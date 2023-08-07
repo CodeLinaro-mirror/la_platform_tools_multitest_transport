@@ -211,6 +211,57 @@ device_actions:
     default_download_url: file:///bin/acloud_prebuilt
     test_resource_type: UNKNOWN
 
+- id: rvd_setup
+  name: Remote Virtual Device Setup
+  description: >
+    Setup a remote virtual device. The device type is Cuttlefish:
+    https://source.android.com/setup/create/cuttlefish
+  device_spec: '\b(device_serial:\S+:gce-device-\S+|device_type:GCE)\b'
+  tradefed_options:
+  - name: gce-driver-path
+    values:
+    - ${TF_WORK_DIR}/acloud
+  - name: gce-boot-timeout
+    values:
+    - 10m
+  - name: device-type
+    values:
+    - GCE_DEVICE
+  - name: gce-driver-param
+    values:
+    - --avd-type
+    - cuttlefish
+    - --boot-timeout
+    - '540'
+    - --no-pull-log
+    - --no-autoconnect
+    - --yes
+    - --skip-pre-run-check
+  - name: gce-driver-file-param
+    values:
+    - local-image=${TF_WORK_DIR}/device
+    - cvd-host-package=${TF_WORK_DIR}/cvd-host_package.tar.gz
+  - name: allow-gce-boot-timeout-override
+    values: 'true'
+  - name: wait-gce-teardown
+    values: 'true'
+  - name: gce-private-key-path
+    values:
+    - /tmp/rvd_id_rsa
+  - name: instance-type
+    values:
+    - CUTTLEFISH
+  test_resource_defs:
+  - name: cvd-host_package.tar.gz
+    test_resource_type: UNKNOWN
+    decompress: false
+  - name: device
+    test_resource_type: DEVICE_IMAGE
+    decompress: false
+  - name: acloud
+    default_download_url: file:///bin/acloud_prebuilt
+    test_resource_type: UNKNOWN
+
 - id: reboot
   name: Reboot
   tradefed_target_preparers:
