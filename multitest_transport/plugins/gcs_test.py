@@ -71,18 +71,48 @@ class GCSBuildProviderTest(absltest.TestCase):
             size=0,
             timestamp=datetime.datetime(2018, 7, 7, 23, 52, 33, 535000)))
 
+  def testGetBuildItem_withPathToDirectory_withoutObject(self):
+    """Tests that directories without objects can be fetched from GCS."""
+    side_effect = apiclient.http.HttpError(mock.Mock(status=404), 'not found')
+    self.api_client.objects().get().execute.side_effect = side_effect
+    self.api_client.objects().get().execute.return_value = {
+        'items': [{
+            'bucket': 'bucket',
+            'contentType': 'text/plain',
+            'name': 'dir/nested_dir/file',
+            'size': '456',
+            'updated': '2018-07-06T23:29:21.410Z',
+        }],
+    }
+
+    build_item = self.provider.GetBuildItem('bucket/dir/')
+    self.assertEqual(
+        build_item,
+        base.BuildItem(name='dir/', path='bucket/dir/', is_file=False),
+    )
+
   def testGetBuildItem_fileNotFound(self):
     """Tests that None is returned if the file is not found."""
     side_effect = apiclient.http.HttpError(mock.Mock(status=404), 'not found')
     self.api_client.objects().get().execute.side_effect = side_effect
+    self.api_client.objects().list().execute.return_value = {'items': []}
 
     build_item = self.provider.GetBuildItem('bucket/dir/file')
     self.assertIsNone(build_item)
-    # Automatically retries with a trailing slash to check for directories.
     self.api_client.objects().get.assert_has_calls([
         mock.call(bucket='bucket', object='dir/file'),
         mock.ANY,  # Execute request.
-        mock.call(bucket='bucket', object='dir/file/'),
+    ])
+    # Automatically retries with a trailing slash to check for directories.
+    self.api_client.objects().list.assert_has_calls([
+        mock.call(
+            bucket='bucket',
+            delimiter=mock.ANY,
+            maxResults=mock.ANY,
+            prefix='dir/file/',
+            pageToken=None,
+        ),
+        mock.ANY,  # Execute request.
     ])
 
   def testGetBuildItem_rootDirectory(self):

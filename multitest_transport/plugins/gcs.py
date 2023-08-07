@@ -73,6 +73,14 @@ def _ParseTimeStamp(timestamp):
   return datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%fZ')
 
 
+def _ParseFileName(path):
+  """Parses the file name from an object path."""
+  if path.endswith(_PATH_DELIMITER):
+    return path[:-1].split(_PATH_DELIMITER)[-1] + _PATH_DELIMITER
+  else:
+    return path.split(_PATH_DELIMITER)[-1]
+
+
 class GCSBucketNotFoundError(errors.FileNotFoundError):
   """A Google Cloud Storage Error indicating that bucket is not supplied."""
 
@@ -155,25 +163,29 @@ class GCSBuildProvider(base.BuildProvider):
     if not object_name:
       return base.BuildItem(name='', is_file=False, path=path)
     response = self._GetGCSObject(bucket, object_name)
-    if not response and not object_name.endswith(_PATH_DELIMITER):
-      # Because directory passed in don't have a trailing slash, need
-      # to try again with trailing slash to check if it's direcotry
-      response = self._GetGCSObject(bucket, object_name + _PATH_DELIMITER)
-    if not response:
+    if response:
+      return base.BuildItem(
+          name=_ParseFileName(response['name']),
+          path=_PATH_DELIMITER.join([bucket, response['name']]),
+          is_file=(not response['name'].endswith(_PATH_DELIMITER)),
+          size=int(response['size']),
+          timestamp=_ParseTimeStamp(response['updated']),
+      )
+    # There is no GCS object for the item. Try the list api to check if it's a
+    # directory.
+    if not object_name.endswith(_PATH_DELIMITER):
+      object_name += _PATH_DELIMITER
+    try:
+      response = self._ListGCSObjects(bucket, object_name)
+    except GCSBucketNotFoundError:
       return None
-    object_name = response['name']
-    is_file = not object_name.endswith(_PATH_DELIMITER)
-    # Parse an object name.
-    if is_file:
-      name = object_name.split(_PATH_DELIMITER)[-1]
-    else:
-      name = object_name[:-1].split(_PATH_DELIMITER)[-1] + _PATH_DELIMITER
-    return base.BuildItem(
-        name=name,
-        path=_PATH_DELIMITER.join([bucket, response['name']]),
-        is_file=is_file,
-        size=int(response['size']),
-        timestamp=_ParseTimeStamp(response['updated']))
+    if response and response.get('items'):
+      return base.BuildItem(
+          name=_ParseFileName(object_name),
+          path=path,
+          is_file=False,
+      )
+    return None
 
   def _ListGCSObjects(self, bucket, prefix, page_token=None):
     """List Google Storage Objects from given path.
