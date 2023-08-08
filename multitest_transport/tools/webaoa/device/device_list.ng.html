@@ -17,14 +17,15 @@
 <mat-list>
   <mat-list-item class="device" *ngFor="let device of devices"
                  (click)="selectionChange.emit(device)">
-    <mat-icon matListIcon>smartphone</mat-icon>
-    <div matLine class="product">{{device.manufacturerName}} {{device.productName}}</div>
-    <div matLine class="serial">{{device.serialNumber}}</div>
+    <mat-icon matListItemIcon>smartphone</mat-icon>
+    <div matListItemTitle class="product">{{device.manufacturerName}} {{device.productName}}</div>
+    <div matListItemLine class="serial">{{device.serialNumber}}</div>
     <div class="default-mode" *ngIf="!device.isAccessoryMode()">Default Mode</div>
     <div class="accessory-mode" *ngIf="device.isAccessoryMode()">
       Accessory Mode
       <ng-template [ngIf]="device.isAdbEnabled()">with ADB</ng-template>
     </div>
+    <!-- TODO: Complete MDC list migration -->
   </mat-list-item>
 </mat-list>
 

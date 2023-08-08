@@ -23,11 +23,11 @@ import {FormsModule} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
 import {MatDialogModule} from '@angular/material/dialog';
 import {MatIconModule} from '@angular/material/icon';
-import {MatLegacyCardModule} from '@angular/material/legacy-card';
-import {MatLegacyFormFieldModule} from '@angular/material/legacy-form-field';
-import {MatLegacyInputModule} from '@angular/material/legacy-input';
-import {MatLegacyListModule} from '@angular/material/legacy-list';
-import {MatLegacySelectModule} from '@angular/material/legacy-select';
+import {MatCardModule} from '@angular/material/card';
+import {MatFormFieldModule} from '@angular/material/form-field';
+import {MatInputModule} from '@angular/material/input';
+import {MatListModule} from '@angular/material/list';
+import {MatSelectModule} from '@angular/material/select';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
 import {MatSnackBarModule} from '@angular/material/snack-bar';
 import {MatTooltipModule} from '@angular/material/tooltip';
@@ -54,14 +54,14 @@ import {WorkflowEditor} from './workflow_editor';
     DragDropModule,
     FormsModule,
     MatButtonModule,
-    MatLegacyCardModule,
+    MatCardModule,
     MatDialogModule,
-    MatLegacyFormFieldModule,
+    MatFormFieldModule,
     MatIconModule,
-    MatLegacyInputModule,
-    MatLegacyListModule,
+    MatInputModule,
+    MatListModule,
     MatProgressBarModule,
-    MatLegacySelectModule,
+    MatSelectModule,
     MatSnackBarModule,
     MatTooltipModule,
   ],

@@ -33,13 +33,14 @@ mat-list-item {
     cursor: pointer;
   }
 
-  .mat-list-icon {
+  .mat-mdc-list-icon {
     font-size: 36px;
     height: 36px;
     width: 36px;
   }
 
-  .accessory-mode, .default-mode {
+  .accessory-mode,
+  .default-mode {
     font-size: 14px;
     white-space: nowrap;
   }

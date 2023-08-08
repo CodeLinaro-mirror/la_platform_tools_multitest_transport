@@ -23,8 +23,6 @@
 // Application theme
 $primary: mat.define-palette(mat.$grey-palette);
 $accent: mat.define-palette(mat.$blue-palette);
-// TODO: Provide this application's typography in the
-// theme configuration instead of providing null.
 $theme: mat.define-light-theme(
   (
     color: (
@@ -32,7 +30,7 @@ $theme: mat.define-light-theme(
       accent: $accent,
     ),
     density: 0,
-    typography: null,
+    typography: mat.define-typography-config(),
   )
 );
 @include mat-deprecated.all-legacy-component-themes($theme);
@@ -46,6 +44,13 @@ $theme: mat.define-light-theme(
 @include mat.progress-bar-theme($theme);
 @include mat.paginator-theme($theme);
 @include mat.tabs-theme($theme);
+@include mat.autocomplete-theme($theme);
+@include mat.card-theme($theme);
+@include mat.input-theme($theme);
+@include mat.form-field-theme($theme);
+@include mat.core-theme($theme);
+@include mat.select-theme($theme);
+@include mat.list-theme($theme);
 
 // Typography
 $typography: mat-deprecated.define-legacy-typography-config();
@@ -64,8 +69,6 @@ $typography: mat-deprecated.define-legacy-typography-config();
 // Button theme
 $button-primary: mat.define-palette(mat.$grey-palette);
 $button-accent: mat.define-palette(mat.$blue-palette, 700);
-// TODO: Provide this application's typography in the
-// theme configuration instead of providing null.
 $button-theme: mat.define-light-theme(
   (
     color: (
@@ -73,7 +76,7 @@ $button-theme: mat.define-light-theme(
       accent: $button-accent,
     ),
     density: 0,
-    typography: null,
+    typography: mat.define-typography-config(),
   )
 );
 @include mat.button-theme($button-theme);

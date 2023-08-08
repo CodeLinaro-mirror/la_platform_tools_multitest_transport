@@ -18,7 +18,7 @@
 import {CommonModule} from '@angular/common';
 import {NgModule} from '@angular/core';
 import {MatIconModule} from '@angular/material/icon';
-import {MatLegacyListModule} from '@angular/material/legacy-list';
+import {MatListModule} from '@angular/material/list';
 import {MatButtonModule} from '@angular/material/button';
 import {MatDialogModule} from '@angular/material/dialog';
 
@@ -40,7 +40,7 @@ import {FindDeviceDialog} from './find_device_dialog';
     MatButtonModule,
     MatDialogModule,
     MatIconModule,
-    MatLegacyListModule,
+    MatListModule,
   ],
   providers: [
     DeviceManager,
