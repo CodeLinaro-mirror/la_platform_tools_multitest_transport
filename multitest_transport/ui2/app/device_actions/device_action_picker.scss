@@ -78,7 +78,7 @@
   font-size: 16px;
 }
 
-::ng-deep .device-action-menu.mat-menu-panel {
+::ng-deep .device-action-menu.mat-mdc-menu-panel {
   max-width: 320px;
   width: 320px;
 
@@ -93,14 +93,13 @@
 
   mat-checkbox {
     align-items: center;
-    background-color: white;
     display: flex;
     height: 100%;
     margin: 0;
   }
 
-  .mat-menu-content:not(:empty),
-  .mat-menu-item {
+  .mat-mdc-menu-content:not(:empty),
+  .mat-mdc-menu-item {
     padding: 0;
   }
 }

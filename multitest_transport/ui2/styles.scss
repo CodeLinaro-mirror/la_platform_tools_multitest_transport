@@ -72,6 +72,7 @@ $theme: map_merge(
 @include mat.icon-button-theme($theme);
 @include mat.paginator-theme($theme);
 @include mat.tabs-theme($theme);
+@include mat.menu-theme($theme);
 
 @include mat.checkbox-typography($typography);
 @include mat.radio-typography($typography);
@@ -81,6 +82,7 @@ $theme: map_merge(
 @include mat.table-typography($typography);
 @include mat.progress-spinner-typography($typography);
 @include mat.progress-bar-typography($typography);
+@include mat.menu-typography($typography);
 
 $button-primary: mat.define-palette(mat.$grey-palette);
 $button-accent: mat.define-palette(mat.$blue-palette, 700);

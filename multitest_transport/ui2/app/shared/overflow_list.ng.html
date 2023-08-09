@@ -23,7 +23,9 @@
     </mat-chip-list>
   </ng-container>
   <ng-template #buttonTemplate>
-    <button mat-menu-item class="main-button" disabled>{{ data[0] }}</button>
+    <div class='mat-mdc-menu-content'>
+      <button mat-menu-item class="main-button" disabled>{{ data[0] }}</button>
+    </div>
   </ng-template>
 
   <!-- Dropdown Button -->

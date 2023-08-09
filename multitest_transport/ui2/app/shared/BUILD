@@ -112,7 +112,7 @@ ng_module(
         third_party_js("angular_components:material_snack_bar"),
         third_party_js("angular_components:material_table"),
         third_party_js("angular_components:material_tooltip"),
-        third_party_js("angular_components:material_legacy_menu"),
+        third_party_js("angular_components:material_menu"),
         third_party_js("angular_components:material_paginator"),
         third_party_js("angular_components:material_legacy_progress_bar"),
         third_party_js("angular_components:material_legacy_progress_spinner"),

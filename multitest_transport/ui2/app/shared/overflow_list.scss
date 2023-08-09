@@ -23,6 +23,15 @@
 
 button {
   color: $text-header !important;
+  opacity: 1 !important;
+}
+
+div.mat-mdc-menu-content {
+  width: 100%;
+}
+
+.mat-mdc-menu-content .mat-mdc-menu-item ::ng-deep .mat-mdc-menu-item-text {
+  font-size: 14px;
 }
 
 .dropdown-button {

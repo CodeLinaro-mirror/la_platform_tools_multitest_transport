@@ -86,7 +86,7 @@
   transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
 }
 
-::ng-deep .test-run-action-menu.mat-menu-panel {
+::ng-deep .test-run-action-menu.mat-mdc-menu-panel {
   max-width: 320px;
   width: 320px;
 
@@ -101,7 +101,6 @@
 
   mat-checkbox {
     align-items: center;
-    background-color: white;
     display: flex;
     height: 100%;
     margin: 0;
@@ -111,8 +110,8 @@
     }
   }
 
-  .mat-menu-content:not(:empty),
-  .mat-menu-item {
+  .mat-mdc-menu-content:not(:empty),
+  .mat-mdc-menu-item {
     padding: 0;
   }
 }
