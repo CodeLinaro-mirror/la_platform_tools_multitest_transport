@@ -52,7 +52,6 @@ ng_module(
         third_party_js("angular_components:material_sort"),
         third_party_js("angular_components:material_table"),
         third_party_js("angular_components:material_tabs"),
-        third_party_js("angular_components:material_legacy_table"),
         third_party_js("angular2:platform_browser"),
         third_party_js("angular2:router"),
         third_party_js("rxjs"),
