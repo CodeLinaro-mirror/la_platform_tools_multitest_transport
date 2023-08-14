@@ -42,8 +42,10 @@
         </h3>
 
         <a mat-list-item routerLink="/tests" routerLinkActive="active" [matTooltip]="'Test Suites'">
-          <mat-icon matListIcon>assignment</mat-icon>
-          <span>Test Suites</span>
+          <mat-icon matListItemIcon>assignment</mat-icon>
+          <span matListItemMeta>
+            <span>Test Suites</span>
+          </span>
         </a>
 
         <a
@@ -52,8 +54,10 @@
           routerLinkActive="active"
           [matTooltip]="'Test Plans'"
         >
-          <mat-icon matListIcon>date_range</mat-icon>
-          <span>Test Plans</span>
+          <mat-icon matListItemIcon>date_range</mat-icon>
+          <span matListItemMeta>
+            <span>Test Plans</span>
+          </span>
         </a>
 
         <a
@@ -62,8 +66,10 @@
           routerLinkActive="active"
           [matTooltip]="'Test Results'"
         >
-          <mat-icon matListIcon>bar_chart</mat-icon>
-          <span>Test Results</span>
+          <mat-icon matListItemIcon>bar_chart</mat-icon>
+          <span matListItemMeta>
+            <span>Test Results</span>
+          </span>
         </a>
 
         <mat-divider></mat-divider>
@@ -73,13 +79,17 @@
         </h3>
 
         <a mat-list-item routerLink="/devices" routerLinkActive="active" [matTooltip]="'Devices'">
-          <mat-icon matListIcon>phone_android</mat-icon>
-          <span>Devices</span>
+          <mat-icon matListItemIcon>phone_android</mat-icon>
+          <span matListItemMeta>
+            <span>Devices</span>
+          </span>
         </a>
 
         <a mat-list-item routerLink="/hosts" routerLinkActive="active" [matTooltip]="'Hosts'">
-          <mat-icon matListIcon>dns</mat-icon>
-          <span>Hosts</span>
+          <mat-icon matListItemIcon>dns</mat-icon>
+          <span matListItemMeta>
+            <span>Hosts</span>
+          </span>
         </a>
 
         <mat-divider></mat-divider>
@@ -89,14 +99,18 @@
         </h3>
 
         <a mat-list-item routerLink="/settings" routerLinkActive="active" matTooltip="Settings">
-          <mat-icon matListIcon>settings</mat-icon>
-          <span>Settings</span>
+          <mat-icon matListItemIcon>settings</mat-icon>
+          <span matListItemMeta>
+            <span>Settings</span>
+          </span>
         </a>
 
         <a mat-list-item routerLink="/file_browser"
            routerLinkActive="active" matTooltip="File Browser">
-          <mat-icon matListIcon>folder_open</mat-icon>
-          <span>File Browser</span>
+          <mat-icon matListItemIcon>folder_open</mat-icon>
+          <span matListItemMeta>
+            <span>File Browser</span>
+          </span>
         </a>
 
         <mat-divider></mat-divider>
@@ -106,8 +120,10 @@
         </h3>
 
         <a mat-list-item matTooltip="WebAOA" target="_blank" href="/webaoa">
-          <mat-icon matListIcon>android</mat-icon>
-          <span> WebAOA </span>
+          <mat-icon matListItemIcon>android</mat-icon>
+          <span matListItemMeta>
+            <span>WebAOA</span>
+          </span>
         </a>
         <a
           *ngIf="netdataUrl"
@@ -118,8 +134,10 @@
           [href]="netdataUrl"
           (click)="trackPageView('netdata')"
         >
-          <mat-icon matListIcon>monitor_heart</mat-icon>
-          <span>Storage Monitor</span>
+          <mat-icon matListItemIcon>monitor_heart</mat-icon>
+          <span matListItemMeta>
+            <span>Storage Monitor</span>
+          </span>
         </a>
 
         <mat-divider></mat-divider>
@@ -134,8 +152,10 @@
           target="_blank"
           href="https://source.android.com/compatibility/tests/development/android-test-station/ats-user-guide"
         >
-          <mat-icon matListIcon>article</mat-icon>
-          <span>User Guide</span>
+          <mat-icon matListItemIcon>article</mat-icon>
+          <span matListItemMeta>
+            <span>User Guide</span>
+          </span>
         </a>
 
         <a
@@ -144,12 +164,16 @@
           target="_blank"
           href="https://source.android.com/compatibility/tests/development/android-test-station/faq"
         >
-          <mat-icon matListIcon>help_outline</mat-icon>
-          <span>FAQs</span>
+          <mat-icon matListItemIcon>help_outline</mat-icon>
+          <span matListItemMeta>
+            <span>FAQs</span>
+          </span>
         </a>
         <a mat-list-item matTooltip="API Explorer" target="_blank" href="/_ah/api_docs">
-          <mat-icon matListIcon>code</mat-icon>
-          <span> API Explorer </span>
+          <mat-icon matListItemIcon>code</mat-icon>
+          <span matListItemMeta>
+            <span>API Explorer</span>
+          </span>
         </a>
       </mat-nav-list>
     </div>

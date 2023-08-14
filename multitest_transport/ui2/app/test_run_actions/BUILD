@@ -7,7 +7,9 @@ licenses(["notice"])
 per_file_sass_binaries(
     name = "styles",
     srcs = glob(["*.scss"]),
-    deps = ["//multitest_transport/ui2:constants"],
+    deps = [
+        "//multitest_transport/ui2:constants",
+    ],
 )
 
 ng_module(
@@ -33,6 +35,7 @@ ng_module(
         third_party_js("angular_components:cdk_collections"),
         third_party_js("angular_components:cdk_drag_drop"),
         third_party_js("angular_components:material_button"),
+        third_party_js("angular_components:material_list"),
         third_party_js("angular_components:material_legacy_dialog"),
         third_party_js("angular2:core"),
         third_party_js("angular2:router"),

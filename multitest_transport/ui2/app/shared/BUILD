@@ -104,7 +104,7 @@ ng_module(
         third_party_js("angular_components:material_grid_list"),
         third_party_js("angular_components:material_icon"),
         third_party_js("angular_components:material_legacy_input"),
-        third_party_js("angular_components:material_legacy_list"),
+        third_party_js("angular_components:material_list"),
         third_party_js("angular_components:material_checkbox"),
         third_party_js("angular_components:material_progress_bar"),
         third_party_js("angular_components:material_progress_spinner"),

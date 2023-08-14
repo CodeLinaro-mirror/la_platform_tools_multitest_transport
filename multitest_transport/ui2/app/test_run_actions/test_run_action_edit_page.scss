@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@use 'third_party/javascript/angular_components/material' as mat;
 
 :host {
   display: block;
@@ -26,5 +27,7 @@ h2 {
 
 mat-selection-list {
   padding-top: 0;
+  padding-bottom: 0;
   margin-bottom: 20px;
+  @include mat.list-density(-2);
 }

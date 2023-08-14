@@ -31,7 +31,7 @@ import {MatLegacyChipsModule} from '@angular/material/legacy-chips';
 import {MatLegacyDialogModule} from '@angular/material/legacy-dialog';
 import {MatLegacyFormFieldModule} from '@angular/material/legacy-form-field';
 import {MatLegacyInputModule} from '@angular/material/legacy-input';
-import {MatLegacyListModule} from '@angular/material/legacy-list';
+import {MatListModule} from '@angular/material/list';
 import {MatMenuModule} from '@angular/material/menu';
 import {MatPaginatorModule} from '@angular/material/paginator';
 import {MatLegacySelectModule} from '@angular/material/legacy-select';
@@ -94,7 +94,7 @@ const MATERIAL_MODULES = [
   MatGridListModule,
   MatIconModule,
   MatLegacyInputModule,
-  MatLegacyListModule,
+  MatListModule,
   MatMenuModule,
   MatPaginatorModule,
   MatProgressBarModule,

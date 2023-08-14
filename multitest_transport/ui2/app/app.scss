@@ -95,6 +95,10 @@ mat-nav-list {
   }
 }
 
+.mat-mdc-list-base {
+  --mdc-list-list-item-leading-icon-color: rgba(0, 0, 0, 0.87);
+}
+
 mat-sidenav-container {
   height: 100%;
 
@@ -102,9 +106,9 @@ mat-sidenav-container {
     @include sidenav-container-transition($nav-transition-duration);
     width: $sidenav-expanded-width;
 
-    .mat-subheader,
+    .mat-mdc-subheader,
     .mat-divider,
-    .mat-list-item span {
+    .mat-mdc-list-item span {
       @include sidenav-nav-list-transition($nav-transition-duration);
     }
   }
@@ -117,9 +121,9 @@ mat-sidenav-container {
     mat-sidenav {
       width: $sidenav-collapsed-width;
 
-      .mat-subheader,
+      .mat-mdc-subheader,
       .mat-divider,
-      .mat-list-item span {
+      .mat-mdc-list-item span {
         opacity: 0;
       }
     }
