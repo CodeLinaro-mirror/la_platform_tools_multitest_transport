@@ -16,11 +16,9 @@
 
 @import 'third_party/py/multitest_transport/ui2/constants';
 
-.mat-card {
-  margin-bottom: 20px;
-
+.mat-mdc-card {
   h2 {
-    align-items: baseline;
+    align-items: center;
     font-size: 16px;
     font-weight: normal;
   }

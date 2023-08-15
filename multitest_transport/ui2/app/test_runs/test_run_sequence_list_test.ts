@@ -86,7 +86,7 @@ describe('TestRunSequenceList', () => {
   });
 
   it('should displays correct number of items', () => {
-    const items = getEls(el, '.mat-card');
+    const items = getEls(el, '.mat-mdc-card');
     expect(items).toBeTruthy();
     expect(items.length).toBe(testRunSequenceList.sequenceList.length);
   });
@@ -99,7 +99,7 @@ describe('TestRunSequenceList', () => {
     expect(textContent).not.toContain(test1.name);
     expect(textContent).toContain(test2.name);
 
-    const items = getEls(el, '.mat-card');
+    const items = getEls(el, '.mat-mdc-card');
     expect(items).toBeTruthy();
     expect(items.length).toBe(1);
   });

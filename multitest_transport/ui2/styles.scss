@@ -74,6 +74,7 @@ $theme: map_merge(
 @include mat.tabs-theme($theme);
 @include mat.list-theme($theme);
 @include mat.menu-theme($theme);
+@include mat.card-theme($theme);
 
 @include mat.checkbox-typography($typography);
 @include mat.radio-typography($typography);
@@ -311,6 +312,34 @@ mat-spinner.loading-spinner {
 .mat-mdc-unelevated-button,
 .mat-mdc-outlined-button {
   flex-shrink: 0 !important;
+}
+
+.mat-mdc-card {
+  margin-bottom: 20px;
+  padding: 16px;
+
+  &>:first-child {
+    margin-top: 0;
+  }
+
+  &>:last-child {
+    margin-bottom: 0;
+  }
+
+  .mat-mdc-card-content {
+    padding: 0px;
+    margin-bottom: 16px;
+    font-size: 14px;
+
+    &:last-child {
+      padding-bottom: 0;
+      margin-bottom: 0;
+    }
+
+    &.description {
+      font-size: 12px;
+    }
+  }
 }
 
 .mat-mdc-cell:first-of-type {

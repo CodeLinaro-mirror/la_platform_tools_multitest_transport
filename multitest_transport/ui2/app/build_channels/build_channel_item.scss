@@ -16,12 +16,11 @@
 
 @import 'third_party/py/multitest_transport/ui2/constants';
 
-.mat-card {
-  margin-bottom: 20px;
-  min-height: 68px;
+.mat-mdc-card {
+  min-height: 100px;
 
   .build-channel-header {
-    align-items: baseline;
+    align-items: center;
   }
 
   h3 {

@@ -94,7 +94,7 @@ ng_module(
         third_party_js("angular2:forms"),
         third_party_js("angular_components:material_legacy_autocomplete"),
         third_party_js("angular_components:material_button"),
-        third_party_js("angular_components:material_legacy_card"),
+        third_party_js("angular_components:material_card"),
         third_party_js("angular_components:material_legacy_checkbox"),
         third_party_js("angular_components:material_legacy_chips"),
         third_party_js("angular_components:material_legacy_dialog"),

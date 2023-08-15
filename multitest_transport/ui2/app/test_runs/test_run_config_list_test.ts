@@ -85,7 +85,7 @@ describe('TestRunConfigList', () => {
   });
 
   it('should displays correct number of items', () => {
-    const items = getEls(el, '.mat-card');
+    const items = getEls(el, '.mat-mdc-card');
     expect(items).toBeTruthy();
     expect(items.length).toBe(testRunConfigList.data.length);
   });
@@ -98,7 +98,7 @@ describe('TestRunConfigList', () => {
     expect(textContent).not.toContain(test1.name);
     expect(textContent).toContain(test2.name);
 
-    const items = getEls(el, '.mat-card');
+    const items = getEls(el, '.mat-mdc-card');
     expect(items).toBeTruthy();
     expect(items.length).toBe(1);
   });
