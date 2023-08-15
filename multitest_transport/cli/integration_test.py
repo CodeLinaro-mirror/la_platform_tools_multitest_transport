@@ -112,6 +112,12 @@ class CliIntegrationTest(absltest.TestCase):
     self._Start()
     self.assertEqual(RUNNING, self._GetStatus())
 
+  def testStartWithControlServerUrl(self):
+    self._Start(args=[
+        '--control_server_url=http://localhost:8000'
+        ])
+    self.assertEqual(RUNNING, self._GetStatus())
+
   def testStop(self):
     self._Start()
     self.assertEqual(RUNNING, self._GetStatus())
