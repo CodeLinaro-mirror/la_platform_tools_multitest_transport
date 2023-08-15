@@ -16,15 +16,15 @@
 
 @import 'third_party/py/multitest_transport/ui2/constants';
 
-// Default status
-.status-button {
-  background: $primary-less;
-  line-height: 30px;
-  width: 100px;
-}
-
 // For specificity
 button {
+  // Default status
+  &.status-button {
+    background: $primary-less;
+    line-height: 30px;
+    width: 100px;
+  }
+
   // Device status
   &.status-button-allocated {
     background: $progress-background;
@@ -49,53 +49,82 @@ button {
     background: $danger-background;
     width: 150px;
   }
-}
 
-// Test Case Result status
-.status-button-pass {
-  background: $success-background;
-}
+  // Recovery state
+  &.status-button-assigned {
+    background: $progress-background;
+  }
 
-.status-button-fail {
-  background: $danger-background;
-}
+  &.status-button-fixed {
+    background: $success-background;
+  }
 
-.status-button-skipped {
-  background: $warning-background;
-}
+  // Test Run State
+  &.status-button-canceled {
+    background: $warning-background;
+  }
 
-// Test Run State
-.status-button-canceled {
-  background: $warning-background;
-}
+  &.status-button-completed {
+    background: $success-background;
+  }
 
-.status-button-completed {
-  background: $success-background;
-}
+  &.status-button-error {
+    background: $danger-background;
+  }
 
-.status-button-error {
-  background: $danger-background;
-}
+  &.status-button-running {
+    background: $progress-background;
+  }
 
-.status-button-running {
-  background: $progress-background;
+  // Test Case Result status
+  &.status-button-pass {
+    background: $success-background;
+  }
+
+  &.status-button-fail {
+    background: $danger-background;
+  }
+
+  &.status-button-skipped {
+    background: $warning-background;
+  }
+
+  // Update state
+  &.status-button-pending,
+  &.status-button-syncing,
+  &.status-button-shutting-down,
+  &.status-button-restarting {
+    backgound: $progress-background;
+    width: 120px;
+  }
+
+  &.status-button-timed-out,
+  &.status-button-errored {
+    background: $danger-background;
+    width: 120px;
+  }
+
+  &.status-button-succeeded {
+    background: $success-background;
+    width: 120px;
+  }
 }
 
 // Config Set state
 :host-context(.config-set) {
   .status-button-imported {
     background: $success-background;
-    width: 120px;
+    width: 140px;
   }
 
   .status-button-not-imported {
     // keep as gray
-    width: 120px;
+    width: 140px;
   }
 
   .status-button-updatable {
     background: $progress-background;
-    width: 120px;
+    width: 140px;
   }
 }
 
@@ -125,33 +154,4 @@ button {
   .status-button-incomplete {
     background: $danger-background;
   }
-}
-
-// Recovery state
-.status-button-assigned {
-  background: $progress-background;
-}
-
-.status-button-fixed {
-  background: $success-background;
-}
-
-// Update state
-.status-button-pending,
-.status-button-syncing,
-.status-button-shutting-down,
-.status-button-restarting {
-  backgound: $progress-background;
-  width: 120px;
-}
-
-.status-button-timed-out,
-.status-button-errored {
-  background: $danger-background;
-  width: 120px;
-}
-
-.status-button-succeeded {
-  background: $success-background;
-  width: 120px;
 }
