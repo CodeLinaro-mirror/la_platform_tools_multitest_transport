@@ -24,17 +24,17 @@ import {MatDividerModule} from '@angular/material/divider';
 import {MatExpansionModule} from '@angular/material/expansion';
 import {MatGridListModule} from '@angular/material/grid-list';
 import {MatIconModule} from '@angular/material/icon';
-import {MatLegacyAutocompleteModule} from '@angular/material/legacy-autocomplete';
+import {MatAutocompleteModule} from '@angular/material/autocomplete';
 import {MatButtonModule} from '@angular/material/button';
 import {MatCardModule} from '@angular/material/card';
 import {MatLegacyChipsModule} from '@angular/material/legacy-chips';
 import {MatLegacyDialogModule} from '@angular/material/legacy-dialog';
-import {MatLegacyFormFieldModule} from '@angular/material/legacy-form-field';
-import {MatLegacyInputModule} from '@angular/material/legacy-input';
+import {MatFormFieldModule} from '@angular/material/form-field';
+import {MatInputModule} from '@angular/material/input';
 import {MatListModule} from '@angular/material/list';
 import {MatMenuModule} from '@angular/material/menu';
 import {MatPaginatorModule} from '@angular/material/paginator';
-import {MatLegacySelectModule} from '@angular/material/legacy-select';
+import {MatSelectModule} from '@angular/material/select';
 import {MatTabsModule} from '@angular/material/tabs';
 import {MatCheckboxModule} from '@angular/material/checkbox';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
@@ -82,7 +82,7 @@ const MATERIAL_MODULES = [
   DragDropModule,
   FlexLayoutModule,
   FormsModule,
-  MatLegacyAutocompleteModule,
+  MatAutocompleteModule,
   MatButtonModule,
   MatCardModule,
   MatLegacyChipsModule,
@@ -90,17 +90,17 @@ const MATERIAL_MODULES = [
   MatLegacyDialogModule,
   MatDividerModule,
   MatExpansionModule,
-  MatLegacyFormFieldModule,
+  MatFormFieldModule,
   MatGridListModule,
   MatIconModule,
-  MatLegacyInputModule,
+  MatInputModule,
   MatListModule,
   MatMenuModule,
   MatPaginatorModule,
   MatProgressBarModule,
   MatProgressSpinnerModule,
   MatRadioModule,
-  MatLegacySelectModule,
+  MatSelectModule,
   MatSidenavModule,
   MatSnackBarModule,
   MatSortModule,

@@ -25,8 +25,9 @@
 <div [class.loading-mask]="isLoading">
   <div class="filter">
     <!-- TODO Add column filtering -->
-    <mat-form-field fxFlex>
+    <mat-form-field fxFlex subscriptSizing="dynamic">
       <mat-icon matPrefix class="filter-icon">filter_list</mat-icon>
+      <mat-label>Filter</mat-label>
       <mat-chip-list #chipList aria-label="Filter">
         <mat-chip
             *ngFor="let filter of filters"
@@ -37,7 +38,6 @@
           <mat-icon matChipRemove>cancel</mat-icon>
         </mat-chip>
         <input
-            placeholder="Filter"
             [matChipInputFor]="chipList"
             [matChipInputSeparatorKeyCodes]="SEPARATOR_KEYCODES"
             [matChipInputAddOnBlur]="true"
@@ -47,7 +47,7 @@
 
     <mat-divider vertical></mat-divider>
 
-    <mat-form-field fxFlex="300px">
+    <mat-form-field fxFlex="300px" subscriptSizing="dynamic">
       <mat-label>Status</mat-label>
       <mat-select multiple [(ngModel)]="states"
                   (selectionChange)="resetPageTokenAndReload()">

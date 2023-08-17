@@ -17,12 +17,8 @@
 @import 'third_party/py/multitest_transport/ui2/constants';
 
 ::ng-deep {
-  .mat-form-field-label {
-    padding-left: 10px;
-  }
-
-  .mat-select-panel {
-    .mat-option.hidden {
+  .mat-mdc-select-panel {
+    .mat-mdc-option.hidden {
       display: none;
     }
   }
@@ -33,8 +29,8 @@
 }
 
 // TODO: Remove 'mat-form-field-appearance-outline'.
-:host mat-form-field.mat-form-field-appearance-outline ::ng-deep {
-  .mat-form-field-wrapper {
+:host mat-form-field.mat-mdc-form-field-appearance-outline ::ng-deep {
+  .mat-mdc-form-field-wrapper {
     padding-bottom: 0px;
   }
 }

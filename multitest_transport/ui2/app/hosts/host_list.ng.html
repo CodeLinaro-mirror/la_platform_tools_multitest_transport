@@ -20,7 +20,7 @@
   <mat-toolbar-row>
     <h1>Hosts</h1>
     <span class="toolbar-spacer"></span>
-    <mat-form-field appearance="outline" fxFlex="300px">
+    <mat-form-field appearance="outline" fxFlex="300px" subscriptSizing="dynamic">
       <mat-select placeholder="Lab" [(ngModel)]="selectedLab" (selectionChange)="load()">
         <mat-option *ngFor="let lab of labs" [value]="lab">
           {{ lab }}
@@ -42,11 +42,11 @@
 <div class="filter">
   <form [formGroup]="formGroup">
     <mat-form-field class="form-field" fxFlex>
+      <mat-label>Filter</mat-label>
       <mat-icon matPrefix class="filter-icon">filter_list</mat-icon>
       <input
         matInput
         #valueInput
-        placeholder="Filter..."
         formControlName="valueControl"
         [matAutocomplete]="auto"
         (keydown.tab)="toggleByKeyPressed($event)"
@@ -56,7 +56,6 @@
       />
       <button
         *ngIf="hasFilter"
-        mat-button
         matSuffix
         mat-icon-button
         aria-label="clear filter"

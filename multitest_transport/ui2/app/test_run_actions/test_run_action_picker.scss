@@ -51,6 +51,8 @@
     color: $accent;
     cursor: move;
     display: flex;
+    padding-top: 5px;
+    padding-bottom: 5px;
 
     span {
       flex: 1;
@@ -70,12 +72,12 @@
     }
   }
 
-  ::ng-deep mat-form-field {
+  ::ng-deep mat-mdc-form-field {
     &:first-of-type {
       padding-top: 6px;
     }
 
-    .mat-form-field-wrapper {
+    .mat-mdc-form-field-wrapper {
       padding: 0;
     }
   }

@@ -73,8 +73,11 @@ $theme: map_merge(
 @include mat.paginator-theme($theme);
 @include mat.tabs-theme($theme);
 @include mat.list-theme($theme);
+@include mat.autocomplete-theme($theme);
 @include mat.menu-theme($theme);
 @include mat.card-theme($theme);
+@include mat.core-theme($theme);
+@include mat.select-theme($theme);
 
 @include mat.checkbox-typography($typography);
 @include mat.radio-typography($typography);
@@ -128,8 +131,24 @@ $input-theme: mat.define-light-theme(
     typography: null,
   )
 );
-@include mat-deprecated.legacy-form-field-theme($input-theme);
-@include mat-deprecated.legacy-input-theme($input-theme);
+@include mat.input-theme($input-theme);
+
+// Form theme
+$primary: mat.define-palette(mat.$grey-palette);
+$accent: mat.define-palette(mat.$blue-palette, 100);
+$warn: mat.define-palette(mat.$amber-palette);
+$form-field-theme: mat.define-light-theme(
+  (
+    color: (
+      primary: $primary,
+      accent: $accent,
+      warn: $warn,
+    ),
+    density: 0,
+    typography: mat.define-typography-config(),
+  )
+);
+@include mat.form-field-theme($form-field-theme);
 
 $panel-title-font-size: 20px;
 $panel-title-line-height: 20px;
@@ -285,7 +304,7 @@ mat-spinner.loading-spinner {
   margin-bottom: 20px;
 }
 
-.mat-autocomplete-filter.mat-form-field-appearance-outline:not(
+.mat-autocomplete-filter.mat-mdc-form-field-appearance-outline:not(
     .mat-form-field-disabled
   )
   .mat-form-field-outline {
@@ -354,19 +373,19 @@ mat-spinner.loading-spinner {
   margin-top: -2px;
 }
 
-.mat-form-field-appearance-outline {
-  &.mat-form-field-can-float.mat-form-field-should-float .mat-form-field-label {
+.mat-mdc-form-field-appearance-outline {
+  &.mat-form-field-can-float.mat-form-field-should-float .mat-mdc-form-field-label {
     transform: translateY(-1.25em) scale(0.75);
   }
 
-  .mat-select-arrow-wrapper {
+  .mat-mdc-select-arrow-wrapper {
     transform: translateY(-10%) !important;
   }
 
-  .mat-form-field-infix {
+  .mat-mdc-form-field-infix {
     padding: 0.4em 0 0.8em;
 
-    .mat-form-field-label-wrapper {
+    .mat-mdc-form-field-label-wrapper {
       top: -1.25em;
     }
   }
@@ -395,7 +414,7 @@ mat-spinner.loading-spinner {
 
 // TODO: Consider using an alternative to `!important` such as a theming mixin
 // or increasing specificity.
-.mat-option.mat-selected {
+.mat-mdc-option.mat-mdc-selected {
   background-color: $accent-light !important;
   color: $text-default !important;
 }
@@ -439,16 +458,16 @@ mat-spinner.loading-spinner {
   }
 }
 
-.mat-select-filter.mat-form-field-appearance-outline .mat-form-field-outline {
+.mat-select-filter.mat-mdc-form-field-appearance-outline .mat-mdc-form-field-outline {
   color: $blue-300;
 }
 
 .mat-select-filter {
-  .mat-select-arrow {
+  .mat-mdc-select-arrow {
     color: $blue-600;
   }
 
-  .mat-select-value-text {
+  .mat-mdc-select-value-text {
     color: $blue-600;
   }
 }
@@ -558,6 +577,55 @@ mat-spinner.loading-spinner {
 // has no impact on this project.
 .mat-mdc-table.mat-mdc-table {
   white-space: nowrap;
+}
+
+// The Input element proper.
+.mat-input-element {
+  // The Material input should match whatever background it is above.
+  background: transparent;
+
+  // If background matches current background then so should the color for proper contrast
+  color: currentColor;
+
+  // By default, <input> has a padding, border, outline and a default width.
+  border: none;
+  outline: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+
+  // Prevent textareas from being resized outside the form field.
+  max-width: 100%;
+
+  // Needed to make last line of the textarea line up with the baseline.
+  vertical-align: bottom;
+
+  // User agent stylesheets set the text-align of inputs explicitly to "start". Those can be
+  // easily overwritten by targeting the input element using a simple CSS selector, but since
+  // the text-align will be applied most of the time on the `mat-form-field` to also align the
+  // placeholder, the alignment should be inherited here.
+  text-align: inherit;
+
+  // It's common for developers to set `box-sizing: border-box` on every element on the page.
+  // Reset it to `content-box` since all of our styles are written with it in mind. `border-box`
+  // can also cause unnecessary scrollbars on auto-resizing textareas (see #21560).
+  box-sizing: content-box;
+}
+
+.mat-toolbar {
+  --mat-toolbar-container-background-color: #fff;
+}
+
+.mat-mdc-form-field {
+  --mdc-filled-text-field-container-color: rgba(0, 0, 0, 0);
+}
+
+.mat-mdc-form-field-hint {
+  color: rgba(0, 0, 0, .6);
+}
+
+mat-horizontal-stepper  .mat-horizontal-content-container {
+  padding: 5px 24px 24px;
 }
 
 // TODO: This mixin provides styles that are changed in

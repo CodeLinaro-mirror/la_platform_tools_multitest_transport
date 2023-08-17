@@ -49,4 +49,8 @@ mat-horizontal-stepper ::ng-deep {
       background-color: transparent;
     }
   }
+
+  .mat-horizontal-content-container {
+    padding-top: 4px;
+  }
 }

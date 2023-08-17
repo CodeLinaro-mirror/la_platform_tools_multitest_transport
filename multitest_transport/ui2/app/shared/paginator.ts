@@ -45,7 +45,7 @@ export const DEFAULT_PAGE_SIZE = 10;
 
     .page-size-select {
       margin: 6px 4px 0;
-      width: 56px;
+      width: 108px;
     }
 
    ::ng-deep .page-size-select .mat-form-field-infix {

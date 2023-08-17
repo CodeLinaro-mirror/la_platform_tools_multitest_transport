@@ -15,6 +15,7 @@
 -->
 
 <mat-form-field class="mat-input-wrapper" floatLabel="never">
+  <mat-label>Search a host or a device</mat-label>
   <span matPrefix>
     <mat-icon class="search-icon">search</mat-icon>
   </span>
@@ -22,7 +23,6 @@
     type="text"
     name="search"
     matInput
-    placeholder="Search a host or a device"
     class="search-input"
     #searchInput
     (keyup.enter)="onEnter(searchInput.value);searchInput.value=''"

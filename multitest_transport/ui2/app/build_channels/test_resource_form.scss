@@ -23,6 +23,10 @@ mat-checkbox.align-with-form-field {
   margin-top: 8px;
 }
 
+.mat-mdc-form-field {
+  min-width: auto;
+}
+
 :host {
   display: block;
   margin-bottom: 20px;
@@ -30,13 +34,11 @@ mat-checkbox.align-with-form-field {
 
 .browse-button {
   position: absolute;
-  top: 0;
-  right: 0;
   line-height: 28px;
 }
 
 .browse-button.mat-mdc-button.mat-mdc-button-base {
-  height: 28px;
+  height: 24px;
 }
 
 .browse-input {

@@ -15,7 +15,7 @@
  */
 
 import {Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges, ViewChild} from '@angular/core';
-import {MatLegacySelect} from '@angular/material/legacy-select';
+import {MatSelect} from '@angular/material/select';
 import {assertRequiredInput} from 'google3/third_party/py/multitest_transport/ui2/app/shared/util';
 
 import {ALL_OPTIONS_VALUE} from '../services/mtt_lab_models';
@@ -42,12 +42,12 @@ export class MultiSelect implements OnInit, OnChanges {
   @Input() itemName = 'item';
   @Input() placeholder = '';
   @Input() formWidth = '300px';
-  @Input() appearance: 'legacy'|'standard'|'fill'|'outline' = 'legacy';
+  @Input() appearance: 'fill'|'outline' = 'fill';
   @Input() disabled = false;
   @Output() readonly selectionChange = new EventEmitter<string[]>();
   @Output() readonly keydown = new EventEmitter<KeyboardEvent>();
 
-  @ViewChild(MatLegacySelect, {static: true}) matSelect!: MatLegacySelect;
+  @ViewChild(MatSelect, {static: true}) matSelect!: MatSelect;
 
   selection: string[] = [];
   filterText = '';

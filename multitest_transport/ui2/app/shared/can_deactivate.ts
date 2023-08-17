@@ -16,8 +16,8 @@
 
 import {Directive, ElementRef, HostListener, Injectable, QueryList, ViewChildren} from '@angular/core';
 import {NgModel} from '@angular/forms';
-import {MatLegacyInput} from '@angular/material/legacy-input';
-import {MatLegacySelect} from '@angular/material/legacy-select';
+import {MatInput} from '@angular/material/input';
+import {MatSelect} from '@angular/material/select';
 import {UrlTree} from '@angular/router';
 import {Observable} from 'rxjs';
 
@@ -37,9 +37,9 @@ export abstract class FormChangeTracker {
    * For example: setting form has inputs, and name_value_pair_form that
    * collectively make up the form.
    */
-  @ViewChildren(MatLegacyInput, {read: ElementRef})
+  @ViewChildren(MatInput, {read: ElementRef})
   formInputs!: QueryList<ElementRef>;
-  @ViewChildren(MatLegacySelect, {read: ElementRef})
+  @ViewChildren(MatSelect, {read: ElementRef})
   formSelects!: QueryList<ElementRef>;
   @ViewChildren(FormChangeTracker) trackers!: QueryList<FormChangeTracker>;
   // Every formInputs will have a cooresponding ngModel

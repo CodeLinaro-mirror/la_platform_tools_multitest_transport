@@ -47,7 +47,7 @@ ng_module(
         third_party_js("angular_components:cdk_collections"),
         third_party_js("angular2:core"),
         third_party_js("angular2:forms"),
-        third_party_js("angular_components:material_legacy_autocomplete"),
+        third_party_js("angular_components:material_autocomplete"),
         third_party_js("angular_components:material_legacy_dialog"),
         third_party_js("angular_components:material_sort"),
         third_party_js("angular_components:material_table"),

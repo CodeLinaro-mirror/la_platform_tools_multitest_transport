@@ -46,7 +46,6 @@
         />
 
         <button
-          mat-button
           *ngIf="filterText"
           matSuffix
           mat-icon-button
@@ -62,7 +61,7 @@
       <div (click)="toggleFilteredSelection()">
         <mat-checkbox
           class="mat-option mat-focus-indicator mat-option-multiple"
-          [class.mat-selected]="isAllFilteredSelected()"
+          [class.mat-mdc-selected]="isAllFilteredSelected()"
           [checked]="filteredSetectedItems().length !== 0 && isAllFilteredSelected()"
           [indeterminate]="filteredSetectedItems().length !== 0 && !isAllFilteredSelected()"
           (click)="$event.preventDefault()"
@@ -82,7 +81,7 @@
       <mat-checkbox
         #selectAll
         class="mat-option mat-focus-indicator mat-option-multiple"
-        [class.mat-selected]="isAllSelected()"
+        [class.mat-mdc-selected]="isAllSelected()"
         [checked]="selection.length !== 0 && isAllSelected()"
         [indeterminate]="selection.length !== 0 && !isAllSelected()"
         (change)="toggleAllSelection(selectAll.checked)"

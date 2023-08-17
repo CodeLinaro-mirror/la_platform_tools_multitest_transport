@@ -74,7 +74,7 @@ export interface TimeFilterEvent {
 export class TimeInputFilter {
   @Input() label = '';
   @Input() suffix = 'Hours';
-  @Input() appearance = 'legacy';
+  @Input() appearance = 'fill';
   @Input() operatorWidth = '135px';
   @Input() numberInputWidth = '100px';
   @Input() number = 0;
