@@ -18,9 +18,9 @@
   <!-- Show first item -->
   <!-- TODO: Should show as many items as possible if there is extra space -->
   <ng-container *ngIf="overflowListType === OverflowListType.CHIP; else buttonTemplate">
-    <mat-chip-list [tabIndex]="-1">
+    <mat-chip-set [tabIndex]="-1">
       <mat-chip>{{ data[0] }}</mat-chip>
-    </mat-chip-list>
+    </mat-chip-set>
   </ng-container>
   <ng-template #buttonTemplate>
     <div class='mat-mdc-menu-content'>

@@ -50,22 +50,20 @@
 
       <!-- Labels Field -->
       <mat-form-field fxFlex="600px">
-        <mat-chip-list #chipList aria-label="Labels">
-          <mat-chip
+        <mat-chip-grid #chipList aria-label="Labels">
+          <mat-chip-row
             *ngFor="let label of labels"
-            [selectable]="true"
-            [removable]="true"
             (removed)="removeLabel(label)">
             {{ label }}
             <mat-icon matChipRemove>cancel</mat-icon>
-          </mat-chip>
+          </mat-chip-row>
           <input
             placeholder="Labels"
             [matChipInputFor]="chipList"
             [matChipInputSeparatorKeyCodes]="separatorKeyCodes"
             [matChipInputAddOnBlur]="true"
             (matChipInputTokenEnd)="addLabel($event)"/>
-        </mat-chip-list>
+        </mat-chip-grid>
       </mat-form-field>
     <div>
       <button mat-flat-button

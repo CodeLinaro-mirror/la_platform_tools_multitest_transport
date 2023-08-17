@@ -50,7 +50,7 @@
       </button>
     </div>
     <div fxLayout="row">
-      <mat-chip-list>
+      <mat-chip-set>
         <mat-chip class="status-chip filter-chip">
           <span>Lab: {{ selectedLab.length ? selectedLab : "All" }}</span>
         </mat-chip>
@@ -62,7 +62,7 @@
         <mat-chip *ngIf="!focusedHostName" class="status-chip filter-chip">
           <span>Run Target: {{ multiSelectedDisplay(selectedRunTargets) }}</span>
         </mat-chip>
-      </mat-chip-list>
+      </mat-chip-set>
       <button
         *ngIf="!focusedHostName"
         mat-icon-button

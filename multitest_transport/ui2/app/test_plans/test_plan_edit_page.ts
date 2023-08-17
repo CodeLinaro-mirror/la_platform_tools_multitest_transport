@@ -18,11 +18,11 @@ import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {COMMA, ENTER} from '@angular/cdk/keycodes';
 import {AfterViewInit, Component, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {MatButton} from '@angular/material/button';
-import {MatLegacyChipInputEvent} from '@angular/material/legacy-chips';
+import {MatChipInputEvent} from '@angular/material/chips';
 import {MatStepper} from '@angular/material/stepper';
 import {ActivatedRoute, Params, Router} from '@angular/router';
 import {forkJoin, of as observableOf, ReplaySubject, Subscription} from 'rxjs';
-import {first, takeUntil} from 'rxjs/operators';
+import {first} from 'rxjs/operators';
 
 import {TestResourceClassType, TestResourceForm} from '../build_channels/test_resource_form';
 import {MttClient} from '../services/mtt_client';
@@ -203,7 +203,7 @@ export class TestPlanEditPage extends FormChangeTracker implements
     this.data.test_resource_pipes = testPlan.test_resource_pipes || [];
   }
 
-  addLabel(event: MatLegacyChipInputEvent) {
+  addLabel(event: MatChipInputEvent) {
     const input = event.chipInput.inputElement;
     const value = event.value;
 

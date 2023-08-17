@@ -50,8 +50,8 @@ div.mat-mdc-menu-content {
   padding: 0;
 }
 
-.mat-chip {
-  background-color: $background-default;
+.mat-mdc-chip {
+  --mdc-chip-elevated-container-color: $background-default;
   border: 1px solid $border-chip;
   font-size: 12px;
 }

@@ -17,7 +17,7 @@
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {MatLegacyChipInput} from '@angular/material/legacy-chips';
+import {MatChipInput} from '@angular/material/chips';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {ActivatedRoute, Params} from '@angular/router';
 import {RouterTestingModule} from '@angular/router/testing';
@@ -114,19 +114,19 @@ describe('TestPlanEditPage', () => {
     testPlanEditPage.data.labels = [];
     const fakeInput = document.createElement('input');
     testPlanEditPage.addLabel({
-      chipInput: {inputElement: fakeInput} as MatLegacyChipInput,
+      chipInput: {inputElement: fakeInput} as MatChipInput,
       value: ' label1  '
     });
     expect(testPlanEditPage.data.labels).toEqual(['label1']);
     testPlanEditPage.addLabel({
-      chipInput: {inputElement: fakeInput} as MatLegacyChipInput,
+      chipInput: {inputElement: fakeInput} as MatChipInput,
       value: 'label2'
     });
     expect(testPlanEditPage.data.labels).toEqual(['label1', 'label2']);
 
     // Should not add duplicate label
     testPlanEditPage.addLabel({
-      chipInput: {inputElement: fakeInput} as MatLegacyChipInput,
+      chipInput: {inputElement: fakeInput} as MatChipInput,
       value: ' label1  '
     });
     expect(testPlanEditPage.data.labels).toEqual(['label1', 'label2']);

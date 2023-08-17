@@ -27,7 +27,7 @@ import {MatIconModule} from '@angular/material/icon';
 import {MatAutocompleteModule} from '@angular/material/autocomplete';
 import {MatButtonModule} from '@angular/material/button';
 import {MatCardModule} from '@angular/material/card';
-import {MatLegacyChipsModule} from '@angular/material/legacy-chips';
+import {MatChipsModule} from '@angular/material/chips';
 import {MatLegacyDialogModule} from '@angular/material/legacy-dialog';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
@@ -85,7 +85,7 @@ const MATERIAL_MODULES = [
   MatAutocompleteModule,
   MatButtonModule,
   MatCardModule,
-  MatLegacyChipsModule,
+  MatChipsModule,
   MatCheckboxModule,
   MatLegacyDialogModule,
   MatDividerModule,

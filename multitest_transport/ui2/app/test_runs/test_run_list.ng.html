@@ -28,21 +28,19 @@
     <mat-form-field fxFlex subscriptSizing="dynamic">
       <mat-icon matPrefix class="filter-icon">filter_list</mat-icon>
       <mat-label>Filter</mat-label>
-      <mat-chip-list #chipList aria-label="Filter">
-        <mat-chip
+      <mat-chip-grid #chipList aria-label="Filter">
+        <mat-chip-row
             *ngFor="let filter of filters"
-            [selectable]="true"
-            [removable]="true"
             (removed)="removeFilter(filter)">
           {{ filter }}
           <mat-icon matChipRemove>cancel</mat-icon>
-        </mat-chip>
+        </mat-chip-row>
         <input
             [matChipInputFor]="chipList"
             [matChipInputSeparatorKeyCodes]="SEPARATOR_KEYCODES"
             [matChipInputAddOnBlur]="true"
             (matChipInputTokenEnd)="addFilter($event)"/>
-      </mat-chip-list>
+      </mat-chip-grid>
     </mat-form-field>
 
     <mat-divider vertical></mat-divider>

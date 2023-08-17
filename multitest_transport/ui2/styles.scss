@@ -78,6 +78,7 @@ $theme: map_merge(
 @include mat.card-theme($theme);
 @include mat.core-theme($theme);
 @include mat.select-theme($theme);
+@include mat.chips-theme($theme);
 
 @include mat.checkbox-typography($typography);
 @include mat.radio-typography($typography);

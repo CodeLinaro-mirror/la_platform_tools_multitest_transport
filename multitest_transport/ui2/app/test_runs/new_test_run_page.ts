@@ -18,7 +18,7 @@ import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {COMMA, ENTER} from '@angular/cdk/keycodes';
 import {AfterViewInit, Component, Inject, OnInit, ViewChild} from '@angular/core';
 import {MatButton} from '@angular/material/button';
-import {MatLegacyChipInputEvent} from '@angular/material/legacy-chips';
+import {MatChipInputEvent} from '@angular/material/chips';
 import {MatStepper} from '@angular/material/stepper';
 import {Title} from '@angular/platform-browser';
 import {ActivatedRoute, Params, Router} from '@angular/router';
@@ -338,7 +338,7 @@ export class NewTestRunPage extends FormChangeTracker implements OnInit,
     this.testRunConfig.test_resource_objs = Object.values(updatedObjsMap);
   }
 
-  addLabel(event: MatLegacyChipInputEvent) {
+  addLabel(event: MatChipInputEvent) {
     const input = event.chipInput.inputElement;
     const value = event.value;
 
