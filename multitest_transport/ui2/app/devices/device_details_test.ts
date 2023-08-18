@@ -17,7 +17,7 @@
 import {HttpClientTestingModule} from '@angular/common/http/testing';
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {MAT_LEGACY_DIALOG_DATA} from '@angular/material/legacy-dialog';
+import {MAT_DIALOG_DATA} from '@angular/material/dialog';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {ActivatedRoute, convertToParamMap, Router} from '@angular/router';
 import {APP_DATA} from 'google3/third_party/py/multitest_transport/ui2/app/services';
@@ -77,7 +77,7 @@ describe('DeviceDetails', () => {
           provide: Router,
           useValue: routerSpy,
         },
-        {provide: MAT_LEGACY_DIALOG_DATA, useValue: {}},
+        {provide: MAT_DIALOG_DATA, useValue: {}},
       ],
     });
     deviceDetailsFixture = TestBed.createComponent(DeviceDetails);

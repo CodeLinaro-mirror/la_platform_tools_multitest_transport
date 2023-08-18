@@ -19,7 +19,7 @@ import {Location} from '@angular/common';
 import {Component, ElementRef, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {UntypedFormControl, UntypedFormGroup} from '@angular/forms';
 import {MatAutocomplete, MatAutocompleteTrigger} from '@angular/material/autocomplete';
-import {MatLegacyDialog} from '@angular/material/legacy-dialog';
+import {MatDialog} from '@angular/material/dialog';
 import {MatTable} from '@angular/material/table';
 import {ActivatedRoute, ParamMap, Router} from '@angular/router';
 import {forkJoin, Observable, of as observableOf, ReplaySubject, throwError} from 'rxjs';
@@ -218,7 +218,7 @@ export class HostList implements OnDestroy, OnInit {
       private readonly route: ActivatedRoute,
       private readonly storageService: StorageService,
       private readonly tfcClient: TfcClient,
-      private readonly matDialog: MatLegacyDialog,
+      private readonly matDialog: MatDialog,
       readonly userService: UserService,
   ) {}
 

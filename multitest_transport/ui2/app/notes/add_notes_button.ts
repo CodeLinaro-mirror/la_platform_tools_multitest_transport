@@ -15,7 +15,7 @@
  */
 
 import {Component, EventEmitter, Input, OnDestroy, Output} from '@angular/core';
-import {MatLegacyDialog, MatLegacyDialogRef} from '@angular/material/legacy-dialog';
+import {MatDialog, MatDialogRef} from '@angular/material/dialog';
 import {ReplaySubject} from 'rxjs';
 import {takeUntil} from 'rxjs/operators';
 
@@ -39,7 +39,7 @@ export class AddNotesButton implements OnDestroy {
 
   protected readonly destroy = new ReplaySubject<void>();
 
-  constructor(readonly matDialog: MatLegacyDialog) {}
+  constructor(readonly matDialog: MatDialog) {}
 
   ngOnDestroy() {
     this.destroy.next();
@@ -65,7 +65,7 @@ export class AddNotesButton implements OnDestroy {
         });
   }
 
-  openNotesDialog(params: NoteDialogParams): MatLegacyDialogRef<NotesDialog> {
+  openNotesDialog(params: NoteDialogParams): MatDialogRef<NotesDialog> {
     return this.matDialog.open(NotesDialog, {
       height: '600px',
       width: '1200px',

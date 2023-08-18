@@ -17,7 +17,7 @@
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {AfterViewInit, Component, Input, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {MatButton} from '@angular/material/button';
-import {MatLegacyDialog} from '@angular/material/legacy-dialog';
+import {MatDialog} from '@angular/material/dialog';
 import {MatTabChangeEvent, MatTabGroup} from '@angular/material/tabs';
 import {ActivatedRoute, Router} from '@angular/router';
 import {EMPTY, interval, Observable, ReplaySubject, zip} from 'rxjs';
@@ -86,7 +86,7 @@ export class TestRunDetail implements OnInit, AfterViewInit, OnDestroy {
       private readonly tfc: TfcClient,
       private readonly liveAnnouncer: LiveAnnouncer,
       private readonly analytics: AnalyticsService,
-      private readonly matDialog: MatLegacyDialog,
+      private readonly matDialog: MatDialog,
   ) {}
 
   ngOnInit() {

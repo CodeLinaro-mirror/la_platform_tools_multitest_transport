@@ -17,7 +17,7 @@
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, inject, TestBed} from '@angular/core/testing';
-import {MatLegacyDialog} from '@angular/material/legacy-dialog';
+import {MatDialog} from '@angular/material/dialog';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {RouterTestingModule} from '@angular/router/testing';
 import {of as observableOf} from 'rxjs';
@@ -190,7 +190,7 @@ describe('TestRunDetail', () => {
      });
 
   it('opens the test run action picker dialog and executes successfully',
-     inject([MatLegacyDialog], (dialog: MatLegacyDialog) => {
+     inject([MatDialog], (dialog: MatDialog) => {
        const manualAction: TestRunAction = {
          id: 'id',
          name: 'action',

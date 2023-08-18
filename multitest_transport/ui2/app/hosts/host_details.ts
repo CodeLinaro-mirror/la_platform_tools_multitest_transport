@@ -17,7 +17,7 @@
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {Location} from '@angular/common';
 import {AfterViewChecked, ChangeDetectorRef, Component, Inject, Input, OnChanges, OnDestroy, OnInit, SimpleChanges, ViewChild} from '@angular/core';
-import {MAT_LEGACY_DIALOG_DATA} from '@angular/material/legacy-dialog';
+import {MAT_DIALOG_DATA} from '@angular/material/dialog';
 import {MatTabChangeEvent} from '@angular/material/tabs';
 import {Router} from '@angular/router';
 import {ReplaySubject} from 'rxjs';
@@ -77,7 +77,7 @@ export class HostDetails implements AfterViewChecked, OnChanges, OnDestroy,
       private readonly storageService: StorageService,
       private readonly tfcClient: TfcClient,
       readonly userService: UserService,
-      @Inject(MAT_LEGACY_DIALOG_DATA) readonly params?: HostDetailsDialogParams,
+      @Inject(MAT_DIALOG_DATA) readonly params?: HostDetailsDialogParams,
   ) {}
 
   ngOnChanges(changes: SimpleChanges) {

@@ -17,7 +17,7 @@
 import {HttpClientTestingModule} from '@angular/common/http/testing';
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, inject, TestBed} from '@angular/core/testing';
-import {MatLegacyDialog} from '@angular/material/legacy-dialog';
+import {MatDialog} from '@angular/material/dialog';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {RouterTestingModule} from '@angular/router/testing';
 import {of as observableOf} from 'rxjs';
@@ -104,7 +104,7 @@ describe('TestRunConfigList', () => {
   });
 
   it('should open test run config editor with the last config',
-     inject([MatLegacyDialog], (dialog: MatLegacyDialog) => {
+     inject([MatDialog], (dialog: MatDialog) => {
        spyOn(dialog, 'open').and.callThrough();
        testRunConfigList.addConfig();
        expect(dialog.open).toHaveBeenCalledTimes(1);
@@ -120,7 +120,7 @@ describe('TestRunConfigList', () => {
      }));
 
   it('should open test run config editor with a new config',
-     inject([MatLegacyDialog], (dialog: MatLegacyDialog) => {
+     inject([MatDialog], (dialog: MatDialog) => {
        testRunConfigList.data = [];
        testRunConfigListFixture.detectChanges();
        spyOn(dialog, 'open').and.callThrough();
@@ -138,7 +138,7 @@ describe('TestRunConfigList', () => {
      }));
 
   it('should open test run config editor with a config template',
-     inject([MatLegacyDialog], (dialog: MatLegacyDialog) => {
+     inject([MatDialog], (dialog: MatDialog) => {
        testRunConfigList.data = [];
        testRunConfigList.configTemplate = config1;
        testRunConfigListFixture.detectChanges();

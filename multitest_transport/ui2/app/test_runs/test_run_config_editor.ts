@@ -15,7 +15,7 @@
  */
 
 import {Component, EventEmitter, Inject, OnInit, Output, ViewChild} from '@angular/core';
-import {MAT_LEGACY_DIALOG_DATA, MatLegacyDialogRef} from '@angular/material/legacy-dialog';
+import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 import {MatStepper} from '@angular/material/stepper';
 
 import {TestResourceClassType, TestResourceForm} from '../build_channels/test_resource_form';
@@ -78,9 +78,9 @@ export class TestRunConfigEditor extends FormChangeTracker implements OnInit {
   selectedTestRunActions: mttModels.TestRunAction[] = [];
 
   constructor(
-      private readonly dialogRef: MatLegacyDialogRef<TestRunConfigEditor>,
+      private readonly dialogRef: MatDialogRef<TestRunConfigEditor>,
       readonly mttObjectMapService: MttObjectMapService,
-      @Inject(MAT_LEGACY_DIALOG_DATA) public data: TestRunConfigEditorData) {
+      @Inject(MAT_DIALOG_DATA) public data: TestRunConfigEditorData) {
     super();
     // When user clicked outside of the dialog, close the dialog
     dialogRef.backdropClick().subscribe(() => {

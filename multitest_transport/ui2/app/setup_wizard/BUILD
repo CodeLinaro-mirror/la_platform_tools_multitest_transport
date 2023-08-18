@@ -35,7 +35,7 @@ ng_module(
     deps = [
         third_party_js("angular_components:cdk_a11y"),
         third_party_js("angular2:core"),
-        third_party_js("angular_components:material_legacy_dialog"),
+        third_party_js("angular_components:material_dialog"),
         third_party_js("angular_components:material_stepper"),
         third_party_js("angular2:platform_browser"),
         third_party_js("rxjs"),

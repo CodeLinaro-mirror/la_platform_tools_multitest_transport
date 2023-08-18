@@ -17,7 +17,7 @@
 import {HttpClientTestingModule} from '@angular/common/http/testing';
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {MAT_LEGACY_DIALOG_DATA, MatLegacyDialogRef} from '@angular/material/legacy-dialog';
+import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 import {By} from '@angular/platform-browser';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {RouterTestingModule} from '@angular/router/testing';
@@ -84,14 +84,14 @@ describe('TestRunConfigEditor', () => {
         {provide: APP_DATA, useValue: {isAtsLabInstance: false}},
         {provide: MttClient, useValue: mttClient},
         {
-          provide: MAT_LEGACY_DIALOG_DATA,
+          provide: MAT_DIALOG_DATA,
           useFactory: () => ({
             editMode: false,
             testRunConfig:
                 newMockTestRunConfig(test.id, 'command', 'retry_command', '', 0)
           })
         },
-        {provide: MatLegacyDialogRef, useValue: dialogRefSpy},
+        {provide: MatDialogRef, useValue: dialogRefSpy},
         {provide: MttObjectMapService, useValue: mttObjectMapService},
         {provide: Notifier, useValue: notifierSpy},
         {provide: TfcClient, useValue: tfcClient},

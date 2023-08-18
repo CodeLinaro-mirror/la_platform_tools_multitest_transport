@@ -16,7 +16,7 @@
 
 import {HttpClientTestingModule} from '@angular/common/http/testing';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {MatLegacyDialog} from '@angular/material/legacy-dialog';
+import {MatDialog} from '@angular/material/dialog';
 import {SortDirection} from '@angular/material/sort';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {of as observableOf} from 'rxjs';
@@ -185,7 +185,7 @@ describe('Predefined Message List', () => {
   });
 
   it('should open editor dialog on openPredefinedMessagesEditor called', () => {
-    const dialog = TestBed.inject(MatLegacyDialog);
+    const dialog = TestBed.inject(MatDialog);
     spyOn(dialog, 'open').and.callThrough();
     predefinedMessageList.openPredefinedMessagesEditor();
     expect(dialog.open).toHaveBeenCalled();

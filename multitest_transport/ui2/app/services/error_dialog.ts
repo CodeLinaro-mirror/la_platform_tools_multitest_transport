@@ -15,7 +15,7 @@
  */
 
 import {Component, Inject} from '@angular/core';
-import {MAT_LEGACY_DIALOG_DATA} from '@angular/material/legacy-dialog';
+import {MAT_DIALOG_DATA} from '@angular/material/dialog';
 
 /** Detailed error object */
 export interface EndpointDetailedError {
@@ -44,5 +44,5 @@ export interface ErrorDialogData {
 })
 export class ErrorDialog {
   showStacktrace = false;
-  constructor(@Inject(MAT_LEGACY_DIALOG_DATA) readonly data: ErrorDialogData) {}
+  constructor(@Inject(MAT_DIALOG_DATA) readonly data: ErrorDialogData) {}
 }

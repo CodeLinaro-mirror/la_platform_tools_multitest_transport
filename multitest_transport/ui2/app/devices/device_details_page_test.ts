@@ -16,7 +16,7 @@
 
 import {DebugElement, LOCALE_ID} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {MAT_LEGACY_DIALOG_DATA} from '@angular/material/legacy-dialog';
+import {MAT_DIALOG_DATA} from '@angular/material/dialog';
 import {Title} from '@angular/platform-browser';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {ActivatedRoute, convertToParamMap} from '@angular/router';
@@ -91,7 +91,7 @@ describe('DeviceDetailsPage', () => {
         {provide: TfcClient, useValue: tfcClient},
         {provide: APP_DATA, useValue: newMockAppData()},
         {provide: LOCALE_ID, useValue: 'en-US'},
-        {provide: MAT_LEGACY_DIALOG_DATA, useValue: dialogData},
+        {provide: MAT_DIALOG_DATA, useValue: dialogData},
       ],
     });
     deviceDetailsPageFixture = TestBed.createComponent(DeviceDetailsPage);

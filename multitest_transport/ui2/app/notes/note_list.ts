@@ -17,7 +17,7 @@
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {Location} from '@angular/common';
 import {Component, ElementRef, EventEmitter, HostListener, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges, ViewChild} from '@angular/core';
-import {MatLegacyDialog} from '@angular/material/legacy-dialog';
+import {MatDialog} from '@angular/material/dialog';
 import {ActivatedRoute, ParamMap, Router} from '@angular/router';
 import {Notifier} from 'google3/third_party/py/multitest_transport/ui2/app/services/notifier';
 import {DEFAULT_PAGE_SIZE, Paginator} from 'google3/third_party/py/multitest_transport/ui2/app/shared/paginator';
@@ -83,7 +83,7 @@ export class NoteList implements OnChanges, OnInit, OnDestroy {
       private readonly route: ActivatedRoute,
       private readonly liveAnnouncer: LiveAnnouncer,
       private readonly location: Location,
-      private readonly matDialog: MatLegacyDialog,
+      private readonly matDialog: MatDialog,
       private readonly notifier: Notifier,
       private readonly router: Router,
       private readonly tfcClient: TfcClient,
@@ -325,7 +325,7 @@ export class NoteList implements OnChanges, OnInit, OnDestroy {
       deviceHostMap: this.hostname ? [[id ? id : this.id, this.hostname]] : [],
     };
     this.matDialog
-        .open(NotesDialog, {width: '1200px', height: '600px', data: params})
+        .open(NotesDialog, {width: '1200px', height: '620px', data: params})
         .afterClosed()
         .pipe(takeUntil(this.destroy))
         .subscribe(result => {

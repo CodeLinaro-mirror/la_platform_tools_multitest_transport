@@ -16,7 +16,7 @@
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {Injectable} from '@angular/core';
-import {MatLegacyDialog} from '@angular/material/legacy-dialog';
+import {MatDialog} from '@angular/material/dialog';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {Observable} from 'rxjs';
 import {map} from 'rxjs/operators';
@@ -31,7 +31,7 @@ import {NotifierDialog, NotifierDialogData} from './notifier_dialog';
 export class Notifier {
   constructor(
       private readonly snackBar: MatSnackBar,
-      private readonly dialog: MatLegacyDialog,
+      private readonly dialog: MatDialog,
       private readonly liveAnnouncer: LiveAnnouncer) {}
 
   /** Displays a message that disappears after a set amount of time. */

@@ -16,7 +16,7 @@
 
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, inject, TestBed} from '@angular/core/testing';
-import {MatLegacyDialog} from '@angular/material/legacy-dialog';
+import {MatDialog} from '@angular/material/dialog';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {ActivatedRoute, Router} from '@angular/router';
 import {RouterTestingModule} from '@angular/router/testing';
@@ -146,7 +146,7 @@ describe('HostDetailsHistory', () => {
 
   it('should open note dialog on editNote called', () => {
     const noteId = 100;
-    const dialog = TestBed.inject(MatLegacyDialog);
+    const dialog = TestBed.inject(MatDialog);
     spyOn(dialog, 'open').and.callThrough();
     spyOn(hostDetailsHistory, 'editNote').and.callThrough();
     hostDetailsHistory.editNote(noteId);
@@ -158,7 +158,7 @@ describe('HostDetailsHistory', () => {
     let dialogSpy: jasmine.Spy;
     const dialogRefSpy =
         jasmine.createSpyObj({afterClosed: observableOf(true), close: null});
-    dialogSpy = spyOn(TestBed.inject(MatLegacyDialog), 'open')
+    dialogSpy = spyOn(TestBed.inject(MatDialog), 'open')
                     .and.returnValue(dialogRefSpy);
     hostDetailsHistory.editNote(0);
     expect(dialogSpy).toHaveBeenCalled();

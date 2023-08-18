@@ -15,7 +15,7 @@
  */
 
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {MatLegacyDialog} from '@angular/material/legacy-dialog';
+import {MatDialog} from '@angular/material/dialog';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {Router} from '@angular/router';
@@ -92,7 +92,7 @@ describe('HostDeviceSearch', () => {
   });
 
   it('should show error when getDeviceInfo returns without serial', () => {
-    const dialog = TestBed.inject(MatLegacyDialog);
+    const dialog = TestBed.inject(MatDialog);
     spyOn(dialog, 'open').and.callThrough();
     tfcClient.getDeviceInfo.and.returnValue(
         observableOf(newMockLabDeviceInfo('')));
@@ -102,7 +102,7 @@ describe('HostDeviceSearch', () => {
 
   it('should show error when getDeviceInfo returns 404 and getHostInfo returns without hostname',
      () => {
-       const dialog = TestBed.inject(MatLegacyDialog);
+       const dialog = TestBed.inject(MatDialog);
        spyOn(dialog, 'open').and.callThrough();
        tfcClient.getDeviceInfo.and.returnValue(throwError({'status': 404}));
        tfcClient.getHostInfo.and.returnValue(
@@ -112,7 +112,7 @@ describe('HostDeviceSearch', () => {
      });
 
   it('should show error when getDeviceInfo return 500', () => {
-    const dialog = TestBed.inject(MatLegacyDialog);
+    const dialog = TestBed.inject(MatDialog);
     spyOn(dialog, 'open').and.callThrough();
     tfcClient.getDeviceInfo.and.returnValue(throwError({'status': 500}));
     hostDeviceSearch.onEnter(hostname);
@@ -121,7 +121,7 @@ describe('HostDeviceSearch', () => {
 
   it('should show error when getDeviceInfo return 404 and getHostInfo retuen 500',
      () => {
-       const dialog = TestBed.inject(MatLegacyDialog);
+       const dialog = TestBed.inject(MatDialog);
        spyOn(dialog, 'open').and.callThrough();
        tfcClient.getDeviceInfo.and.returnValue(throwError({'status': 404}));
        tfcClient.getHostInfo.and.returnValue(throwError({'status': 500}));

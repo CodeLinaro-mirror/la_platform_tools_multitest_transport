@@ -15,7 +15,7 @@
  */
 
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {MatLegacyDialog} from '@angular/material/legacy-dialog';
+import {MatDialog} from '@angular/material/dialog';
 import {Observable, of} from 'rxjs';
 import {takeUntil} from 'rxjs/operators';
 
@@ -70,7 +70,7 @@ export class TestResourceForm extends FormChangeTracker implements OnInit {
 
   constructor(
       private readonly mttClient: MttClient,
-      private readonly dialog: MatLegacyDialog) {
+      private readonly dialog: MatDialog) {
     super();
   }
 

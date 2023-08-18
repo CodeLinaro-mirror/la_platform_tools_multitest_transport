@@ -15,7 +15,7 @@
  */
 
 import {Component, Inject} from '@angular/core';
-import {MAT_LEGACY_DIALOG_DATA, MatLegacyDialogRef} from '@angular/material/legacy-dialog';
+import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 import {Notifier} from 'google3/third_party/py/multitest_transport/ui2/app/services/notifier';
 
 import {NoteType} from '../services/mtt_lab_models';
@@ -71,8 +71,8 @@ export class NotesDialog {
   closeAfterSave = false;
 
   constructor(
-      @Inject(MAT_LEGACY_DIALOG_DATA) private params: NoteDialogParams,
-      private readonly dialogRef: MatLegacyDialogRef<NotesDialog>,
+      @Inject(MAT_DIALOG_DATA) protected params: NoteDialogParams,
+      private readonly dialogRef: MatDialogRef<NotesDialog>,
       private readonly notifier: Notifier,
   ) {
     if (this.validateParams(params) === false) {

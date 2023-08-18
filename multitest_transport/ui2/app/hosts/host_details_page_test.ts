@@ -16,7 +16,7 @@
 
 import {DebugElement, LOCALE_ID} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {MAT_LEGACY_DIALOG_DATA} from '@angular/material/legacy-dialog';
+import {MAT_DIALOG_DATA} from '@angular/material/dialog';
 import {Title} from '@angular/platform-browser';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {ActivatedRoute, convertToParamMap, Router} from '@angular/router';
@@ -104,7 +104,7 @@ describe('HostDetailsPage', () => {
         {provide: TfcClient, useValue: tfcClient},
         {provide: Router, useValue: routerSpy},
         {provide: LOCALE_ID, useValue: 'en-US'},
-        {provide: MAT_LEGACY_DIALOG_DATA, useValue: dialogData},
+        {provide: MAT_DIALOG_DATA, useValue: dialogData},
       ],
     });
     hostDetailsPageFixture = TestBed.createComponent(HostDetailsPage);

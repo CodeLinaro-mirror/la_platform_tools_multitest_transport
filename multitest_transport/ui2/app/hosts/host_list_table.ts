@@ -16,7 +16,7 @@
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {Component, EventEmitter, Inject, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges, ViewChild} from '@angular/core';
-import {MatLegacyDialog} from '@angular/material/legacy-dialog';
+import {MatDialog} from '@angular/material/dialog';
 import {MatTable, MatTableDataSource} from '@angular/material/table';
 import {MatSort, Sort} from '@angular/material/sort';
 import {Router} from '@angular/router';
@@ -107,7 +107,7 @@ export class HostListTable implements OnInit, OnChanges, OnDestroy {
   tableRowsSelectManager!: TableRowsSelectManager;
 
   constructor(
-      public dialog: MatLegacyDialog,
+      public dialog: MatDialog,
       private readonly router: Router,
       @Inject(APP_DATA) private readonly appData: AppData,
       private readonly notifier: Notifier,

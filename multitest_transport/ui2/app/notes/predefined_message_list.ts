@@ -16,7 +16,7 @@
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild} from '@angular/core';
-import {MatLegacyDialog} from '@angular/material/legacy-dialog';
+import {MatDialog} from '@angular/material/dialog';
 import {MatTable, MatTableDataSource} from '@angular/material/table';
 import {MatSort, Sort} from '@angular/material/sort';
 import {Notifier} from 'google3/third_party/py/multitest_transport/ui2/app/services/notifier';
@@ -92,7 +92,7 @@ export class PredefinedMessageList implements OnInit, OnDestroy {
   // TODO: Predefined message CRUD.
 
   constructor(
-      private readonly matDialog: MatLegacyDialog,
+      private readonly matDialog: MatDialog,
       private readonly liveAnnouncer: LiveAnnouncer,
       private readonly notifier: Notifier,
       private readonly tfcClient: TfcClient,

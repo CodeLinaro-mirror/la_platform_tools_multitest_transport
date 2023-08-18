@@ -23,7 +23,7 @@ import {NgModule} from '@angular/core';
 import {FormsModule} from '@angular/forms';
 import {MatIconModule} from '@angular/material/icon';
 import {MatButtonModule} from '@angular/material/button';
-import {MatLegacyDialogModule} from '@angular/material/legacy-dialog';
+import {MatDialogModule} from '@angular/material/dialog';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
 
@@ -36,7 +36,7 @@ import {NotifierDialog} from './notifier_dialog';
     CommonModule,
     HttpClientModule,
     MatButtonModule,
-    MatLegacyDialogModule,
+    MatDialogModule,
     MatIconModule,
     MatFormFieldModule,
     FormsModule,

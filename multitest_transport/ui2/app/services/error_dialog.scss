@@ -16,17 +16,13 @@
 
 @import 'third_party/py/multitest_transport/ui2/constants';
 
-[mat-dialog-title] {
-  align-items: center;
-  display: flex;
-}
-
 [mat-dialog-title].error {
   color: $text-danger;
 }
 
 mat-icon {
   margin-right: 6px;
+  vertical-align: text-bottom;
 }
 
 mat-dialog-actions {

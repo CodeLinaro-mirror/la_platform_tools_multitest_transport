@@ -15,7 +15,7 @@
  */
 
 import {Component} from '@angular/core';
-import {MatLegacyDialog, MatLegacyDialogRef} from '@angular/material/legacy-dialog';
+import {MatDialog, MatDialogRef} from '@angular/material/dialog';
 import {first, mergeMap} from 'rxjs/operators';
 
 import {MttClient} from '../services/mtt_client';
@@ -35,10 +35,10 @@ import {SetupWizardStepper} from './setup_wizard_stepper';
 })
 export class SetupWizardDialog {
   enableMetrics = true;
-  stepperDialog!: MatLegacyDialogRef<SetupWizardStepper>;
+  stepperDialog!: MatDialogRef<SetupWizardStepper>;
 
   constructor(
-      private readonly dialog: MatLegacyDialog, private readonly mtt: MttClient,
+      private readonly dialog: MatDialog, private readonly mtt: MttClient,
       private readonly notifier: Notifier) {}
 
   submitMetrics(enableMetrics: boolean) {

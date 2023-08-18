@@ -15,7 +15,7 @@
  */
 
 import {Injectable} from '@angular/core';
-import {MatLegacyDialog} from '@angular/material/legacy-dialog';
+import {MatDialog} from '@angular/material/dialog';
 import {interval, Observable} from 'rxjs';
 import {filter, finalize, first, map} from 'rxjs/operators';
 
@@ -33,7 +33,7 @@ const AUTH_WINDOW_FEATURES = 'width=550,height=420,resizable,scrollbars,status';
   providedIn: 'root',
 })
 export class AuthService {
-  constructor(private readonly dialog: MatLegacyDialog) {}
+  constructor(private readonly dialog: MatDialog) {}
 
   /**
    * Fetches an authorization code using automatic or manual copy-paste flows.

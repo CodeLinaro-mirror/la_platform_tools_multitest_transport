@@ -16,7 +16,7 @@
 
 import {HttpClientTestingModule} from '@angular/common/http/testing';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {MAT_LEGACY_DIALOG_DATA, MatLegacyDialogRef} from '@angular/material/legacy-dialog';
+import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {ActivatedRoute, Router} from '@angular/router';
 import {APP_DATA, Notifier} from 'google3/third_party/py/multitest_transport/ui2/app/services';
@@ -34,7 +34,7 @@ describe('NotesDialog', () => {
   const serial2 = 'serial2';
   const noteId = 201;
   const labName = 'lab 1';
-  let dialogRefSpy: jasmine.SpyObj<MatLegacyDialogRef<NotesDialog>>;
+  let dialogRefSpy: jasmine.SpyObj<MatDialogRef<NotesDialog>>;
   let routerSpy: jasmine.SpyObj<Router>;
   let notesDialog: NotesDialog;
   let notesDialogFixture: ComponentFixture<NotesDialog>;
@@ -51,7 +51,7 @@ describe('NotesDialog', () => {
   beforeEach(() => {
     const activatedRouteSpy = new ActivatedRouteStub({});
     routerSpy = jasmine.createSpyObj('Router', ['navigateByUrl', 'navigate']);
-    dialogRefSpy = jasmine.createSpyObj<MatLegacyDialogRef<NotesDialog>>(
+    dialogRefSpy = jasmine.createSpyObj<MatDialogRef<NotesDialog>>(
         'dialogRefSpy', ['close']);
     notifier = jasmine.createSpyObj('notifier', ['showError']);
 
@@ -62,9 +62,9 @@ describe('NotesDialog', () => {
         HttpClientTestingModule,
       ],
       providers: [
-        {provide: MAT_LEGACY_DIALOG_DATA, useValue: noteDialogParams},
+        {provide: MAT_DIALOG_DATA, useValue: noteDialogParams},
         {provide: APP_DATA, useValue: newMockAppData()},
-        {provide: MatLegacyDialogRef, useValue: dialogRefSpy},
+        {provide: MatDialogRef, useValue: dialogRefSpy},
         {provide: Notifier, useValue: notifier},
         {provide: Router, useValue: routerSpy},
         {provide: ActivatedRoute, useValue: activatedRouteSpy},

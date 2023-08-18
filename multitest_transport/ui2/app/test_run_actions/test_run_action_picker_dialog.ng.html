@@ -20,9 +20,9 @@
   <test-run-action-picker [actions]="this.data.actions" [selectedActions]="selectedActions">
   </test-run-action-picker>
 </mat-dialog-content>
-<div>
+<mat-dialog-actions>
   <button mat-button mat-flat-button class="execute-button" (click)="execute()" color="accent">
     Execute
   </button>
   <button mat-button matDialogClose color="accent">Cancel</button>
-</div>
+</mat-dialog-actions>

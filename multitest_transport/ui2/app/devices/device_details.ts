@@ -16,7 +16,7 @@
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {Component, Inject, Input, OnChanges, OnDestroy, OnInit, SimpleChanges} from '@angular/core';
-import {MAT_LEGACY_DIALOG_DATA} from '@angular/material/legacy-dialog';
+import {MAT_DIALOG_DATA} from '@angular/material/dialog';
 import {MatTabChangeEvent} from '@angular/material/tabs';
 import {Router} from '@angular/router';
 import {ReplaySubject} from 'rxjs';
@@ -65,7 +65,7 @@ export class DeviceDetails implements OnChanges, OnDestroy, OnInit {
       private readonly router: Router,
       private readonly storageService: StorageService,
       private readonly tfcClient: TfcClient,
-      @Inject(MAT_LEGACY_DIALOG_DATA) readonly params?:
+      @Inject(MAT_DIALOG_DATA) readonly params?:
           DeviceDetailsDialogParams,
   ) {}
 

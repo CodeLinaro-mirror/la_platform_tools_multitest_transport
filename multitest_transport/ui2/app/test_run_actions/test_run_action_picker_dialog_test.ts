@@ -16,7 +16,7 @@
 
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {MAT_LEGACY_DIALOG_DATA, MatLegacyDialogRef} from '@angular/material/legacy-dialog';
+import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {of as observableOf} from 'rxjs';
 
@@ -28,7 +28,7 @@ import {TestRunActionsModule} from './test_run_actions_module';
 
 describe('TestRunActionPickerDialog', () => {
   let dialogRefSpy:
-      jasmine.SpyObj<MatLegacyDialogRef<TestRunActionPickerDialog>>;
+      jasmine.SpyObj<MatDialogRef<TestRunActionPickerDialog>>;
   let notifier: jasmine.SpyObj<Notifier>;
 
   let fixture: ComponentFixture<TestRunActionPickerDialog>;
@@ -43,7 +43,7 @@ describe('TestRunActionPickerDialog', () => {
       imports: [NoopAnimationsModule, TestRunActionsModule],
       providers: [
         {
-          provide: MAT_LEGACY_DIALOG_DATA,
+          provide: MAT_DIALOG_DATA,
           useFactory: () => ({
             actions: [
               {
@@ -62,7 +62,7 @@ describe('TestRunActionPickerDialog', () => {
             ],
           })
         },
-        {provide: MatLegacyDialogRef, useValue: dialogRefSpy},
+        {provide: MatDialogRef, useValue: dialogRefSpy},
         {provide: Notifier, useValue: notifier},
       ],
     });

@@ -17,10 +17,14 @@
 @import 'third_party/py/multitest_transport/ui2/constants';
 @import '../shared/shared';
 
-.mat-dialog-title {
+.mat-mdc-dialog-title {
   line-height: 48px;
 }
 
 .mat-dialog-content {
   padding-top: 5px;
+}
+
+.add-event-time-container {
+  padding-right: 24px;
 }
