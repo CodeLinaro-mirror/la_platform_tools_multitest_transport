@@ -79,8 +79,8 @@ ng_module(
         "tree_table.ng.html",
         "view_columns_button.ng.html",
     ],
-    strict_checks = False,
     strict_templates = False,
+    tsc_config = "//multitest_transport/ui2:tsc_config",
     visibility = ["//multitest_transport"],
     deps = [
         third_party_js("angular_components:cdk_a11y"),
