@@ -1,4 +1,6 @@
 # Android Test Station local file server.
+
+load("//third_party/bazel_rules/rules_python/python:py_test.bzl", "py_test")
 load("@tradefed_cluster//tradefed_cluster:adapter.bzl", "py_library", "py_strict_test", "pytype_strict_binary", "pytype_strict_library", "third_party")
 
 package(default_applicable_licenses = ["//multitest_transport:license"])
