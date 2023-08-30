@@ -13,9 +13,9 @@
 # limitations under the License.
 
 """Utilities for downloading test resources."""
-import base64
 from concurrent import futures
 import datetime
+import hashlib
 import logging
 import time
 
@@ -46,7 +46,10 @@ def GetCacheUrl(url: str = '') -> str:
   Returns:
     a cache URL.
   """
-  encoded_url = base64.b64encode(url.encode()).decode()
+  if url:
+    encoded_url = hashlib.sha256(url.encode()).hexdigest()
+  else:
+    encoded_url = ''
   return file_util.GetAppStorageUrl([TEST_RESOURCE_CACHE_DIR, encoded_url])
 
 
