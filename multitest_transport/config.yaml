@@ -300,6 +300,7 @@ tests:
   - android-cts/results/[^/]+/compatibility_result\..*
   - android-cts/results/[^/]+/logo.png
   - android-cts/results/[^/]+/test_result.xml
+  - android-cts/results/[^/]+/proto/test-record\.pb.*
   result_file: test_result.xml
   jvm_options:
   - '-Xmx6g'
@@ -335,6 +336,7 @@ tests:
   - android-cts/results/[^/]+/compatibility_result\..*
   - android-cts/results/[^/]+/logo.png
   - android-cts/results/[^/]+/test_result.xml
+  - android-cts/results/[^/]+/proto/test-record\.pb.*
   result_file: test_result.xml
   jvm_options:
   - '-Xmx6g'
@@ -370,6 +372,7 @@ tests:
   - android-cts/results/[^/]+/compatibility_result\..*
   - android-cts/results/[^/]+/logo.png
   - android-cts/results/[^/]+/test_result.xml
+  - android-cts/results/[^/]+/proto/test-record\.pb.*
   result_file: test_result.xml
   jvm_options:
   - '-Xmx6g'
@@ -405,6 +408,7 @@ tests:
   - android-cts_instant/results/[^/]+/compatibility_result\..*
   - android-cts_instant/results/[^/]+/logo.png
   - android-cts_instant/results/[^/]+/test_result.xml
+  - android-cts/results/[^/]+/proto/test-record\.pb.*
   result_file: test_result.xml
   java_properties:
   - name: CTS_INSTANT_ROOT
@@ -438,6 +442,7 @@ tests:
   - android-cts/results/[^/]+/compatibility_result\..*
   - android-cts/results/[^/]+/logo.png
   - android-cts/results/[^/]+/test_result.xml
+  - android-cts/results/[^/]+/proto/test-record\.pb.*
   result_file: test_result.xml
   jvm_options:
   - '-Xmx6g'
@@ -473,6 +478,7 @@ tests:
   - android-cts/results/[^/]+/compatibility_result\..*
   - android-cts/results/[^/]+/logo.png
   - android-cts/results/[^/]+/test_result.xml
+  - android-cts/results/[^/]+/proto/test-record\.pb.*
   result_file: test_result.xml
   jvm_options:
   - '-Xmx6g'
@@ -512,6 +518,7 @@ tests:
   - android-cts/results/[^/]+/compatibility_result\..*
   - android-cts/results/[^/]+/logo.png
   - android-cts/results/[^/]+/test_result.xml
+  - android-cts/results/[^/]+/proto/test-record\.pb.*
   result_file: test_result.xml
   jvm_options:
   - '-Xmx6g'
@@ -551,6 +558,7 @@ tests:
   - android-cts/results/[^/]+/compatibility_result\..*
   - android-cts/results/[^/]+/logo.png
   - android-cts/results/[^/]+/test_result.xml
+  - android-cts/results/[^/]+/proto/test-record\.pb.*
   result_file: test_result.xml
   jvm_options:
   - '-Xmx6g'
@@ -590,6 +598,7 @@ tests:
   - android-cts/results/[^/]+/compatibility_result\..*
   - android-cts/results/[^/]+/logo.png
   - android-cts/results/[^/]+/test_result.xml
+  - android-cts/results/[^/]+/proto/test-record\.pb.*
   result_file: test_result.xml
   jvm_options:
   - '-Xmx6g'
@@ -629,6 +638,7 @@ tests:
   - android-cts/results/[^/]+/compatibility_result\..*
   - android-cts/results/[^/]+/logo.png
   - android-cts/results/[^/]+/test_result.xml
+  - android-cts/results/[^/]+/proto/test-record\.pb.*
   result_file: test_result.xml
   jvm_options:
   - '-Xmx16g'

@@ -74,6 +74,7 @@
       <button mat-button (click)="back()" color="accent">Cancel</button>
       <!-- Error messages after validation -->
       <form-error-info [invalidInputs]="invalidInputs"></form-error-info>
+      <form-error-info [errorMessage]="errorMessage"></form-error-info>
     </div>
   </mat-step>
 

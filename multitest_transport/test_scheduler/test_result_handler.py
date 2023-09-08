@@ -94,6 +94,12 @@ def MergeReports(test_run_id):
     return
 
   test_run = ndb_models.TestRun.get_by_id(test_run_id)
+  if test_run.test_run_config.sharding_mode != ndb_models.ShardingMode.MODULE:
+    logging.info(
+        'Test run %s is not running with MODULE sharding mode, skip merging'
+        ' report.', test_run_id
+    )
+    return
   if not test_run.is_finalized:
     logging.info(
         'Test run %s is not finalized yet, skip merging reports', test_run_id
@@ -102,11 +108,17 @@ def MergeReports(test_run_id):
   attempts = tfc_client.GetLatestFinishedAttempts(test_run.request_id)
 
   result_urls = []
+  test_record_urls = []
   for attempt in attempts:
     result_url = file_util.GetResultUrl(test_run, attempt)
     local_result_url = _GetLocalFilePath(result_url) if result_url else None
     if local_result_url:
-      result_urls.append(local_result_url.strip())
+      local_result_url = local_result_url.strip()
+      local_test_record_url = '/'.join(
+          [os.path.dirname(local_result_url), 'test-record.pb']
+      )
+      result_urls.append(local_result_url)
+      test_record_urls.append(local_test_record_url)
 
   if len(result_urls) < 2:
     logging.info(
@@ -118,6 +130,7 @@ def MergeReports(test_run_id):
   with write_report_lock:
     logging.info('Acquired the lock to merge reports...')
     xml_report_files = ','.join(result_urls)
+    test_record_proto_files = ','.join(test_record_urls)
     merged_report_dir = os.path.join(
         _GetLocalFilePath(file_util.GetAppStorageUrl([test_run.output_path])),
         'merged_report',
@@ -130,6 +143,8 @@ def MergeReports(test_run_id):
         report_generator_jar,
         '--xml_report_files',
         xml_report_files,
+        '--test_record_proto_files',
+        test_record_proto_files,
         '--output_dir',
         merged_report_dir,
     ]
@@ -146,6 +161,29 @@ def MergeReports(test_run_id):
           logging.info(line.decode('utf-8').strip())
         else:
           break
+      merged_report_zip_file_url = _GetMergedReportZipFile(test_run)
+      if merged_report_zip_file_url:
+        test_resources = test_run.next_test_context.test_resources
+        if test_resources:
+          new_test_resource_name = os.path.basename(merged_report_zip_file_url)
+          old_test_resource_name = test_resources[0].name
+          idx = old_test_resource_name.rfind('/')
+          if idx >= 0:
+            new_test_resource_name = (
+                old_test_resource_name[:idx] + '/' + new_test_resource_name
+            )
+          test_run.next_test_context.test_resources = [
+              ndb_models.TestResourceObj(
+                  name=new_test_resource_name,
+                  url=merged_report_zip_file_url,
+              )
+          ]
+          logging.info(
+              'Updates test resources for test run %s next_test_context: %s',
+              test_run_id,
+              test_run.next_test_context.test_resources,
+          )
+          test_run.put()
     finally:
       (unexpected_out, _) = proc.communicate()
       for line in unexpected_out.splitlines():
@@ -157,3 +195,20 @@ def _GetLocalFilePath(result_url: str) -> Optional[str]:
     logging.warning('Invalid local file URL %s', result_url)
     return None
   return result_url[7:]
+
+
+def _GetMergedReportZipFile(test_run) -> Optional[str]:
+  """Gets merged report zip file URL."""
+  merged_report_dir = file_util.GetMergedReportFileUrl(test_run)
+  merged_report_dir_handle = file_util.FileHandle.Get(merged_report_dir)
+  merged_report_files = merged_report_dir_handle.ListFiles()
+  merged_report_zip_file_url = None
+  if merged_report_files:
+    merged_report_file_urls = [
+        f.url for f in merged_report_files if f.is_file
+    ]
+    merged_report_zip_file_url = next(
+        (f for f in merged_report_file_urls if f.endswith('.zip')),
+        None,
+    )
+  return merged_report_zip_file_url

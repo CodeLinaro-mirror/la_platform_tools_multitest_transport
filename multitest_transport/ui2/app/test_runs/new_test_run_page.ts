@@ -30,7 +30,7 @@ import {APP_DATA, AppData} from '../services/app_data';
 import {MttClient} from '../services/mtt_client';
 import {DeviceSearchCriteria, LabDeviceInfosResponse} from '../services/mtt_lab_models';
 import * as mttModels from '../services/mtt_models';
-import {RerunContext, testResourceDefToObj} from '../services/mtt_models';
+import {RerunContext, ShardingMode, testResourceDefToObj} from '../services/mtt_models';
 import {MttObjectMapService, newMttObjectMap} from '../services/mtt_object_map';
 import {Notifier} from '../services/notifier';
 import {TfcClient} from '../services/tfc_client';
@@ -151,6 +151,12 @@ export class NewTestRunPage extends FormChangeTracker implements OnInit,
     this.invalidInputs = [];
     switch (currentStep) {
       case Step.CONFIGURE_TEST_RUN: {
+        const errors = this.testRunConfigForm.validateContents();
+        if (errors.length) {
+          this.errorMessage = errors.map(e => 'Error: ' + e).join('\n');
+          return false;
+        }
+
         this.invalidInputs = this.testRunConfigForm.getInvalidInputs();
         return !this.invalidInputs.length;
       }
@@ -239,6 +245,14 @@ export class NewTestRunPage extends FormChangeTracker implements OnInit,
        */
       this.testRunConfig = prevTestRun.test_run_config;
       this.testRunConfig.device_specs = this.testRunConfig.device_specs || [];
+      if (this.prevTestRunId &&
+          this.testRunConfig.sharding_mode === ShardingMode.MODULE) {
+        this.testRunConfig.sharding_mode = ShardingMode.RUNNER;
+        // Clears selected devices as the retry needs to go with runner mode and
+        // previous selected devices might be crossing hosts.
+        this.testRunConfig.device_specs = [];
+        this.testRunConfig.shard_count = 0;
+      }
 
       // Load device actions
       const deviceActionIds = this.testRunConfig.before_device_action_ids || [];

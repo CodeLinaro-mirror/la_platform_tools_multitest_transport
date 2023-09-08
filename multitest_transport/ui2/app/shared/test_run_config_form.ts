@@ -51,7 +51,8 @@ export class TestRunConfigForm extends FormChangeTracker implements OnInit,
   @Input() prevTestRunId?: string;
 
   /** Emits the updated config for two-way binding with parent */
-  @Output() readonly testRunConfigChange = new EventEmitter<Partial<TestRunConfig>>();
+  @Output()
+  readonly testRunConfigChange = new EventEmitter<Partial<TestRunConfig>>();
   /** Emits the latest rerun parameters. */
   @Output() readonly rerunContext = new EventEmitter<RerunContext>();
 
@@ -126,20 +127,23 @@ export class TestRunConfigForm extends FormChangeTracker implements OnInit,
               this.uploadProgress = 0;
             }),
             )
-        .subscribe(event => {
-          this.uploadProgress = event.progress;
-          if (event.done) {
-            this.testResultsFilename = file.name;
-            this.testResultsFileUrl =
-                this.fs.getFileUrl('', `tmp/${file.name}`);
-            this.updateRerunContext();
-            this.liveAnnouncer.announce(`${file.name} uploaded`, 'assertive');
-          }
-        }, error => {
-          this.notifier.showError(
-              `Failed to upload '${file.name}'.`,
-              buildApiErrorMessage(error));
-        });
+        .subscribe(
+            event => {
+              this.uploadProgress = event.progress;
+              if (event.done) {
+                this.testResultsFilename = file.name;
+                this.testResultsFileUrl =
+                    this.fs.getFileUrl('', `tmp/${file.name}`);
+                this.updateRerunContext();
+                this.liveAnnouncer.announce(
+                    `${file.name} uploaded`, 'assertive');
+              }
+            },
+            error => {
+              this.notifier.showError(
+                  `Failed to upload '${file.name}'.`,
+                  buildApiErrorMessage(error));
+            });
   }
 
   /** Updates the rerun context based on the current parameters. */
@@ -158,5 +162,19 @@ export class TestRunConfigForm extends FormChangeTracker implements OnInit,
       this.isRerun = !!this.prevTestRunId;
       this.rerunContext.emit({test_run_id: this.prevTestRunId});
     }
+  }
+
+  /** Validates the form contents and returns error message if any. */
+  validateContents(): string[] {
+    const errors: string[] = [];
+    if (this.prevTestRunId) {
+      if (this.testRunConfig.sharding_mode === ShardingMode.MODULE &&
+          this.prevTestRunId.trim()) {
+        errors.push(
+            'Cannot select Sharding Mode MODULE when the Previous Test Run ' +
+            'ID is specified.');
+      }
+    }
+    return errors;
   }
 }
