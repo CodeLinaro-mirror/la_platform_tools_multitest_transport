@@ -23,7 +23,6 @@
         "disabledRules": [
             "ban-mutable-exports",
             "check-return-value",
-            "property-renaming-safe",
             "must-use-promises"
         ]
       }
