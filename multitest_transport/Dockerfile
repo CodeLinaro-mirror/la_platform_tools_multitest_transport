@@ -174,6 +174,11 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
         apt-get install -y nodejs && \
         rm nodesource_setup.sh
 
+# Install TVTS prerequisites
+# The perfetto package is only supported by python 3.9
+RUN pip install perfetto
+RUN pip install matplotlib
+
 # Install cuttlefish-common and add MTT user (root) to the groups
 # debuild -d skips checking the dependency of debhelper-compat 12.
 # Reference: https://android.googlesource.com/device/google/cuttlefish/+/refs/heads/android13-dev/README.md
