@@ -68,7 +68,11 @@ export class TestRunTargetPicker extends FormChangeTracker implements
         build_id: {values: observableOf([])},
         device_serial: {values: observableOf([])},
         device_type: {
-          values: observableOf([DeviceType.PHYSICAL, DeviceType.LOCAL_VIRTUAL])
+          values: observableOf([
+            DeviceType.PHYSICAL,
+            DeviceType.LOCAL_VIRTUAL,
+            DeviceType.REMOTE_VIRTUAL,
+          ])
         },
         hostname: {values: observableOf([])},
         product: {values: observableOf([])},

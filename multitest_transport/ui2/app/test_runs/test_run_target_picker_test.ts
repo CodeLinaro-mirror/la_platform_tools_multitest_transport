@@ -173,6 +173,11 @@ describe('TestRunTargetPicker', () => {
               displayedValue: 'LOCAL_VIRTUAL',
               reopenPanel: false
             },
+            {
+              value: 'device_type:REMOTE_VIRTUAL',
+              displayedValue: 'REMOTE_VIRTUAL',
+              reopenPanel: false
+            }
           ]);
           done();
         });

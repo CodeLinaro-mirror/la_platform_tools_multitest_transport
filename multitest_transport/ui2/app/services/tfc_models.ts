@@ -76,6 +76,12 @@ export declare interface DeviceInfo {
   readonly test_harness: string;
   /** timestamp: update timestamp */
   readonly timestamp: string;
+  /** is_stub_device: if the device is a stub device */
+  readonly is_stub_device: boolean;
+  /** preconfigured_ip: IP address of the device, if it is remote */
+  readonly preconfigured_ip?: string;
+  /** preconfigured_device_num_offset: device number offset */
+  readonly preconfigured_device_num_offset?: number;
 }
 
 
@@ -282,6 +288,7 @@ export enum DeviceType {
   REMOTE = 'REMOTE',
   TCP = 'TCP',
   LOCAL_VIRTUAL = 'LOCAL_VIRTUAL',
+  REMOTE_VIRTUAL = 'REMOTE_VIRTUAL',
 }
 
 /** Possible recovery states for a device or host. */

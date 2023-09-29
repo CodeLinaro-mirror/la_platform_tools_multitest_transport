@@ -559,6 +559,9 @@ export function convertToLabDeviceInfo(source: tfcModels.DeviceInfo):
     state: source.state,
     test_harness: source.test_harness,
     timestamp: source.timestamp,
+    is_stub_device: source.is_stub_device,
+    preconfigured_ip: source.preconfigured_ip,
+    preconfigured_device_num_offset: source.preconfigured_device_num_offset,
   };
 }
 

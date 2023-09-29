@@ -207,10 +207,10 @@
     <!-- Device Serial Number -->
     <ng-container matColumnDef="device_serial">
       <mat-header-cell *matHeaderCellDef fxFlex="210px"> Serial </mat-header-cell>
-      <mat-cell *matCellDef="let device" [matTooltip]="device.device_serial" fxFlex="210px">
+      <mat-cell *matCellDef="let device" [matTooltip]="getDeviceSerialForDisplay(device)" fxFlex="210px">
         <div class="device-serial">
           <a (click)="openDeviceDetails(device.device_serial)">
-            {{ device.device_serial }}
+            {{ getDeviceSerialForDisplay(device) }}
           </a>
         </div>
         <a

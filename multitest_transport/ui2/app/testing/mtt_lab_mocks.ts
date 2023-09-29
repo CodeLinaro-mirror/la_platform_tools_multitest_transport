@@ -409,7 +409,7 @@ export function newMockDeviceInfo(
     build_id: BUILD_ID,
     device_serial: deviceSerial,
     device_type: deviceType,
-    extra_info: extraInfo? extraInfo: newMockDeviceExtraInfo(deviceNoteId),
+    extra_info: extraInfo ? extraInfo : newMockDeviceExtraInfo(deviceNoteId),
     flated_extra_info:
         ['battery_level:80', 'sdk_version:10', 'sim_state:ABSENT'],
     hidden,
@@ -428,6 +428,7 @@ export function newMockDeviceInfo(
     state,
     test_harness: testHarness,
     timestamp,
+    is_stub_device: false,
   };
 }
 

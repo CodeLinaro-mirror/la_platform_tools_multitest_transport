@@ -31,7 +31,7 @@ import {TableColumn} from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
 import {StorageService} from '../services/storage_service';
 import {TfcClient} from '../services/tfc_client';
-import {DeviceRecoveryStateRequest, FilterHintList, FilterHintType, NoteList, RecoveryState, TestHarness} from '../services/tfc_models';
+import {DeviceRecoveryStateRequest, DeviceType, FilterHintList, FilterHintType, NoteList, RecoveryState, TestHarness} from '../services/tfc_models';
 import {UserService} from '../services/user_service';
 import {FilterBarUtility} from '../shared/filterbar_util';
 import {OverflowListType} from '../shared/overflow_list';
@@ -1226,5 +1226,13 @@ export class DeviceList implements OnChanges, OnDestroy, OnInit {
   updateSelectedDeviceSerials(selectedSerials: string[]) {
     this.selectedSerials = selectedSerials;
     this.selectedSerialsChange.emit(this.selectedSerials);
+  }
+
+  getDeviceSerialForDisplay(device: LabDeviceInfo) {
+    if (device.device_type === DeviceType.REMOTE_VIRTUAL) {
+      return `remote-virtual-${device.preconfigured_ip || 'unknown'}-${
+          device.preconfigured_device_num_offset || 'unknown'}`;
+    }
+    return device.device_serial;
   }
 }
