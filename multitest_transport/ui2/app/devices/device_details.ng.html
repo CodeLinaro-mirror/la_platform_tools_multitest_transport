@@ -37,8 +37,8 @@
         (selectionChange)="load($event.value, true)"
         (click)="startDeviceNavigationHats()"
       >
-        <mat-option *ngFor="let deviceSerial of deviceSerials" [value]="deviceSerial">
-          {{ deviceSerial }}
+        <mat-option *ngFor="let deviceSerial of deviceSerialsWithDisplay" [value]="deviceSerial.serial">
+          {{ deviceSerial.serialForDisplay }}
         </mat-option>
       </mat-select>
     </mat-form-field>

@@ -98,7 +98,7 @@ describe('DeviceDetails', () => {
   });
 
   it('should add device serial to dropdown option when no others', () => {
-    deviceDetails.deviceSerials = [];
+    deviceDetails.deviceSerialsWithDisplay = [];
     deviceDetails.id = deviceSerial;
     deviceDetails.appendDefaultOption();
     expect(deviceDetails.deviceSerials[0]).toEqual(deviceSerial);

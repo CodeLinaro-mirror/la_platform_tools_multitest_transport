@@ -25,7 +25,7 @@ import {takeUntil} from 'rxjs/operators';
 import {FeedbackService} from '../services/feedback_service';
 import {LabDeviceInfo, NoteType, SurveyTrigger} from '../services/mtt_lab_models';
 import {Notifier} from '../services/notifier';
-import {StorageService} from '../services/storage_service';
+import {DeviceSerialWithDisplay, StorageService} from '../services/storage_service';
 import {TfcClient} from '../services/tfc_client';
 import {buildApiErrorMessage} from '../shared/util';
 
@@ -55,7 +55,7 @@ export class DeviceDetails implements OnChanges, OnDestroy, OnInit {
   isLoading = false;
   private readonly destroy = new ReplaySubject<void>();
   isModalMode = false;
-  deviceSerials: string[] = [];
+  deviceSerialsWithDisplay: DeviceSerialWithDisplay[] = [];
   data?: LabDeviceInfo;
 
   constructor(
@@ -82,13 +82,18 @@ export class DeviceDetails implements OnChanges, OnDestroy, OnInit {
       this.id = this.params.id;
       this.newWindow = this.params.newWindow;
     }
-    this.deviceSerials = this.storageService.deviceList;
+    this.deviceSerialsWithDisplay = this.storageService.deviceList;
     this.load(this.id);
     this.appendDefaultOption();
   }
 
   ngOnDestroy() {
     this.destroy.next();
+  }
+
+  get deviceSerials() {
+    return this.deviceSerialsWithDisplay.map(
+        deviceSerialWithDisplay => deviceSerialWithDisplay.serial);
   }
 
   load(deviceSerial: string, switchParam = false) {
@@ -128,7 +133,10 @@ export class DeviceDetails implements OnChanges, OnDestroy, OnInit {
 
   appendDefaultOption() {
     if (this.id && !this.deviceSerials.includes(this.id)) {
-      this.deviceSerials.push(this.id);
+      this.deviceSerialsWithDisplay.push({
+        serial: this.id,
+        serialForDisplay: this.id,
+      });
     }
   }
 

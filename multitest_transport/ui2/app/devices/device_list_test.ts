@@ -27,7 +27,7 @@ import {DEVICE_SERIAL, DeviceSearchCriteria, HOSTNAME, LabDeviceInfosResponse, S
 import {Notifier} from '../services/notifier';
 import {DEVICE_LIST_KEY} from '../services/storage_service';
 import {TfcClient} from '../services/tfc_client';
-import {DeviceRecoveryStateRequest, DeviceType, FilterHintType, NoteList, RecoveryState} from '../services/tfc_models';
+import {DeviceRecoveryStateRequest, FilterHintType, NoteList, RecoveryState} from '../services/tfc_models';
 import {ActivatedRouteStub} from '../testing/activated_route_stub';
 import {getEl, getEls, getTextContent} from '../testing/jasmine_util';
 import {newMockAppData, newMockDeviceNote, newMockFilterHintList, newMockLabDeviceInfo, newMockLabDeviceInfosResponse} from '../testing/mtt_lab_mocks';
@@ -913,29 +913,5 @@ describe('DeviceList in ATS instance', () => {
     };
     expect(tfcClient.queryDeviceInfos).toHaveBeenCalledWith(query, 2);
     expect(deviceList.selectedSerials).toEqual(['device-2']);
-  });
-
-  it('should return correct serial for display', () => {
-    expect(
-        deviceList.getDeviceSerialForDisplay(newMockLabDeviceInfo('device-1')))
-        .toEqual('device-1');
-
-    expect(deviceList.getDeviceSerialForDisplay({
-      ...newMockLabDeviceInfo('device-1'),
-      device_type: DeviceType.REMOTE_VIRTUAL,
-    })).toEqual('remote-virtual-unknown-unknown');
-
-    expect(deviceList.getDeviceSerialForDisplay({
-      ...newMockLabDeviceInfo('device-1'),
-      device_type: DeviceType.REMOTE_VIRTUAL,
-      preconfigured_ip: '1.1.1.1',
-    })).toEqual('remote-virtual-1.1.1.1-unknown');
-
-    expect(deviceList.getDeviceSerialForDisplay({
-      ...newMockLabDeviceInfo('device-1'),
-      device_type: DeviceType.REMOTE_VIRTUAL,
-      preconfigured_ip: '1.1.1.1',
-      preconfigured_device_num_offset: 2,
-    })).toEqual('remote-virtual-1.1.1.1-2');
   });
 });

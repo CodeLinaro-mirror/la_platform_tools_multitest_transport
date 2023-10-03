@@ -188,15 +188,15 @@
     <!-- Device Serial Number -->
     <ng-container matColumnDef="device_serial">
       <mat-header-cell *matHeaderCellDef fxFlex="210px" mat-sort-header> Serial </mat-header-cell>
-      <mat-cell *matCellDef="let device" [matTooltip]="device.device_serial" fxFlex="210px">
+      <mat-cell *matCellDef="let device" [matTooltip]="getDeviceSerialForDisplay(device)" fxFlex="210px">
         <div class="device-serial">
           <ng-container *ngIf="!isModalMode; else deviceSerialStringTemp">
             <a (click)="openDeviceDetails(device.device_serial)">
-              {{ device.device_serial }}
+              {{ getDeviceSerialForDisplay(device) }}
             </a>
           </ng-container>
           <ng-template #deviceSerialStringTemp>
-            {{ device.device_serial }}
+            {{ getDeviceSerialForDisplay(device) }}
           </ng-template>
         </div>
         <a

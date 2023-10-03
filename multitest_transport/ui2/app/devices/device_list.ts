@@ -26,12 +26,12 @@ import {catchError, concatMap, delay, filter, map, mergeMap, retryWhen, switchMa
 
 import {APP_DATA, AppData} from '../services';
 import {FeedbackService} from '../services/feedback_service';
-import {ALL_OPTIONS_VALUE, DEVICE_SERIAL, DeviceQueryParams, DeviceSearchCriteria, FilterOption, HOSTNAME, LAB_STORAGE_KEY, LabDeviceInfo, LabDeviceInfosResponse, REMOVE_DEVICE_MESSAGE, SurveyTrigger} from '../services/mtt_lab_models';
+import {ALL_OPTIONS_VALUE, DEVICE_SERIAL, DeviceQueryParams, DeviceSearchCriteria, FilterOption, getDeviceSerialForDisplay, HOSTNAME, LAB_STORAGE_KEY, LabDeviceInfo, LabDeviceInfosResponse, REMOVE_DEVICE_MESSAGE, SurveyTrigger} from '../services/mtt_lab_models';
 import {TableColumn} from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
-import {StorageService} from '../services/storage_service';
+import {DeviceSerialWithDisplay, StorageService} from '../services/storage_service';
 import {TfcClient} from '../services/tfc_client';
-import {DeviceRecoveryStateRequest, DeviceType, FilterHintList, FilterHintType, NoteList, RecoveryState, TestHarness} from '../services/tfc_models';
+import {DeviceRecoveryStateRequest, FilterHintList, FilterHintType, NoteList, RecoveryState, TestHarness} from '../services/tfc_models';
 import {UserService} from '../services/user_service';
 import {FilterBarUtility} from '../shared/filterbar_util';
 import {OverflowListType} from '../shared/overflow_list';
@@ -63,6 +63,7 @@ export class DeviceList implements OnChanges, OnDestroy, OnInit {
   dataSource: LabDeviceInfo[] = [];
   readonly overflowListType = OverflowListType;
   readonly allOptionsValue = ALL_OPTIONS_VALUE;
+  readonly getDeviceSerialForDisplay = getDeviceSerialForDisplay;
 
   @ViewChild('table', {static: true, read: ElementRef}) table!: ElementRef;
   @ViewChild(MatTable, {static: true}) matTable!: MatTable<{}>;
@@ -247,6 +248,14 @@ export class DeviceList implements OnChanges, OnDestroy, OnInit {
 
   get deviceSerials() {
     return this.dataSource.map(info => info.device_serial);
+  }
+
+  get deviceSerialsWithDisplay(): DeviceSerialWithDisplay[] {
+    return this.dataSource.map(
+        info => ({
+          serial: info.device_serial,
+          serialForDisplay: this.getDeviceSerialForDisplay(info),
+        }));
   }
 
   constructor(
@@ -1130,7 +1139,7 @@ export class DeviceList implements OnChanges, OnDestroy, OnInit {
 
   /** Naviagte to device details page. */
   openDeviceDetails(deviceSerial: string) {
-    this.storageService.deviceList = this.deviceSerials;
+    this.storageService.deviceList = this.deviceSerialsWithDisplay;
     const url = this.getDeviceDetailsUrl(deviceSerial);
     this.router.navigateByUrl(url);
   }
@@ -1220,19 +1229,12 @@ export class DeviceList implements OnChanges, OnDestroy, OnInit {
   }
 
   storeDeviceSerialsInLocalStorage() {
-    this.storageService.saveDeviceListInLocalStorage(this.deviceSerials);
+    this.storageService.saveDeviceListInLocalStorage(
+        this.deviceSerialsWithDisplay);
   }
 
   updateSelectedDeviceSerials(selectedSerials: string[]) {
     this.selectedSerials = selectedSerials;
     this.selectedSerialsChange.emit(this.selectedSerials);
-  }
-
-  getDeviceSerialForDisplay(device: LabDeviceInfo) {
-    if (device.device_type === DeviceType.REMOTE_VIRTUAL) {
-      return `remote-virtual-${device.preconfigured_ip || 'unknown'}-${
-          device.preconfigured_device_num_offset || 'unknown'}`;
-    }
-    return device.device_serial;
   }
 }

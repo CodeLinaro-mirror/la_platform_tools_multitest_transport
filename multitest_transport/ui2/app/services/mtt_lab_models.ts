@@ -834,3 +834,12 @@ export enum SurveyTrigger {
   SEARCHABLE_FILTER = 'pKJaTdaQK0nnvAQfLMD0VfULJyWr',
   VIEW_DEVICES_COLUMNS = 'S8E34xYdV0nnvAQfLMD0T3XM42Dw',
 }
+
+/** Gets the device serial for display. */
+export function getDeviceSerialForDisplay(device: LabDeviceInfo) {
+  if (device.device_type === tfcModels.DeviceType.REMOTE_VIRTUAL) {
+    return `remote-virtual-${device.preconfigured_ip || 'unknown'}-${
+        device.preconfigured_device_num_offset || 'unknown'}`;
+  }
+  return device.device_serial;
+}

@@ -1,7 +1,7 @@
-import {DEVICE_COUNT_SUMMARIES, newMockHostInfo, newMockLabOfflineHostInfosByLabResponse, newMockUnconvertedHostInfo, newMockDeviceInfo, newMockHostResource} from '../testing/mtt_lab_mocks';
+import {DEVICE_COUNT_SUMMARIES, newMockDeviceInfo, newMockHostInfo, newMockHostResource, newMockLabDeviceInfo, newMockLabOfflineHostInfosByLabResponse, newMockUnconvertedHostInfo} from '../testing/mtt_lab_mocks';
 
-import {calculateTotalDeviceCountSummary, convertToLabHostInfo, convertToLabDeviceInfo, convertToLabHostResource} from './mtt_lab_models';
-import {HostState, TestHarness, HostResource} from './tfc_models';
+import {calculateTotalDeviceCountSummary, convertToLabDeviceInfo, convertToLabHostInfo, convertToLabHostResource, getDeviceSerialForDisplay} from './mtt_lab_models';
+import {DeviceType, HostResource, HostState, TestHarness} from './tfc_models';
 
 describe('MttLabModels', () => {
   it('converts to HostInfo correctly when required key is not found', () => {
@@ -82,5 +82,28 @@ describe('MttLabModels', () => {
     const result = convertToLabHostResource(source);
 
     expect(result).toBeNull();
+  });
+
+  it('should return correct serial for display', () => {
+    expect(getDeviceSerialForDisplay(newMockLabDeviceInfo('device-1')))
+        .toEqual('device-1');
+
+    expect(getDeviceSerialForDisplay({
+      ...newMockLabDeviceInfo('device-1'),
+      device_type: DeviceType.REMOTE_VIRTUAL,
+    })).toEqual('remote-virtual-unknown-unknown');
+
+    expect(getDeviceSerialForDisplay({
+      ...newMockLabDeviceInfo('device-1'),
+      device_type: DeviceType.REMOTE_VIRTUAL,
+      preconfigured_ip: '1.1.1.1',
+    })).toEqual('remote-virtual-1.1.1.1-unknown');
+
+    expect(getDeviceSerialForDisplay({
+      ...newMockLabDeviceInfo('device-1'),
+      device_type: DeviceType.REMOTE_VIRTUAL,
+      preconfigured_ip: '1.1.1.1',
+      preconfigured_device_num_offset: 2,
+    })).toEqual('remote-virtual-1.1.1.1-2');
   });
 });

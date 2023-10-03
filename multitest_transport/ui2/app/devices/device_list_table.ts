@@ -16,8 +16,8 @@
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {Component, ElementRef, EventEmitter, HostListener, Inject, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges, ViewChild} from '@angular/core';
-import {MatTable, MatTableDataSource} from '@angular/material/table';
 import {MatSort, Sort} from '@angular/material/sort';
+import {MatTable, MatTableDataSource} from '@angular/material/table';
 import {Router} from '@angular/router';
 import {TableColumn} from 'google3/third_party/py/multitest_transport/ui2/app/services/mtt_models';
 import {Notifier} from 'google3/third_party/py/multitest_transport/ui2/app/services/notifier';
@@ -27,8 +27,8 @@ import {of as observableOf, ReplaySubject, throwError} from 'rxjs';
 import {catchError, filter, switchMap, takeUntil} from 'rxjs/operators';
 
 import {APP_DATA, AppData} from '../services';
-import {DEVICE_SERIAL, HOSTNAME, LabDeviceInfo, REMOVE_DEVICE_MESSAGE} from '../services/mtt_lab_models';
-import {StorageService} from '../services/storage_service';
+import {DEVICE_SERIAL, getDeviceSerialForDisplay, HOSTNAME, LabDeviceInfo, REMOVE_DEVICE_MESSAGE} from '../services/mtt_lab_models';
+import {DeviceSerialWithDisplay, StorageService} from '../services/storage_service';
 import {TfcClient} from '../services/tfc_client';
 import {DeviceRecoveryStateRequest, RecoveryState, TestHarness} from '../services/tfc_models';
 import {UserService} from '../services/user_service';
@@ -95,6 +95,7 @@ export class DeviceListTable implements OnDestroy, OnInit, OnChanges {
   isTableScrolled = false;
   readonly recoveryState = RecoveryState;
   readonly testHarness = TestHarness;
+  readonly getDeviceSerialForDisplay = getDeviceSerialForDisplay;
   logUrl = '';
   readonly COLUMN_DISPLAY_STORAGE_KEY = 'DEVICE_COLUMN_DISPLAY';
   columns: TableColumn[] = [
@@ -162,6 +163,14 @@ export class DeviceListTable implements OnDestroy, OnInit, OnChanges {
 
   get deviceSerials() {
     return this.tableDataSource.data.map(info => info.device_serial);
+  }
+
+  get deviceSerialsWithDisplay(): DeviceSerialWithDisplay[] {
+    return this.dataSource.map(
+        info => ({
+          serial: info.device_serial,
+          serialForDisplay: this.getDeviceSerialForDisplay(info),
+        }));
   }
 
   /** Clicks header to sort. */
@@ -258,7 +267,7 @@ export class DeviceListTable implements OnDestroy, OnInit, OnChanges {
 
   /** Naviagte to device details page. */
   openDeviceDetails(deviceSerial: string) {
-    this.storageService.deviceList = this.deviceSerials;
+    this.storageService.deviceList = this.deviceSerialsWithDisplay;
     const url = this.getDeviceDetailsUrl(deviceSerial);
     this.router.navigateByUrl(url);
   }
@@ -444,6 +453,7 @@ export class DeviceListTable implements OnDestroy, OnInit, OnChanges {
   }
 
   storeDeviceSerialsInLocalStorage() {
-    this.storageService.saveDeviceListInLocalStorage(this.deviceSerials);
+    this.storageService.saveDeviceListInLocalStorage(
+        this.deviceSerialsWithDisplay);
   }
 }

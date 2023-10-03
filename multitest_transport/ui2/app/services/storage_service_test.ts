@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {DEVICE_LIST_KEY, HOST_LIST_KEY, StorageService} from './storage_service';
+import {DEVICE_LIST_KEY, DeviceSerialWithDisplay, HOST_LIST_KEY, StorageService} from './storage_service';
 
 describe('StorageService', () => {
   let service: StorageService;
@@ -38,7 +38,10 @@ describe('StorageService', () => {
   it('should get device list from local storage if device list in service is empty',
      () => {
        spyOn(service, 'getListFromLocalStorage').and.callThrough();
-       const deviceSerials = ['device1', 'device2'];
+       const deviceSerials: DeviceSerialWithDisplay[] = [
+         {serial: 'device1', serialForDisplay: 'display1'},
+         {serial: 'device2', serialForDisplay: 'display2'},
+       ];
        window.localStorage.setItem(
            DEVICE_LIST_KEY, JSON.stringify(deviceSerials));
        const deviceList = service.deviceList;
@@ -58,7 +61,10 @@ describe('StorageService', () => {
 
   it('should set device list into local storage correctly', () => {
     spyOn(window.localStorage, 'setItem');
-    const deviceList = ['device4', 'device5'];
+    const deviceList: DeviceSerialWithDisplay[] = [
+      {serial: 'device4', serialForDisplay: 'display4'},
+      {serial: 'device5', serialForDisplay: 'display5'},
+    ];
     service.saveDeviceListInLocalStorage(deviceList);
     expect(window.localStorage.setItem)
         .toHaveBeenCalledWith(DEVICE_LIST_KEY, JSON.stringify(deviceList));
