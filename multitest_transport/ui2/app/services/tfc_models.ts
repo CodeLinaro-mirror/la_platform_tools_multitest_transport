@@ -158,6 +158,8 @@ export declare interface Command {
   readonly command_line?: string;
   /** state of the command */
   readonly state: CommandState;
+  /** error reason of the command */
+  readonly error_reason?: ErrorReason;
   /** timestamp when the command started executing */
   readonly start_time?: string;
   /** timestamp when the command finished executing */
@@ -198,6 +200,12 @@ export const FINAL_COMMAND_STATES: CommandState[] = [
 /** Returns true if the status is considered final, false otherwise */
 export function isFinalCommandState(state: CommandState) {
   return FINAL_COMMAND_STATES.includes(state);
+}
+
+/** Enum for command error reasons */
+export enum ErrorReason {
+  UNKNOWN = 'UNKNOWN',
+  TOO_MANY_LOST_DEVICES = 'TOO_MANY_LOST_DEVICES',
 }
 
 /** A list of commands */

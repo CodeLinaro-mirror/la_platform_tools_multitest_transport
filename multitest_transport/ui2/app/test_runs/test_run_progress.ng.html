@@ -187,8 +187,10 @@
                     +{{getDuration(commandNode.value)}}
                 </div>
 
-                <div fxFlex="190px">
-                    <!-- Output files column -->
+                <div fxFlex="190px" class="row-text">
+                  <ng-container *ngIf="commandNode.value.error_reason && commandNode.value.error_reason != 'UNKNOWN'">
+                      Error reason: {{ commandNode.value.error_reason }}
+                  </ng-container>
                 </div>
               </div><!-- End of command row -->
 
