@@ -34,6 +34,7 @@ $theme: mat.define-light-theme(
   )
 );
 @include mat-deprecated.all-legacy-component-themes($theme);
+@include mat.divider-theme($theme);
 @include mat.radio-theme($theme);
 @include mat.checkbox-theme($theme);
 @include mat.dialog-theme($theme);

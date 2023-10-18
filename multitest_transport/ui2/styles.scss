@@ -60,6 +60,7 @@ $theme: map_merge(
 );
 
 @include mat-deprecated.all-legacy-component-themes($theme);
+@include mat.divider-theme($theme);
 @include mat.radio-theme($theme);
 @include mat.checkbox-theme($theme);
 @include mat.dialog-theme($theme);
@@ -338,11 +339,11 @@ mat-spinner.loading-spinner {
   margin-bottom: 20px;
   padding: 16px;
 
-  &>:first-child {
+  & > :first-child {
     margin-top: 0;
   }
 
-  &>:last-child {
+  & > :last-child {
     margin-bottom: 0;
   }
 
@@ -375,7 +376,8 @@ mat-spinner.loading-spinner {
 }
 
 .mat-mdc-form-field-appearance-outline {
-  &.mat-form-field-can-float.mat-form-field-should-float .mat-mdc-form-field-label {
+  &.mat-form-field-can-float.mat-form-field-should-float
+    .mat-mdc-form-field-label {
     transform: translateY(-1.25em) scale(0.75);
   }
 
@@ -459,7 +461,8 @@ mat-spinner.loading-spinner {
   }
 }
 
-.mat-select-filter.mat-mdc-form-field-appearance-outline .mat-mdc-form-field-outline {
+.mat-select-filter.mat-mdc-form-field-appearance-outline
+  .mat-mdc-form-field-outline {
   color: $blue-300;
 }
 
@@ -621,10 +624,10 @@ mat-spinner.loading-spinner {
 }
 
 .mat-mdc-form-field-hint {
-  color: rgba(0, 0, 0, .6);
+  color: rgba(0, 0, 0, 0.6);
 }
 
-mat-horizontal-stepper  .mat-horizontal-content-container {
+mat-horizontal-stepper .mat-horizontal-content-container {
   padding: 5px 24px 24px;
 }
 
