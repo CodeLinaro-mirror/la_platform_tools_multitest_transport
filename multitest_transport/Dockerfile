@@ -28,7 +28,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -
         cec-utils \
         cron \
         daemontools \
-        ffmpeg \
         fuse-zip \
         git \
         iputils-ping \
@@ -40,13 +39,14 @@ RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -
         ndppd \
         netdata \
         socat \
+        software-properties-common \
         tini \
         tzdata \
         usbutils \
         unzip \
         wget \
-        zip \
-        software-properties-common
+        xz-utils \
+        zip
 
 RUN add-apt-repository ppa:deadsnakes/ppa
 RUN export DEBIAN_FRONTEND=noninteractive; apt update -qq; apt install -y -qq \
@@ -233,6 +233,15 @@ RUN wget -q --retry-connrefused -O ${LIBUSB_VERSION}.tar.bz2 http://downloads.so
     && ldconfig \
     && cd - \
     && rm -rf ${LIBUSB_VERSION}.tar.bz2 ${LIBUSB_VERSION}
+
+# Install ffmpeg
+ARG FFMPEG_VERSION=ffmpeg-release-amd64-static
+RUN wget -q --retry-connrefused https://johnvansickle.com/ffmpeg/releases/${FFMPEG_VERSION}.tar.xz \
+  && tar -xf ${FFMPEG_VERSION}.tar.xz \
+  && cd ffmpeg-*-amd64-static \
+  && mv ffmpeg ffprobe /usr/local/bin/ \
+  && cd - \
+  && rm -rf ffmpeg-*-amd64-static*
 
 # Docker builds image by layers. If a layer changes, all the following layers
 # will need to be rebuilt. So less frequent changes, e.g. install packages, will
