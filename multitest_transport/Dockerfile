@@ -218,7 +218,7 @@ ENV MTT_SUPPORT_BRIDGE_NETWORK true
 
 # Install acloud
 # TODO: Replace /url with ?alt=media when it works
-ARG ACLOUD_DOWNLOAD_URL='https://www.googleapis.com/android/internal/build/v3/builds/10652639/aosp_cf_x86_64_phone-trunk_staging-userdebug/attempts/latest/artifacts/acloud_prebuilt/url'
+ARG ACLOUD_DOWNLOAD_URL='https://www.googleapis.com/android/internal/build/v3/builds/10988168/aosp_cf_x86_64_phone-trunk_staging-userdebug/attempts/latest/artifacts/acloud_prebuilt/url'
 ENV ACLOUD_PREBUILT_PATH=/bin/acloud_prebuilt
 RUN wget -q --retry-connrefused -O ${ACLOUD_PREBUILT_PATH} ${ACLOUD_DOWNLOAD_URL} \
     && chmod +x ${ACLOUD_PREBUILT_PATH}
