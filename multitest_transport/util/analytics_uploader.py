@@ -14,6 +14,7 @@
 
 """Client used to upload Google Analytics events."""
 import ctypes
+import json
 import logging
 import multiprocessing
 from typing import Iterator, Optional, Tuple
@@ -35,44 +36,51 @@ _UPLOAD_ERROR_COUNT = multiprocessing.Value(ctypes.c_int, 0)
 APP = flask.Flask(__name__)
 
 # GA constants
-_GA_ENDPOINT = 'http://www.google-analytics.com/collect'
-_API_VERSION = '1'
-_EVENT_TYPE = 'event'
-_TRACKING_ID = 'UA-140187490-2'
+_TRACKING_ID = 'G-DLP3P88DWR'
+_API_KEY = 'y10znyAaTom6tlQxY5xYag'
+_GA_ENDPOINT = f'https://www.google-analytics.com/mp/collect?measurement_id={_TRACKING_ID}&api_secret={_API_KEY}'
 
 # GA custom metrics definitions
-_METRIC_KEYS = {
-    'app_version': 'cd1',
-    'test_name': 'cd2',
-    'test_version': 'cd3',
-    'state': 'cd4',
-    'is_rerun': 'cd5',
-    'is_google': 'cd6',
-    'command': 'cd7',
-    'failed_test_count_threshold': 'cd8',
-    'test_run_command': 'cd9',
-    'test_run_retry_command': 'cd10',
-    'missing_previous_run': 'cd11',
-    'test_id': 'cd12',
-    'is_sequence_run': 'cd13',
-    'user_tag': 'cd14',
-    'operation_mode': 'cd15',
-    'worker_id': 'cd16',
-    'duration_seconds': 'cm1',
-    'device_count': 'cm2',
-    'attempt_count': 'cm3',
-    'failed_module_count': 'cm4',
-    'test_count': 'cm5',
-    'failed_test_count': 'cm6',
-    'elapsed_time_seconds': 'cm7',
-    'prev_total_test_count': 'cm8',
-    'prev_failed_module_count': 'cm9',
-    'prev_failed_test_count': 'cm10',
-    'total_disk_size_byte': 'cm11',
-    'used_disk_size_byte': 'cm12',
-    'free_disk_size_byte': 'cm13',
-    'worker_count': 'cm14'
-}
+_EVENT_METRIC_KEYS = frozenset([
+    # Custom Dimension
+    'event_category',
+    'event_label',
+    'event_value',
+    'app_version',
+    'test_name',
+    'test_version',
+    'state',
+    'is_rerun',
+    'is_google',
+    'command',
+    'failed_test_count_threshold',
+    'test_run_command',
+    'test_run_retry_command',
+    'missing_previous_run',
+    'test_id',
+    'is_sequence_run',
+    'operation_mode',
+    'worker_id',
+    # Custom Metrics
+    'duration_seconds',
+    'device_count',
+    'attempt_count',
+    'failed_module_count',
+    'test_count',
+    'failed_test_count',
+    'elapsed_time_seconds',
+    'prev_total_test_count',
+    'prev_failed_module_count',
+    'prev_failed_test_count',
+    'total_disk_size_byte',
+    'used_disk_size_byte',
+    'free_disk_size_byte',
+    'worker_count',
+])
+_USER_PROPERTIES_KEYS = frozenset([
+    # Custom Dimension
+    'user_tag',
+])
 
 
 @APP.route('/_ah/queue/' + analytics.QUEUE_NAME, methods=['POST'])
@@ -92,10 +100,17 @@ def _UploadEvent(category: str, action: str, **kwargs) -> bool:
       _UPLOAD_ERROR_COUNT.value >= MAX_CONSECUTIVE_UPLOAD_ERRORS):  # pytype: disable=attribute-error  # re-none
     logging.debug('Metrics disabled - skipping %s:%s', category, action)
     return False
-  event = _Event(private_node_config.server_uuid, category, action, **kwargs)
-  data = urllib.parse.urlencode(dict(event)).encode()
+  params = _EventParams(category=category, **kwargs)
+  data = _BuildMeasurementProtocol(
+      server_uuid=private_node_config.server_uuid,
+      action=action,
+      params=params,
+      # User properties
+      user_tag=private_node_config.gms_client_id,
+  )
   request = urllib.request.Request(
-      url=_GA_ENDPOINT, data=data, headers={'User-Agent': 'MTT'})
+      url=_GA_ENDPOINT, data=data, headers={'User-Agent': 'MTT'}
+  )
   try:
     urllib.request.urlopen(request)
     _UPLOAD_ERROR_COUNT.value = 0
@@ -106,38 +121,29 @@ def _UploadEvent(category: str, action: str, **kwargs) -> bool:
   return True
 
 
-class _Event(object):
-  """Holds GA event information."""
+class _EventParams(object):
+  """Holds GA event params."""
 
-  def __init__(self,
-               server_uuid: str,
-               category: str,
-               action: str,
-               label: Optional[str] = None,
-               value: Optional[str] = None,
-               **kwargs):
-    private_node_config = ndb_models.GetPrivateNodeConfig()
-    # Required parameters
-    self.v = _API_VERSION  # API version
-    self.tid = _TRACKING_ID  # Tracking ID
-    self.cid = server_uuid  # Server ID
-    self.t = _EVENT_TYPE  # Event type
-    self.ec = category  # Event category
-    self.ea = action  # Event action
-    # Optional parameters
-    if label:
-      self.el = label
-    if value:
-      self.ev = value
+  def __init__(
+      self,
+      category: str,
+      label: Optional[str] = None,
+      value: Optional[str] = None,
+      **kwargs,
+  ):
+    # Event dimensions
+    self.event_category = category
+    self.event_label = label
+    self.event_value = value
+
     # Custom dimensions and metrics
-    setattr(self, _METRIC_KEYS['app_version'], env.VERSION)
-    setattr(self, _METRIC_KEYS['is_google'], env.IS_GOOGLE)
-    setattr(self, _METRIC_KEYS['user_tag'], private_node_config.gms_client_id)
+    self.app_version = env.VERSION
+    self.is_google = env.IS_GOOGLE
     for key, value in kwargs.items():
-      if not _METRIC_KEYS[key]:
+      if key not in _EVENT_METRIC_KEYS:
         logging.warning('Unknown metric key: %s', key)
         continue
-      setattr(self, _METRIC_KEYS[key], value)
+      setattr(self, key, value)
 
   def __iter__(self) -> Iterator[Tuple[str, str]]:
     for key, value in self.__dict__.items():
@@ -145,7 +151,23 @@ class _Event(object):
         yield key, value
 
   def __eq__(self, other) -> bool:
-    return isinstance(other, _Event) and dict(self) == dict(other)
+    return isinstance(other, _EventParams) and dict(self) == dict(other)
 
   def __ne__(self, other) -> bool:
     return not self.__eq__(other)
+
+
+def _BuildMeasurementProtocol(
+    server_uuid: str, action: str, params: _EventParams, **user_properties
+) -> bytes:
+  """Builds GA measurement protocol JSON post body."""
+  mp = {
+      'client_id': server_uuid,
+      'user_properties': {
+          key: value
+          for key, value in user_properties.items()
+          if key in _USER_PROPERTIES_KEYS and value is not None
+      },
+      'events': [{'name': action, 'params': dict(params)}],
+  }
+  return json.dumps(mp).encode()

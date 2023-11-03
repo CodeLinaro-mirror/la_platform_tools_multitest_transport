@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """Tests for analytics_uploader."""
+import json
 from unittest import mock
 import urllib.parse
 import urllib.request
@@ -42,14 +43,21 @@ class AnalyticsUploaderTest(testbed_dependent_test.TestbedDependentTest):
 
   def assertValidEvent(self, data, server, category, action):
     """Confirms the base event information is present."""
-    self.assertEqual(analytics_uploader._API_VERSION, data['v'])
-    self.assertEqual(analytics_uploader._TRACKING_ID, data['tid'])
-    self.assertEqual(server, data['cid'])
-    self.assertEqual(analytics_uploader._EVENT_TYPE, data['t'])
-    self.assertEqual(category, data['ec'])
-    self.assertEqual(action, data['ea'])
-    self.assertEqual(env.VERSION, data['cd1'])
-    self.assertIn(data['cd6'], [True, 'True'])
+    self.assertListEqual(['client_id', 'user_properties', 'events'], list(data))
+    self.assertEqual(server, data['client_id'])
+    self.assertDictEqual({'user_tag': 'test_user_tag'}, data['user_properties'])
+    # Assert event
+    self.assertLen(data['events'], 1)
+    self.assertListEqual(['name', 'params'], list(data['events'][0]))
+    self.assertEqual(action, data['events'][0]['name'])
+    self.assertDictContainsSubset(
+        {
+            'event_category': category,
+            'app_version': env.VERSION,
+            'is_google': True,
+        },
+        data['events'][0]['params'],
+    )
 
   @mock.patch.object(urllib.request, 'urlopen')
   def testUploadEvent(self, mock_urlopen):
@@ -57,7 +65,7 @@ class AnalyticsUploaderTest(testbed_dependent_test.TestbedDependentTest):
     uploaded = analytics_uploader._UploadEvent('category', 'action')
     self.assertTrue(uploaded)
     request = mock_urlopen.call_args[0][0]
-    data = dict(urllib.parse.parse_qsl(request.data.decode()))
+    data = json.loads(request.data.decode())
     self.assertEqual(analytics_uploader._GA_ENDPOINT, request.get_full_url())
     self.assertValidEvent(data, 'server', 'category', 'action')
 
@@ -83,17 +91,10 @@ class AnalyticsUploaderTest(testbed_dependent_test.TestbedDependentTest):
     uploaded = analytics_uploader._UploadEvent('category', 'action')
     self.assertFalse(uploaded)
 
-  def testEvent_simple(self):
-    """Tests that simple events can be constructed."""
-    event = analytics_uploader._Event('server', 'category', 'action')
-    data = dict(event)
-    self.assertValidEvent(data, 'server', 'category', 'action')
-    self.assertLen(data, 9)  # no additional fields
-
-  def testEvent_complex(self):
-    """Tests that complex events can be constructed."""
-    event = analytics_uploader._Event(
-        'server',
+  @mock.patch.object(urllib.request, 'urlopen')
+  def testUploadEvent_complex(self, mock_urlopen):
+    """Tests complex events are sent to GA correctly."""
+    uploaded = analytics_uploader._UploadEvent(
         'category',
         'action',
         test_name='name',
@@ -111,27 +112,52 @@ class AnalyticsUploaderTest(testbed_dependent_test.TestbedDependentTest):
         total_disk_size_byte=100000,
         used_disk_size_byte=40000,
         free_disk_size_byte=60000,
-        worker_count=2)
-    data = dict(event)
+        worker_count=2,
+        # ignored params
+        none=None,
+        unknown='unknown',
+    )
+    self.assertTrue(uploaded)
+    request = mock_urlopen.call_args[0][0]
+    data = json.loads(request.data.decode())
+    self.assertEqual(analytics_uploader._GA_ENDPOINT, request.get_full_url())
     self.assertValidEvent(data, 'server', 'category', 'action')
-    self.assertLen(data, 25)  # 15 additional fields
-    self.assertEqual('name', data['cd2'])
-    self.assertEqual('version', data['cd3'])
-    self.assertEqual('COMPLETED', data['cd4'])
-    self.assertEqual(True, data['cd5'])
-    self.assertEqual('test_user_tag', data['cd14'])
-    self.assertEqual('on_premise', data['cd15'])
-    self.assertEqual('worker_id', data['cd16'])
-    self.assertEqual(0, data['cm1'])
-    self.assertEqual(1, data['cm2'])
-    self.assertEqual(2, data['cm3'])
-    self.assertEqual(3, data['cm4'])
-    self.assertEqual(4, data['cm5'])
-    self.assertEqual(5, data['cm6'])
-    self.assertEqual(100000, data['cm11'])
-    self.assertEqual(40000, data['cm12'])
-    self.assertEqual(60000, data['cm13'])
-    self.assertEqual(2, data['cm14'])
+    self.assertDictEqual(
+        {
+            'event_category': 'category',
+            'app_version': env.VERSION,
+            'is_google': True,
+            'test_name': 'name',
+            'test_version': 'version',
+            'state': 'COMPLETED',
+            'is_rerun': True,
+            'operation_mode': 'on_premise',
+            'worker_id': 'worker_id',
+            'duration_seconds': 0,
+            'device_count': 1,
+            'attempt_count': 2,
+            'failed_module_count': 3,
+            'test_count': 4,
+            'failed_test_count': 5,
+            'total_disk_size_byte': 100000,
+            'used_disk_size_byte': 40000,
+            'free_disk_size_byte': 60000,
+            'worker_count': 2,
+        },
+        data['events'][0]['params'],
+    )
+
+  @mock.patch.object(urllib.request, 'urlopen')
+  def testUploadEvent_emptyGmsClientId(self, mock_urlopen):
+    """Tests that events are sent to GA without GMS client ID."""
+    private_node_config = ndb_models.GetPrivateNodeConfig()
+    private_node_config.gms_client_id = None
+    private_node_config.put()
+    uploaded = analytics_uploader._UploadEvent('category', 'action')
+    self.assertTrue(uploaded)
+    request = mock_urlopen.call_args[0][0]
+    data = json.loads(request.data.decode())
+    self.assertEmpty(data['user_properties'])
 
 
 if __name__ == '__main__':
