@@ -32,6 +32,7 @@ py_test(
     tags = ["local"],
     deps = [
         ":integration_util",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
     ],
 )
 
@@ -48,6 +49,7 @@ py_test(
     tags = ["local"],
     deps = [
         ":integration_util",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
     ],
 )
 
@@ -60,6 +62,7 @@ py_test(
     tags = ["local"],
     deps = [
         ":integration_util",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
     ],
 )
 
@@ -76,6 +79,7 @@ py_test(
     tags = ["local"],
     deps = [
         ":integration_util",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
     ],
 )
 
@@ -87,6 +91,7 @@ py_test(
     tags = ["local"],
     deps = [
         ":integration_util",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
     ],
 )
 

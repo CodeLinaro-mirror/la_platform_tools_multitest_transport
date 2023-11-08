@@ -28,6 +28,7 @@ py_test(
     deps = [
         ":analytics_lib",
         third_party("absl/testing:absltest"),
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
     ],
 )
 
@@ -54,6 +55,7 @@ py_test(
         third_party("absl/testing:absltest"),
         ":analytics_uploader_lib",
         ":env_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         "//multitest_transport/models:ndb_models_lib",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
     ],
@@ -97,6 +99,7 @@ py_test(
     tags = ["not_run:arm"],
     deps = [
         ":oauth2_util_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
         third_party("google/oauth2:service_account"),
     ],
@@ -125,6 +128,7 @@ py_test(
         third_party("sqlalchemy"),
         third_party("sqlalchemy_utils"),
         third_party("sqlite3"),
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
     ],
 )
 
@@ -153,6 +157,7 @@ py_test(
     tags = ["not_run:arm"],
     deps = [
         ":tfc_client_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
         "@tradefed_cluster//tradefed_cluster/plugins:base_lib",
         third_party("absl/testing:absltest"),
@@ -202,6 +207,7 @@ py_test(
         ":file_util_lib",
         third_party("absl/testing:absltest"),
         third_party("absl/testing:parameterized"),
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
     ],
 )
 
@@ -228,5 +234,6 @@ py_test(
     deps = [
         ":xts_result_lib",
         third_party("absl/testing:absltest"),
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
     ],
 )

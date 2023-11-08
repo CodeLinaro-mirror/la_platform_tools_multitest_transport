@@ -29,6 +29,7 @@ py_test(
     deps = [
         ":android_lib",
         third_party("absl/testing:absltest"),
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
     ],
 )
 
@@ -55,6 +56,7 @@ py_test(
     ],
     deps = [
         ":apfe_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         "//multitest_transport/models:ndb_models_lib",
         third_party("absl/testing:absltest"),
     ],
@@ -78,6 +80,7 @@ py_test(
     ],
     deps = [
         ":http_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         "//multitest_transport/util",
         third_party("absl/testing:absltest"),
     ],
@@ -101,6 +104,7 @@ py_test(
     ],
     deps = [
         ":file_upload_hook_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         "//multitest_transport/models",
         third_party("absl/testing:absltest"),
     ],
@@ -129,6 +133,7 @@ py_test(
         ":gcs_lib",
         third_party("absl/testing:absltest"),
         third_party("apiclient"),
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
     ],
 )
 
@@ -156,6 +161,7 @@ py_test(
         ":google_drive_lib",
         third_party("absl/testing:absltest"),
         third_party("apiclient"),
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
     ],
 )
 
@@ -208,6 +214,7 @@ py_test(
     deps = [
         ":registry_lib",
         third_party("absl/testing:absltest"),
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
     ],
 )
 
@@ -230,6 +237,7 @@ py_test(
     tags = ["not_run:arm"],
     deps = [
         ":web_hook_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         "//multitest_transport/models",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
         third_party("absl/testing:absltest"),

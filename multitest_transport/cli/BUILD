@@ -200,6 +200,7 @@ py_test(
         ":common",
         ":google_auth_util_lib",
         ":unittest_util_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         "@tradefed_cluster//tradefed_cluster/configs:lab_config_lib",
         third_party("absl/testing:absltest"),
         third_party("absl/testing:parameterized"),
@@ -216,6 +217,7 @@ py_test(
         ":unittest_util_lib",
         third_party("absl/testing:absltest"),
         third_party("absl/testing:parameterized"),
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
     ],
 )
 
@@ -228,6 +230,7 @@ py_test(
         ":command_util_lib",
         ":ssh_util_lib",
         third_party("absl/testing:absltest"),
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
     ],
 )
 
@@ -239,6 +242,7 @@ py_test(
     deps = [
         ":gcs_file_util_lib",
         third_party("absl/testing:absltest"),
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         "@tradefed_cluster//tradefed_cluster/configs:lab_config_lib",
     ],
 )
@@ -251,6 +255,7 @@ py_test(
     deps = [
         ":google_auth_util_lib",
         third_party("absl/testing:absltest"),
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
     ],
 )
 
@@ -264,6 +269,7 @@ py_test(
         ":ssh_util_lib",
         third_party("absl/testing:absltest"),
         third_party("absl/testing:parameterized"),
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
     ],
 )
 
@@ -276,6 +282,7 @@ py_test(
         ":control_server_util_lib",
         third_party("apiclient"),
         third_party("absl/testing:absltest"),
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
     ],
 )
 
@@ -287,6 +294,7 @@ py_test(
     deps = [
         ":lab_cli_lib",
         ":unittest_util_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         "@tradefed_cluster//tradefed_cluster/configs:lab_config_lib",
         third_party("absl/testing:absltest"),
         third_party("absl/testing:parameterized"),
@@ -302,6 +310,7 @@ py_test(
         ":ssh_util_lib",
         third_party("absl/testing:absltest"),
         third_party("absl/testing:parameterized"),
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
     ],
 )
 
@@ -316,6 +325,7 @@ py_test(
         third_party("absl/testing:absltest"),
         # TODO: remove six
         third_party("six"),
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
     ],
 )
 

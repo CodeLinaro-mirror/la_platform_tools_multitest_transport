@@ -38,6 +38,7 @@ py_test(
         ":launcher_lib",
         third_party("absl/testing:absltest"),
         third_party("absl/testing:parameterized"),
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
     ],
 )
 
@@ -61,6 +62,7 @@ py_test(
     deps = [
         ":rabbitmq_plugin_lib",
         third_party("absl/testing:absltest"),
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
     ],
 )
 
@@ -85,5 +87,6 @@ py_test(
     deps = [
         ":rabbitmq_puller_lib",
         third_party("absl/testing:absltest"),
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
     ],
 )

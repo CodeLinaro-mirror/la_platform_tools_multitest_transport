@@ -29,6 +29,7 @@ py_test(
     tags = ["not_run:arm"],
     deps = [
         ":build_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
     ],
 )
@@ -54,6 +55,7 @@ py_test(
     tags = ["not_run:arm"],
     deps = [
         ":config_encoder_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
     ],
 )
@@ -84,6 +86,7 @@ py_test(
         ":build_lib",
         ":config_encoder_lib",
         ":config_set_helper_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         "//multitest_transport/test_scheduler",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
     ],
@@ -106,6 +109,7 @@ py_test(
     tags = ["not_run:arm"],
     deps = [
         ":event_log_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
     ],
 )
@@ -139,6 +143,7 @@ py_test(
     tags = ["not_run:arm"],
     deps = [
         ":messages_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
     ],
 )
@@ -187,6 +192,7 @@ py_test(
     ],
     deps = [
         ":sql_models_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         "//multitest_transport/util",
         third_party("absl/testing:absltest"),
         third_party("absl/testing:parameterized"),
@@ -216,6 +222,7 @@ py_test(
     tags = ["not_run:arm"],
     deps = [
         ":test_run_hook_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         "@tradefed_cluster//tradefed_cluster:command_task_api_lib",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
     ],

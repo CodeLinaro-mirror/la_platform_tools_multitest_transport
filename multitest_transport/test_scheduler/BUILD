@@ -31,6 +31,7 @@ py_test(
     tags = ["not_run:arm"],
     deps = [
         ":download_util_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
         "@tradefed_cluster//tradefed_cluster/util:ndb_shim_lib",
     ],
@@ -57,6 +58,7 @@ py_test(
     deps = [
         ":sharding_strategies_lib",
         third_party("absl/testing:absltest"),
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
     ],
 )
 
@@ -93,6 +95,7 @@ py_test(
     deps = [
         ":download_util_lib",
         ":test_kicker_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         "//multitest_transport/models:build_lib",
         "//multitest_transport/models:messages_lib",
         "//multitest_transport/models:ndb_models_lib",
@@ -140,6 +143,7 @@ py_test(
     tags = ["not_run:arm"],
     deps = [
         ":test_plan_kicker_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
     ],
 )
@@ -165,6 +169,7 @@ py_test(
     tags = ["not_run:arm"],
     deps = [
         ":test_result_handler_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
         "@tradefed_cluster//tradefed_cluster/services:task_scheduler_lib",
     ],
@@ -194,6 +199,7 @@ py_test(
     tags = ["not_run:arm"],
     deps = [
         ":test_scheduler_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         "//multitest_transport/models:messages_lib",
         "//multitest_transport/models:ndb_models_lib",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
@@ -229,6 +235,7 @@ py_test(
     deps = [
         ":test_result_handler_lib",
         ":tfc_event_handler_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
     ],
 )
@@ -252,6 +259,7 @@ py_test(
     tags = ["not_run:arm"],
     deps = [
         ":test_run_manager_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
     ],
 )

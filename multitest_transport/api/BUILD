@@ -64,6 +64,7 @@ py_test(
         ":api_test_util_lib",
         ":build_channel_api_lib",
         third_party("google/oauth2:credentials"),
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
     ],
 )
 
@@ -89,6 +90,7 @@ py_test(
     deps = [
         ":api_test_util_lib",
         ":build_channel_provider_api_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
     ],
 )
 
@@ -116,6 +118,7 @@ py_test(
     deps = [
         ":api_test_util_lib",
         ":config_set_api_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
     ],
 )
 
@@ -142,6 +145,7 @@ py_test(
     deps = [
         ":api_test_util_lib",
         ":device_action_api_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
     ],
 )
 
@@ -167,6 +171,7 @@ py_test(
     deps = [
         ":api_test_util_lib",
         ":node_config_api_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
     ],
 )
 
@@ -203,6 +208,7 @@ py_test(
     deps = [
         ":api_test_util_lib",
         ":private_node_config_api_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
     ],
 )
 
@@ -260,6 +266,7 @@ py_test(
     deps = [
         ":api_test_util_lib",
         ":test_api_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
     ],
 )
 
@@ -291,6 +298,7 @@ py_test(
     deps = [
         ":api_test_util_lib",
         ":test_plan_api_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
     ],
 )
 
@@ -317,6 +325,7 @@ py_test(
     deps = [
         ":api_test_util_lib",
         ":test_result_api_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         "//multitest_transport/models",
         "//multitest_transport/util",
         third_party("sqlite3"),
@@ -349,6 +358,7 @@ py_test(
         ":api_test_util_lib",
         ":test_run_action_api_lib",
         third_party("google/oauth2:credentials"),
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
     ],
 )
 
@@ -380,6 +390,7 @@ py_test(
     deps = [
         ":api_test_util_lib",
         ":test_run_api_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
     ],
 )
 
@@ -404,6 +415,7 @@ py_test(
     deps = [
         ":api_test_util_lib",
         ":file_cleaner_api_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
     ],
 )
 
@@ -432,5 +444,6 @@ py_test(
         ":api_test_util_lib",
         ":netdata_api_lib",
         third_party("requests_mock"),
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
     ],
 )

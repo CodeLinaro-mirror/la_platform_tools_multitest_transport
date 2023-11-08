@@ -27,6 +27,7 @@ py_test(
         ":sidekicks",
         third_party("absl/testing:absltest"),
         third_party("webtest"),
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         "//multitest_transport/test_scheduler:download_util_lib",
         "//multitest_transport/util:analytics_lib",
         "//multitest_transport/util:tfc_client_lib",

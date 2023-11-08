@@ -25,6 +25,7 @@ py_test(
         ":criterion_lib",
         third_party("absl/testing:absltest"),
         third_party("pyfakefs:fake_filesystem_unittest"),
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
     ],
 )
 
@@ -46,6 +47,7 @@ py_test(
     srcs = ["file_cleaner_test.py"],
     deps = [
         ":file_cleaner_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         "//multitest_transport/util:env_lib",
         third_party("absl/testing:absltest"),
         third_party("requests_mock"),
@@ -68,6 +70,7 @@ py_test(
     srcs = ["operation_test.py"],
     deps = [
         ":operation_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         "//multitest_transport/util:env_lib",
         third_party("absl/testing:absltest"),
         third_party("pyfakefs:fake_filesystem_unittest"),
@@ -90,6 +93,7 @@ py_test(
     srcs = ["policy_test.py"],
     deps = [
         ":policy_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         "//multitest_transport/util:env_lib",
         third_party("absl/testing:absltest"),
         third_party("pyfakefs:fake_filesystem_unittest"),

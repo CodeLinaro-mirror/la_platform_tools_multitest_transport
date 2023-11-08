@@ -57,6 +57,7 @@ py_test(
     tags = ["not_run:arm"],
     deps = [
         ":cron_kicker_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
         third_party("absl/testing:absltest"),
         third_party("webtest"),
@@ -81,6 +82,7 @@ py_test(
     tags = ["not_run:arm"],
     deps = [
         ":ndb_upgrader_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         "@tradefed_cluster//tradefed_cluster/util:ndb_test_lib",
         third_party("absl/testing:absltest"),
         third_party("protorpc"),
@@ -127,6 +129,7 @@ py_test(
     tags = ["not_run:arm"],
     deps = [
         ":service_checker_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         "@tradefed_cluster//tradefed_cluster/util:ndb_test_lib",
     ],
 )
