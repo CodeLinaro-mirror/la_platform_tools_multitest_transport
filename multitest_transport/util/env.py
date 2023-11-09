@@ -40,6 +40,7 @@ CLI_VERSION = os.environ.get('MTT_CLI_VERSION', UNKNOWN)
 ADB_VERSION = os.environ.get('ADB_VERSION', UNKNOWN)
 IS_DEV_MODE = os.environ.get('DEV_MODE') == 'true'
 IS_LAB_MODE = os.environ.get('LAB_MODE') == 'true'
+IS_OMNILAB_BASED = os.environ.get('IS_OMNILAB_BASED') == 'true'
 OPERATION_MODE = OperationMode(
     os.environ.get('OPERATION_MODE', OperationMode.UNKNOWN))
 IS_GOOGLE = bool(re.search(r'\.google\.com$', HOSTNAME))

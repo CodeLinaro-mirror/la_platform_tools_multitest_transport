@@ -136,6 +136,21 @@ pytype_strict_library(
     ],
 )
 
+pytype_strict_library(
+    name = "device_api_lib",
+    srcs = [
+        "device_api.py",
+    ],
+    deps = [
+        ":base_lib",
+        "//multitest_transport/models",
+        "@tradefed_cluster//tradefed_cluster/util:ndb_shim_lib",
+        third_party("google-endpoints"),
+        third_party("protorpc"),
+        "@tradefed_cluster//tradefed_cluster:api_messages_lib",
+    ],
+)
+
 py_test(
     name = "device_action_api_test",
     srcs = [
@@ -226,6 +241,7 @@ pytype_strict_library(
         ":build_channel_provider_api_lib",
         ":config_set_api_lib",
         ":device_action_api_lib",
+        ":device_api_lib",
         ":file_cleaner_api_lib",
         ":netdata_api_lib",
         ":node_config_api_lib",

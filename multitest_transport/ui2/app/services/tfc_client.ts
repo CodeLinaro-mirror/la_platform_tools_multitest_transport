@@ -35,6 +35,10 @@ export const ONLINE_DEVICE_STATES = ['Allocated', 'Available', 'Fastboot'];
 export class TfcClient {
   /** URL for TFC API methods */
   tfcApiUrl = '/_ah/api/tradefed_cluster/v1';
+  /** URL for MTT API methods */
+  mttApiUrl = '/_ah/api/mtt/v1';
+  /** URL for API methods. It can be MTT or TFC api. */
+  apiUrl = this.tfcApiUrl;
   /** URL for TFC API unassign hosts. */
   unAssignHostsUrl = `/hosts/unassign`;
   /** URL for the TFC API that sets hosts' recovery states in a batch. */
@@ -49,6 +53,7 @@ export class TfcClient {
     if (appData.isAtsLabInstance) {
       this.tfcApiUrl = '/api-proxy';
     }
+    this.apiUrl = appData.isOmniLabBased ? this.mttApiUrl : this.tfcApiUrl;
     this.unAssignHostsUrl = `${this.tfcApiUrl}${this.unAssignHostsUrl}`;
     this.batchSetHostsRecoveryStatesUrl =
         `${this.tfcApiUrl}${this.batchSetHostsRecoveryStatesUrl}`;
@@ -62,7 +67,7 @@ export class TfcClient {
                        .appendAll({'device_states': ONLINE_DEVICE_STATES})
                        .append('count', 1000);
     return this.http.get<DeviceInfosResponse>(
-        `${this.tfcApiUrl}/devices`, {params});
+        `${this.apiUrl}/devices`, {params});
   }
 
   getRequest(requestId: string): Observable<Request> {
@@ -185,8 +190,7 @@ export class TfcClient {
       Observable<mttLabModels.LabDeviceInfosResponse> {
     const params = new HttpParams().set('hostname', hostName);
     return this.http
-        .get<tfcModels.DeviceInfosResponse>(
-            `${this.tfcApiUrl}/devices`, {params})
+        .get<tfcModels.DeviceInfosResponse>(`${this.apiUrl}/devices`, {params})
         .pipe(map(
             result => mttLabModels.convertToLabDeviceInfosResponse(result)));
   }

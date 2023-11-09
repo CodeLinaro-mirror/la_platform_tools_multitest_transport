@@ -51,6 +51,8 @@ export declare interface AppData {
   readonly isAtsLabInstance?: boolean;
   /** Base URL for logs. */
   readonly logUrl?: string;
+  /** True if running in OmniLab Infra. */
+  readonly isOmniLabBased?: boolean;
 }
 
 /** Converts local url to real url. */
