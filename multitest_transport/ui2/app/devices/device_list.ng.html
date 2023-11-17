@@ -398,8 +398,7 @@
         </button>
         <button
           *ngIf="
-            device?.state.toUpperCase() === 'GONE' &&
-            device.test_harness.toUpperCase() === testHarness.TF.toUpperCase()
+            device?.state.toUpperCase() === 'GONE'
           "
           mat-button
           color="accent"
