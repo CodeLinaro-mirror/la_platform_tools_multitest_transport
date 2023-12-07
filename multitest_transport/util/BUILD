@@ -223,6 +223,30 @@ pytype_strict_library(
     ],
 )
 
+pytype_strict_library(
+    name = "olcs_session_client_lib",
+    srcs = ["olcs_session_client.py"],
+    deps = [
+        third_party("grpc"),
+        "@com_google_deviceinfra//src/devtools/common/metrics/stability/util:grpc_error_util_lib",
+        "@com_google_deviceinfra//src/devtools/mobileharness/infra/client/longrunningservice/proto:session_service_py_grpc",
+        "@com_google_deviceinfra//src/devtools/mobileharness/infra/client/longrunningservice/proto:session_service_py_proto",
+    ],
+)
+
+py_test(
+    name = "olcs_session_client_test",
+    srcs = [
+        "olcs_session_client_test.py",
+    ],
+    deps = [
+        ":olcs_session_client_lib",
+        third_party("absl/testing:absltest"),
+        "@com_google_deviceinfra//src/devtools/mobileharness/infra/client/longrunningservice/proto:session_service_py_grpc",
+        "@com_google_deviceinfra//src/devtools/mobileharness/infra/client/longrunningservice/proto:session_service_py_proto",
+    ],
+)
+
 py_test(
     name = "xts_result_test",
     srcs = [
