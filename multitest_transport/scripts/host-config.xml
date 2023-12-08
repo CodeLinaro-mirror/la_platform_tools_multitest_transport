@@ -40,7 +40,6 @@
   <option name="dmgr:device-recovery-interval" value="5m" />
   <option name="dmgr:max-emulators" value="0" />
   <option name="dmgr:max-null-devices" value="0" />
-  <option name="dmgr:max-tcp-devices" value="0" />
   <option name="dmgr:max-gce-devices" value="0" />
   <option name="dmgr:max-remote-devices" value="0" />
   <option name="dmgr:max-local-virtual-devices" value="${MAX_LOCAL_VIRTUAL_DEVICES}" />
