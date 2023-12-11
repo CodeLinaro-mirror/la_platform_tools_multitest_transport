@@ -1,0 +1,100 @@
+{
+  "type": "MANAGED",
+  "user": "test_kicker",
+  "command_infos": [
+    {
+      "command_line": "cts --enable-token-sharding --max-testcase-run-count 2 --retry-strategy RETRY_ANY_FAILURE -m Gesture --invocation-data mtt=1",
+      "run_count": 1,
+      "shard_count": 1,
+      "allow_partial_device_match": false,
+      "test_bench": {
+        "cluster": "default",
+        "host": {
+          "groups": [
+            {
+              "run_targets": [
+                {
+                  "name": "*",
+                  "device_attributes": [
+                    { "name": "device_serial", "value": "29081FDH200D3U" }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "queue_timeout_seconds": 86400,
+  "max_retry_on_test_failures": 3,
+  "prev_test_context": {
+    "command_line": "retry --retry 0 --invocation-data mtt=1",
+    "env_vars": [{ "key": "TFC_ATTEMPT_NUMBER", "value": "2" }],
+    "test_resources": [
+      {
+        "url": "file:///usr/local/google/home/jiuchangz/ats/app_default_bucket/test_runs/10ba08d9-b272-4732-b16d-7f1ac7135771/output/6720215068966912/6105f498-a62d-4a63-bbd6-dc698cce01c6/2023.11.15_15.22.17.zip",
+        "name": "android-cts/results/2023.11.15_15.22.17.zip",
+        "decompress": false,
+        "decompress_dir": "",
+        "params": {}
+      }
+    ]
+  },
+  "test_environment": {
+    "env_vars": [
+      { "key": "JAVA_HOME", "value": "${TF_WORK_DIR}/android-cts/jdk" },
+      {
+        "key": "TF_PATH",
+        "value": "${TF_WORK_DIR}/android-cts/tools:${TF_WORK_DIR}/android-cts/testcases"
+      },
+      {
+        "key": "LD_LIBRARY_PATH",
+        "value": "${TF_WORK_DIR}/android-cts/lib:${TF_WORK_DIR}/android-cts/lib64"
+      },
+      { "key": "WIFI_SSID", "value": "" },
+      { "key": "WIFI_PSK", "value": "" }
+    ],
+    "output_file_patterns": [
+      "android-cts/logs/.*",
+      "android-cts/results/[^/]+/[^/]+\\.html",
+      "android-cts/results/[^/]+/compatibility_result\\..*",
+      "android-cts/results/[^/]+/logo.png",
+      "android-cts/results/[^/]+/test_result.xml",
+      "android-cts/results/[^/]+/proto/test-record\\.pb.*"
+    ],
+    "output_file_upload_url": "file:///usr/local/google/home/jiuchangz/ats/app_default_bucket/test_runs/59da9900-2052-4892-b7b8-decdf4d73f8b/output",
+    "use_subprocess_reporting": true,
+    "invocation_timeout_millis": 0,
+    "output_idle_timeout_millis": 3600000,
+    "jvm_options": ["-Xmx6g"],
+    "java_properties": [{ "key": "CTS_ROOT", "value": "${TF_WORK_DIR}" }],
+    "context_file_pattern": "android-cts/results/[\\d_\\.]+\\.zip",
+    "extra_context_files": ["mtt.json"],
+    "retry_command_line": "retry --retry 0 --invocation-data mtt=1",
+    "log_level": "INFO",
+    "tradefed_config_objects": [
+      {
+        "type": "TARGET_PREPARER",
+        "class_name": "com.android.tradefed.targetprep.DeviceCleaner",
+        "option_values": [{ "key": "post-cleanup", "values": ["SCREEN_OFF"] }]
+      }
+    ],
+    "use_parallel_setup": true
+  },
+  "test_resources": [
+    {
+      "url": "file:///usr/local/google/home/jiuchangz/ats/test_resources/f0444c27d05a4e1f2811b179ffb0b7d376141c27e5a4acba0bae95d5211fb64f",
+      "name": "android-cts.zip",
+      "decompress": true,
+      "decompress_dir": "",
+      "mount_zip": true,
+      "params": {}
+    },
+    {
+      "url": "http://jiuchangz1.bej.corp.google.com:8000/_ah/api/mtt/v1/test_runs/59da9900-2052-4892-b7b8-decdf4d73f8b/metadata",
+      "name": "mtt.json"
+    }
+  ],
+  "affinity_tag": "59da9900-2052-4892-b7b8-decdf4d73f8b"
+}
