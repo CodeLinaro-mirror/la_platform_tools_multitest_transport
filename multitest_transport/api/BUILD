@@ -40,6 +40,32 @@ pytype_strict_library(
 )
 
 pytype_strict_library(
+    name = "build_api_lib",
+    srcs = [
+        "build_api.py",
+    ],
+    deps = [
+        ":base_lib",
+        "//multitest_transport/models",
+        third_party("google-endpoints"),
+        third_party("protorpc"),
+    ],
+)
+
+py_test(
+    name = "build_api_test",
+    srcs = [
+        "build_api_test.py",
+    ],
+    tags = ["not_run:arm"],
+    deps = [
+        ":api_test_util_lib",
+        ":build_api_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
+    ],
+)
+
+pytype_strict_library(
     name = "build_channel_api_lib",
     srcs = [
         "build_channel_api.py",
@@ -237,6 +263,7 @@ pytype_strict_library(
     ],
     deps = [
         ":base_lib",
+        ":build_api_lib",
         ":build_channel_api_lib",
         ":build_channel_provider_api_lib",
         ":config_set_api_lib",

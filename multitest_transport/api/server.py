@@ -19,6 +19,7 @@ from tradefed_cluster import api as tfc_api
 
 
 from multitest_transport.api import base
+from multitest_transport.api import build_api
 from multitest_transport.api import build_channel_api
 from multitest_transport.api import build_channel_provider_api
 from multitest_transport.api import config_set_api
@@ -38,6 +39,7 @@ from multitest_transport.util import env
 
 # List of REST API handlers
 API_HANDLERS = [
+    build_api.BuildApi,
     build_channel_api.BuildChannelApi,
     build_channel_provider_api.BuildChannelProviderApi,
     config_set_api.ConfigSetApi,

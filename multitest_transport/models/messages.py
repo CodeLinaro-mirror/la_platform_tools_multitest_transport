@@ -1471,3 +1471,32 @@ class NetdataAlarm(messages.Message):
 
 class NetdataAlarmList(messages.Message):
   alarms = messages.MessageField(NetdataAlarm, 1, repeated=True)
+
+
+class Build(messages.Message):
+  """A build."""
+  id = messages.StringField(1)
+  name = messages.StringField(2)
+  file_url = messages.StringField(3)
+  size = messages.IntegerField(4)
+  labels = messages.StringField(5, repeated=True)
+
+
+@Converter(ndb_models.Build, Build)
+def _BuildConverter(obj):
+  return Build(
+      id=str(obj.key.id()) if obj.key else None,
+      name=obj.name,
+      file_url=obj.file_url,
+      size=obj.size,
+      labels=obj.labels)
+
+
+@Converter(Build, ndb_models.Build)
+def _BuildMessageConverter(msg):
+  return ndb_models.Build(
+      key=ConvertToKeyOrNone(ndb_models.Build, msg.id),
+      name=msg.name,
+      file_url=msg.file_url,
+      size=msg.size,
+      labels=msg.labels)

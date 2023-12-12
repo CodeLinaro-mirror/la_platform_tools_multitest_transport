@@ -1033,3 +1033,18 @@ def GetFileCleanerSettings():
   """
   obj = ndb.Key(FileCleanerSettings, FILE_CLEANER_SETTINGS_ID).get()
   return obj or DEFAULT_FILE_CLEANER_SETTINGS
+
+
+class Build(ndb.Model):
+  """A build.
+
+  Attributes:
+    name: a build name
+    file_url: file URL of a build.
+    size: size of a build.
+    labels: list of strings users can use to categorize builds.
+  """
+  name = ndb.StringProperty()
+  file_url = ndb.StringProperty()
+  size = ndb.IntegerProperty()
+  labels = ndb.StringProperty(repeated=True)
