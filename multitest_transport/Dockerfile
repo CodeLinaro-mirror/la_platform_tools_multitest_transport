@@ -270,7 +270,10 @@ ENV MTT_USE_HOST_ADB ""
 # Authenticate on GCE (ignored if running locally or file not provided)
 ENV GOOGLE_APPLICATION_CREDENTIALS /tmp/keyfile/key.json
 
-COPY . /mtt
+# In case there are libraries in context folder
+COPY /usr/ /usr/
+
+COPY /mtt/ /mtt/
 # Compile and remove all python source files.
 RUN python3 -m compileall -bq /mtt/google3 \
     && find /mtt/google3 -type f -iname "*.py" ! -iname "gunicorn_config.py" -exec rm -rf {} \;
