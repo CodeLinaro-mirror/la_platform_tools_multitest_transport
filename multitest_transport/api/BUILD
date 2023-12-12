@@ -63,8 +63,8 @@ py_test(
     deps = [
         ":api_test_util_lib",
         ":build_channel_api_lib",
-        third_party("google/oauth2:credentials"),
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
+        third_party("google/oauth2:credentials"),
     ],
 )
 
@@ -144,10 +144,10 @@ pytype_strict_library(
     deps = [
         ":base_lib",
         "//multitest_transport/models",
+        "@tradefed_cluster//tradefed_cluster:api_messages_lib",
         "@tradefed_cluster//tradefed_cluster/util:ndb_shim_lib",
         third_party("google-endpoints"),
         third_party("protorpc"),
-        "@tradefed_cluster//tradefed_cluster:api_messages_lib",
     ],
 )
 
@@ -373,8 +373,8 @@ py_test(
     deps = [
         ":api_test_util_lib",
         ":test_run_action_api_lib",
-        third_party("google/oauth2:credentials"),
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
+        third_party("google/oauth2:credentials"),
     ],
 )
 
@@ -459,7 +459,7 @@ py_test(
     deps = [
         ":api_test_util_lib",
         ":netdata_api_lib",
-        third_party("requests_mock"),
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
+        third_party("requests_mock"),
     ],
 )

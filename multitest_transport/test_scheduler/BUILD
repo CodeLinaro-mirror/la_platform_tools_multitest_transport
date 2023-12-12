@@ -57,8 +57,8 @@ py_test(
     ],
     deps = [
         ":sharding_strategies_lib",
-        third_party("absl/testing:absltest"),
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
+        third_party("absl/testing:absltest"),
     ],
 )
 

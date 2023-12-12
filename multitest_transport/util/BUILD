@@ -27,8 +27,8 @@ py_test(
     ],
     deps = [
         ":analytics_lib",
-        third_party("absl/testing:absltest"),
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
+        third_party("absl/testing:absltest"),
     ],
 )
 
@@ -52,12 +52,12 @@ py_test(
     ],
     tags = ["not_run:arm"],
     deps = [
-        third_party("absl/testing:absltest"),
         ":analytics_uploader_lib",
         ":env_lib",
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         "//multitest_transport/models:ndb_models_lib",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
+        third_party("absl/testing:absltest"),
     ],
 )
 
@@ -123,12 +123,12 @@ py_test(
     ],
     deps = [
         ":sql_util_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         third_party("absl/testing:absltest"),
         third_party("protorpc"),
         third_party("sqlalchemy"),
         third_party("sqlalchemy_utils"),
         third_party("sqlite3"),
-        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
     ],
 )
 
@@ -205,9 +205,9 @@ py_test(
     deps = [
         ":env_lib",
         ":file_util_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         third_party("absl/testing:absltest"),
         third_party("absl/testing:parameterized"),
-        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
     ],
 )
 
@@ -260,10 +260,10 @@ pytype_strict_library(
     name = "olcs_session_client_lib",
     srcs = ["olcs_session_client.py"],
     deps = [
-        third_party("grpc"),
         "@com_google_deviceinfra//src/devtools/common/metrics/stability/util:grpc_error_util_lib",
         "@com_google_deviceinfra//src/devtools/mobileharness/infra/client/longrunningservice/proto:session_service_py_grpc",
         "@com_google_deviceinfra//src/devtools/mobileharness/infra/client/longrunningservice/proto:session_service_py_proto",
+        third_party("grpc"),
     ],
 )
 
@@ -274,9 +274,9 @@ py_test(
     ],
     deps = [
         ":olcs_session_client_lib",
-        third_party("absl/testing:absltest"),
         "@com_google_deviceinfra//src/devtools/mobileharness/infra/client/longrunningservice/proto:session_service_py_grpc",
         "@com_google_deviceinfra//src/devtools/mobileharness/infra/client/longrunningservice/proto:session_service_py_proto",
+        third_party("absl/testing:absltest"),
     ],
 )
 
@@ -290,7 +290,7 @@ py_test(
     ],
     deps = [
         ":xts_result_lib",
-        third_party("absl/testing:absltest"),
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
+        third_party("absl/testing:absltest"),
     ],
 )

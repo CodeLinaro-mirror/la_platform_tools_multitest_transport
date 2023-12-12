@@ -28,8 +28,8 @@ py_test(
     ],
     deps = [
         ":android_lib",
-        third_party("absl/testing:absltest"),
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
+        third_party("absl/testing:absltest"),
     ],
 )
 
@@ -131,9 +131,9 @@ py_test(
     ],
     deps = [
         ":gcs_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         third_party("absl/testing:absltest"),
         third_party("apiclient"),
-        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
     ],
 )
 
@@ -159,9 +159,9 @@ py_test(
     ],
     deps = [
         ":google_drive_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         third_party("absl/testing:absltest"),
         third_party("apiclient"),
-        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
     ],
 )
 
@@ -213,8 +213,8 @@ py_test(
     ],
     deps = [
         ":registry_lib",
-        third_party("absl/testing:absltest"),
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
+        third_party("absl/testing:absltest"),
     ],
 )
 

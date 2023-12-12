@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""A module to provide test APIs."""
+"""A module to provide device APIs."""
 # Non-standard docstrings are used to generate the API documentation.
 
 import endpoints

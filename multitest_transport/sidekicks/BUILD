@@ -12,9 +12,9 @@ pytype_strict_library(
     ],
     visibility = ["//multitest_transport"],
     deps = [
-        third_party("flask"),
         "//multitest_transport/test_scheduler:download_util_lib",
         "//multitest_transport/util",
+        third_party("flask"),
     ],
 )
 
@@ -25,12 +25,12 @@ py_test(
     ],
     deps = [
         ":sidekicks",
-        third_party("absl/testing:absltest"),
-        third_party("webtest"),
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         "//multitest_transport/test_scheduler:download_util_lib",
         "//multitest_transport/util:analytics_lib",
         "//multitest_transport/util:tfc_client_lib",
         "@tradefed_cluster//tradefed_cluster:api_messages_lib",
+        third_party("absl/testing:absltest"),
+        third_party("webtest"),
     ],
 )

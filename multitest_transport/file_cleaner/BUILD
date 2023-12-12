@@ -23,9 +23,9 @@ py_test(
     srcs = ["criterion_test.py"],
     deps = [
         ":criterion_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         third_party("absl/testing:absltest"),
         third_party("pyfakefs:fake_filesystem_unittest"),
-        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
     ],
 )
 
