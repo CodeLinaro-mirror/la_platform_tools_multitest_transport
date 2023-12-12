@@ -778,7 +778,7 @@ export declare interface TestRun {
   /** State of the test run */
   state: TestRunState;
   /** Additional state information */
-  state_info?: TestRunState;
+  state_info?: string;
   /** Link to output files folder */
   output_url?: string;
   /** Information on the test package */
