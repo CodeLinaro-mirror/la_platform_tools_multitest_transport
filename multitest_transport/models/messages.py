@@ -1500,3 +1500,9 @@ def _BuildMessageConverter(msg):
       file_url=msg.file_url,
       size=msg.size,
       labels=msg.labels)
+
+
+class BuildList(messages.Message):
+  """A list of builds."""
+
+  builds = messages.MessageField(Build, 1, repeated=True)

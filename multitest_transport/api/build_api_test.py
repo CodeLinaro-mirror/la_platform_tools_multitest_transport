@@ -17,10 +17,12 @@
 import json
 
 from absl.testing import absltest
+from protorpc import protojson
 
 
 from multitest_transport.api import api_test_util
 from multitest_transport.api import build_api
+from multitest_transport.models import messages
 from multitest_transport.models import ndb_models
 
 
@@ -29,7 +31,26 @@ class BuildApiTest(api_test_util.TestCase):
   def setUp(self):
     super(BuildApiTest, self).setUp(build_api.BuildApi)
 
+  def _CreateMockBuild(self):
+    build = ndb_models.Build(
+        name='Foo',
+        file_url='file:///root/file/path',
+        size=123123123,
+        labels=[
+            'MR',
+            'UDC',
+        ],
+    )
+    build.put()
+    return build
+
+  def testList(self):
+    """Tests builds.list API."""
+    res = self.app.get('/_ah/api/mtt/v1/builds')
+    self.assertIsNotNone(res)
+
   def testCreate(self):
+    """Tests builds.create API."""
     data = {
         'name': 'Foo',
         'file_url': 'file:///root/file/path',
@@ -48,6 +69,54 @@ class BuildApiTest(api_test_util.TestCase):
     self.assertEqual(data['file_url'], build.file_url)
     self.assertEqual(data['size'], str(build.size))
     self.assertEqual(data['labels'], build.labels)
+
+  def testGet(self):
+    """Tests builds.get API."""
+    build = self._CreateMockBuild()
+
+    res = self.app.get('/_ah/api/mtt/v1/builds/%s' % build.key.id())
+    msg = protojson.decode_message(messages.Build, res.body)
+    self.assertEqual(messages.Convert(build, messages.Build), msg)
+
+  def testGet_notFound(self):
+    """Tests builds.get with unknown ID."""
+    res = self.app.get('/_ah/api/mtt/v1/builds/%s' % 123456, expect_errors=True)
+    self.assertEqual('404 Not Found', res.status)
+
+  def testUpdate(self):
+    """Tests builds.update API."""
+    build = self._CreateMockBuild()
+    build_msg = messages.Convert(build, messages.Build)
+    build_msg.name = 'Bar'
+    build_msg.labels = ['IR', 'TM']
+    data = protojson.encode_message(build_msg)
+
+    res = self.app.put('/_ah/api/mtt/v1/builds/%s' % build.key.id(), data)
+
+    updated_build_msg = protojson.decode_message(messages.Build, res.body)
+    self.assertEqual(build_msg, updated_build_msg)
+
+  def testDelete(self):
+    """Tests builds.delete API."""
+    build = self._CreateMockBuild()
+    self.assertIsNotNone(build.key.get())
+    self.app.delete(
+        '/_ah/api/mtt/v1/builds', params={'build_ids': [build.key.id()]}
+    )
+    self.assertIsNone(build.key.get())
+
+  def testDelete_skipFailedBuilds(self):
+    """Tests builds.delete API with unknown ID."""
+    build = self._CreateMockBuild()
+    self.assertIsNotNone(build.key.get())
+    res = self.app.delete(
+        '/_ah/api/mtt/v1/builds',
+        params={'build_ids': [build.key.id(), 'unknown_id']},
+        expect_errors=True,
+    )
+    self.assertIsNone(build.key.get())
+    self.assertEqual('400 Bad Request', res.status)
+
 
 if __name__ == '__main__':
   absltest.main()
