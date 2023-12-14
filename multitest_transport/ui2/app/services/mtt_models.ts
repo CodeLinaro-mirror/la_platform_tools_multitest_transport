@@ -1074,3 +1074,22 @@ export declare interface NetdataAlarm {
 export declare interface NetdataAlarmList {
   alarms?: NetdataAlarm[];
 }
+
+/** Build info. */
+export declare interface Build {
+  /** An auto-generated build id */
+  id: string;
+  /** A build name */
+  name: string;
+  /** A file URL for this build */
+  file_url: string;
+  /** Size of this build (bytes) */
+  size: number;
+  /** List of strings to filter builds */
+  labels: string[];
+}
+
+/** List of Builds */
+export declare interface BuildList {
+  builds: Build[];
+}

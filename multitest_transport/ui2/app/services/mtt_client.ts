@@ -36,6 +36,7 @@ export class MttClient {
   readonly testRunActions: TestRunActionClient;
   readonly testResults: TestResultClient;
   readonly netdata: NetdataClient;
+  readonly builds: BuildClient;
 
   constructor(
       private readonly http: HttpClient, private readonly auth: AuthService) {
@@ -44,6 +45,7 @@ export class MttClient {
     this.testRunActions = new TestRunActionClient(http, auth);
     this.testResults = new TestResultClient(http);
     this.netdata = new NetdataClient(http);
+    this.builds = new BuildClient(http);
   }
 
   /**
@@ -586,5 +588,44 @@ export class NetdataClient {
       },
     });
     return this.http.get(`${NetdataClient.PATH}/alarms`, {params});
+  }
+}
+
+/** Provides access to the Build API. */
+export class BuildClient {
+  /** Backend path which serves Build data. */
+  static readonly PATH = `${MTT_API_URL}/builds`;
+
+  constructor(private readonly http: HttpClient) {}
+
+  /** Lists all builds. */
+  list(): Observable<model.BuildList> {
+    return this.http.get<model.BuildList>(BuildClient.PATH);
+  }
+
+  /** Returns a build using its ID. */
+  get(id: string): Observable<model.Build> {
+    return this.http.get<model.Build>(
+        `${BuildClient.PATH}/${encodeURIComponent(id)}`);
+  }
+
+  /** Creates a new build. */
+  create(data: model.Build): Observable<model.Build> {
+    const context = AnalyticsContext.create('builds', 'create');
+    return this.http.post<model.Build>(BuildClient.PATH, data, {context});
+  }
+
+  /** Updates an existing build. */
+  update(id: string, data: model.Build): Observable<model.Build> {
+    const context = AnalyticsContext.create('builds', 'update');
+    return this.http.put<model.Build>(
+        `${BuildClient.PATH}/${encodeURIComponent(id)}`, data, {context});
+  }
+
+  /** Deletes a list of builds. */
+  delete(ids: string[]): Observable<void> {
+    const context = AnalyticsContext.create('builds', 'delete');
+    const params = new HttpParams().appendAll({'build_ids': ids});
+    return this.http.delete<void>(BuildClient.PATH, {context, params});
   }
 }

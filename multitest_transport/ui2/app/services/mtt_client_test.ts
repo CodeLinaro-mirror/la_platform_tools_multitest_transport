@@ -20,8 +20,8 @@ import {of as observableOf} from 'rxjs';
 import * as testUtil from '../testing/mtt_mocks';
 
 import {AuthService, REDIRECT_URI} from './auth_service';
-import {MTT_API_URL, MttClient, NetdataClient, TestRunActionClient} from './mtt_client';
-import {BuildChannelList, TestPlanList, TestRunAction, TestRunActionRefList} from './mtt_models';
+import {BuildClient, MTT_API_URL, MttClient, NetdataClient, TestRunActionClient} from './mtt_client';
+import {Build, BuildChannelList, BuildList, TestPlanList, TestRunAction, TestRunActionRefList} from './mtt_models';
 
 describe('MttClient', () => {
   let httpClientSpy: jasmine.SpyObj<HttpClient>;
@@ -835,6 +835,71 @@ describe('NetdataClient', () => {
     expect(http.get).toHaveBeenCalledWith(
         `${NetdataClient.PATH}/alarms`, {params});
     expect(http.get).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('BuildClient', () => {
+  let http: jasmine.SpyObj<HttpClient>;
+  let client: BuildClient;
+
+  const build: Build = {
+    id: '123456',
+    name: 'Foo',
+    file_url: 'file:///root/file/path',
+    size: 123123123,
+    labels: [
+      'MR',
+      'UDC',
+    ]
+  };
+
+  beforeEach(() => {
+    http = jasmine.createSpyObj<HttpClient>(
+        'HttpClient', ['get', 'post', 'put', 'delete']);
+    client = new BuildClient(http);
+  });
+
+  it('can list builds', () => {
+    const buildList: BuildList = {builds: [build]};
+    http.get.and.returnValue(observableOf(buildList));
+    client.list().subscribe(expectResponse(buildList));
+    expect(http.get).toHaveBeenCalledWith(BuildClient.PATH);
+    expect(http.get).toHaveBeenCalledTimes(1);
+  });
+
+  it('can get build', () => {
+    http.get.and.returnValue(observableOf(build));
+    client.get('id').subscribe(expectResponse(build));
+    expect(http.get).toHaveBeenCalledWith(BuildClient.PATH + '/id');
+    expect(http.get).toHaveBeenCalledTimes(1);
+  });
+
+  it('can create build', () => {
+    http.post.and.returnValue(observableOf(build));
+    client.create(build).subscribe(expectResponse(build));
+    expect(http.post).toHaveBeenCalledWith(
+        BuildClient.PATH, build, jasmine.any(Object));
+    expect(http.post).toHaveBeenCalledTimes(1);
+  });
+
+  it('can update build', () => {
+    http.put.and.returnValue(observableOf(build));
+    client.update('id', build).subscribe(expectResponse(build));
+    expect(http.put).toHaveBeenCalledWith(
+        BuildClient.PATH + '/id', build, jasmine.any(Object));
+    expect(http.put).toHaveBeenCalledTimes(1);
+  });
+
+  it('can delete builds', () => {
+    http.delete.and.returnValue(observableOf());
+    client.delete(['id_1', 'id_2']).subscribe();
+    const params = new HttpParams()
+                       .append('build_ids', 'id_1')
+                       .append('build_ids', 'id_2');
+    expect(http.delete)
+        .toHaveBeenCalledWith(
+            BuildClient.PATH, jasmine.objectContaining({params}));
+    expect(http.delete).toHaveBeenCalledTimes(1);
   });
 });
 
