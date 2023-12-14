@@ -39,7 +39,7 @@ class BuildApi(remote.Service):
   )
   def List(self, request):
     """Lists builds."""
-    builds = list(ndb_models.Build.query())
+    builds = list(ndb_models.Build.query().order(-ndb_models.Build.create_time))
     build_msgs = mtt_messages.ConvertList(builds, mtt_messages.Build)
     return mtt_messages.BuildList(builds=build_msgs)
 
@@ -89,18 +89,18 @@ class BuildApi(remote.Service):
   def Update(self, request):
     """Updates a build.
 
+    Only name and labels fields are updatable.
+
     Body:
       Build data
     Parameters:
       build_id: Build ID
     """
-    build_key, _ = self._getBuild(request.build_id)
-    build = mtt_messages.Convert(
-        request, ndb_models.Build, from_cls=mtt_messages.Build
-    )
-    build.key = build_key
-    build.put()
-    return mtt_messages.Convert(build, mtt_messages.Build)
+    _, existing_build = self._getBuild(request.build_id)
+    existing_build.name = request.name
+    existing_build.labels = request.labels
+    existing_build.put()
+    return mtt_messages.Convert(existing_build, mtt_messages.Build)
 
   @base.ApiMethod(
       endpoints.ResourceContainer(

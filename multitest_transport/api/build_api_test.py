@@ -27,6 +27,9 @@ from multitest_transport.models import ndb_models
 
 
 class BuildApiTest(api_test_util.TestCase):
+  """Unit tests for build APIs."""
+
+  FILE_URL = 'file:///root/file/path'
 
   def setUp(self):
     super(BuildApiTest, self).setUp(build_api.BuildApi)
@@ -34,7 +37,7 @@ class BuildApiTest(api_test_util.TestCase):
   def _CreateMockBuild(self):
     build = ndb_models.Build(
         name='Foo',
-        file_url='file:///root/file/path',
+        file_url=self.FILE_URL,
         size=123123123,
         labels=[
             'MR',
@@ -53,7 +56,7 @@ class BuildApiTest(api_test_util.TestCase):
     """Tests builds.create API."""
     data = {
         'name': 'Foo',
-        'file_url': 'file:///root/file/path',
+        'file_url': self.FILE_URL,
         'size': '123123123',
         'labels': [
             'UDC',
@@ -94,7 +97,28 @@ class BuildApiTest(api_test_util.TestCase):
     res = self.app.put('/_ah/api/mtt/v1/builds/%s' % build.key.id(), data)
 
     updated_build_msg = protojson.decode_message(messages.Build, res.body)
+    # Verify that the update_time field is updated automatically.
+    self.assertGreater(updated_build_msg.update_time, build_msg.update_time)
+    # Reset update_time to verify other fields.
+    updated_build_msg.update_time = None
+    build_msg.update_time = None
     self.assertEqual(build_msg, updated_build_msg)
+
+  def testUpdate_skipChangesToReadOnlyFields(self):
+    """Tests builds.update API with changes to read only fields."""
+    build = self._CreateMockBuild()
+    build_msg = messages.Convert(build, messages.Build)
+    build_msg.name = 'Bar'
+    build_msg.file_url = 'file:///root/file/new_path'
+    data = protojson.encode_message(build_msg)
+
+    res = self.app.put('/_ah/api/mtt/v1/builds/%s' % build.key.id(), data)
+
+    updated_build_msg = protojson.decode_message(messages.Build, res.body)
+    # Verify that the name field is updated.
+    self.assertEqual(updated_build_msg.name, 'Bar')
+    # Verify that the file_url field remains the same as before.
+    self.assertEqual(updated_build_msg.file_url, self.FILE_URL)
 
   def testDelete(self):
     """Tests builds.delete API."""

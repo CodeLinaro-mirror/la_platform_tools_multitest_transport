@@ -1480,6 +1480,8 @@ class Build(messages.Message):
   file_url = messages.StringField(3)
   size = messages.IntegerField(4)
   labels = messages.StringField(5, repeated=True)
+  create_time = message_types.DateTimeField(6)
+  update_time = message_types.DateTimeField(7)
 
 
 @Converter(ndb_models.Build, Build)
@@ -1489,7 +1491,10 @@ def _BuildConverter(obj):
       name=obj.name,
       file_url=obj.file_url,
       size=obj.size,
-      labels=obj.labels)
+      labels=obj.labels,
+      create_time=_AddTimezone(obj.create_time),
+      update_time=_AddTimezone(obj.update_time),
+  )
 
 
 @Converter(Build, ndb_models.Build)

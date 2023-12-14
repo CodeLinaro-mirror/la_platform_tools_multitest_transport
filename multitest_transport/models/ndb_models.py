@@ -1043,8 +1043,12 @@ class Build(ndb.Model):
     file_url: file URL of a build.
     size: size of a build.
     labels: list of strings users can use to categorize builds.
+    create_time: time a build is created.
+    update_time: time a build is last updated.
   """
   name = ndb.StringProperty()
   file_url = ndb.StringProperty()
   size = ndb.IntegerProperty()
   labels = ndb.StringProperty(repeated=True)
+  create_time = ndb.DateTimeProperty(auto_now_add=True)
+  update_time = ndb.DateTimeProperty(auto_now=True)
