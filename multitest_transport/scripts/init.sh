@@ -175,14 +175,16 @@ then
     echo "WIFI_IPV6_PREFIX=${WIFI_IPV6_PREFIX}"
     echo "ETHERNET_IPV6_PREFIX=${ETHERNET_IPV6_PREFIX}"
     # Reference: https://github.com/google/android-cuttlefish/blob/main/debian/cuttlefish-common.default
-    wifi_ipv6_prefix="${WIFI_IPV6_PREFIX}" \
+    num_cvd_accounts="${MAX_LOCAL_VIRTUAL_DEVICES}" \
+      wifi_ipv6_prefix="${WIFI_IPV6_PREFIX}" \
       wifi_ipv6_prefix_length=64 \
       ethernet_ipv6_prefix="${ETHERNET_IPV6_PREFIX}" \
       ethernet_ipv6_prefix_length=64 \
       /etc/init.d/cuttlefish-common start
     start_ndppd "${WIFI_IPV6_PREFIX}/64" "${ETHERNET_IPV6_PREFIX}/64"
   else
-    /etc/init.d/cuttlefish-common start
+    num_cvd_accounts="${MAX_LOCAL_VIRTUAL_DEVICES}" \
+      /etc/init.d/cuttlefish-common start
   fi
 fi
 
