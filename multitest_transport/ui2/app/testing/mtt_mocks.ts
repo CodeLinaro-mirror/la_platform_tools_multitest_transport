@@ -620,3 +620,15 @@ export function toTitleCase(str: string) {
       (word) =>
           `${word.charAt(0).toUpperCase()}${word.substr(1).toLowerCase()}`);
 }
+
+/** Creates a Build object. */
+export function newMockBuild(
+    id: string, name: string, fileUrl: string, labels: string[]) {
+  return {
+    id,
+    name,
+    file_url: fileUrl,
+    size: 123123123,
+    labels,
+  };
+}

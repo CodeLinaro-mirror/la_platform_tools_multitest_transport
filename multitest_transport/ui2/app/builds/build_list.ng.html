@@ -1,0 +1,77 @@
+<!--
+ Copyright 2023 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<mat-toolbar>
+  <mat-toolbar-row fxLayoutAlign="space-between center">
+    <h1>Builds</h1>
+    <button routerLink='/builds/new' mat-flat-button color="accent">
+      Create a build
+    </button>
+  </mat-toolbar-row>
+</mat-toolbar>
+
+<mat-spinner class="loading-spinner" color="accent" *ngIf="isLoading"></mat-spinner>
+
+<mat-table
+  [dataSource]="dataSource"
+  aria-label="Build list">
+
+  <!-- Build name -->
+  <ng-container matColumnDef="name">
+    <mat-header-cell *matHeaderCellDef fxFlex> Name </mat-header-cell>
+    <mat-cell *matCellDef="let build" fxFlex> {{build.name}} </mat-cell>
+  </ng-container>
+
+  <!-- Build source url -->
+  <ng-container matColumnDef="source">
+    <mat-header-cell *matHeaderCellDef fxFlex class="build-source-column"> Source </mat-header-cell>
+    <mat-cell *matCellDef="let build" fxFlex class="build-source-column"> {{build.file_url}} </mat-cell>
+  </ng-container>
+
+  <!-- Build size -->
+  <ng-container matColumnDef="size">
+    <mat-header-cell *matHeaderCellDef fxFlex="80px"> Size </mat-header-cell>
+    <mat-cell *matCellDef="let build" fxFlex="80px"> {{build.size | fileSize}} </mat-cell>
+  </ng-container>
+
+  <!-- Build labels -->
+  <ng-container matColumnDef="labels">
+    <mat-header-cell *matHeaderCellDef fxFlex="120px"> Labels </mat-header-cell>
+    <mat-cell *matCellDef="let build" fxFlex="120px">
+      <overflow-list [data]="build.labels || []"
+      [overflowListType]="OverflowListType.CHIP">
+      </overflow-list>
+    </mat-cell>
+  </ng-container>
+
+  <!-- Build created date -->
+  <ng-container matColumnDef="create_time">
+    <mat-header-cell *matHeaderCellDef fxFlex="120px">Created</mat-header-cell>
+    <mat-cell *matCellDef="let build" fxFlex="120px"
+              [title]="build.create_time | utc | date:'MM/dd/yyyy h:mma'">
+      {{build.create_time | utc | fromNow}}
+    </mat-cell>
+  </ng-container>
+
+  <mat-header-row *matHeaderRowDef="displayColumns"></mat-header-row>
+  <mat-row *matRowDef="let row; columns: displayColumns;"></mat-row>
+</mat-table>
+
+<div [class.loading-mask]="!isLoading">
+  <div class="empty" *ngIf="!dataSource.data.length">
+    No builds found.
+  </div>
+</div>

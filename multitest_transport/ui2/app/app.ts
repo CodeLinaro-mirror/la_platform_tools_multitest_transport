@@ -29,6 +29,7 @@ import {AuthReturnPage} from './auth/auth_return_page';
 import {BuildChannelEditPage} from './build_channels/build_channel_edit_page';
 import {BuildChannelList} from './build_channels/build_channel_list';
 import {BuildCreatePage} from './builds/build_create_page';
+import {BuildListPage} from './builds/build_list_page';
 import {ConfigSetList} from './config_sets/config_set_list';
 import {ConfigSetPicker} from './config_sets/config_set_picker';
 import {DeviceActionEditPage} from './device_actions/device_action_edit_page';
@@ -77,6 +78,7 @@ export const routes: Routes = [
     component: BuildChannelEditPage,
     canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
   },
+  {path: 'builds', component: BuildListPage},
   {
     path: 'builds/new',
     component: BuildCreatePage,
