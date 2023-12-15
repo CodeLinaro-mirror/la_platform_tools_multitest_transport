@@ -46,10 +46,10 @@ ng_module(
     ],
     strict_templates = False,
     deps = [
-        third_party_js("angular_components:cdk_a11y"),
         third_party_js("angular2:common_http"),
         third_party_js("angular2:core"),
         third_party_js("angular2:forms"),
+        third_party_js("angular_components:cdk_a11y"),
         third_party_js("angular_components:material_button"),
         third_party_js("angular_components:material_dialog"),
         third_party_js("angular_components:material_form_field"),
