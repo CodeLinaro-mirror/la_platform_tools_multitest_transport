@@ -1,0 +1,78 @@
+<!--
+ Copyright 2023 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<div class="header">
+  <div class="back-button-label">Builds</div>
+  <h1 class="subtitle">
+    <button mat-icon-button (click)="back()" #backButton id="back-button"
+      aria-label="Return to builds page"
+      matTooltip="Return to builds page">
+      <mat-icon class="back-button-icon">arrow_back</mat-icon>
+    </button>
+    Create New Build
+  </h1>
+</div>
+
+<div class="page">
+  <!-- Name Field -->
+  <mat-form-field appearance="outline" [floatLabel]="'always'" fxLayout="column">
+    <mat-label> Name </mat-label>
+    <input matInput type="text" [(ngModel)]="data.name" name="name" required #name="ngModel">
+    <mat-error *ngIf="name.invalid && name.touched">Name is required</mat-error>
+  </mat-form-field>
+
+  <!-- Labels Field -->
+  <mat-form-field appearance="outline" floatLabel="always">
+    <mat-chip-grid #chipList aria-label="Labels">
+      <mat-chip-row
+        *ngFor="let label of data.labels"
+        (removed)="removeLabel(label)">
+        {{ label }}
+        <mat-icon matChipRemove>cancel</mat-icon>
+      </mat-chip-row>
+      <input
+        placeholder="Labels"
+        [matChipInputFor]="chipList"
+        [matChipInputSeparatorKeyCodes]="separatorKeyCodes"
+        [matChipInputAddOnBlur]="true"
+        (matChipInputTokenEnd)="addLabel($event)"/>
+    </mat-chip-grid>
+  </mat-form-field>
+
+  <!-- Source Field -->
+  <!-- TODO: Support to select a file -->
+  <mat-form-field appearance="outline" floatLabel="always" fxLayout="column">
+    <mat-label> Source </mat-label>
+    <input matInput type="text" [(ngModel)]="data.file_url" readonly required #url="ngModel">
+    <mat-hint>
+      {{data.size | fileSize}}
+    </mat-hint>
+    <mat-error *ngIf="url.invalid && url.touched">
+      Source is required
+  </mat-error>
+  </mat-form-field>
+
+  <div class="buttons">
+    <button mat-flat-button class="create-button" color="accent" type="button" aria-label="Create"
+        (click)="submit()">
+      Create
+    </button>
+    <button mat-button class="cancel-button" color="accent" type="button" aria-label="Cancel"
+        (click)="back()">
+      Cancel
+    </button>
+  </div>
+</div>

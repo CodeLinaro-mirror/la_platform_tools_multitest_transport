@@ -43,6 +43,7 @@ ng_module(
         third_party_js("rxjs"),
         "//multitest_transport/ui2/app/auth",
         "//multitest_transport/ui2/app/build_channels",
+        "//multitest_transport/ui2/app/builds",
         "//multitest_transport/ui2/app/config_sets",
         "//multitest_transport/ui2/app/device_actions",
         "//multitest_transport/ui2/app/devices",

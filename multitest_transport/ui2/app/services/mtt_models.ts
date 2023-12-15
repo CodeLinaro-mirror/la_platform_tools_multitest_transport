@@ -1089,6 +1089,15 @@ export declare interface Build {
   labels: string[];
 }
 
+/** Initialize a build. */
+export function initBuild(): Partial<Build> {
+  return {
+    name: '',
+    file_url: '',
+    labels: [],
+  };
+}
+
 /** List of Builds */
 export declare interface BuildList {
   builds: Build[];
