@@ -67,6 +67,7 @@ import {TestListPage} from './tests/test_list_page';
 
 /** Routing paths for the sidenav */
 export const routes: Routes = [
+  {path: 'auth_return', component: AuthReturnPage},
   {path: 'build_channels/new', component: BuildChannelEditPage},
   {
     path: 'build_channels/new',
@@ -110,79 +111,6 @@ export const routes: Routes = [
   },
   {path: 'devices', component: DeviceListPage},
   {path: 'devices/:id', component: DeviceDetailsPage},
-  {path: 'hosts', component: HostListPage},
-  {path: 'hosts/:id', component: HostDetailsPage},
-  {
-    path: 'settings',
-    component: SettingPage,
-    children: [
-      {path: 'build_channels', component: BuildChannelList},
-      {path: 'config_sets', component: ConfigSetList},
-      {path: 'device_actions', component: DeviceActionList},
-      {path: 'test_run_actions', component: TestRunActionList},
-      {
-        path: 'general',
-        component: SettingForm,
-        canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
-      },
-      {path: 'file_cleaner', component: FileCleanerSettingList},
-      {path: '**', redirectTo: '/settings/general', pathMatch: 'full'},
-    ]
-  },
-  {path: 'tests', component: TestListPage},
-  {
-    path: 'tests/new',
-    component: TestEditPage,
-    canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
-  },
-  {
-    path: 'tests/new/:copy_id',
-    component: TestEditPage,
-    canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
-  },
-  {
-    path: 'tests/:id',
-    component: TestEditPage,
-    canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
-  },
-  {path: 'test_runs', component: TestRunListPage},
-  {
-    path: 'test_run_actions/new',
-    component: TestRunActionEditPage,
-    canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
-  },
-  {
-    path: 'test_run_actions/new/:copy_id',
-    component: TestRunActionEditPage,
-    canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
-  },
-  {
-    path: 'test_run_actions/:id',
-    component: TestRunActionEditPage,
-    canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
-  },
-  {path: 'test_plans', component: TestPlanListPage},
-  {
-    path: 'test_plans/new',
-    component: TestPlanEditPage,
-    canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
-  },
-  {
-    path: 'test_plans/:id',
-    component: TestPlanEditPage,
-    canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
-  },
-  {
-    path: 'test_runs/new',
-    component: NewTestRunPage,
-    canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
-  },
-  {path: 'test_runs/:id', component: TestRunDetailPage},
-  {path: 'auth_return', component: AuthReturnPage},
-  {
-    path: FILE_BROWSER_PATH,
-    children: [{path: '**', component: FileBrowserPage}]
-  },
   {
     path: 'file_cleaner/policy/new',
     component: FileCleanerPolicyEditPage,
@@ -201,6 +129,78 @@ export const routes: Routes = [
   {
     path: 'file_cleaner/config/:index',
     component: FileCleanerConfigEditPage,
+    canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
+  },
+  {path: 'hosts', component: HostListPage},
+  {path: 'hosts/:id', component: HostDetailsPage},
+  {
+    path: 'settings',
+    component: SettingPage,
+    children: [
+      {path: 'build_channels', component: BuildChannelList},
+      {path: 'config_sets', component: ConfigSetList},
+      {path: 'device_actions', component: DeviceActionList},
+      {path: 'file_cleaner', component: FileCleanerSettingList},
+      {
+        path: 'general',
+        component: SettingForm,
+        canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
+      },
+      {path: 'test_run_actions', component: TestRunActionList},
+      {path: '**', redirectTo: '/settings/general', pathMatch: 'full'},
+    ]
+  },
+  {path: 'test_plans', component: TestPlanListPage},
+  {
+    path: 'test_plans/new',
+    component: TestPlanEditPage,
+    canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
+  },
+  {
+    path: 'test_plans/:id',
+    component: TestPlanEditPage,
+    canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
+  },
+  {
+    path: 'test_run_actions/new',
+    component: TestRunActionEditPage,
+    canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
+  },
+  {
+    path: 'test_run_actions/new/:copy_id',
+    component: TestRunActionEditPage,
+    canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
+  },
+  {
+    path: 'test_run_actions/:id',
+    component: TestRunActionEditPage,
+    canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
+  },
+  {path: 'test_runs', component: TestRunListPage},
+  {
+    path: 'test_runs/new',
+    component: NewTestRunPage,
+    canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
+  },
+  {path: 'test_runs/:id', component: TestRunDetailPage},
+  {
+    path: FILE_BROWSER_PATH,
+    children: [{path: '**', component: FileBrowserPage}]
+  },
+  {path: 'tests', component: TestListPage},
+  {
+    path: 'tests/new',
+    component: TestEditPage,
+    canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
+  },
+  {
+    path: 'tests/new/:copy_id',
+    component: TestEditPage,
+    canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
+  },
+  {
+    path: 'tests/:id',
+    component: TestEditPage,
     canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
   },
   {path: '**', redirectTo: '/test_runs', pathMatch: 'full'},
