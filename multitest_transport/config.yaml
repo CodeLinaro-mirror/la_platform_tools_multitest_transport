@@ -198,6 +198,8 @@ device_actions:
     values:
     - local-image=${TF_WORK_DIR}/lvd_images
     - local-tool=${TF_WORK_DIR}/lvd_tools
+  - name: disable-usb-reset
+    values: 'true'
   test_resource_defs:
   - name: cvd-host_package.tar.gz
     test_resource_type: UNKNOWN
@@ -251,6 +253,8 @@ device_actions:
   - name: instance-type
     values:
     - CUTTLEFISH
+  - name: disable-usb-reset
+    values: 'true'
   test_resource_defs:
   - name: cvd-host_package.tar.gz
     test_resource_type: UNKNOWN
