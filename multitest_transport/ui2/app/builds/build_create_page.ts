@@ -20,9 +20,16 @@ import {MatButton} from '@angular/material/button';
 import {MatChipInputEvent} from '@angular/material/chips';
 import {MatDialog} from '@angular/material/dialog';
 import {Router} from '@angular/router';
+import {ReplaySubject} from 'rxjs';
+import {takeUntil} from 'rxjs/operators';
 
+import {MttClient} from '../services/mtt_client';
 import * as mttModels from '../services/mtt_models';
+import {Notifier} from '../services/notifier';
 import {FormChangeTracker} from '../shared/can_deactivate';
+import {buildApiErrorMessage} from '../shared/util';
+
+import {BuildFileSelector, BuildFileSelectorData} from './build_file_selector';
 
 /**
  * Component for creating a build.
@@ -36,20 +43,29 @@ export class BuildCreatePage extends FormChangeTracker implements
     AfterViewInit {
   @ViewChild('backButton', {static: false}) backButton?: MatButton;
 
+  data: Partial<mttModels.Build> = mttModels.initBuild();
+
   /** Keys used to separate labels */
   readonly separatorKeyCodes: number[] = [ENTER, COMMA];
 
-  data: Partial<mttModels.Build> = mttModels.initBuild();
+  private readonly destroy = new ReplaySubject<void>();
 
   constructor(
+      private readonly mttClient: MttClient,
+      private readonly notifier: Notifier,
       private readonly router: Router,
-      public dialog: MatDialog,
+      private readonly dialog: MatDialog,
   ) {
     super();
   }
 
   ngAfterViewInit() {
     this.backButton!.focus();
+  }
+
+  ngOnDestroy() {
+    this.destroy.next();
+    this.destroy.complete();
   }
 
   addLabel(event: MatChipInputEvent) {
@@ -71,6 +87,34 @@ export class BuildCreatePage extends FormChangeTracker implements
     if (index >= 0) {
       this.data.labels!.splice(index, 1);
     }
+  }
+
+  openBuildFileSelector(build: Partial<mttModels.Build>) {
+    const data: BuildFileSelectorData = {fileUrl: build.file_url!};
+    const dialogRef = this.dialog.open(BuildFileSelector, {
+      width: '800px',
+      height: '600px',
+      panelClass: 'build-selector-container',
+      data
+    });
+
+    dialogRef.afterClosed().subscribe(fileUrl => {
+      if (fileUrl) {
+        build.file_url = fileUrl;
+        this.mttClient.lookupBuildItem(fileUrl)
+            .pipe(takeUntil(this.destroy))
+            .subscribe(
+                (res) => {
+                  build.size = res.size;
+                },
+                (error) => {
+                  this.notifier.showError(
+                      'Failed to lookup build item.',
+                      buildApiErrorMessage(error));
+                },
+            );
+      }
+    });
   }
 
   back() {

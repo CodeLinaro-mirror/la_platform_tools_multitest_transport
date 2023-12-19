@@ -25,11 +25,13 @@ import {ServicesModule} from '../services/services_module';
 import {SharedModule} from '../shared/shared_module';
 
 import {BuildCreatePage} from './build_create_page';
+import {BuildFileSelector} from './build_file_selector';
 import {BuildList} from './build_list';
 import {BuildListPage} from './build_list_page';
 
 const COMPONENTS = [
   BuildCreatePage,
+  BuildFileSelector,
   BuildList,
   BuildListPage,
 ];

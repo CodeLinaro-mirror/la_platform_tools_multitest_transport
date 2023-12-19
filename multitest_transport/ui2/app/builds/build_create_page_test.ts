@@ -17,7 +17,9 @@
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {MatChipInput} from '@angular/material/chips';
+import {MatDialog} from '@angular/material/dialog';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
+import {of as observableOf} from 'rxjs';
 
 import {getEl} from '../testing/jasmine_util';
 
@@ -106,4 +108,16 @@ describe('BuildCreatePage', () => {
       expect(cancelButton.getAttribute('aria-label')).toBe('Cancel');
     });
   });
+
+  it('should open build file seletor dialog when clicking source form field',
+     () => {
+       let dialogSpy: jasmine.Spy;
+       const dialogRefSpy =
+           jasmine.createSpyObj({afterClosed: observableOf(''), close: null});
+       dialogSpy = spyOn(TestBed.inject(MatDialog), 'open')
+                       .and.returnValue(dialogRefSpy);
+       getEl(el, '.source-field').click();
+       expect(dialogSpy).toHaveBeenCalled();
+       expect(dialogRefSpy.afterClosed).toHaveBeenCalled();
+     });
 });

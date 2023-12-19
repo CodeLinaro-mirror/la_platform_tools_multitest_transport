@@ -53,8 +53,9 @@
   </mat-form-field>
 
   <!-- Source Field -->
-  <!-- TODO: Support to select a file -->
-  <mat-form-field appearance="outline" floatLabel="always" fxLayout="column">
+  <mat-form-field appearance="outline" class="source-field" floatLabel="always" fxLayout="column"
+                  (click)="openBuildFileSelector(data)"
+                  (keydown.enter)="openBuildFileSelector(data)">
     <mat-label> Source </mat-label>
     <input matInput type="text" [(ngModel)]="data.file_url" readonly required #url="ngModel">
     <mat-hint>

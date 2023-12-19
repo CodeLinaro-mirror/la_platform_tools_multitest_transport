@@ -12,6 +12,13 @@ sass_binary(
 )
 
 sass_binary(
+    name = "build_file_selector",
+    src = "build_file_selector.scss",
+    output_name = "build_file_selector.css",
+    visibility = ["//multitest_transport"],
+)
+
+sass_binary(
     name = "build_list",
     src = "build_list.scss",
     output_name = "build_list.css",
@@ -22,14 +29,17 @@ ng_module(
     name = "builds",
     srcs = [
         "build_create_page.ts",
+        "build_file_selector.ts",
         "build_list.ts",
         "build_list_page.ts",
         "builds_module.ts",
     ],
     assets = [
         ":build_create_page",
+        ":build_file_selector",
         ":build_list",
         "build_create_page.ng.html",
+        "build_file_selector.ng.html",
         "build_list.ng.html",
         "build_list_page.ng.html",
     ],
@@ -55,6 +65,7 @@ ng_module(
     testonly = True,
     srcs = [
         "build_create_page_test.ts",
+        "build_file_selector_test.ts",
         "build_list_test.ts",
     ],
     visibility = ["//multitest_transport"],
@@ -65,6 +76,7 @@ ng_module(
         third_party_js("angular2:platform_browser_animations"),
         third_party_js("angular2:router_testing"),
         third_party_js("angular_components:material_chips"),
+        third_party_js("angular_components:material_dialog"),
         third_party_js("rxjs"),
         "//multitest_transport/ui2/app/services",
         "//multitest_transport/ui2/app/testing:jasmine_util",
