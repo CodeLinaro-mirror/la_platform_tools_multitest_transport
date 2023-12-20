@@ -123,6 +123,23 @@ export class BuildCreatePage extends FormChangeTracker implements
 
   // Creates a build.
   submit() {
-    // TODO: triggers a request to create a build.
+    const build: mttModels.Build = {
+      name: this.data.name!.trim(),
+      file_url: this.data.file_url!.trim(),
+      size: this.data.size || 0,
+      labels: this.data.labels!,
+    };
+    this.mttClient.builds.create(build)
+        .pipe(takeUntil(this.destroy))
+        .subscribe(
+            (result) => {
+              super.resetForm();
+              this.router.navigate([`builds/${result.id}`]);
+              this.notifier.showMessage(`Build '${result.name}' created`);
+            },
+            (error) => {
+              this.notifier.showError(
+                  'Failed to create build.', buildApiErrorMessage(error));
+            });
   }
 }

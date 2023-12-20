@@ -1078,7 +1078,7 @@ export declare interface NetdataAlarmList {
 /** Build info. */
 export declare interface Build {
   /** An auto-generated build id */
-  id: string;
+  id?: string;
   /** A build name */
   name: string;
   /** A file URL for this build */

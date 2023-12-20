@@ -15,13 +15,17 @@
  */
 
 import {DebugElement} from '@angular/core';
-import {ComponentFixture, TestBed} from '@angular/core/testing';
+import {ComponentFixture, inject, TestBed} from '@angular/core/testing';
 import {MatChipInput} from '@angular/material/chips';
 import {MatDialog} from '@angular/material/dialog';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
+import {Router} from '@angular/router';
+import {RouterTestingModule} from '@angular/router/testing';
 import {of as observableOf} from 'rxjs';
 
+import {BuildClient, MttClient} from '../services/mtt_client';
 import {getEl} from '../testing/jasmine_util';
+import {newMockBuild} from '../testing/mtt_mocks';
 
 import {BuildCreatePage} from './build_create_page';
 import {BuildsModule} from './builds_module';
@@ -29,13 +33,23 @@ import {BuildsModule} from './builds_module';
 describe('BuildCreatePage', () => {
   let buildCreatePage: BuildCreatePage;
   let buildCreatePageFixture: ComponentFixture<BuildCreatePage>;
+  let buildClient: jasmine.SpyObj<BuildClient>;
 
   let el: DebugElement;
 
   beforeEach(() => {
+    buildClient = jasmine.createSpyObj('buildClient', ['create']);
+    buildClient.create.and.returnValue(observableOf(newMockBuild(
+        'build_id_1', 'name_1', 'file:///file/path_1',
+        ['label_1', 'label_2'])));
+
     TestBed.configureTestingModule({
-      imports: [BuildsModule, NoopAnimationsModule],
+      imports: [BuildsModule, NoopAnimationsModule, RouterTestingModule],
+      providers: [
+        {provide: MttClient, useValue: {builds: buildClient}},
+      ],
     });
+
     buildCreatePageFixture = TestBed.createComponent(BuildCreatePage);
     buildCreatePageFixture.detectChanges();
     el = buildCreatePageFixture.debugElement;
@@ -120,4 +134,11 @@ describe('BuildCreatePage', () => {
        expect(dialogSpy).toHaveBeenCalled();
        expect(dialogRefSpy.afterClosed).toHaveBeenCalled();
      });
+
+  it('creates new build', inject([Router], (router: Router) => {
+       spyOn(router, 'navigate');
+       getEl(el, '.create-button').click();
+       expect(buildClient.create).toHaveBeenCalled();
+       expect(router.navigate).toHaveBeenCalledWith([`builds/build_id_1`]);
+     }));
 });

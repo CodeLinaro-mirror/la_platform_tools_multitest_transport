@@ -74,6 +74,7 @@ ng_module(
         third_party_js("angular2:core"),
         third_party_js("angular2:core_testing"),
         third_party_js("angular2:platform_browser_animations"),
+        third_party_js("angular2:router"),
         third_party_js("angular2:router_testing"),
         third_party_js("angular_components:material_chips"),
         third_party_js("angular_components:material_dialog"),
