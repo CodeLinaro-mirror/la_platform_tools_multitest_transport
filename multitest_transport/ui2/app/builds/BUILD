@@ -29,6 +29,8 @@ ng_module(
     name = "builds",
     srcs = [
         "build_create_page.ts",
+        "build_detail.ts",
+        "build_detail_page.ts",
         "build_file_selector.ts",
         "build_list.ts",
         "build_list_page.ts",
@@ -39,6 +41,8 @@ ng_module(
         ":build_file_selector",
         ":build_list",
         "build_create_page.ng.html",
+        "build_detail.ng.html",
+        "build_detail_page.ng.html",
         "build_file_selector.ng.html",
         "build_list.ng.html",
         "build_list_page.ng.html",
@@ -67,6 +71,7 @@ ng_module(
     testonly = True,
     srcs = [
         "build_create_page_test.ts",
+        "build_detail_test.ts",
         "build_file_selector_test.ts",
         "build_list_test.ts",
     ],
@@ -78,6 +83,7 @@ ng_module(
         third_party_js("angular2:platform_browser_animations"),
         third_party_js("angular2:router"),
         third_party_js("angular2:router_testing"),
+        third_party_js("angular_components:cdk_a11y"),
         third_party_js("angular_components:material_chips"),
         third_party_js("angular_components:material_dialog"),
         third_party_js("rxjs"),
