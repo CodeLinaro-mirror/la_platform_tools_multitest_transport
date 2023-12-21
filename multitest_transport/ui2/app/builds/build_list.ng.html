@@ -25,9 +25,43 @@
 
 <mat-spinner class="loading-spinner" color="accent" *ngIf="isLoading"></mat-spinner>
 
+<div class="action-row">
+  <button
+    mat-stroked-button
+    class="delete-button"
+    color="accent"
+    (click)="deleteSelectedBuilds()"
+    [disabled]="this.selection.selected.length === 0"
+  >
+    Delete
+  </button>
+</div>
+
 <mat-table
   [dataSource]="dataSource"
   aria-label="Build list">
+
+  <!-- Checkbox column -->
+  <ng-container matColumnDef="select">
+    <mat-header-cell *matHeaderCellDef fxFlex="76px">
+      <mat-checkbox
+        (change)="$event ? toggleSelection() : null"
+        [checked]="isAllSelected()"
+        [indeterminate]="selection.selected.length > 0 && !isAllSelected()"
+        aria-label="Select all builds"
+        class="select-all-checkbox"
+      >
+      </mat-checkbox>
+    </mat-header-cell>
+    <mat-cell *matCellDef="let build" fxFlex="76px">
+      <mat-checkbox
+        (click)="$event.stopPropagation()"
+        (change)="selection.toggle(build)"
+        [checked]="selection.isSelected(build)"
+      >
+      </mat-checkbox>
+    </mat-cell>
+  </ng-container>
 
   <!-- Build name -->
   <ng-container matColumnDef="name">

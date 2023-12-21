@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 import {LiveAnnouncer} from '@angular/cdk/a11y';
+import {SelectionModel} from '@angular/cdk/collections';
 import {Component, Input, OnDestroy, OnInit} from '@angular/core';
 import {MatTableDataSource} from '@angular/material/table';
 import {ReplaySubject} from 'rxjs';
@@ -39,10 +40,14 @@ export class BuildList implements OnInit, OnDestroy {
 
   private readonly destroy = new ReplaySubject<void>();
 
-  @Input() displayColumns = ['name', 'source', 'size', 'labels', 'create_time'];
+  @Input()
+  displayColumns =
+      ['select', 'name', 'source', 'size', 'labels', 'create_time'];
 
   isLoading = false;
   dataSource = new MatTableDataSource<Build>();
+  selection = new SelectionModel<Build>(
+      /*allow multi select*/ true, []);
 
   constructor(
       private readonly notifier: Notifier,
@@ -61,6 +66,7 @@ export class BuildList implements OnInit, OnDestroy {
   load() {
     this.isLoading = true;
     this.liveAnnouncer.announce('Loading', 'polite');
+    this.selection.clear();
 
     this.mttClient.builds.list()
         .pipe(
@@ -79,5 +85,57 @@ export class BuildList implements OnInit, OnDestroy {
                   'Failed to load build list.', buildApiErrorMessage(error));
             },
         );
+  }
+
+  /**
+   * Whether the number of selected elements matches the total number of rows.
+   */
+  isAllSelected() {
+    return this.selection.selected.length === this.dataSource.data.length;
+  }
+
+  /**
+   * Selects all rows if they are not all selected; otherwise clear selection.
+   */
+  toggleSelection() {
+    if (this.isAllSelected()) {
+      this.selection.clear();
+      return;
+    }
+
+    for (const row of this.dataSource.data) {
+      this.selection.select(row);
+    }
+  }
+
+  /**
+   * Selects all rows if they are not all selected; otherwise clear selection.
+   */
+  deleteSelectedBuilds() {
+    this.notifier
+        .confirm('Do you really want to delete these builds?', 'Delete Builds')
+        .subscribe(result => {
+          if (!result) {
+            return;
+          }
+          this.isLoading = true;
+          this.mttClient.builds
+              .delete(this.selection.selected.map(build => build.id!))
+              .pipe(
+                  takeUntil(this.destroy),
+                  finalize(() => {
+                    this.load();
+                  }),
+                  )
+              .subscribe(
+                  () => {
+                    this.notifier.showMessage('Builds deleted.');
+                  },
+                  (error) => {
+                    this.notifier.showError(
+                        'Failed to delete builds.',
+                        buildApiErrorMessage(error));
+                  });
+        });
   }
 }

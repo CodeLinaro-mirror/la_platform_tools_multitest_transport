@@ -18,11 +18,11 @@ import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {RouterTestingModule} from '@angular/router/testing';
-import {of as observableOf} from 'rxjs';
+import {EMPTY, of as observableOf} from 'rxjs';
 
 import {BuildClient, MttClient} from '../services/mtt_client';
 import {Notifier} from '../services/notifier';
-import {getTextContent} from '../testing/jasmine_util';
+import {getEl, getTextContent} from '../testing/jasmine_util';
 import {newMockBuild} from '../testing/mtt_mocks';
 
 import {BuildList} from './build_list';
@@ -46,7 +46,8 @@ describe('BuildList', () => {
   let el: DebugElement;
 
   beforeEach(() => {
-    buildClient = jasmine.createSpyObj('buildClient', ['list']);
+    buildClient = jasmine.createSpyObj('buildClient', ['delete', 'list']);
+    buildClient.delete.and.returnValue(EMPTY);
     buildClient.list.and.returnValue(observableOf(BUILDS));
 
     notifier = jasmine.createSpyObj(['confirm', 'showError']);
@@ -79,5 +80,28 @@ describe('BuildList', () => {
       expect(textContent).toContain(build.name);
       expect(textContent).toContain(build.file_url);
     }
+  });
+
+  it('selects all and unselects all correctly', () => {
+    expect(buildList.isAllSelected()).toBe(false);
+
+    buildList.toggleSelection();
+    expect(buildList.isAllSelected()).toBe(true);
+
+    buildList.toggleSelection();
+    expect(buildList.isAllSelected()).toBe(false);
+  });
+
+  it('can delete builds', () => {
+    // Confirms delete.
+    notifier.confirm.and.returnValue(observableOf(true));
+
+    buildList.selection.select(BUILDS.builds[0]);
+    buildListFixture.detectChanges();
+    getEl(el, '.delete-button').click();
+    expect(buildClient.delete).toHaveBeenCalledWith(['build_id_1']);
+    // Reloads current page.
+    expect(buildClient.list).toHaveBeenCalledTimes(2);
+    expect(buildList.selection.selected.length).toEqual(0);
   });
 });
