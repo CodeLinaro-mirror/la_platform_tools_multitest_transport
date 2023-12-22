@@ -72,7 +72,9 @@
   <!-- Build source url -->
   <ng-container matColumnDef="source">
     <mat-header-cell *matHeaderCellDef fxFlex class="build-source-column"> Source </mat-header-cell>
-    <mat-cell *matCellDef="let build" fxFlex class="build-source-column"> {{build.file_url}} </mat-cell>
+    <mat-cell *matCellDef="let build" fxFlex class="build-source-column">
+      {{build.file_url}}
+    </mat-cell>
   </ng-container>
 
   <!-- Build size -->
@@ -97,6 +99,16 @@
     <mat-cell *matCellDef="let build" fxFlex="120px"
               [title]="build.create_time | utc | date:'MM/dd/yyyy h:mma'">
       {{build.create_time | utc | fromNow}}
+    </mat-cell>
+  </ng-container>
+
+  <!-- View Build Details Button -->
+  <ng-container matColumnDef="view" stickyEnd>
+    <mat-header-cell *matHeaderCellDef fxFlex="100px"></mat-header-cell>
+    <mat-cell *matCellDef="let build" fxFlex="100px">
+      <a mat-stroked-button class="view-button" color="accent" [routerLink]="['/builds', build.id]">
+         View
+      </a>
     </mat-cell>
   </ng-container>
 

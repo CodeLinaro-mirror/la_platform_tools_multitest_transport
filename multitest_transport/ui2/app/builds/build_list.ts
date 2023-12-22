@@ -16,7 +16,7 @@
  */
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {SelectionModel} from '@angular/cdk/collections';
-import {Component, Input, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit} from '@angular/core';
 import {MatTableDataSource} from '@angular/material/table';
 import {ReplaySubject} from 'rxjs';
 import {finalize, takeUntil} from 'rxjs/operators';
@@ -36,18 +36,16 @@ import {buildApiErrorMessage} from '../shared/util';
   templateUrl: './build_list.ng.html',
 })
 export class BuildList implements OnInit, OnDestroy {
-  readonly OverflowListType = OverflowListType;
-
-  private readonly destroy = new ReplaySubject<void>();
-
-  @Input()
-  displayColumns =
-      ['select', 'name', 'source', 'size', 'labels', 'create_time'];
-
   isLoading = false;
+  displayColumns =
+      ['select', 'name', 'source', 'size', 'labels', 'create_time', 'view'];
   dataSource = new MatTableDataSource<Build>();
   selection = new SelectionModel<Build>(
       /*allow multi select*/ true, []);
+
+  readonly OverflowListType = OverflowListType;
+
+  private readonly destroy = new ReplaySubject<void>();
 
   constructor(
       private readonly notifier: Notifier,

@@ -15,8 +15,9 @@
  */
 
 import {DebugElement} from '@angular/core';
-import {ComponentFixture, TestBed} from '@angular/core/testing';
+import {ComponentFixture, inject, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
+import {Router} from '@angular/router';
 import {RouterTestingModule} from '@angular/router/testing';
 import {EMPTY, of as observableOf} from 'rxjs';
 
@@ -80,6 +81,7 @@ describe('BuildList', () => {
       expect(textContent).toContain(build.name);
       expect(textContent).toContain(build.file_url);
     }
+    expect(textContent).toContain('View');
   });
 
   it('selects all and unselects all correctly', () => {
@@ -104,4 +106,13 @@ describe('BuildList', () => {
     expect(buildClient.list).toHaveBeenCalledTimes(2);
     expect(buildList.selection.selected.length).toEqual(0);
   });
+
+  it('should navigate to build detail page on view button clicked',
+     inject([Router], (router: Router) => {
+       spyOn(router, 'navigate');
+       getEl(el, '.view-button').click();
+       buildListFixture.whenStable().then(() => {
+         expect(router.navigate).toHaveBeenCalledWith([`builds/build_id_1`]);
+       });
+     }));
 });
