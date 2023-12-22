@@ -29,6 +29,7 @@ import {buildApiErrorMessage} from '../shared/util';
 /** A component for displaying the details of a build. */
 @Component({
   selector: 'build-detail',
+  styleUrls: ['build_detail.css'],
   templateUrl: './build_detail.ng.html',
 })
 export class BuildDetail implements OnInit, AfterViewInit {

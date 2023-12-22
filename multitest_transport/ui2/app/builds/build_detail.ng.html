@@ -29,8 +29,54 @@
 </div>
 
 <div class="page" [class.loading-mask]="isLoading">
-
-  <!-- TODO: Impletement Build metadata Component -->
+  <mat-card class="card">
+    <mat-card-title>
+      <h2 fxFlex>Metadata</h2>
+    </mat-card-title>
+    <mat-card-content *ngIf="build">
+      <table class="table-layout">
+        <tr>
+          <td>
+            <table class="table-content">
+              <tr>
+                <td class="title-field">
+                  <mat-label>Name</mat-label>
+                </td>
+                <td class="value-field">
+                  {{build.name}}
+                </td>
+              </tr>
+              <tr>
+                <td class="title-field">
+                  <mat-label>Source</mat-label>
+                </td>
+                <td class="value-field">{{build.file_url}}</td>
+              </tr>
+              <tr>
+                <td class="title-field">
+                  <mat-label>Size</mat-label>
+                </td>
+                <td class="value-field">{{build.size | fileSize}}</td>
+              </tr>
+              <tr>
+                <td class="title-field">
+                  <mat-label>Labels</mat-label>
+                </td>
+                <td class="value-field">{{build.labels}}</td>
+              </tr>
+              <tr>
+                <td class="title-field">
+                  <mat-label>Created</mat-label>
+                </td>
+                <td class="value-field">{{build.create_time | utc | fromNow}}</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <!-- TODO: Impletement update and upload functionalities -->
+      </table>
+    </mat-card-content>
+  </mat-card>
   <!-- TODO: Impletement xTS detection Component -->
 
   <div class="empty" *ngIf="!build && !isLoading">

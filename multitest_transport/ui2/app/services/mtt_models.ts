@@ -1087,6 +1087,8 @@ export declare interface Build {
   size: number;
   /** List of strings to filter builds */
   labels: string[];
+  /** Created time of this build */
+  create_time?: string;
 }
 
 /** Initialize a build. */

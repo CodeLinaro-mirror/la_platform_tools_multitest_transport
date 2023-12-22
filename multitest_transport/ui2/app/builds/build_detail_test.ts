@@ -72,6 +72,10 @@ describe('BuildDetail', () => {
   it('displays the correct build data', () => {
     const textContent = getTextContent(el);
     expect(textContent).toContain(build.id!);
+    expect(textContent).toContain('Metadata');
+    expect(textContent).toContain(build.name);
+    expect(textContent).toContain(build.file_url);
+    expect(textContent).toContain(build.labels.join(','));
     // TODO: Add more checks as page is built.
   });
 });
