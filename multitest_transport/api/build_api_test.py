@@ -15,15 +15,14 @@
 """Tests for build_api."""
 
 import json
+import uuid
 
 from absl.testing import absltest
-from protorpc import protojson
-
-
 from multitest_transport.api import api_test_util
 from multitest_transport.api import build_api
 from multitest_transport.models import messages
 from multitest_transport.models import ndb_models
+from protorpc import protojson
 
 
 class BuildApiTest(api_test_util.TestCase):
@@ -36,6 +35,7 @@ class BuildApiTest(api_test_util.TestCase):
 
   def _CreateMockBuild(self):
     build = ndb_models.Build(
+        id=str(uuid.uuid4()),
         name='Foo',
         file_url=self.FILE_URL,
         size=123123123,
@@ -67,7 +67,7 @@ class BuildApiTest(api_test_util.TestCase):
     res = self.app.post_json('/_ah/api/mtt/v1/builds', data)
 
     obj = json.loads(res.body)
-    build = ndb_models.Build.get_by_id(int(obj['id']))
+    build = ndb_models.Build.get_by_id(obj['id'])
     self.assertEqual(data['name'], build.name)
     self.assertEqual(data['file_url'], build.file_url)
     self.assertEqual(data['size'], str(build.size))

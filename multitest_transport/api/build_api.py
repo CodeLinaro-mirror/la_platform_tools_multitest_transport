@@ -15,15 +15,15 @@
 """A module to provide build APIs."""
 # Non-standard docstrings are used to generate the API documentation.
 
+import uuid
+
 import endpoints
-from protorpc import message_types
-from protorpc import messages
-from protorpc import remote
-
-
 from multitest_transport.api import base
 from multitest_transport.models import messages as mtt_messages
 from multitest_transport.models import ndb_models
+from protorpc import message_types
+from protorpc import messages
+from protorpc import remote
 
 
 @base.MTT_API.api_class(resource_name='build', path='builds')
@@ -53,8 +53,13 @@ class BuildApi(remote.Service):
     Body:
       Build data
     """
-    build = mtt_messages.Convert(
-        request, ndb_models.Build, from_cls=mtt_messages.Build)
+    build = ndb_models.Build(
+        id=str(uuid.uuid4()),
+        name=request.name,
+        file_url=request.file_url,
+        size=request.size,
+        labels=request.labels,
+    )
     build.put()
     return mtt_messages.Convert(build, mtt_messages.Build)
 
