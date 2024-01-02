@@ -94,7 +94,7 @@ button {
   &.status-button-syncing,
   &.status-button-shutting-down,
   &.status-button-restarting {
-    backgound: $progress-background;
+    background: $progress-background;
     width: 120px;
   }
 
