@@ -325,6 +325,9 @@ class Test(messages.Message):
   default_test_run_parameters = messages.MessageField(TestRunParameter, 16)
   module_config_pattern = messages.StringField(17)
   module_execution_args = messages.StringField(18)
+  visibility_type = messages.EnumField(
+      ndb_models.VisibilityType, 19, default=ndb_models.VisibilityType.PUBLIC
+  )
 
 
 @Converter(ndb_models.Test, Test)
@@ -346,9 +349,12 @@ def _TestConverter(obj):
       retry_command_line=obj.retry_command_line,
       runner_sharding_args=obj.runner_sharding_args,
       default_test_run_parameters=Convert(
-          obj.default_test_run_parameters, TestRunParameter),
+          obj.default_test_run_parameters, TestRunParameter
+      ),
       module_config_pattern=obj.module_config_pattern,
-      module_execution_args=obj.module_execution_args)
+      module_execution_args=obj.module_execution_args,
+      visibility_type=obj.visibility_type,
+  )
 
 
 @Converter(Test, ndb_models.Test)
@@ -358,7 +364,8 @@ def _TestMessageConverter(msg):
       name=msg.name,
       description=msg.description,
       test_resource_defs=ConvertList(
-          msg.test_resource_defs, ndb_models.TestResourceDef),
+          msg.test_resource_defs, ndb_models.TestResourceDef
+      ),
       command=msg.command,
       env_vars=ConvertNameValuePairs(msg.env_vars, ndb_models.NameValuePair),
       setup_scripts=msg.setup_scripts,
@@ -366,15 +373,19 @@ def _TestMessageConverter(msg):
       result_file=msg.result_file,
       jvm_options=msg.jvm_options,
       java_properties=ConvertNameValuePairs(
-          msg.java_properties, ndb_models.NameValuePair),
+          msg.java_properties, ndb_models.NameValuePair
+      ),
       context_file_dir=msg.context_file_dir,
       context_file_pattern=msg.context_file_pattern,
       retry_command_line=msg.retry_command_line,
       runner_sharding_args=msg.runner_sharding_args,
       default_test_run_parameters=Convert(
-          msg.default_test_run_parameters, ndb_models.TestRunParameter),
+          msg.default_test_run_parameters, ndb_models.TestRunParameter
+      ),
       module_config_pattern=msg.module_config_pattern,
-      module_execution_args=msg.module_execution_args)
+      module_execution_args=msg.module_execution_args,
+      visibility_type=msg.visibility_type,
+  )
 
 
 class TestList(messages.Message):

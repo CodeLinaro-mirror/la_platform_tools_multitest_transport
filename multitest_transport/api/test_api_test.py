@@ -31,13 +31,17 @@ class TestApiTest(api_test_util.TestCase):
   def setUp(self):
     super(TestApiTest, self).setUp(test_api.TestApi)
 
-  def _CreateMockTest(self):
+  def _CreateMockTest(
+      self,
+      visibility_type=None,
+  ):
     test = ndb_models.Test(
         name='Foo',
         test_resource_defs=[
             ndb_models.TestResourceDef(
                 name='test_resource_name',
-                default_download_url='test_resource_url'),
+                default_download_url='test_resource_url',
+            ),
         ],
         command='command',
         env_vars=[
@@ -48,14 +52,28 @@ class TestApiTest(api_test_util.TestCase):
         jvm_options=['jvm_option'],
         java_properties=[
             ndb_models.NameValuePair(
-                name='java_property_name', value='java_property_value')
-        ])
+                name='java_property_name', value='java_property_value'
+            )
+        ],
+        visibility_type=visibility_type,
+    )
     test.put()
     return test
 
   def testList(self):
+    for _ in range(1, 6):
+      self._CreateMockTest()
     res = self.app.get('/_ah/api/mtt/v1/tests')
-    self.assertIsNotNone(res)
+    test_list = protojson.decode_message(messages.TestList, res.body)
+    self.assertLen(test_list.tests, 5)
+
+  def testList_filterOutHiddenTests(self):
+    for _ in range(1, 6):
+      self._CreateMockTest()
+      self._CreateMockTest(visibility_type=ndb_models.VisibilityType.HIDDEN)
+    res = self.app.get('/_ah/api/mtt/v1/tests')
+    test_list = protojson.decode_message(messages.TestList, res.body)
+    self.assertLen(test_list.tests, 5)
 
   def testCreate(self):
     data = {

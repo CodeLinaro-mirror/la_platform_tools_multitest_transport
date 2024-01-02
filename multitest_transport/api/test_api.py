@@ -37,6 +37,12 @@ class TestApi(remote.Service):
   def List(self, request):
     """Lists test suites."""
     tests = list(ndb_models.Test.query().order(ndb_models.Test.name))
+    tests = [
+        test
+        for test in tests
+        if test.visibility_type is None
+        or test.visibility_type == ndb_models.VisibilityType.PUBLIC
+    ]
     test_msgs = mtt_messages.ConvertList(tests, mtt_messages.Test)
     return mtt_messages.TestList(tests=test_msgs)
 

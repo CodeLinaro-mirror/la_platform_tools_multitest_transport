@@ -232,6 +232,11 @@ class TestRunParameter(ndb.Model):
   output_idle_timeout_seconds = ndb.IntegerProperty()
 
 
+class VisibilityType(messages.Enum):
+  PUBLIC = 0  # Test is visible to any user.
+  HIDDEN = 1  # Test is not visible to any user.
+
+
 class Test(ndb.Model):
   """A test.
 
@@ -246,17 +251,17 @@ class Test(ndb.Model):
     setup_scripts: a list of scripts to run before running a test.
     jvm_options: a list of JVM options to be passed to TF.
     java_properties: a dict of Java properties to be passed to TF.
-    context_file_dir: directory where the context file which needs to be
-        passed across attempts is located.
+    context_file_dir: directory where the context file which needs to be passed
+      across attempts is located.
     context_file_pattern: a regex pattern for the filename of the context file
-        which needs to be passed across attempts.
-    retry_command_line: a command line to use in retry invocations.
-        attempts.
-    runner_sharding_args: extra args to enable runner sharding. It can contain
-        a reference to a desired shard count (e.g. ${TF_SHARD_COUNT})
+      which needs to be passed across attempts.
+    retry_command_line: a command line to use in retry invocations. attempts.
+    runner_sharding_args: extra args to enable runner sharding. It can contain a
+      reference to a desired shard count (e.g. ${TF_SHARD_COUNT})
     default_test_run_parameters: default test run parameters.
     module_config_pattern: a regex pattern for module config files.
     module_execution_args: extra args to run a specific module.
+    visibility_type: the visibility of a test.
   """
   name = ndb.StringProperty(required=True)
   description = ndb.StringProperty()
@@ -275,6 +280,9 @@ class Test(ndb.Model):
   default_test_run_parameters = ndb.LocalStructuredProperty(TestRunParameter)
   module_config_pattern = ndb.StringProperty()
   module_execution_args = ndb.StringProperty()
+  visibility_type = ndb.EnumProperty(
+      VisibilityType, default=VisibilityType.PUBLIC
+  )
 
 
 class ShardingMode(messages.Enum):
