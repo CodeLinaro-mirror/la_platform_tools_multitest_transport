@@ -112,7 +112,7 @@ export declare interface LabHostInfosResponse {
 }
 
 /** Info of a single host. */
-export interface LabHostInfo {
+export declare interface LabHostInfo {
   /** Extra info for the host. */
   extraInfo: LabHostExtraInfo;
   /** Is the host hidden or not, hidden is used for soft delete. */
@@ -538,7 +538,7 @@ export function convertToLabDeviceInfo(source: tfcModels.DeviceInfo):
     device_serial: source.device_serial,
     device_type: source.device_type,
     extra_info: source.extra_info,
-    extraInfo: convertToDeviceExtraInfo(source.extra_info),
+    extraInfo: convertToDeviceExtraInfo(source.extra_info || []),
     flated_extra_info: source.flated_extra_info,
     flatedExtraInfo: source.flated_extra_info,
     hidden: source.hidden,
@@ -576,14 +576,14 @@ export function convertToDeviceExtraInfo(source: KeyValuePair[]):
     sdk_version: "UNKNOWN",
     battery_level: -1,
   };
+
   for (const entity of source) {
-    if (['device_note_id', 'utilization'].includes(
-            entity.key)) {
-      extraInfo[entity.key] = !Number.isNaN(Number(entity.value))?
-          Number(entity.value): -1;
+    if (['device_note_id', 'utilization'].includes(entity.key)) {
+      extraInfo[entity.key] =
+          !Number.isNaN(Number(entity.value)) ? Number(entity.value) : -1;
     } else if (entity.key === 'battery_level') {
-      extraInfo[entity.key] = !Number.isNaN(Number(entity.value))?
-          Number(entity.value) / 100: -1;
+      extraInfo[entity.key] =
+          !Number.isNaN(Number(entity.value)) ? Number(entity.value) / 100 : -1;
     } else {
       extraInfo[entity.key] = entity.value;
     }
