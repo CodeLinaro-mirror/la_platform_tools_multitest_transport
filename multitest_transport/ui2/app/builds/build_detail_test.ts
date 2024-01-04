@@ -41,7 +41,8 @@ describe('BuildDetail', () => {
   let el: DebugElement;
 
   beforeEach(() => {
-    liveAnnouncer = jasmine.createSpyObj('liveAnnouncer', ['announce']);
+    liveAnnouncer =
+        jasmine.createSpyObj('liveAnnouncer', ['announce', 'clear']);
     buildClient = jasmine.createSpyObj('buildClient', ['get']);
     buildClient.get.and.returnValue(observableOf(build));
 
