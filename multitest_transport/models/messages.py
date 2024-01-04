@@ -36,7 +36,6 @@ from multitest_transport.util import env
 from multitest_transport.util import file_util
 from multitest_transport.util import xts_result
 
-_DEFAULT_CLUSTER = 'default'
 _OAUTH2_CREDENTIALS_USERNAME = 'User Account'
 
 _convert_func_map = {}
@@ -840,7 +839,9 @@ def _TestResourceObjMessageConverter(msg):
 class TestRunConfig(messages.Message):
   """A test run config."""
   test_id = messages.StringField(1, required=True)
-  cluster = messages.StringField(2, required=True, default=_DEFAULT_CLUSTER)
+  cluster = messages.StringField(
+      2, required=True, default=ndb_models.DEFAULT_CLUSTER
+  )
   command = messages.StringField(3, required=True, default='')
   retry_command = messages.StringField(4, required=True, default='')
   device_specs = messages.StringField(5, repeated=True)

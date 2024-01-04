@@ -27,6 +27,7 @@ from tradefed_cluster.util import ndb_shim as ndb
 from multitest_transport.util import env
 from multitest_transport.util import oauth2_util
 
+DEFAULT_CLUSTER = 'default'
 NODE_CONFIG_ID = 1
 FILE_CLEANER_SETTINGS_ID = 1
 
@@ -439,7 +440,7 @@ class TestRunConfig(ndb.Model):
         or not
   """
   test_key = ndb.KeyProperty(kind=Test, required=True)
-  cluster = ndb.StringProperty(required=True)
+  cluster = ndb.StringProperty(required=True, default=DEFAULT_CLUSTER)
   command = ndb.TextProperty(required=True, default='')
   retry_command = ndb.TextProperty(required=True, default='')
   device_specs = ndb.StringProperty(repeated=True)
