@@ -36,6 +36,13 @@ sass_binary(
     visibility = ["//multitest_transport"],
 )
 
+sass_binary(
+    name = "xts_requirement_detect",
+    src = "xts_requirement_detect.scss",
+    output_name = "xts_requirement_detect.css",
+    visibility = ["//multitest_transport"],
+)
+
 ng_module(
     name = "builds",
     srcs = [
@@ -46,18 +53,21 @@ ng_module(
         "build_list.ts",
         "build_list_page.ts",
         "builds_module.ts",
+        "xts_requirement_detect.ts",
     ],
     assets = [
         ":build_create_page",
         ":build_detail",
         ":build_file_selector",
         ":build_list",
+        ":xts_requirement_detect",
         "build_create_page.ng.html",
         "build_detail.ng.html",
         "build_detail_page.ng.html",
         "build_file_selector.ng.html",
         "build_list.ng.html",
         "build_list_page.ng.html",
+        "xts_requirement_detect.ng.html",
     ],
     visibility = ["//multitest_transport"],
     deps = [
@@ -70,11 +80,13 @@ ng_module(
         third_party_js("angular_components:material_button"),
         third_party_js("angular_components:material_chips"),
         third_party_js("angular_components:material_dialog"),
+        third_party_js("angular_components:material_stepper"),
         third_party_js("angular_components:material_table"),
         third_party_js("rxjs"),
-        "//third_party/javascript/angular_components:cdk_collections",
+        "//multitest_transport/ui2/app/build_channels",
         "//multitest_transport/ui2/app/services",
         "//multitest_transport/ui2/app/shared",
+        "//multitest_transport/ui2/app/test_runs",
     ],
 )
 
@@ -86,6 +98,7 @@ ng_module(
         "build_detail_test.ts",
         "build_file_selector_test.ts",
         "build_list_test.ts",
+        "xts_requirement_detect_test.ts",
     ],
     visibility = ["//multitest_transport"],
     deps = [
