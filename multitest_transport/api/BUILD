@@ -47,6 +47,8 @@ pytype_strict_library(
     deps = [
         ":base_lib",
         "//multitest_transport/models",
+        "//multitest_transport/test_scheduler:test_kicker_lib",
+        "@tradefed_cluster//tradefed_cluster/util:ndb_shim_lib",
         third_party("google-endpoints"),
         third_party("protorpc"),
     ],

@@ -15,20 +15,33 @@
 """Tests for build_api."""
 
 import json
+from unittest import mock
 import uuid
 
 from absl.testing import absltest
+from google.oauth2 import credentials as authorized_user
 from multitest_transport.api import api_test_util
 from multitest_transport.api import build_api
 from multitest_transport.models import messages
 from multitest_transport.models import ndb_models
+from multitest_transport.test_scheduler import test_kicker
 from protorpc import protojson
+
+FILE_URL = 'file:///root/file/path'
+DEVICE_SPEC = 'device_serial:2A151FDH20066K'
+GTS_ZIP_NAME = 'android-gts.zip'
+GTS_ZIP_URL = 'file:///android/gts/zip/path'
+DETECTION_REQUEST = {
+    'device_spec': DEVICE_SPEC,
+    'test_resource_objs': [{
+        'name': GTS_ZIP_NAME,
+        'url': GTS_ZIP_URL,
+    }],
+}
 
 
 class BuildApiTest(api_test_util.TestCase):
   """Unit tests for build APIs."""
-
-  FILE_URL = 'file:///root/file/path'
 
   def setUp(self):
     super(BuildApiTest, self).setUp(build_api.BuildApi)
@@ -37,7 +50,7 @@ class BuildApiTest(api_test_util.TestCase):
     build = ndb_models.Build(
         id=str(uuid.uuid4()),
         name='Foo',
-        file_url=self.FILE_URL,
+        file_url=FILE_URL,
         size=123123123,
         labels=[
             'MR',
@@ -46,6 +59,22 @@ class BuildApiTest(api_test_util.TestCase):
     )
     build.put()
     return build
+
+  def _createMockTest(self, name='test', command='command'):
+    """Create a mock ndb_models.Test object."""
+    test = ndb_models.Test(
+        id=build_api.XTS_REQUIREMENTS_DETECTION_TEST_KEY,
+        name=name,
+        command=command,
+    )
+    test.put()
+    return test
+
+  def _CreateTestRunAction(self, **kwargs):
+    """Convenience method to create a test run action."""
+    action = ndb_models.TestRunAction(**kwargs)
+    action.put()
+    return action
 
   def testList(self):
     """Tests builds.list API."""
@@ -56,7 +85,7 @@ class BuildApiTest(api_test_util.TestCase):
     """Tests builds.create API."""
     data = {
         'name': 'Foo',
-        'file_url': self.FILE_URL,
+        'file_url': FILE_URL,
         'size': '123123123',
         'labels': [
             'UDC',
@@ -118,7 +147,7 @@ class BuildApiTest(api_test_util.TestCase):
     # Verify that the name field is updated.
     self.assertEqual(updated_build_msg.name, 'Bar')
     # Verify that the file_url field remains the same as before.
-    self.assertEqual(updated_build_msg.file_url, self.FILE_URL)
+    self.assertEqual(updated_build_msg.file_url, FILE_URL)
 
   def testDelete(self):
     """Tests builds.delete API."""
@@ -140,6 +169,144 @@ class BuildApiTest(api_test_util.TestCase):
     )
     self.assertIsNone(build.key.get())
     self.assertEqual('400 Bad Request', res.status)
+
+  @mock.patch.object(test_kicker, 'CreateTestRun', autospec=True)
+  def testDetect(self, mock_run_test):
+    """Tests builds.detect API."""
+    test = self._createMockTest()
+    action = self._CreateTestRunAction(
+        name='Report Upload Action',
+        hook_class_name=build_api.REPORT_UPLOAD_HOOK_CLASS_NAME,
+        credentials=authorized_user.Credentials(None),
+    )
+    test_run = ndb_models.TestRun(
+        test=test,
+        labels=['xts_requirements_detection'],
+        test_run_config=ndb_models.TestRunConfig(
+            test_key=test.key,
+            cluster='cluster',
+            command=test.command,
+            device_specs=[DEVICE_SPEC],
+            test_run_action_refs=[
+                ndb_models.TestRunActionRef(action_key=action.key)
+            ],
+            test_resource_objs=[
+                ndb_models.TestResourceObj(name=GTS_ZIP_NAME, url=GTS_ZIP_URL),
+            ],
+        ),
+    )
+    test_run.put()
+    mock_run_test.return_value = test_run
+    build = self._CreateMockBuild()
+    build_msg = messages.Convert(build, messages.Build)
+    self.assertEqual(
+        build_msg.xts_requirements.detection_status,
+        ndb_models.XtsRequirementsDetectionStatus.NOT_STARTED,
+    )
+    self.assertIsNone(build_msg.xts_requirements.detection_test_run_id)
+
+    res = self.app.post_json(
+        '/_ah/api/mtt/v1/builds/%s/detect' % build.key.id(),
+        DETECTION_REQUEST,
+    )
+    mock_run_test.assert_called_with(
+        labels=['xts_requirements_detection', build.key.id()],
+        test_run_config=ndb_models.TestRunConfig(
+            test_key=test.key,
+            command=test.command,
+            device_specs=[DEVICE_SPEC],
+            test_run_action_refs=[
+                ndb_models.TestRunActionRef(action_key=action.key)
+            ],
+            test_resource_objs=[
+                ndb_models.TestResourceObj(name=GTS_ZIP_NAME, url=GTS_ZIP_URL),
+            ],
+        ),
+    )
+    updated_build_msg = protojson.decode_message(messages.Build, res.body)
+    self.assertEqual(
+        updated_build_msg.xts_requirements.detection_status,
+        ndb_models.XtsRequirementsDetectionStatus.SIGNALS_COLLECTING,
+    )
+    self.assertEqual(
+        updated_build_msg.xts_requirements.detection_test_run_id,
+        str(test_run.key.id()),
+    )
+
+  def testDetect_testNotFound(self):
+    """Tests builds.detect with test not added."""
+    build = self._CreateMockBuild()
+    res = self.app.post_json(
+        '/_ah/api/mtt/v1/builds/%s/detect' % build.key.id(),
+        DETECTION_REQUEST,
+        expect_errors=True,
+    )
+    self.assertEqual('404 Not Found', res.status)
+    self.assertIn(
+        'Test %s not found' % build_api.XTS_REQUIREMENTS_DETECTION_TEST_KEY,
+        str(res.body),
+    )
+
+  def testDetect_reportUploadActionNotFound(self):
+    """Tests builds.detect with report upload action not added."""
+    self._createMockTest()
+    build = self._CreateMockBuild()
+    res = self.app.post_json(
+        '/_ah/api/mtt/v1/builds/%s/detect' % build.key.id(),
+        DETECTION_REQUEST,
+        expect_errors=True,
+    )
+    self.assertEqual('404 Not Found', res.status)
+    self.assertIn(
+        'Report upload test action with configed credentials and options %s not'
+        ' found'
+        % build_api.REPORT_UPLOAD_HOOK_CLASS_NAME,
+        str(res.body),
+    )
+
+  def testDetect_reportUploadActionNotFound_noCredentials(self):
+    """Tests builds.detect with credentials in report upload action unset."""
+    self._createMockTest()
+    self._CreateTestRunAction(
+        name='Report Upload Action',
+        hook_class_name=build_api.REPORT_UPLOAD_HOOK_CLASS_NAME,
+    )
+    build = self._CreateMockBuild()
+    res = self.app.post_json(
+        '/_ah/api/mtt/v1/builds/%s/detect' % build.key.id(),
+        DETECTION_REQUEST,
+        expect_errors=True,
+    )
+    self.assertEqual('404 Not Found', res.status)
+    self.assertIn(
+        'Report upload test action with configed credentials and options %s not'
+        ' found'
+        % build_api.REPORT_UPLOAD_HOOK_CLASS_NAME,
+        str(res.body),
+    )
+
+  def testDetect_reportUploadActionNotFound_noOptionValues(self):
+    """Tests builds.detect with option values in report upload action unset."""
+    self._createMockTest()
+    self._CreateTestRunAction(
+        name='Report Upload Action',
+        hook_class_name=build_api.REPORT_UPLOAD_HOOK_CLASS_NAME,
+        credentials=authorized_user.Credentials(None),
+        options=[{'name': 'option_name'}],
+    )
+    build = self._CreateMockBuild()
+    res = self.app.post_json(
+        '/_ah/api/mtt/v1/builds/%s/detect' % build.key.id(),
+        DETECTION_REQUEST,
+        expect_errors=True,
+    )
+    self.assertEqual('404 Not Found', res.status)
+    self.assertIn(
+        'Report upload test action with configed credentials and options %s not'
+        ' found'
+        % build_api.REPORT_UPLOAD_HOOK_CLASS_NAME,
+        str(res.body),
+    )
 
 
 if __name__ == '__main__':

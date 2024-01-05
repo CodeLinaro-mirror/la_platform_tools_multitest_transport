@@ -1485,6 +1485,25 @@ class NetdataAlarmList(messages.Message):
   alarms = messages.MessageField(NetdataAlarm, 1, repeated=True)
 
 
+class XtsRequirements(messages.Message):
+  """Xts requirements of a build."""
+
+  detection_status = messages.EnumField(
+      ndb_models.XtsRequirementsDetectionStatus, 1
+  )
+  detection_test_run_id = messages.StringField(2)
+
+
+@Converter(ndb_models.XtsRequirements, XtsRequirements)
+def _XtsRequirementsConverter(obj):
+  return XtsRequirements(
+      detection_status=obj.detection_status,
+      detection_test_run_id=str(obj.detection_test_run_key.id())
+      if obj.detection_test_run_key
+      else None,
+  )
+
+
 class Build(messages.Message):
   """A build."""
   id = messages.StringField(1)
@@ -1494,6 +1513,7 @@ class Build(messages.Message):
   labels = messages.StringField(5, repeated=True)
   create_time = message_types.DateTimeField(6)
   update_time = message_types.DateTimeField(7)
+  xts_requirements = messages.MessageField(XtsRequirements, 8)
 
 
 @Converter(ndb_models.Build, Build)
@@ -1506,20 +1526,18 @@ def _BuildConverter(obj):
       labels=obj.labels,
       create_time=_AddTimezone(obj.create_time),
       update_time=_AddTimezone(obj.update_time),
+      xts_requirements=Convert(obj.xts_requirements, XtsRequirements),
   )
-
-
-@Converter(Build, ndb_models.Build)
-def _BuildMessageConverter(msg):
-  return ndb_models.Build(
-      key=ConvertToKeyOrNone(ndb_models.Build, msg.id),
-      name=msg.name,
-      file_url=msg.file_url,
-      size=msg.size,
-      labels=msg.labels)
 
 
 class BuildList(messages.Message):
   """A list of builds."""
 
   builds = messages.MessageField(Build, 1, repeated=True)
+
+
+class XtsRequirementsDetectionRequest(messages.Message):
+  """Request to run xTS requirements detection."""
+
+  device_spec = messages.StringField(1)
+  test_resource_objs = messages.MessageField(TestResourceObj, 2, repeated=True)

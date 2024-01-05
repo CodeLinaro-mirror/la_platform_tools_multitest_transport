@@ -1044,6 +1044,33 @@ def GetFileCleanerSettings():
   return obj or DEFAULT_FILE_CLEANER_SETTINGS
 
 
+class XtsRequirementsDetectionStatus(messages.Enum):
+  NOT_STARTED = 0  # Xts requirements detection is not yet started.
+  SIGNALS_COLLECTING = 1  # A task is collecting build integrity signals.
+  ANALYSIS_RUNNING = 2  # A build analysis on APA side is running.
+  COMPLETED = 3  # Xts requirements detection is completed.
+  CANCELED = 4  # Xts requirements detection is canceled.
+  ERROR = 5  # Xts requirements detection is aborted with an error.
+
+
+class XtsRequirements(ndb.Model):
+  """Xts requirements of a build.
+
+  Attributes:
+    detection_status: status of xts requirements detection for a build.
+    detection_test_run_key: test run key of xts requirements detection for a
+      build.
+  """
+
+  detection_status = ndb.EnumProperty(
+      XtsRequirementsDetectionStatus,
+      default=XtsRequirementsDetectionStatus.NOT_STARTED,
+  )
+  detection_test_run_key = ndb.KeyProperty(TestRun)
+  # TODO: Add fields to store xts requirement details based on APA
+  # response.
+
+
 class Build(ndb.Model):
   """A build.
 
@@ -1054,6 +1081,7 @@ class Build(ndb.Model):
     labels: list of strings users can use to categorize builds.
     create_time: time a build is created.
     update_time: time a build is last updated.
+    xts_requirements: xts requirements of a build.
   """
   name = ndb.StringProperty()
   file_url = ndb.StringProperty()
@@ -1061,3 +1089,6 @@ class Build(ndb.Model):
   labels = ndb.StringProperty(repeated=True)
   create_time = ndb.DateTimeProperty(auto_now_add=True)
   update_time = ndb.DateTimeProperty(auto_now=True)
+  xts_requirements = ndb.StructuredProperty(
+      XtsRequirements, default=XtsRequirements()
+  )

@@ -21,9 +21,19 @@ import endpoints
 from multitest_transport.api import base
 from multitest_transport.models import messages as mtt_messages
 from multitest_transport.models import ndb_models
+from multitest_transport.test_scheduler import test_kicker
 from protorpc import message_types
 from protorpc import messages
 from protorpc import remote
+from tradefed_cluster.util import ndb_shim as ndb
+
+XTS_REQUIREMENTS_DETECTION_TEST_KEY = (
+    'android.gts.latest_release.xts_requirements_detection'
+)
+
+# LINT.IfChange(report_upload_hook_class_name)
+REPORT_UPLOAD_HOOK_CLASS_NAME = 'APFEReportUploadHook'
+# LINT.ThenChange(//depot/google3/third_party/py/multitest_transport/plugins/apfe.py:report_upload_hook_name)
 
 
 @base.MTT_API.api_class(resource_name='build', path='builds')
@@ -135,6 +145,58 @@ class BuildApi(remote.Service):
       )
     return message_types.VoidMessage()
 
+  @base.ApiMethod(
+      endpoints.ResourceContainer(
+          mtt_messages.XtsRequirementsDetectionRequest,
+          build_id=messages.StringField(1, required=True),
+      ),
+      mtt_messages.Build,
+      path='{build_id}/detect',
+      http_method='POST',
+      name='detect',
+  )
+  def Detect(self, request):
+    """Detects xTS requirements for a build.
+
+    Body:
+      Request to run xTS requirements detection
+    Parameters:
+      build_id: Build ID
+    """
+    test_key, test = self._getXtsRequirementsDetectionTest()
+    report_upload_action_key, _ = self._getReportUploadAction()
+
+    test_run_config = ndb_models.TestRunConfig(
+        test_key=test_key,
+        command=test.command,
+        device_specs=[request.device_spec],
+        test_run_action_refs=[
+            ndb_models.TestRunActionRef(action_key=report_upload_action_key)
+        ],
+        test_resource_objs=mtt_messages.ConvertList(
+            request.test_resource_objs, ndb_models.TestResourceObj
+        ),
+    )
+    test_run = test_kicker.CreateTestRun(
+        labels=['xts_requirements_detection', request.build_id],
+        test_run_config=test_run_config,
+    )
+
+    # Update detection status to SIGNALS_COLLECTING and store test run key.
+    def _Txn():
+      _, build = self._getBuild(request.build_id)
+      if not test_run:
+        return
+      build.xts_requirements.detection_status = (
+          ndb_models.XtsRequirementsDetectionStatus.SIGNALS_COLLECTING
+      )
+      build.xts_requirements.detection_test_run_key = test_run.key
+      build.put()
+      return build
+
+    updated_build = ndb.transaction(_Txn)
+    return mtt_messages.Convert(updated_build, mtt_messages.Build)
+
   def _Delete(self, build_id):
     """Deletes a build."""
     build_key, _ = self._getBuild(build_id)
@@ -147,3 +209,35 @@ class BuildApi(remote.Service):
     if not build:
       raise endpoints.NotFoundException('Build %s not found' % build_id)
     return build_key, build
+
+  def _getXtsRequirementsDetectionTest(self):
+    """Gets the default test for xts requirements detection."""
+    test_key = mtt_messages.ConvertToKey(
+        ndb_models.Test, XTS_REQUIREMENTS_DETECTION_TEST_KEY
+    )
+    test = test_key.get()
+    if not test:
+      raise endpoints.NotFoundException(
+          'Test %s not found' % XTS_REQUIREMENTS_DETECTION_TEST_KEY
+      )
+    return test_key, test
+
+  def _getReportUploadAction(self):
+    """Gets the report upload test action."""
+    actions = list(
+        ndb_models.TestRunAction.query(
+            ndb_models.TestRunAction.hook_class_name
+            == REPORT_UPLOAD_HOOK_CLASS_NAME
+        )
+    )
+    report_upload_action = None
+    for action in actions:
+      if action.credentials and all(opt.value for opt in action.options):
+        report_upload_action = action
+        break
+    if not report_upload_action:
+      raise endpoints.NotFoundException(
+          'Report upload test action with configed credentials and options %s'
+          ' not found' % REPORT_UPLOAD_HOOK_CLASS_NAME
+      )
+    return report_upload_action.key, report_upload_action

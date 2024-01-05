@@ -36,7 +36,9 @@ _API_VERSION = 'v1'
 
 class APFEReportUploadHook(base.TestRunHook):
   """Hook which uploads reports to APFE."""
+  # LINT.IfChange(report_upload_hook_name)
   name = 'APFEReportUploadHook'
+  # LINT.ThenChange(//depot/google3/third_party/py/multitest_transport/api/build_api.py:report_upload_hook_class_name)
   oauth2_config = oauth2_util.OAuth2Config(
       client_id=env.GOOGLE_OAUTH2_CLIENT_ID,
       client_secret=env.GOOGLE_OAUTH2_CLIENT_SECRET,
