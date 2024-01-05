@@ -144,14 +144,3 @@ button {
     background: $success-background;
   }
 }
-
-// Module Result status
-:host-context(.module-result) {
-  .status-button-completed {
-    background: $success-background;
-  }
-
-  .status-button-incomplete {
-    background: $danger-background;
-  }
-}
