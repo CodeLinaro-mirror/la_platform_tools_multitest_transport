@@ -458,6 +458,15 @@ class FileUtilTest(parameterized.TestCase):
     env.FILE_SERVER_URL = 'http://localhost:8006/'
     env.HOSTNAME = 'test.hostname.com'
 
+  def testGetLocalFilePath(self):
+    self.assertEqual(
+        '/local/file/path/',
+        file_util.GetLocalFilePath('file:///local/file/path/'),
+    )
+    self.assertIsNone(
+        file_util.GetLocalFilePath('file://invalid/local/file/path/')
+    )
+
   def testGetGetAppStorageUrl(self):
     self.assertEqual('file:///root/file/path',
                      file_util.GetAppStorageUrl(['file', 'path']))

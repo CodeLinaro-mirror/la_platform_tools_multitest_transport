@@ -111,7 +111,9 @@ def MergeReports(test_run_id):
   test_record_urls = []
   for attempt in attempts:
     result_url = file_util.GetResultUrl(test_run, attempt)
-    local_result_url = _GetLocalFilePath(result_url) if result_url else None
+    local_result_url = (
+        file_util.GetLocalFilePath(result_url) if result_url else None
+    )
     if local_result_url:
       local_result_url = local_result_url.strip()
       local_test_record_url = '/'.join(
@@ -132,7 +134,9 @@ def MergeReports(test_run_id):
     xml_report_files = ','.join(result_urls)
     test_record_proto_files = ','.join(test_record_urls)
     merged_report_dir = os.path.join(
-        _GetLocalFilePath(file_util.GetAppStorageUrl([test_run.output_path])),
+        file_util.GetLocalFilePath(
+            file_util.GetAppStorageUrl([test_run.output_path])
+        ),
         'merged_report',
     )
     if os.path.isdir(merged_report_dir):
@@ -188,13 +192,6 @@ def MergeReports(test_run_id):
       (unexpected_out, _) = proc.communicate()
       for line in unexpected_out.splitlines():
         logging.warning(line)
-
-
-def _GetLocalFilePath(result_url: str) -> Optional[str]:
-  if not result_url.startswith('file:///'):
-    logging.warning('Invalid local file URL %s', result_url)
-    return None
-  return result_url[7:]
 
 
 def _GetMergedReportZipFile(test_run) -> Optional[str]:

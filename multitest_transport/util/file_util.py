@@ -41,6 +41,7 @@ UPLOAD_BUFFER_SIZE = 512 * 1024
 LOCAL_HOSTNAME = ('localhost', '0.0.0.0', '127.0.0.1', '::', '::1')
 HTTP_TIMEOUT_SECONDS = 30
 MAX_HTTP_READ_ATTEMPTS = 3
+LOCAL_FILE_URL_PREFIX = 'file:///'
 
 
 @dataclasses.dataclass(frozen=True)
@@ -243,7 +244,7 @@ class FileHandle(object):
     Returns:
       file handle
     """
-    if url.startswith('file:///'):
+    if url.startswith(LOCAL_FILE_URL_PREFIX):
       return LocalFileHandle(url)  # Local file URL
     if url.startswith('file://'):
       return RemoteFileHandle(url)  # Remote file server URL
@@ -297,9 +298,10 @@ class LocalFileHandle(FileHandle):
 
   def __init__(self, url: str):
     super(LocalFileHandle, self).__init__(url)
-    if not url.startswith('file:///'):
+    local_file_path = GetLocalFilePath(url)
+    if not local_file_path:
       raise ValueError('Invalid local file URL %s' % url)
-    self.path = url[7:]
+    self.path = local_file_path
     if not self.path.startswith(env.STORAGE_PATH):
       self.path = _JoinPath('/', env.STORAGE_PATH, self.path)
 
@@ -511,6 +513,21 @@ class RemoteFileHandle(HttpFileHandle):
     request = urllib.request.Request(url=self.file_url)
     request.get_method = lambda: 'DELETE'
     urllib.request.urlopen(request)
+
+
+def GetLocalFilePath(file_url: str) -> Optional[str]:
+  """Get the local file path.
+
+  Args:
+    file_url: file URL.
+
+  Returns:
+    local file path
+  """
+  if not file_url.startswith(LOCAL_FILE_URL_PREFIX):
+    logging.warning('Invalid local file URL %s', file_url)
+    return None
+  return file_url[7:]
 
 
 def GetAppStorageUrl(parts: List[str], hostname: Optional[str] = None) -> str:
