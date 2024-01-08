@@ -181,7 +181,7 @@ export class TfcClient {
     }
     return this.http
         .get<mttLabModels.LabDeviceInfosResponse>(
-            `${this.tfcApiUrl}/devices`, {params})
+            `${this.apiUrl}/devices`, {params})
         .pipe(map(
             result => mttLabModels.convertToLabDeviceInfosResponse(result)));
   }
@@ -262,7 +262,7 @@ export class TfcClient {
               .append('timestamp_operator', searchCriteria.timestampOperator);
     }
     return this.http
-        .get<tfcModels.HostInfosResponse>(`${this.tfcApiUrl}/hosts`, {params})
+        .get<tfcModels.HostInfosResponse>(`${this.apiUrl}/hosts`, {params})
         .pipe(
             map(result => mttLabModels.convertToLabHostInfosResponse(result)));
   }

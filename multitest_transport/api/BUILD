@@ -214,6 +214,48 @@ py_test(
 )
 
 pytype_strict_library(
+    name = "host_api_lib",
+    srcs = [
+        "host_api.py",
+    ],
+    deps = [
+        ":base_lib",
+        ":device_api_lib",
+        "@com_google_deviceinfra//src/devtools/mobileharness/api/model/proto:device_py_pb2",
+        "@com_google_deviceinfra//src/devtools/mobileharness/infra/master/rpc/proto:lab_info_service_py_proto",
+        "//third_party/py/endpoints:endpoints_library",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
+        "//multitest_transport/util:olcs_lab_info_client_lib",
+        third_party("protorpc"),
+        "@tradefed_cluster//tradefed_cluster:api_messages_lib",
+    ],
+)
+
+py_test(
+    name = "host_api_test",
+    srcs = [
+        "host_api_test.py",
+    ],
+    tags = ["not_run:arm"],
+    deps = [
+        ":api_test_util_lib",
+        ":base_lib",
+        third_party("grpc"),
+        ":host_api_lib",
+        "@com_google_deviceinfra//src/devtools/mobileharness/api/model/proto:device_py_pb2",
+        "@com_google_deviceinfra//src/devtools/mobileharness/infra/master/rpc/proto:lab_info_service_py_grpc",
+        "@com_google_deviceinfra//src/devtools/mobileharness/infra/master/rpc/proto:lab_info_service_py_proto",
+        "//third_party/py/absl/testing:absltest",
+        "//multitest_transport/models",
+        "//multitest_transport/util:olcs_lab_info_client_lib",
+        "@tradefed_cluster//tradefed_cluster:api_messages_lib",
+        "@tradefed_cluster//tradefed_cluster/util:ndb_shim_lib",
+        third_party("google-endpoints"),
+        third_party("protorpc"),
+    ],
+)
+
+pytype_strict_library(
     name = "node_config_api_lib",
     srcs = [
         "node_config_api.py",
@@ -293,6 +335,7 @@ pytype_strict_library(
         ":device_action_api_lib",
         ":device_api_lib",
         ":file_cleaner_api_lib",
+        ":host_api_lib",
         ":netdata_api_lib",
         ":node_config_api_lib",
         ":openapi_lib",

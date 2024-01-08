@@ -111,98 +111,9 @@ class DeviceApi(remote.Service):
     ) in (
         response.lab_query_result.device_view.grouped_devices.device_list.device_info
     ):
-      device_type = api_messages.DeviceTypeMessage.PHYSICAL
-      if 'AndroidRealDevice' in device_info.device_feature.type:
-        device_type = api_messages.DeviceTypeMessage.PHYSICAL
-      elif 'NoOpDevice' in device_info.device_feature.type:
-        device_type = api_messages.DeviceTypeMessage.NULL
-      state = 'UNKNOWN'
-      if device_info.device_status == device_pb2.DeviceStatus.IDLE:
-        state = 'AVAILABLE'
-      elif device_info.device_status == device_pb2.DeviceStatus.INIT:
-        state = 'INIT'
-      elif device_info.device_status == device_pb2.DeviceStatus.BUSY:
-        state = 'ALLOCATED'
-      elif device_info.device_status == device_pb2.DeviceStatus.DYING:
-        state = 'DYING'
-      elif device_info.device_status == device_pb2.DeviceStatus.DIRTY:
-        state = 'DIRTY'
-      elif device_info.device_status == device_pb2.DeviceStatus.PREPPING:
-        state = 'PREPPING'
-      elif device_info.device_status == device_pb2.DeviceStatus.LAMEDUCK:
-        state = 'DIRTY'
-      elif device_info.device_status == device_pb2.DeviceStatus.MISSING:
-        state = 'MISSING'
-
-      build_id = ''
-      product = ''
-      sdk_version = ''
-      pools = []
-      mac_address = ''
-      dimensions = (
-          device_info.device_feature.composite_dimension.supported_dimension
-      )
-      lab_name = ''
-      battery_level = '100'
-      sim_card_info = ''
-      for dimension in dimensions:
-        if dimension.name == 'build':
-          build_id = dimension.value
-        elif dimension.name == 'product_board':
-          product = dimension.value
-        elif dimension.name == 'sdk_version':
-          sdk_version = dimension.value
-        elif dimension.name == 'cluster':
-          pools.append(dimension.value)
-        elif dimension.name == 'mac_address':
-          mac_address = dimension.value
-        elif dimension.name == 'lab_location':
-          lab_name = dimension.value
-        elif dimension.name == 'battery_level':
-          battery_level = dimension.value
-        elif dimension.name == 'sim_card_info':
-          sim_card_info = dimension.value
-
       device_infos.append(
-          api_messages.DeviceInfo(
-              device_serial=device_info.device_uuid,
-              lab_name=lab_name,
-              hostname=device_info.device_locator.lab_locator.host_name,
-              run_target=product,
-              build_id=build_id,
-              product=product,
-              product_variant=product,
-              sdk_version=sdk_version,
-              state=state,
-              timestamp=datetime.datetime.fromtimestamp(
-                  response.lab_query_result.timestamp.seconds
-              ),
-              battery_level=battery_level,
-              hidden=False,
-              notes=[],
-              history=[],
-              utilization=0.0,
-              cluster='',
-              host_group='',
-              pools=pools,
-              device_type=device_type,
-              mac_address=mac_address,
-              group_name='',
-              sim_state='READY' if sim_card_info else 'ABSENT',
-              sim_operator=sim_card_info,
-              extra_info=[
-                  api_messages.KeyValuePair(
-                      key='battery_level', value=battery_level
-                  )
-              ],
-              flated_extra_info=[],
-              test_harness='OMNILAB',
-              recovery_state='',
-              last_recovery_time=datetime.datetime.fromtimestamp(0),
-              is_stub_device=False,
-              display_serial=device_info.device_locator.id,
-              preconfigured_ip=device_info.device_locator.lab_locator.ip,
-              preconfigured_device_num_offset=0,
+          DeviceApi.ConvertDeviceInfo(
+              device_info, response.lab_query_result.timestamp
           )
       )
 
@@ -215,4 +126,104 @@ class DeviceApi(remote.Service):
         more=True
         if offset + returned_device_count < total_device_count
         else False,
+    )
+
+  @staticmethod
+  def ConvertDeviceInfo(device_info, timestamp):
+    """Converts an OmniLab device info to an ATS device info.
+
+    Args:
+      device_info: the OmniLab device info
+      timestamp: the timestamp when this device info is returned
+
+    Returns:
+      an ATS device info
+    """
+    device_type = api_messages.DeviceTypeMessage.PHYSICAL
+    if 'AndroidRealDevice' in device_info.device_feature.type:
+      device_type = api_messages.DeviceTypeMessage.PHYSICAL
+    elif 'NoOpDevice' in device_info.device_feature.type:
+      device_type = api_messages.DeviceTypeMessage.NULL
+    state = 'UNKNOWN'
+    if device_info.device_status == device_pb2.DeviceStatus.IDLE:
+      state = 'AVAILABLE'
+    elif device_info.device_status == device_pb2.DeviceStatus.INIT:
+      state = 'INIT'
+    elif device_info.device_status == device_pb2.DeviceStatus.BUSY:
+      state = 'ALLOCATED'
+    elif device_info.device_status == device_pb2.DeviceStatus.DYING:
+      state = 'DYING'
+    elif device_info.device_status == device_pb2.DeviceStatus.DIRTY:
+      state = 'DIRTY'
+    elif device_info.device_status == device_pb2.DeviceStatus.PREPPING:
+      state = 'PREPPING'
+    elif device_info.device_status == device_pb2.DeviceStatus.LAMEDUCK:
+      state = 'DIRTY'
+    elif device_info.device_status == device_pb2.DeviceStatus.MISSING:
+      state = 'MISSING'
+
+    build_id = ''
+    product = ''
+    sdk_version = ''
+    pools = []
+    mac_address = ''
+    dimensions = (
+        device_info.device_feature.composite_dimension.supported_dimension
+    )
+    lab_name = ''
+    battery_level = '100'
+    sim_card_info = ''
+    for dimension in dimensions:
+      if dimension.name == 'build':
+        build_id = dimension.value
+      elif dimension.name == 'product_board':
+        product = dimension.value
+      elif dimension.name == 'sdk_version':
+        sdk_version = dimension.value
+      elif dimension.name == 'cluster':
+        pools.append(dimension.value)
+      elif dimension.name == 'mac_address':
+        mac_address = dimension.value
+      elif dimension.name == 'lab_location':
+        lab_name = dimension.value
+      elif dimension.name == 'battery_level':
+        battery_level = dimension.value
+      elif dimension.name == 'sim_card_info':
+        sim_card_info = dimension.value
+
+    return api_messages.DeviceInfo(
+        device_serial=device_info.device_uuid,
+        lab_name=lab_name,
+        hostname=device_info.device_locator.lab_locator.host_name,
+        run_target=product,
+        build_id=build_id,
+        product=product,
+        product_variant=product,
+        sdk_version=sdk_version,
+        state=state,
+        timestamp=datetime.datetime.fromtimestamp(timestamp.seconds),
+        battery_level=battery_level,
+        hidden=False,
+        notes=[],
+        history=[],
+        utilization=0.0,
+        cluster='',
+        host_group='',
+        pools=pools,
+        device_type=device_type,
+        mac_address=mac_address,
+        group_name='',
+        sim_state='READY' if sim_card_info else 'ABSENT',
+        sim_operator=sim_card_info,
+        extra_info=[
+            api_messages.KeyValuePair(key='battery_level', value=battery_level)
+        ],
+        flated_extra_info=[],
+        test_harness='OMNILAB',
+        recovery_state='',
+        last_recovery_time=datetime.datetime.fromtimestamp(0),
+        is_stub_device=False,
+        display_serial=device_info.device_locator.id,
+        preconfigured_ip=device_info.device_locator.lab_locator.ip,
+        preconfigured_device_num_offset=0,
     )
