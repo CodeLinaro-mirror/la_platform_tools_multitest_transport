@@ -17,6 +17,7 @@
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {AfterViewInit, Component, Input, OnInit, ViewChild} from '@angular/core';
 import {MatButton} from '@angular/material/button';
+import {MatDialog} from '@angular/material/dialog';
 import {Router} from '@angular/router';
 import {ReplaySubject} from 'rxjs';
 import {finalize, takeUntil} from 'rxjs/operators';
@@ -25,6 +26,8 @@ import {MttClient} from '../services/mtt_client';
 import * as mttModels from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
 import {buildApiErrorMessage} from '../shared/util';
+
+import {XtsRequirementDetect, XtsRequirementDetectData} from './xts_requirement_detect';
 
 /** A component for displaying the details of a build. */
 @Component({
@@ -44,6 +47,7 @@ export class BuildDetail implements OnInit, AfterViewInit {
 
   constructor(
       private readonly liveAnnouncer: LiveAnnouncer,
+      private readonly matDialog: MatDialog,
       private readonly mttClient: MttClient,
       private readonly notifier: Notifier,
       private readonly router: Router,
@@ -89,5 +93,41 @@ export class BuildDetail implements OnInit, AfterViewInit {
 
   back() {
     this.router.navigate(['builds']);
+  }
+
+  detect() {
+    const initConfig = mttModels.initXtsRequirementDetect();
+
+    const xtsRequirementDetectData:
+        XtsRequirementDetectData = {testRunConfig: initConfig};
+
+    const dialogRef = this.matDialog.open(XtsRequirementDetect, {
+      width: '80vw',
+      height: '80vh',
+      panelClass: 'xts-requirements-detect-dialog',
+      data: xtsRequirementDetectData,
+    });
+
+    dialogRef.componentInstance.configSubmitted
+        .pipe(takeUntil(dialogRef.afterClosed()))
+        .subscribe((newConfig: mttModels.TestRunConfig) => {
+          const request: mttModels.XtsRequirementsDetectionRequest = {
+            device_spec: newConfig.device_specs![0],
+            test_resource_objs: newConfig.test_resource_objs!,
+          };
+          this.mttClient.builds.detect(this.buildId, request)
+              .pipe(takeUntil(this.destroy))
+              .subscribe(
+                  updatedBuild => {
+                    this.build = updatedBuild;
+                  },
+                  error => {
+                    this.notifier.showError(
+                        `Failed to detect xTS requirements for build '${
+                            this.buildId}'.`,
+                        buildApiErrorMessage(error));
+                  },
+              );
+        });
   }
 }

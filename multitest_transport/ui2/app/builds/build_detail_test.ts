@@ -16,22 +16,23 @@
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {DebugElement} from '@angular/core';
-import {ComponentFixture, TestBed} from '@angular/core/testing';
+import {ComponentFixture, inject, TestBed} from '@angular/core/testing';
+import {MatDialog} from '@angular/material/dialog';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {RouterTestingModule} from '@angular/router/testing';
 import {of as observableOf} from 'rxjs';
 
 import {BuildClient, MttClient} from '../services/mtt_client';
 import * as mttModels from '../services/mtt_models';
-import {getTextContent} from '../testing/jasmine_util';
+import {getEl, getTextContent} from '../testing/jasmine_util';
 import {newMockBuild} from '../testing/mtt_mocks';
 
 import {BuildDetail} from './build_detail';
 import {BuildsModule} from './builds_module';
+import {XtsRequirementDetect} from './xts_requirement_detect';
 
 describe('BuildDetail', () => {
-  const build: mttModels.Build = newMockBuild(
-      'build_id_1', 'name_1', 'file:///file/path_1', ['label_1', 'label_2']);
+  const build: mttModels.Build = newMockBuild();
 
   let buildDetail: BuildDetail;
   let buildDetailFixture: ComponentFixture<BuildDetail>;
@@ -77,6 +78,25 @@ describe('BuildDetail', () => {
     expect(textContent).toContain(build.name);
     expect(textContent).toContain(build.file_url);
     expect(textContent).toContain(build.labels.join(','));
-    // TODO: Add more checks as page is built.
+    expect(textContent).toContain('xTS Testing Requirements');
+    expect(textContent)
+        .toContain(build.xts_requirements!.detection_test_run_id);
   });
+
+  it('should open xts requirement detect dialog when clicking detect button',
+     inject([MatDialog], (dialog: MatDialog) => {
+       spyOn(dialog, 'open').and.callThrough();
+
+       getEl(el, '.detect-button').click();
+       expect(dialog.open).toHaveBeenCalledTimes(1);
+
+       const dialogParams = {
+         width: '80vw',
+         height: '80vh',
+         panelClass: 'xts-requirements-detect-dialog',
+         data: {testRunConfig: mttModels.initXtsRequirementDetect()},
+       };
+       expect(dialog.open)
+           .toHaveBeenCalledWith(XtsRequirementDetect, dialogParams);
+     }));
 });

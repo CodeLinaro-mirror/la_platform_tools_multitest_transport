@@ -77,7 +77,56 @@
       </table>
     </mat-card-content>
   </mat-card>
-  <!-- TODO: Impletement xTS detection Component -->
+  <mat-card class="card">
+    <mat-card-title>
+      <h2 fxFlex>xTS Testing Requirements</h2>
+    </mat-card-title>
+    <mat-card-content *ngIf="build">
+      <table class="table-layout">
+        <tr>
+          <td>
+            <table class="table-content">
+              <tr>
+                <td class="title-field">
+                  <mat-label>Detection status</mat-label>
+                </td>
+                <td class="value-field">
+                  <status-button class="xts-requirements-detection"
+                      [state]="build.xts_requirements!.detection_status">
+                  </status-button>
+                </td>
+              </tr>
+              <tr>
+                <td class="title-field">
+                  <mat-label>Invocation run</mat-label>
+                </td>
+                <td class="value-field">
+                  <ng-container *ngIf="build.xts_requirements?.detection_test_run_id">
+                    <a href="/test_runs/{{build.xts_requirements!.detection_test_run_id!}}">
+                      {{build.xts_requirements!.detection_test_run_id!}}
+                    </a>
+                  </ng-container>
+                  <ng-container *ngIf="!build.xts_requirements?.detection_test_run_id">
+                    N/A
+                  </ng-container>
+                </td>
+              </tr>
+              <tr>
+                <button mat-flat-button
+                    class="detect-button"
+                    color="accent"
+                    type="button"
+                    aria-label="Detect"
+                    (click)="detect()">
+                  Detect
+                </button>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </mat-card-content>
+  </mat-card>
 
   <div class="empty" *ngIf="!build && !isLoading">
     Build {{buildId}} not found.

@@ -144,3 +144,15 @@ button {
     background: $success-background;
   }
 }
+
+// Xts requirements detection status
+:host-context(.xts-requirements-detection) {
+  .status-button-not-started {
+    width: 120px;
+  }
+
+  .status-button-signals-collecting {
+    background: $progress-background;
+    width: 166px;
+  }
+}

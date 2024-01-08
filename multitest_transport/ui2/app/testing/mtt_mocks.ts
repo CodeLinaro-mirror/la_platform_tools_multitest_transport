@@ -16,14 +16,14 @@
 
 import * as moment from 'moment';
 
-import {AppData} from '../services/app_data';
 import * as mttModels from '../services/mtt_models';
 import * as tfcModels from '../services/tfc_models';
 
 // CONSTANTS;
-const ADB_VERSION = '12.3.4-5678901';
-const ANALYTICS_TRACKING_ID = 'analyticstrackingid';
 const ATTEMPT_ID = 'attemptid789';
+const BUILD_ID = 'build_id';
+const BUILD_NAME = 'build_name';
+const BUILD_URL = 'file:///build/path';
 const BUILD_CHANNEL_ID = 'test_build_channel_id';
 const BUILD_CHANNEL_NAME = 'test_build_channel_name';
 const BUILD_CHANNEL_PROVIDER_NAME = 'Partner Android Build';
@@ -38,15 +38,10 @@ const DATE = new Date().toISOString();
 const DATE_FUTURE = addTime(DATE, 0, 5, 0);  // 5 minutes later
 const DEVICE_ACTION_ID = 'reset';
 const DEVICE_ACTION_NAME = 'Factory Reset';
-const DEVICE_BUILD_ID = 'B12.34.56';
-const DEVICE_PRODUCT = 'fish';
-const DEVICE_SERIAL = 'D12345';
 const FAILED_TEST_COUNT = 13;
-const FILE_BROWSE_URL = '/file/browse/url';
-const FILE_OPEN_URL = '/file/open/url';
-const FILE_SERVER_ROOT = '/file/server/root';
 const HOSTNAME = 'hostname';
-const MTT_VERSION = '01012000';
+const LABEL1 = 'label1';
+const LABEL2 = 'label2';
 const OPTION_DEF_NAME = 'test_name';
 const PREVIOUS_TEST_RUN_ID = '12345678';
 const REQUEST_ID = 'requestid123';
@@ -623,12 +618,18 @@ export function toTitleCase(str: string) {
 
 /** Creates a Build object. */
 export function newMockBuild(
-    id: string, name: string, fileUrl: string, labels: string[]) {
+    id = BUILD_ID, name = BUILD_NAME, fileUrl = BUILD_URL,
+    labels = [LABEL1, LABEL2]) {
   return {
     id,
     name,
     file_url: fileUrl,
     size: 123123123,
     labels,
+    xts_requirements: {
+      detection_status:
+          mttModels.XtsRequirementsDetectionStatus.SIGNALS_COLLECTING,
+      detection_test_run_id: TEST_RUN_ID,
+    },
   };
 }

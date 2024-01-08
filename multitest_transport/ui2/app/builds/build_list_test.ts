@@ -29,6 +29,9 @@ import {newMockBuild} from '../testing/mtt_mocks';
 import {BuildList} from './build_list';
 import {BuildsModule} from './builds_module';
 
+/** This is for mock routers */
+class FakeComponent {}
+
 describe('BuildList', () => {
   const BUILDS = {
     builds: [
@@ -54,7 +57,11 @@ describe('BuildList', () => {
     notifier = jasmine.createSpyObj(['confirm', 'showError']);
 
     TestBed.configureTestingModule({
-      imports: [BuildsModule, NoopAnimationsModule, RouterTestingModule],
+      imports: [
+        BuildsModule, NoopAnimationsModule, RouterTestingModule.withRoutes([
+          {path: 'builds/:id', component: FakeComponent},
+        ])
+      ],
       providers: [
         {provide: MttClient, useValue: {builds: buildClient}},
         {provide: Notifier, useValue: notifier},

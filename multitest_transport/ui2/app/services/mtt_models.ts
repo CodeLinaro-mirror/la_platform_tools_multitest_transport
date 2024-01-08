@@ -42,6 +42,13 @@ export const DEFAULT_SHARD_COUNT = 0;
 /** Default cluster name */
 const DEFAULT_CLUSTER = 'default';
 
+// LINT.IfChange(xts_requirements_detection_test_id)
+const XTS_REQUIREMENTS_DETECTION_TEST_ID =
+    'android.gts.latest_release.xts_requirements_detection';
+// LINT.ThenChange(
+//   //depot/google3/third_party/py/multitest_transport/api/build_api.py:xts_requirements_detection_test_key,
+// )
+
 /** OAuth2 authorization information. */
 export declare interface AuthorizationInfo {
   /** An authorization url. */
@@ -1075,6 +1082,24 @@ export declare interface NetdataAlarmList {
   alarms?: NetdataAlarm[];
 }
 
+/** Status for xTS requirements detection. */
+export enum XtsRequirementsDetectionStatus {
+  NOT_STARTED = 'NOT_STARTED',
+  SIGNALS_COLLECTING = 'SIGNALS_COLLECTING',
+  ANALYSIS_RUNNING = 'ANALYSIS_RUNNING',
+  COMPLETED = 'COMPLETED',
+  CANCELED = 'CANCELED',
+  ERROR = 'ERROR',
+}
+
+/** Xts requirements of a build. */
+export declare interface XtsRequirements {
+  /** Status of xTS requirements detection */
+  detection_status: XtsRequirementsDetectionStatus;
+  /** Test run id of xTS requirements detection */
+  detection_test_run_id: string;
+}
+
 /** Build info. */
 export declare interface Build {
   /** An auto-generated build id */
@@ -1089,9 +1114,11 @@ export declare interface Build {
   labels: string[];
   /** Created time of this build */
   create_time?: string;
+  /** Xts requirements of this build */
+  xts_requirements?: XtsRequirements;
 }
 
-/** Initialize a build. */
+/** Initializes a build. */
 export function initBuild(): Partial<Build> {
   return {
     name: '',
@@ -1100,7 +1127,26 @@ export function initBuild(): Partial<Build> {
   };
 }
 
-/** List of Builds */
+/** List of Builds. */
 export declare interface BuildList {
   builds: Build[];
+}
+
+/** Initializes a new test run config for xTS requirements detection. */
+export function initXtsRequirementDetect(): Partial<TestRunConfig> {
+  const config = {
+    /**
+     * Loads the default settings from the test to initialize the test run
+     * config.
+     */
+    test_id: XTS_REQUIREMENTS_DETECTION_TEST_ID,
+    device_specs: [],
+  };
+  return config;
+}
+
+/** Requests to run xTS requirements detection. */
+export declare interface XtsRequirementsDetectionRequest {
+  device_spec: string;
+  test_resource_objs: TestResourceObj[];
 }

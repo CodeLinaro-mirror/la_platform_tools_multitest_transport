@@ -628,4 +628,14 @@ export class BuildClient {
     const params = new HttpParams().appendAll({'build_ids': ids});
     return this.http.delete<void>(BuildClient.PATH, {context, params});
   }
+
+  detect(
+      buildId: string,
+      xtsRequirementsDetectionRequest: model.XtsRequirementsDetectionRequest):
+      Observable<model.Build> {
+    const context = AnalyticsContext.create('builds', 'detect');
+    return this.http.post<model.Build>(
+        `${MTT_API_URL}/builds/${encodeURIComponent(buildId)}/detect`,
+        xtsRequirementsDetectionRequest, {context});
+  }
 }

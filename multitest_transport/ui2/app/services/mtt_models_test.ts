@@ -33,6 +33,7 @@ describe('MttModels', () => {
       expect(config.output_idle_timeout_seconds)
           .toEqual(mttModels.DEFAULT_OUTPUT_IDLE_TIMEOUT_SECONDS);
     });
+
     it('creates a config with a test\'s default values', () => {
       const test = testUtil.newMockTest();
       const config = mttModels.initTestRunConfig(test);
@@ -86,6 +87,7 @@ describe('MttModels', () => {
       const namespace = mttModels.getNamespaceFromId(id);
       expect(namespace).toEqual('ns1.test/catalog');
     });
+
     it('handles an id without a namespace', () => {
       const id = 'abc:123/cde.456';
       const namespace = mttModels.getNamespaceFromId(id);

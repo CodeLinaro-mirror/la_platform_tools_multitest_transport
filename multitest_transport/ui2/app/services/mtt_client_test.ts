@@ -21,7 +21,7 @@ import * as testUtil from '../testing/mtt_mocks';
 
 import {AuthService, REDIRECT_URI} from './auth_service';
 import {BuildClient, MTT_API_URL, MttClient, NetdataClient, TestRunActionClient} from './mtt_client';
-import {Build, BuildChannelList, BuildList, TestPlanList, TestRunAction, TestRunActionRefList} from './mtt_models';
+import {Build, BuildChannelList, BuildList, TestPlanList, TestRunAction, TestRunActionRefList, XtsRequirementsDetectionRequest} from './mtt_models';
 
 describe('MttClient', () => {
   let httpClientSpy: jasmine.SpyObj<HttpClient>;
@@ -900,6 +900,18 @@ describe('BuildClient', () => {
         .toHaveBeenCalledWith(
             BuildClient.PATH, jasmine.objectContaining({params}));
     expect(http.delete).toHaveBeenCalledTimes(1);
+  });
+
+  it('can delect xts requirements', () => {
+    const request: XtsRequirementsDetectionRequest = {
+      device_spec: '',
+      test_resource_objs: []
+    };
+    http.post.and.returnValue(observableOf(build));
+    client.detect(build.id!, request).subscribe();
+    expect(http.post).toHaveBeenCalledWith(
+        `${BuildClient.PATH}/${build.id}/detect`, request, jasmine.any(Object));
+    expect(http.post).toHaveBeenCalledTimes(1);
   });
 });
 
