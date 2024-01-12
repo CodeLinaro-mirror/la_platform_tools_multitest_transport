@@ -135,7 +135,7 @@ export class TfcClient {
 
   getDeviceInfo(serial: string): Observable<mttLabModels.LabDeviceInfo> {
     return this.http
-        .get<tfcModels.DeviceInfo>(`${this.tfcApiUrl}/devices/${serial}`)
+        .get<tfcModels.DeviceInfo>(`${this.apiUrl}/devices/${serial}`)
         .pipe(map(result => mttLabModels.convertToLabDeviceInfo(result)));
   }
 

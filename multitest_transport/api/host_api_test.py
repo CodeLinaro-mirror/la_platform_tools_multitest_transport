@@ -115,7 +115,15 @@ class HostApiTest(api_test_util.TestCase):
                     extra_info=[
                         api_messages.KeyValuePair(
                             key='battery_level', value='100'
-                        )
+                        ),
+                        api_messages.KeyValuePair(key='sdk_version', value=''),
+                        api_messages.KeyValuePair(key='build_id', value=''),
+                        api_messages.KeyValuePair(
+                            key='product', value='panther'
+                        ),
+                        api_messages.KeyValuePair(
+                            key='product_variant', value='panther'
+                        ),
                     ],
                     flated_extra_info=[],
                     test_harness='OMNILAB',

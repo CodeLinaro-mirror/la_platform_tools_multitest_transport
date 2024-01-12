@@ -115,8 +115,8 @@ class DeviceApiTest(api_test_util.TestCase):
             notes=[],
             history=[],
             utilization=0.0,
-            cluster='',
-            host_group='',
+            cluster='presubmit',
+            host_group='presubmit',
             pools=['presubmit'],
             device_type=api_messages.DeviceTypeMessage.PHYSICAL,
             mac_address='00:90:4c:d2:b1:9e',
@@ -124,7 +124,68 @@ class DeviceApiTest(api_test_util.TestCase):
             sim_state='READY',
             sim_operator='T-mobile',
             extra_info=[
-                api_messages.KeyValuePair(key='battery_level', value='90')
+                api_messages.KeyValuePair(key='battery_level', value='90'),
+                api_messages.KeyValuePair(key='sdk_version', value='34'),
+                api_messages.KeyValuePair(
+                    key='build_id', value='aosp_arm64-userdebug'
+                ),
+                api_messages.KeyValuePair(key='product', value='panther'),
+                api_messages.KeyValuePair(
+                    key='product_variant', value='panther'
+                ),
+            ],
+            flated_extra_info=[],
+            test_harness='OMNILAB',
+            recovery_state='',
+            last_recovery_time=datetime.datetime.fromtimestamp(0),
+            is_stub_device=False,
+            display_serial='device1',
+            preconfigured_ip='127.0.0.1',
+            preconfigured_device_num_offset=0,
+        ),
+    )
+
+  def testGetDevice(self):
+    res = self.app.get('/_ah/api/mtt/v1/devices/%s' % 'device_uuid1')
+    res_msg = protojson.decode_message(
+        api_messages.DeviceInfo, res.body
+    )
+    self.assertEqual(
+        res_msg,
+        api_messages.DeviceInfo(
+            device_serial='device_uuid1',
+            lab_name='bej',
+            hostname='localhost',
+            run_target='panther',
+            build_id='aosp_arm64-userdebug',
+            product='panther',
+            product_variant='panther',
+            sdk_version='34',
+            state='AVAILABLE',
+            timestamp=datetime.datetime.fromtimestamp(60),
+            battery_level='90',
+            hidden=False,
+            notes=[],
+            history=[],
+            utilization=0.0,
+            cluster='presubmit',
+            host_group='presubmit',
+            pools=['presubmit'],
+            device_type=api_messages.DeviceTypeMessage.PHYSICAL,
+            mac_address='00:90:4c:d2:b1:9e',
+            group_name='',
+            sim_state='READY',
+            sim_operator='T-mobile',
+            extra_info=[
+                api_messages.KeyValuePair(key='battery_level', value='90'),
+                api_messages.KeyValuePair(key='sdk_version', value='34'),
+                api_messages.KeyValuePair(
+                    key='build_id', value='aosp_arm64-userdebug'
+                ),
+                api_messages.KeyValuePair(key='product', value='panther'),
+                api_messages.KeyValuePair(
+                    key='product_variant', value='panther'
+                ),
             ],
             flated_extra_info=[],
             test_harness='OMNILAB',

@@ -32,6 +32,17 @@ from com_google_deviceinfra.src.devtools.mobileharness.infra.master.rpc.proto im
 class DeviceApi(remote.Service):
   """A class for device API service."""
 
+  def __init__(
+      self,
+      olcs_client: Optional[olcs_lab_info_client.OlcsLabInfoClient] = None,
+  ):
+    if olcs_client:
+      self._olcs_lab_info_client = olcs_client
+    else:
+      self._olcs_lab_info_client = (
+          olcs_lab_info_client.OlcsLabInfoClient.create()
+      )
+
   DEVICE_LIST_RESOURCE = endpoints.ResourceContainer(
       message_types.VoidMessage,
       lab_name=messages.StringField(1),
@@ -58,17 +69,6 @@ class DeviceApi(remote.Service):
       test_harness=messages.StringField(18, repeated=True),
       elastic_query=messages.StringField(19),
   )
-
-  def __init__(
-      self,
-      olcs_client: Optional[olcs_lab_info_client.OlcsLabInfoClient] = None,
-  ):
-    if olcs_client:
-      self._olcs_lab_info_client = olcs_client
-    else:
-      self._olcs_lab_info_client = (
-          olcs_lab_info_client.OlcsLabInfoClient.create()
-      )
 
   @base.ApiMethod(
       DEVICE_LIST_RESOURCE,
@@ -126,6 +126,55 @@ class DeviceApi(remote.Service):
         more=True
         if offset + returned_device_count < total_device_count
         else False,
+    )
+
+  DEVICE_GET_RESOURCE = endpoints.ResourceContainer(
+      message_types.VoidMessage,
+      device_serial=messages.StringField(1, required=True),
+      include_notes=messages.BooleanField(2, default=False),
+      include_history=messages.BooleanField(3, default=False),
+      include_utilization=messages.BooleanField(4, default=False),
+      hostname=messages.StringField(5),
+  )
+
+  @base.ApiMethod(
+      DEVICE_GET_RESOURCE,
+      api_messages.DeviceInfo,
+      path='{device_serial}',
+      http_method='GET',
+      name='get',
+  )
+  def GetDevice(self, request):
+    """Fetches the information and notes of a given device.
+
+    Args:
+      request: an API request.
+
+    Returns:
+      a DeviceInfo object.
+    Raises:
+      endpoints.NotFoundException: If the given device does not exist.
+    """
+    device_serial = request.device_serial
+    get_lab_info_request = lab_info_service_pb2.GetLabInfoRequest()
+
+    get_lab_info_request.page.offset = 0
+    get_lab_info_request.page.limit = 50
+    get_lab_info_request.lab_query.device_view_request.device_limit = 0
+    response = self._olcs_lab_info_client.get_lab_info(get_lab_info_request)
+
+    for (
+        device_info
+    ) in (
+        response.lab_query_result.device_view.grouped_devices.device_list.device_info
+    ):
+      # TODO: Do the filter in OLC server.
+      if device_info.device_uuid == device_serial:
+        return DeviceApi.ConvertDeviceInfo(
+            device_info, response.lab_query_result.timestamp
+        )
+    raise endpoints.NotFoundException(
+        "Device {0} doesn't exist.".format(device_serial)
     )
 
   @staticmethod
@@ -207,8 +256,8 @@ class DeviceApi(remote.Service):
         notes=[],
         history=[],
         utilization=0.0,
-        cluster='',
-        host_group='',
+        cluster=pools[0] if pools else '',
+        host_group=pools[0] if pools else '',
         pools=pools,
         device_type=device_type,
         mac_address=mac_address,
@@ -216,7 +265,11 @@ class DeviceApi(remote.Service):
         sim_state='READY' if sim_card_info else 'ABSENT',
         sim_operator=sim_card_info,
         extra_info=[
-            api_messages.KeyValuePair(key='battery_level', value=battery_level)
+            api_messages.KeyValuePair(key='battery_level', value=battery_level),
+            api_messages.KeyValuePair(key='sdk_version', value=sdk_version),
+            api_messages.KeyValuePair(key='build_id', value=build_id),
+            api_messages.KeyValuePair(key='product', value=product),
+            api_messages.KeyValuePair(key='product_variant', value=product),
         ],
         flated_extra_info=[],
         test_harness='OMNILAB',
