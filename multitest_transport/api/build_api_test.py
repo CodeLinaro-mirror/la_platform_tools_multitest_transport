@@ -27,7 +27,7 @@ from multitest_transport.models import ndb_models
 from multitest_transport.test_scheduler import test_kicker
 from protorpc import protojson
 
-FILE_URL = 'file:///root/file/path'
+FILE_URL = 'file:///root/file/path/build.zip'
 DEVICE_SPEC = 'device_serial:2A151FDH20066K'
 GTS_ZIP_NAME = 'android-gts.zip'
 GTS_ZIP_URL = 'file:///android/gts/zip/path'
@@ -45,6 +45,18 @@ class BuildApiTest(api_test_util.TestCase):
 
   def setUp(self):
     super(BuildApiTest, self).setUp(build_api.BuildApi)
+
+  def _CreateBuildToRequest(self):
+    build_to_request = {
+        'name': 'Foo',
+        'file_url': FILE_URL,
+        'size': '123123123',
+        'labels': [
+            'UDC',
+            'MR',
+        ],
+    }
+    return build_to_request
 
   def _CreateMockBuild(self):
     build = ndb_models.Build(
@@ -83,15 +95,7 @@ class BuildApiTest(api_test_util.TestCase):
 
   def testCreate(self):
     """Tests builds.create API."""
-    data = {
-        'name': 'Foo',
-        'file_url': FILE_URL,
-        'size': '123123123',
-        'labels': [
-            'UDC',
-            'MR',
-        ],
-    }
+    data = self._CreateBuildToRequest()
 
     res = self.app.post_json('/_ah/api/mtt/v1/builds', data)
 
@@ -101,6 +105,58 @@ class BuildApiTest(api_test_util.TestCase):
     self.assertEqual(data['file_url'], build.file_url)
     self.assertEqual(data['size'], str(build.size))
     self.assertEqual(data['labels'], build.labels)
+
+  def testCreate_unsetName(self):
+    """Tests builds.create API with unset name."""
+    data = self._CreateBuildToRequest()
+    data.pop('name')
+
+    res = self.app.post_json('/_ah/api/mtt/v1/builds', data, expect_errors=True)
+
+    self.assertEqual('400 Bad Request', res.status)
+    self.assertIn(
+        'Name in the request is unset.',
+        str(res.body),
+    )
+
+  def testCreate_unsetFileUrl(self):
+    """Tests builds.create API with unset file url."""
+    data = self._CreateBuildToRequest()
+    data.pop('file_url')
+
+    res = self.app.post_json('/_ah/api/mtt/v1/builds', data, expect_errors=True)
+
+    self.assertEqual('400 Bad Request', res.status)
+    self.assertIn(
+        'File url in the request is unset.',
+        str(res.body),
+    )
+
+  def testCreate_remoteFileUrl(self):
+    """Tests builds.create API with remote file url."""
+    data = self._CreateBuildToRequest()
+    data['file_url'] = 'file://remote/file/path'
+
+    res = self.app.post_json('/_ah/api/mtt/v1/builds', data, expect_errors=True)
+
+    self.assertEqual('400 Bad Request', res.status)
+    self.assertIn(
+        'Invalid local file URL %s.' % data['file_url'],
+        str(res.body),
+    )
+
+  def testCreate_unsupportedFileFormat(self):
+    """Tests builds.create API with unsupported file format."""
+    data = self._CreateBuildToRequest()
+    data['file_url'] = 'file:///root/file/path/build.rar.gz'
+
+    res = self.app.post_json('/_ah/api/mtt/v1/builds', data, expect_errors=True)
+
+    self.assertEqual('400 Bad Request', res.status)
+    self.assertIn(
+        'The file format for %s has not been supported.' % data['file_url'],
+        str(res.body),
+    )
 
   def testGet(self):
     """Tests builds.get API."""

@@ -15,6 +15,7 @@
 """A module to provide build APIs."""
 # Non-standard docstrings are used to generate the API documentation.
 
+import os
 import uuid
 
 import endpoints
@@ -22,6 +23,7 @@ from multitest_transport.api import base
 from multitest_transport.models import messages as mtt_messages
 from multitest_transport.models import ndb_models
 from multitest_transport.test_scheduler import test_kicker
+from multitest_transport.util import file_util
 from protorpc import message_types
 from protorpc import messages
 from protorpc import remote
@@ -38,6 +40,8 @@ XTS_REQUIREMENTS_DETECTION_TEST_KEY = (
 # LINT.IfChange(report_upload_hook_class_name)
 REPORT_UPLOAD_HOOK_CLASS_NAME = 'APFEReportUploadHook'
 # LINT.ThenChange(//depot/google3/third_party/py/multitest_transport/plugins/apfe.py:report_upload_hook_name)
+
+_ALLOWED_SOURCE_EXT = ['.zip', '.rar', '.tgz']
 
 
 @base.MTT_API.api_class(resource_name='build', path='builds')
@@ -69,11 +73,12 @@ class BuildApi(remote.Service):
     """
     build = ndb_models.Build(
         id=str(uuid.uuid4()),
-        name=request.name,
+        name=self._stripName(request.name),
         file_url=request.file_url,
         size=request.size,
         labels=request.labels,
     )
+    self._ValidateBuild(build)
     build.put()
     return mtt_messages.Convert(build, mtt_messages.Build)
 
@@ -116,8 +121,9 @@ class BuildApi(remote.Service):
       build_id: Build ID
     """
     _, existing_build = self._getBuild(request.build_id)
-    existing_build.name = request.name
+    existing_build.name = self._stripName(request.name)
     existing_build.labels = request.labels
+    self._ValidateBuild(existing_build)
     existing_build.put()
     return mtt_messages.Convert(existing_build, mtt_messages.Build)
 
@@ -245,3 +251,35 @@ class BuildApi(remote.Service):
           ' not found' % REPORT_UPLOAD_HOOK_CLASS_NAME
       )
     return report_upload_action.key, report_upload_action
+
+  def _stripName(self, name):
+    """Strips build name."""
+    if not name:
+      return None
+    return name.strip()
+
+  def _ValidateBuild(self, build):
+    """Check validity of a given build.
+
+    Args:
+      build: a ndb_models.Build object.
+    """
+    if not build.name:
+      raise endpoints.BadRequestException('Name in the request is unset.')
+    if not build.file_url:
+      raise endpoints.BadRequestException('File url in the request is unset.')
+    local_file_path = file_util.GetLocalFilePath(build.file_url)
+    if not local_file_path:
+      raise endpoints.BadRequestException(
+          'Invalid local file URL %s.' % build.file_url
+      )
+    _, ext = os.path.splitext(local_file_path)
+    if ext not in _ALLOWED_SOURCE_EXT:
+      raise endpoints.BadRequestException(
+          (
+              'The file format for %s has not been supported. For information'
+              ' on supported formats, see'
+              ' https://docs.partner.android.com/partners/guides/afap/builds#prepare-build.'
+          )
+          % build.file_url
+      )
