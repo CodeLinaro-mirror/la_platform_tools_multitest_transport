@@ -24,7 +24,7 @@ import {RouterTestingModule} from '@angular/router/testing';
 import {of as observableOf} from 'rxjs';
 
 import {BuildClient, MttClient} from '../services/mtt_client';
-import {getEl} from '../testing/jasmine_util';
+import {getEl, getTextContent} from '../testing/jasmine_util';
 import {newMockBuild} from '../testing/mtt_mocks';
 
 import {BuildCreatePage} from './build_create_page';
@@ -137,8 +137,27 @@ describe('BuildCreatePage', () => {
 
   it('creates new build', inject([Router], (router: Router) => {
        spyOn(router, 'navigate');
+       buildCreatePage.data = {
+         name: 'build_name',
+         file_url: 'file:///file/path',
+       };
+       buildCreatePageFixture.whenStable().then(() => {
+         getEl(el, '.create-button').click();
+         expect(buildClient.create).toHaveBeenCalled();
+         expect(router.navigate).toHaveBeenCalledWith([`builds/build_id_1`]);
+       });
+     }));
+
+  it('should not create new build if data is invalid',
+     inject([Router], (router: Router) => {
+       spyOn(router, 'navigate');
        getEl(el, '.create-button').click();
-       expect(buildClient.create).toHaveBeenCalled();
-       expect(router.navigate).toHaveBeenCalledWith([`builds/build_id_1`]);
+       buildCreatePageFixture.detectChanges();
+       const textContent = getTextContent(el);
+       expect(textContent).toContain('Name is required');
+       expect(textContent).toContain('Source is required');
+       expect(textContent).toContain('Your changes could not be saved');
+       expect(buildClient.create).not.toHaveBeenCalled();
+       expect(router.navigate).not.toHaveBeenCalled();
      }));
 });

@@ -121,8 +121,24 @@ export class BuildCreatePage extends FormChangeTracker implements
     this.router.navigate(['builds']);
   }
 
+  /**
+   * Validates the form.
+   * Returns true if no error, false otherwise.
+   */
+  validate(): boolean {
+    this.invalidInputs = this.getInvalidInputs();
+    for (const tracker of this.trackers) {
+      this.invalidInputs.push(...tracker.getInvalidInputs());
+    }
+    return !this.invalidInputs.length;
+  }
+
   // Creates a build.
   submit() {
+    if (!this.validate()) {
+      return;
+    }
+
     const build: mttModels.Build = {
       name: this.data.name!.trim(),
       file_url: this.data.file_url!.trim(),
