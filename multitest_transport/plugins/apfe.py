@@ -12,26 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Android Partner Front End plugins."""
-import json
 import logging
 import os
 import re
 
-import apiclient
-import httplib2
-
 from multitest_transport.models import event_log
 from multitest_transport.models import ndb_models
 from multitest_transport.plugins import base
-from multitest_transport.plugins import constant
+from multitest_transport.util import apfe_client
+from multitest_transport.util import constant
 from multitest_transport.util import env
 from multitest_transport.util import file_util
 from multitest_transport.util import oauth2_util
-
-_OAUTH2_SCOPES = ('https://www.googleapis.com/auth/androidPartner',)
-
-_API_NAME = 'androidpartner'
-_API_VERSION = 'v1'
 
 
 class APFEReportUploadHook(base.TestRunHook):
@@ -42,45 +34,35 @@ class APFEReportUploadHook(base.TestRunHook):
   oauth2_config = oauth2_util.OAuth2Config(
       client_id=env.GOOGLE_OAUTH2_CLIENT_ID,
       client_secret=env.GOOGLE_OAUTH2_CLIENT_SECRET,
-      scopes=list(_OAUTH2_SCOPES))
+      scopes=list(constant.ANDROID_PARTNER_OAUTH2_SCOPES),
+  )
 
-  def __init__(self, _credentials=None, company_id=None, **_):  
+  def __init__(
+      self,
+      _api_name=constant.ANDROID_PARTNER_API_NAME,
+      _api_key=None,
+      _credentials=None,
+      company_id=None,
+      **_,
+  ):  
     if not company_id:
       raise ValueError('Company id is required')
 
-    self._authorized_http = None
-    self._client = None
-    self._credentials = _credentials
+    self._apfe_client = apfe_client.ApfeClient(
+        _api_name,
+        api_key=_api_key,
+        credentials=_credentials,
+    )
     self.company_id = company_id
-
-  def _GetHttp(self):
-    """Initializes an authorized http objcet if necessary."""
-    if not self._authorized_http:
-      http = httplib2.Http(timeout=constant.HTTP_TIMEOUT_SECONDS)
-      self._authorized_http = oauth2_util.AuthorizeHttp(
-          http, self._credentials, scopes=list(_OAUTH2_SCOPES))
-
-    return self._authorized_http
-
-  def _GetClient(self):
-    """Initializes an APFE client if necessary."""
-    if not self._client:
-      # Discovery api does not accept credentials
-      self._client = apiclient.discovery.build(
-          _API_NAME,
-          _API_VERSION,
-          # Use raw model as the response of media api is not json
-          model=apiclient.model.RawModel(),
-      )
-
-    return self._client
 
   def Execute(self, context):
     if context.phase == ndb_models.TestRunPhase.ON_SUCCESS:
       if self._isTestRunShardingModeModule(context.test_run):
-        self._UploadReport(context.test_run, context.latest_attempt, True)
+        self._ValidateAndUploadReport(
+            context.test_run, context.latest_attempt, True
+        )
       else:
-        self._UploadReport(context.test_run, context.latest_attempt)
+        self._ValidateAndUploadReport(context.test_run, context.latest_attempt)
     if context.phase == ndb_models.TestRunPhase.MANUAL:
       if not context.test_run.IsFinal():
         event_log.Warn(
@@ -89,9 +71,11 @@ class APFEReportUploadHook(base.TestRunHook):
              'skipping upload.'))
         return
       if self._isTestRunShardingModeModule(context.test_run):
-        self._UploadReport(context.test_run, context.latest_attempt, True)
+        self._ValidateAndUploadReport(
+            context.test_run, context.latest_attempt, True
+        )
       else:
-        self._UploadReport(context.test_run, context.latest_attempt)
+        self._ValidateAndUploadReport(context.test_run, context.latest_attempt)
 
   def _isTestRunShardingModeModule(self, test_run):
     try:
@@ -103,7 +87,9 @@ class APFEReportUploadHook(base.TestRunHook):
       logging.exception('Not found sharding mode: %s', e)
     return False
 
-  def _UploadReport(self, test_run, attempt, upload_merged_report=False):
+  def _ValidateAndUploadReport(
+      self, test_run, attempt, upload_merged_report=False
+  ):
     context_file_pattern = test_run.test.context_file_pattern
     if not context_file_pattern:
       event_log.Warn(
@@ -155,27 +141,7 @@ class APFEReportUploadHook(base.TestRunHook):
           '[APFE Report Upload] Result file type is not zip, skipping upload.')
       return
 
-    # Start upload session
-    raw_response = self._GetClient().compatibility().report().startUploadReport(
-    ).execute(
-        http=self._GetHttp(), num_retries=constant.NUM_RETRIES)
-    resource_name = json.loads(raw_response)['ref']['name']
-
-    # Upload result
-    result_media = file_util.FileHandleMediaUpload(
-        result_handle, chunksize=constant.UPLOAD_CHUNK_SIZE, resumable=False)
-    self._GetClient().media().upload(
-        resourceName=resource_name, media_body=result_media).execute(
-            http=self._GetHttp(), num_retries=constant.NUM_RETRIES)
-
-    # Create report
-    self._GetClient().compatibility().report().create(body={
-        'reportRef': {
-            'name': resource_name,
-        },
-        'companyId': self.company_id,
-    }).execute(
-        http=self._GetHttp(), num_retries=constant.NUM_RETRIES)
+    self._apfe_client.UploadReport(result_url, self.company_id)
     event_log.Info(test_run, f'[APFE Report Upload] Uploaded {result_url}.')
 
 

@@ -17,7 +17,6 @@ import json
 from unittest import mock
 
 from absl.testing import absltest
-
 from multitest_transport.models import event_log
 from multitest_transport.models import ndb_models
 from multitest_transport.plugins import apfe
@@ -36,8 +35,8 @@ class APFEReportUploadHookTest(absltest.TestCase):
     # Initialize mock API client and hook under test
     self.client = mock.MagicMock()
     self.hook = apfe.APFEReportUploadHook(company_id=self.mock_company_id)
-    self.hook._client = self.client
-    self.hook._authorized_http = mock.MagicMock()
+    self.hook._apfe_client._client = self.client
+    self.hook._apfe_client._authorized_http = mock.MagicMock()
 
   def _SetUpContext(self, phase, mock_filenames, mock_output_url,
                     mock_handle_factory,
@@ -249,6 +248,13 @@ class APFEReportUploadHookTest(absltest.TestCase):
     self.hook.Execute(hook_context)
 
     self._VerifyUpload(hook_context.test_run, mock_info)
+
+  def testGetPublicOptionDefs(self):
+    self.assertEqual(
+        list(apfe.APFEReportUploadHook.GetPublicOptionDefs()),
+        [plugins.OptionDef('company_id', str, [], '')],
+    )
+
 
 
 if __name__ == '__main__':

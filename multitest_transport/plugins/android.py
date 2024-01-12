@@ -21,7 +21,7 @@ import httplib2
 
 
 from multitest_transport.plugins import base
-from multitest_transport.plugins import constant
+from multitest_transport.util import constant
 from multitest_transport.util import env
 from multitest_transport.util import errors
 from multitest_transport.util import file_util

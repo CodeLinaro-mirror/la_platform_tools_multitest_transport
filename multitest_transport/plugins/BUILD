@@ -12,6 +12,7 @@ pytype_strict_library(
     ],
     deps = [
         ":plugin_base",
+        "//multitest_transport/util:constant_lib",
         "//multitest_transport/util:env_lib",
         "//multitest_transport/util:errors_lib",
         "//multitest_transport/util:file_util_lib",
@@ -144,6 +145,7 @@ pytype_strict_library(
     ],
     deps = [
         ":plugin_base",
+        "//multitest_transport/util:constant_lib",
         "//multitest_transport/util:env_lib",
         "//multitest_transport/util:errors_lib",
         "//multitest_transport/util:file_util_lib",
@@ -187,7 +189,6 @@ pytype_strict_library(
     name = "plugin_base",
     srcs = [
         "base.py",
-        "constant.py",
     ],
     visibility = ["//multitest_transport"],
     deps = [

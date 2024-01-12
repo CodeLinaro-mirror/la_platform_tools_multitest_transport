@@ -62,6 +62,40 @@ py_test(
 )
 
 pytype_strict_library(
+    name = "apfe_client_lib",
+    srcs = [
+        "apfe_client.py",
+    ],
+    deps = [
+        ":constant_lib",
+        ":file_util_lib",
+        ":oauth2_util_lib",
+        third_party("apiclient"),
+        third_party("httplib2"),
+    ],
+)
+
+py_test(
+    name = "apfe_client_test",
+    srcs = [
+        "apfe_client_test.py",
+    ],
+    tags = ["not_run:arm"],
+    deps = [
+        ":apfe_client_lib",
+        third_party("absl/testing:absltest"),
+        third_party("google/protobuf:use_fast_cpp_protos"),
+    ],
+)
+
+pytype_strict_library(
+    name = "constant_lib",
+    srcs = [
+        "constant.py",
+    ],
+)
+
+pytype_strict_library(
     name = "env_lib",
     srcs = [
         "env.py",
@@ -169,6 +203,8 @@ pytype_strict_library(
     visibility = ["//multitest_transport"],
     deps = [
         ":analytics_lib",
+        ":apfe_client_lib",
+        ":constant_lib",
         ":env_lib",
         ":errors_lib",
         ":file_util_lib",

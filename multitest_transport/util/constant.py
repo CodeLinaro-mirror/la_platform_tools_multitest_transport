@@ -1,4 +1,4 @@
-# Copyright 2019 Google LLC
+# Copyright 2024 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,3 +23,11 @@ DEFAULT_CHUNK_SIZE = 16 * 1024 * 1024
 # Upload chunk size in bytes.
 UPLOAD_CHUNK_SIZE = 1 * 1024 * 1024  # 1MB
 HTTP_NOT_FOUND_ERROR_CODE = 404
+
+ANDROID_PARTNER_OAUTH2_SCOPES = (
+    'https://www.googleapis.com/auth/androidPartner',
+)
+ANDROID_PARTNER_API_NAME = 'androidpartner'
+
+ANDROID_PARTNER_API_VERSION = 'v1'
+BUILD_FINGERPRINTS_PATH = 'device_names/*/product_names/*/build_fingerprints'
