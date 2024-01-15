@@ -43,6 +43,17 @@ class Operator(messages.Enum):
 class HostApi(remote.Service):
   """A class for host API service."""
 
+  def __init__(
+      self,
+      olcs_client: Optional[olcs_lab_info_client.OlcsLabInfoClient] = None,
+  ):
+    if olcs_client:
+      self._olcs_lab_info_client = olcs_client
+    else:
+      self._olcs_lab_info_client = (
+          olcs_lab_info_client.OlcsLabInfoClient.create()
+      )
+
   HOST_LIST_RESOURCE = endpoints.ResourceContainer(
       message_types.VoidMessage,
       lab_name=messages.StringField(1),
@@ -69,17 +80,6 @@ class HostApi(remote.Service):
           api_messages.HostUpdateState, 19, repeated=True
       ),
   )
-
-  def __init__(
-      self,
-      olcs_client: Optional[olcs_lab_info_client.OlcsLabInfoClient] = None,
-  ):
-    if olcs_client:
-      self._olcs_lab_info_client = olcs_client
-    else:
-      self._olcs_lab_info_client = (
-          olcs_lab_info_client.OlcsLabInfoClient.create()
-      )
 
   @base.ApiMethod(
       HOST_LIST_RESOURCE,
@@ -111,107 +111,11 @@ class HostApi(remote.Service):
     response = self._olcs_lab_info_client.get_lab_info(get_lab_info_request)
     returned_host_count = len(response.lab_query_result.lab_view.lab_data)
     total_host_count = response.lab_query_result.lab_view.lab_total_count
-    lab_name = ''
-    test_runner_version = ''
-    host_group = 'default'
-
     host_infos = []
     for host_info in response.lab_query_result.lab_view.lab_data:
-      device_count_summaries = {}
-      for (
-          host_property
-      ) in host_info.lab_info.lab_server_feature.host_properties.host_property:
-        if host_property.key == 'lab_location':
-          lab_name = host_property.value
-        elif host_property.key == 'host_version':
-          test_runner_version = host_property.value
-        elif host_property.key == 'host_group':
-          host_group = host_property.value
-      total_devices = 0
-      available_devices = 0
-      allocated_devices = 0
-      offline_devices = 0
-      device_infos = []
-      for olcs_device_info in host_info.device_list.device_info:
-        device_info = device_api.DeviceApi.ConvertDeviceInfo(
-            olcs_device_info, response.lab_query_result.timestamp
-        )
-        if device_info.run_target in device_count_summaries:
-          device_count_summary = device_count_summaries[device_info.run_target]
-        else:
-          device_count_summary = api_messages.DeviceCountSummary(
-              run_target=device_info.run_target,
-              total=0,
-              available=0,
-              allocated=0,
-              offline=0,
-              timestamp=datetime.datetime.fromtimestamp(
-                  response.lab_query_result.timestamp.seconds
-              ),
-          )
-          device_count_summaries[device_info.run_target] = device_count_summary
-        total_devices += 1
-        device_count_summary.total += 1
-        if olcs_device_info.device_status in [device_pb2.DeviceStatus.IDLE]:
-          available_devices += 1
-          device_count_summary.available += 1
-        elif olcs_device_info.device_status in [
-            device_pb2.DeviceStatus.DIRTY,
-            device_pb2.DeviceStatus.BUSY,
-        ]:
-          allocated_devices += 1
-          device_count_summary.allocated += 1
-        elif olcs_device_info.device_status in [
-            device_pb2.DeviceStatus.DYING,
-            device_pb2.DeviceStatus.INIT,
-            device_pb2.DeviceStatus.LAMEDUCK,
-            device_pb2.DeviceStatus.MISSING,
-            device_pb2.DeviceStatus.PREPPING,
-        ]:
-          offline_devices += 1
-          device_count_summary.offline += 1
-        device_infos.append(device_info)
-
       host_infos.append(
-          api_messages.HostInfo(
-              hostname=host_info.lab_info.lab_locator.host_name,
-              lab_name=lab_name,
-              cluster=host_group,
-              host_group=host_group,
-              test_runner='OMNILAB',
-              test_runner_version=test_runner_version,
-              device_infos=device_infos,
-              timestamp=datetime.datetime.fromtimestamp(
-                  response.lab_query_result.timestamp.seconds
-              ),
-              total_devices=total_devices,
-              offline_devices=offline_devices,
-              available_devices=available_devices,
-              allocated_devices=allocated_devices,
-              device_count_timestamp=datetime.datetime.fromtimestamp(
-                  response.lab_query_result.timestamp.seconds
-              ),
-              hidden=False,
-              notes=[],
-              extra_info=[],
-              next_cluster_ids=[],
-              pools=[],
-              host_state='RUNNING',
-              state_history=[],
-              assignee='',
-              device_count_summaries=list(device_count_summaries.values()),
-              is_bad=False,
-              test_harness='OMNILAB',
-              test_harness_version=test_runner_version,
-              flated_extra_info=[],
-              last_recovery_time=datetime.datetime.fromtimestamp(0),
-              recovery_state='',
-              update_state='',
-              update_state_display_message='',
-              bad_reason='',
-              update_timestamp=datetime.datetime.fromtimestamp(
-                  response.lab_query_result.timestamp.seconds
-              ),
+          HostApi.ConvertHostInfo(
+              host_info, response.lab_query_result.timestamp
           )
       )
     return api_messages.HostInfoCollection(
@@ -221,4 +125,151 @@ class HostApi(remote.Service):
         else '',
         prev_cursor=str(offset) if offset > 0 else '',
         more=True if offset + returned_host_count < total_host_count else False,
+    )
+
+  HOST_GET_RESOURCE = endpoints.ResourceContainer(
+      message_types.VoidMessage,
+      hostname=messages.StringField(1, required=True),
+      include_notes=messages.BooleanField(2, default=False),
+      include_hidden=messages.BooleanField(3, default=False),
+      include_host_state_history=messages.BooleanField(4, default=False),
+      host_state_history_limit=messages.IntegerField(5, default=10),
+  )
+
+  @base.ApiMethod(
+      HOST_GET_RESOURCE,
+      api_messages.HostInfo,
+      path='{hostname}',
+      http_method='GET',
+      name='get',
+  )
+  def GetHost(self, request):
+    """Fetches the information and notes of a given hostname.
+
+    Args:
+      request: an API request.
+
+    Returns:
+      a HostInfo object.
+    Raises:
+      endpoints.NotFoundException: If the given host does not exist.
+    """
+    host_name = request.hostname
+    get_lab_info_request = lab_info_service_pb2.GetLabInfoRequest()
+
+    get_lab_info_request.page.offset = 0
+    get_lab_info_request.page.limit = 50
+    response = self._olcs_lab_info_client.get_lab_info(get_lab_info_request)
+
+    for host_info in response.lab_query_result.lab_view.lab_data:
+      # TODO: Do the filter in OLC server.
+      if host_info.lab_info.lab_locator.host_name == host_name:
+        return HostApi.ConvertHostInfo(
+            host_info, response.lab_query_result.timestamp
+        )
+    raise endpoints.NotFoundException(
+        "Host {0} doesn't exist.".format(host_name)
+    )
+
+  @staticmethod
+  def ConvertHostInfo(host_info, timestamp):
+    """Converts an OmniLab host info to an ATS host info.
+
+    Args:
+      host_info: the OmniLab host info
+      timestamp: the timestamp when this host info is returned
+
+    Returns:
+      an ATS host info
+    """
+    lab_name = ''
+    test_runner_version = ''
+    host_group = 'default'
+    device_count_summaries = {}
+    for (
+        host_property
+    ) in host_info.lab_info.lab_server_feature.host_properties.host_property:
+      if host_property.key == 'lab_location':
+        lab_name = host_property.value
+      elif host_property.key == 'host_version':
+        test_runner_version = host_property.value
+      elif host_property.key == 'host_group':
+        host_group = host_property.value
+    total_devices = 0
+    available_devices = 0
+    allocated_devices = 0
+    offline_devices = 0
+    device_infos = []
+    for olcs_device_info in host_info.device_list.device_info:
+      device_info = device_api.DeviceApi.ConvertDeviceInfo(
+          olcs_device_info, timestamp
+      )
+      if device_info.run_target in device_count_summaries:
+        device_count_summary = device_count_summaries[device_info.run_target]
+      else:
+        device_count_summary = api_messages.DeviceCountSummary(
+            run_target=device_info.run_target,
+            total=0,
+            available=0,
+            allocated=0,
+            offline=0,
+            timestamp=datetime.datetime.fromtimestamp(timestamp.seconds),
+        )
+        device_count_summaries[device_info.run_target] = device_count_summary
+      total_devices += 1
+      device_count_summary.total += 1
+      if olcs_device_info.device_status in [device_pb2.DeviceStatus.IDLE]:
+        available_devices += 1
+        device_count_summary.available += 1
+      elif olcs_device_info.device_status in [
+          device_pb2.DeviceStatus.DIRTY,
+          device_pb2.DeviceStatus.BUSY,
+      ]:
+        allocated_devices += 1
+        device_count_summary.allocated += 1
+      elif olcs_device_info.device_status in [
+          device_pb2.DeviceStatus.DYING,
+          device_pb2.DeviceStatus.INIT,
+          device_pb2.DeviceStatus.LAMEDUCK,
+          device_pb2.DeviceStatus.MISSING,
+          device_pb2.DeviceStatus.PREPPING,
+      ]:
+        offline_devices += 1
+        device_count_summary.offline += 1
+      device_infos.append(device_info)
+    return api_messages.HostInfo(
+        hostname=host_info.lab_info.lab_locator.host_name,
+        lab_name=lab_name,
+        cluster=host_group,
+        host_group=host_group,
+        test_runner='OMNILAB',
+        test_runner_version=test_runner_version,
+        device_infos=device_infos,
+        timestamp=datetime.datetime.fromtimestamp(timestamp.seconds),
+        total_devices=total_devices,
+        offline_devices=offline_devices,
+        available_devices=available_devices,
+        allocated_devices=allocated_devices,
+        device_count_timestamp=datetime.datetime.fromtimestamp(
+            timestamp.seconds
+        ),
+        hidden=False,
+        notes=[],
+        extra_info=[],
+        next_cluster_ids=[],
+        pools=[],
+        host_state='RUNNING',
+        state_history=[],
+        assignee='',
+        device_count_summaries=list(device_count_summaries.values()),
+        is_bad=False,
+        test_harness='OMNILAB',
+        test_harness_version=test_runner_version,
+        flated_extra_info=[],
+        last_recovery_time=datetime.datetime.fromtimestamp(0),
+        recovery_state='',
+        update_state='',
+        update_state_display_message='',
+        bad_reason='',
+        update_timestamp=datetime.datetime.fromtimestamp(timestamp.seconds),
     )

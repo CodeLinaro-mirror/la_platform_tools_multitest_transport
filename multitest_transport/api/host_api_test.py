@@ -25,6 +25,94 @@ from com_google_deviceinfra.src.devtools.mobileharness.api.model.proto import de
 from com_google_deviceinfra.src.devtools.mobileharness.infra.master.rpc.proto import lab_info_service_pb2
 
 
+EXPECTED_HOST_INFO = api_messages.HostInfo(
+    hostname='localhost',
+    lab_name='bej',
+    cluster='presubmit',
+    host_group='presubmit',
+    test_runner='OMNILAB',
+    test_runner_version='4.100.0',
+    device_infos=[
+        api_messages.DeviceInfo(
+            device_serial='device_uuid1',
+            lab_name='',
+            hostname='localhost',
+            run_target='panther',
+            build_id='',
+            product='panther',
+            product_variant='panther',
+            sdk_version='',
+            state='AVAILABLE',
+            timestamp=datetime.datetime.fromtimestamp(60),
+            battery_level='100',
+            hidden=False,
+            notes=[],
+            history=[],
+            utilization=0.0,
+            cluster='',
+            host_group='',
+            pools=[],
+            device_type=api_messages.DeviceTypeMessage.PHYSICAL,
+            mac_address='',
+            group_name='',
+            sim_state='ABSENT',
+            sim_operator='',
+            extra_info=[
+                api_messages.KeyValuePair(key='battery_level', value='100'),
+                api_messages.KeyValuePair(key='sdk_version', value=''),
+                api_messages.KeyValuePair(key='build_id', value=''),
+                api_messages.KeyValuePair(key='product', value='panther'),
+                api_messages.KeyValuePair(
+                    key='product_variant', value='panther'
+                ),
+            ],
+            flated_extra_info=[],
+            test_harness='OMNILAB',
+            recovery_state='',
+            last_recovery_time=datetime.datetime.fromtimestamp(0),
+            is_stub_device=False,
+            display_serial='device1',
+            preconfigured_ip='127.0.0.1',
+            preconfigured_device_num_offset=0,
+        )
+    ],
+    timestamp=datetime.datetime.fromtimestamp(60),
+    total_devices=1,
+    offline_devices=0,
+    available_devices=1,
+    allocated_devices=0,
+    device_count_timestamp=datetime.datetime.fromtimestamp(60),
+    hidden=False,
+    notes=[],
+    extra_info=[],
+    next_cluster_ids=[],
+    pools=[],
+    host_state='RUNNING',
+    state_history=[],
+    assignee='',
+    device_count_summaries=[
+        api_messages.DeviceCountSummary(
+            run_target='panther',
+            total=1,
+            allocated=0,
+            available=1,
+            offline=0,
+            timestamp=datetime.datetime.fromtimestamp(60),
+        )
+    ],
+    is_bad=False,
+    test_harness='OMNILAB',
+    test_harness_version='4.100.0',
+    flated_extra_info=[],
+    last_recovery_time=datetime.datetime.fromtimestamp(0),
+    recovery_state='',
+    update_state='',
+    update_state_display_message='',
+    bad_reason='',
+    update_timestamp=datetime.datetime.fromtimestamp(60),
+)
+
+
 class HostApiTest(api_test_util.TestCase):
 
   class HostApiForTest(host_api.HostApi):
@@ -78,99 +166,12 @@ class HostApiTest(api_test_util.TestCase):
         api_messages.HostInfoCollection, res.body
     )
     self.assertLen(res_msg.host_infos, 1)
-    self.assertEqual(
-        res_msg.host_infos[0],
-        api_messages.HostInfo(
-            hostname='localhost',
-            lab_name='bej',
-            cluster='presubmit',
-            host_group='presubmit',
-            test_runner='OMNILAB',
-            test_runner_version='4.100.0',
-            device_infos=[
-                api_messages.DeviceInfo(
-                    device_serial='device_uuid1',
-                    lab_name='',
-                    hostname='localhost',
-                    run_target='panther',
-                    build_id='',
-                    product='panther',
-                    product_variant='panther',
-                    sdk_version='',
-                    state='AVAILABLE',
-                    timestamp=datetime.datetime.fromtimestamp(60),
-                    battery_level='100',
-                    hidden=False,
-                    notes=[],
-                    history=[],
-                    utilization=0.0,
-                    cluster='',
-                    host_group='',
-                    pools=[],
-                    device_type=api_messages.DeviceTypeMessage.PHYSICAL,
-                    mac_address='',
-                    group_name='',
-                    sim_state='ABSENT',
-                    sim_operator='',
-                    extra_info=[
-                        api_messages.KeyValuePair(
-                            key='battery_level', value='100'
-                        ),
-                        api_messages.KeyValuePair(key='sdk_version', value=''),
-                        api_messages.KeyValuePair(key='build_id', value=''),
-                        api_messages.KeyValuePair(
-                            key='product', value='panther'
-                        ),
-                        api_messages.KeyValuePair(
-                            key='product_variant', value='panther'
-                        ),
-                    ],
-                    flated_extra_info=[],
-                    test_harness='OMNILAB',
-                    recovery_state='',
-                    last_recovery_time=datetime.datetime.fromtimestamp(0),
-                    is_stub_device=False,
-                    display_serial='device1',
-                    preconfigured_ip='127.0.0.1',
-                    preconfigured_device_num_offset=0,
-                )
-            ],
-            timestamp=datetime.datetime.fromtimestamp(60),
-            total_devices=1,
-            offline_devices=0,
-            available_devices=1,
-            allocated_devices=0,
-            device_count_timestamp=datetime.datetime.fromtimestamp(60),
-            hidden=False,
-            notes=[],
-            extra_info=[],
-            next_cluster_ids=[],
-            pools=[],
-            host_state='RUNNING',
-            state_history=[],
-            assignee='',
-            device_count_summaries=[
-                api_messages.DeviceCountSummary(
-                    run_target='panther',
-                    total=1,
-                    allocated=0,
-                    available=1,
-                    offline=0,
-                    timestamp=datetime.datetime.fromtimestamp(60),
-                )
-            ],
-            is_bad=False,
-            test_harness='OMNILAB',
-            test_harness_version='4.100.0',
-            flated_extra_info=[],
-            last_recovery_time=datetime.datetime.fromtimestamp(0),
-            recovery_state='',
-            update_state='',
-            update_state_display_message='',
-            bad_reason='',
-            update_timestamp=datetime.datetime.fromtimestamp(60),
-        ),
-    )
+    self.assertEqual(res_msg.host_infos[0], EXPECTED_HOST_INFO)
+
+  def testGetHost(self):
+    res = self.app.get('/_ah/api/mtt/v1/hosts/%s' % 'localhost')
+    res_msg = protojson.decode_message(api_messages.HostInfo, res.body)
+    self.assertEqual(res_msg, EXPECTED_HOST_INFO)
 
 
 if __name__ == '__main__':
