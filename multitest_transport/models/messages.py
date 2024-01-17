@@ -1485,6 +1485,21 @@ class NetdataAlarmList(messages.Message):
   alarms = messages.MessageField(NetdataAlarm, 1, repeated=True)
 
 
+class RequiredReport(messages.Message):
+  """A required report."""
+
+  type = messages.EnumField(ndb_models.ReportType, 1)
+  test_plan = messages.StringField(2)
+  available = messages.BooleanField(3)
+
+
+@Converter(ndb_models.RequiredReport, RequiredReport)
+def _RequiredReportConverter(obj):
+  return RequiredReport(
+      type=obj.type, test_plan=obj.test_plan, available=obj.available
+  )
+
+
 class XtsRequirements(messages.Message):
   """Xts requirements of a build."""
 
@@ -1492,6 +1507,7 @@ class XtsRequirements(messages.Message):
       ndb_models.XtsRequirementsDetectionStatus, 1
   )
   detection_test_run_id = messages.StringField(2)
+  required_reports = messages.MessageField(RequiredReport, 3, repeated=True)
 
 
 @Converter(ndb_models.XtsRequirements, XtsRequirements)
@@ -1501,6 +1517,7 @@ def _XtsRequirementsConverter(obj):
       detection_test_run_id=str(obj.detection_test_run_key.id())
       if obj.detection_test_run_key
       else None,
+      required_reports=ConvertList(obj.required_reports, RequiredReport),
   )
 
 

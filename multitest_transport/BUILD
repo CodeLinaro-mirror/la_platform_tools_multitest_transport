@@ -1,8 +1,8 @@
+load("@tradefed_cluster//tradefed_cluster:adapter.bzl", "py_appengine_binary", "pytype_strict_library", "third_party")
 load("//tools/build_defs/license:license.bzl", "license")
 
 # Android testing lab software for Android device partners
 load("//tools/build_defs/testing:bzl_library.bzl", "bzl_library")
-load("@tradefed_cluster//tradefed_cluster:adapter.bzl", "py_appengine_binary", "pytype_strict_library", "third_party")
 
 package(
     default_applicable_licenses = ["//multitest_transport:license"],
@@ -107,6 +107,7 @@ pytype_strict_library(
     ],
     deps = [
         "//multitest_transport/api",
+        "//multitest_transport/build_manager:xts_requirements_detector_lib",
         "//multitest_transport/core:app_lib",
         "//multitest_transport/core:cron_kicker_lib",
         "//multitest_transport/file_server:proxy_lib",

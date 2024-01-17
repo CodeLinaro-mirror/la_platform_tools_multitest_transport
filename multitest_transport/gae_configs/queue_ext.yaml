@@ -42,3 +42,7 @@ queue:
 - name: test-output-uploader-queue
   rate: 20/s
   target: default
+
+- name: xts-requirements-detection-event-queue
+  rate: 20/s
+  target: default

@@ -18,6 +18,7 @@ from tradefed_cluster.services import task_scheduler
 
 
 from multitest_transport.api import server as api
+from multitest_transport.build_manager import xts_requirements_detector
 from multitest_transport.core import app as core
 from multitest_transport.core import cron_kicker
 from multitest_transport.file_server import proxy as file_server_proxy
@@ -45,6 +46,10 @@ APP = RegexDispatcher([
     # Task handlers
     (r'/_ah/queue/analytics-queue', analytics_uploader.APP),
     (r'/_ah/queue/default', task_scheduler.APP),
+    (
+        r'/_ah/queue/xts-requirements-detection-event-queue',
+        xts_requirements_detector.APP,
+    ),
     (r'/_ah/queue/test-kicker-queue', test_kicker.APP),
     (r'/_ah/queue/test-plan-kicker-queue', test_plan_kicker.APP),
     (r'/_ah/queue/tfc-event-queue', tfc_event_handler.APP),

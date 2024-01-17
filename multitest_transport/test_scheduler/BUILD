@@ -215,6 +215,7 @@ pytype_strict_library(
     deps = [
         ":test_result_handler_lib",
         ":test_scheduler_lib",
+        "//multitest_transport/build_manager:xts_requirements_detector_lib",
         "//multitest_transport/models",
         "//multitest_transport/util",
         "@tradefed_cluster//tradefed_cluster:api_messages_lib",

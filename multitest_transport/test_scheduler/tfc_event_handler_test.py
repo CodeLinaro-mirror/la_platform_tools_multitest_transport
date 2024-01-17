@@ -24,6 +24,8 @@ from tradefed_cluster.services import task_scheduler
 from tradefed_cluster.util import ndb_shim as ndb
 
 
+from multitest_transport.build_manager import xts_requirements_detector
+from multitest_transport.models import event_log
 from multitest_transport.models import ndb_models
 from multitest_transport.models import test_run_hook
 from multitest_transport.test_scheduler import tfc_event_handler
@@ -270,10 +272,32 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
     self.assertEqual(expected_test_context,
                      self.mock_test_run.key.get().next_test_context)
     mock_add_task.assert_has_calls([
-        mock.call(test_run_hook.ExecuteHooks, self.mock_test_run.key.id(),
-                  ndb_models.TestRunPhase.AFTER_RUN, _transactional=True),
-        mock.call(tfc_event_handler._TrackTestRun,
-                  self.mock_test_run.key.id(), _transactional=True),
+        mock.call(
+            test_result_handler.MergeReports,
+            self.mock_test_run.key.id(),
+            _transactional=True,
+        ),
+        mock.call(
+            test_run_hook.ExecuteHooks,
+            self.mock_test_run.key.id(),
+            ndb_models.TestRunPhase.AFTER_RUN,
+            _transactional=True,
+        ),
+        mock.call(
+            tfc_event_handler._TrackTestRun,
+            self.mock_test_run.key.id(),
+            _transactional=True,
+        ),
+        mock.call(
+            event_log.Info,
+            self.mock_test_run.key,
+            'Test run reached final state',
+            _transactional=True,
+        ),
+        mock.call(
+            xts_requirements_detector.HandleFinalizedTestRun,
+            self.mock_test_run.key,
+        ),
     ])
 
   @mock.patch.object(analytics, 'Log')

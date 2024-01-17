@@ -1044,6 +1044,51 @@ def GetFileCleanerSettings():
   return obj or DEFAULT_FILE_CLEANER_SETTINGS
 
 
+class ReportType(messages.Enum):
+  """Type of a report."""
+
+  REPORT_TYPE_UNKNOWN = 0  # Unknown test report.
+  CTS = 1  # Android Compatibility Test Suite.
+  CTS_VERIFIER = 2  # Android Compatibility Test Suite Verifier.
+  GTS = 3  # GMS Core Test Suite.
+  CAT = 4  # CTS Auto Test Suite.
+  WTS = 5  # Wearable Test Suite.
+  WTS_VERIFIER = 6  # Wearable Test Suite Verifier.
+  TVTS = 7  # TV Test Suite.
+  CRT = 8  # Cast Ready Test.
+  PCTS = 9  # Automotive Projected Test Suite.
+  VTS = 10  # Vendor Test Suite (Treble).
+  ATS = 11  # Automotive Test Suite.
+  ATS_VERIFIER = 12  # Automotive Test Suite Verifier.
+  GOATS = 13  # Android Go Test Suite.
+  STS = 14  # Security Test Suite.
+  CTS_INSTANT = 15  # Instant App mode of CTS.
+  BTS_V2 = 17  # Athena Report (BTS v2).
+  ENTS = 18  # Exposure Notification Test Suite.
+  CTS_ON_GSI = 19  # Compatibility Test Suite on GSI (go/android-gsi).
+  CATBOX = 20  # CATBox Test Suite.
+  APTS = 21  # Android Performance Test Suite.
+  DTS = 22  # Driveable Test Suite.
+  GTS_VERIFIER = 23  # GMS Core Manual Test Suite.
+  WTS_CHECKLIST = 25  # Wear Test Suite Checklist.
+  GCATBOX = 26  # GAS CATBox Test Suite.
+  WPTS = 27  # Wear Performance Test Suite.
+
+
+class RequiredReport(ndb.Model):
+  """A required report for a build.
+
+  Attributes:
+    type: the type of a report.
+    test_plan: the test plan of a report.
+    available: whether the report is available on APFE.
+  """
+
+  type = ndb.EnumProperty(ReportType, required=True)
+  test_plan = ndb.StringProperty()
+  available = ndb.BooleanProperty()
+
+
 class XtsRequirementsDetectionStatus(messages.Enum):
   NOT_STARTED = 0  # Xts requirements detection is not yet started.
   SIGNALS_COLLECTING = 1  # A task is collecting build integrity signals.
@@ -1060,6 +1105,7 @@ class XtsRequirements(ndb.Model):
     detection_status: status of xts requirements detection for a build.
     detection_test_run_key: test run key of xts requirements detection for a
       build.
+    required_reports: required reports to get approval for a build.
   """
 
   detection_status = ndb.EnumProperty(
@@ -1067,8 +1113,7 @@ class XtsRequirements(ndb.Model):
       default=XtsRequirementsDetectionStatus.NOT_STARTED,
   )
   detection_test_run_key = ndb.KeyProperty(TestRun)
-  # TODO: Add fields to store xts requirement details based on APA
-  # response.
+  required_reports = ndb.StructuredProperty(RequiredReport, repeated=True)
 
 
 class Build(ndb.Model):
