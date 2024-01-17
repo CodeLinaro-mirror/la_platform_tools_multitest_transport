@@ -40,6 +40,7 @@ ng_module(
         "device_list_table.ng.html",
         "simple_device_list.ng.html",
     ],
+    slow_development_build = True,
     strict_templates = False,
     visibility = ["//multitest_transport"],
     deps = [

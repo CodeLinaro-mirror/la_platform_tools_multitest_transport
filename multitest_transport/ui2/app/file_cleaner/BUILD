@@ -29,6 +29,7 @@ ng_module(
         "file_cleaner_policy_edit_page.ng.html",
         "file_cleaner_setting_list.ng.html",
     ],
+    slow_development_build = True,
     strict_templates = False,
     visibility = ["//multitest_transport"],
     deps = [

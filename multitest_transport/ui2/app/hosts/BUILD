@@ -67,6 +67,7 @@ ng_module(
         "offline_host_assignments_page.ng.html",
         "unassigned_offline_host_list.ng.html",
     ],
+    slow_development_build = True,
     strict_templates = False,
     visibility = ["//multitest_transport"],
     deps = [

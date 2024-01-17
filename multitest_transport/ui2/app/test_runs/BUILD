@@ -55,6 +55,7 @@ ng_module(
         "test_run_sequence_list.ng.html",
         "test_run_target_picker.ng.html",
     ],
+    slow_development_build = True,
     strict_templates = False,
     visibility = ["//multitest_transport"],
     deps = [

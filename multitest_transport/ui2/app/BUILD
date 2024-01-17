@@ -31,6 +31,7 @@ ng_module(
         "app.ng.html",
         ":app_styles",
     ],
+    slow_development_build = True,
     visibility = ["//multitest_transport"],
     deps = [
         third_party_js("angular2:common_http"),

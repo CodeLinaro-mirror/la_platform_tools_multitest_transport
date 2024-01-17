@@ -44,6 +44,7 @@ ng_module(
         "error_dialog.ng.html",
         "notifier_dialog.ng.html",
     ],
+    slow_development_build = True,
     strict_templates = False,
     deps = [
         third_party_js("angular2:common_http"),

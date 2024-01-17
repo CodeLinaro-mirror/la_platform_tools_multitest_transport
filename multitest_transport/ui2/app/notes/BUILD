@@ -34,6 +34,7 @@ ng_module(
         "predefined_message_list.ng.html",
         "predefined_messages_editor.ng.html",
     ],
+    slow_development_build = True,
     strict_templates = False,
     visibility = ["//multitest_transport"],
     deps = [
