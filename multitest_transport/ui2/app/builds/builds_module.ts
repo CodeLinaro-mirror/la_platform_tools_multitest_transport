@@ -29,6 +29,7 @@ import {TestRunsModule} from '../test_runs/test_runs_module';
 import {BuildCreatePage} from './build_create_page';
 import {BuildDetail} from './build_detail';
 import {BuildDetailPage} from './build_detail_page';
+import {BuildEditor} from './build_editor';
 import {BuildFileSelector} from './build_file_selector';
 import {BuildList} from './build_list';
 import {BuildListPage} from './build_list_page';
@@ -38,6 +39,7 @@ const COMPONENTS = [
   BuildCreatePage,
   BuildDetail,
   BuildDetailPage,
+  BuildEditor,
   BuildFileSelector,
   BuildList,
   BuildListPage,

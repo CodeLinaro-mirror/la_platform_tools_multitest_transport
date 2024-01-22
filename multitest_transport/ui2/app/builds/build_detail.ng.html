@@ -42,9 +42,7 @@
                 <td class="title-field">
                   <mat-label>Name</mat-label>
                 </td>
-                <td class="value-field">
-                  {{build.name}}
-                </td>
+                <td class="value-field">{{build.name}}</td>
               </tr>
               <tr>
                 <td class="title-field">
@@ -70,10 +68,20 @@
                 </td>
                 <td class="value-field">{{build.create_time | utc | fromNow}}</td>
               </tr>
+              <tr>
+                <button mat-flat-button
+                    class="update-button"
+                    color="accent"
+                    type="button"
+                    aria-label="Update"
+                    (click)="update()">
+                  Update
+                </button>
+                <!-- TODO: Impletement upload functionalities -->
+              </tr>
             </table>
           </td>
         </tr>
-        <!-- TODO: Impletement update and upload functionalities -->
       </table>
     </mat-card-content>
   </mat-card>

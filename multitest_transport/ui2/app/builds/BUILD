@@ -23,6 +23,13 @@ sass_binary(
 )
 
 sass_binary(
+    name = "build_editor",
+    src = "build_editor.scss",
+    output_name = "build_editor.css",
+    visibility = ["//multitest_transport"],
+)
+
+sass_binary(
     name = "build_file_selector",
     src = "build_file_selector.scss",
     output_name = "build_file_selector.css",
@@ -49,6 +56,7 @@ ng_module(
         "build_create_page.ts",
         "build_detail.ts",
         "build_detail_page.ts",
+        "build_editor.ts",
         "build_file_selector.ts",
         "build_list.ts",
         "build_list_page.ts",
@@ -58,12 +66,14 @@ ng_module(
     assets = [
         ":build_create_page",
         ":build_detail",
+        ":build_editor",
         ":build_file_selector",
         ":build_list",
         ":xts_requirement_detect",
         "build_create_page.ng.html",
         "build_detail.ng.html",
         "build_detail_page.ng.html",
+        "build_editor.ng.html",
         "build_file_selector.ng.html",
         "build_list.ng.html",
         "build_list_page.ng.html",
@@ -96,6 +106,7 @@ ng_module(
     srcs = [
         "build_create_page_test.ts",
         "build_detail_test.ts",
+        "build_editor_test.ts",
         "build_file_selector_test.ts",
         "build_list_test.ts",
         "xts_requirement_detect_test.ts",

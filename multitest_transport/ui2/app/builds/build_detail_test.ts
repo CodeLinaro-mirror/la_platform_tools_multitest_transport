@@ -22,17 +22,21 @@ import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {RouterTestingModule} from '@angular/router/testing';
 import {of as observableOf} from 'rxjs';
 
+import {APP_DATA} from '../services';
 import {BuildClient, MttClient} from '../services/mtt_client';
 import * as mttModels from '../services/mtt_models';
 import {getEl, getTextContent} from '../testing/jasmine_util';
+import {newMockAppData} from '../testing/mtt_lab_mocks';
 import {newMockBuild} from '../testing/mtt_mocks';
 
 import {BuildDetail} from './build_detail';
+import {BuildEditor} from './build_editor';
 import {BuildsModule} from './builds_module';
 import {XtsRequirementDetect} from './xts_requirement_detect';
 
 describe('BuildDetail', () => {
   const build: mttModels.Build = newMockBuild();
+  const appData = newMockAppData();
 
   let buildDetail: BuildDetail;
   let buildDetailFixture: ComponentFixture<BuildDetail>;
@@ -50,6 +54,7 @@ describe('BuildDetail', () => {
     TestBed.configureTestingModule({
       imports: [BuildsModule, NoopAnimationsModule, RouterTestingModule],
       providers: [
+        {provide: APP_DATA, useValue: appData},
         {provide: LiveAnnouncer, useValue: liveAnnouncer},
         {provide: MttClient, useValue: {builds: buildClient}},
       ],
@@ -98,5 +103,28 @@ describe('BuildDetail', () => {
        };
        expect(dialog.open)
            .toHaveBeenCalledWith(XtsRequirementDetect, dialogParams);
+     }));
+
+  it('should open build editor dialog when clicking update button',
+     inject([MatDialog], (dialog: MatDialog) => {
+       spyOn(dialog, 'open').and.callThrough();
+
+       getEl(el, '.update-button').click();
+       expect(dialog.open).toHaveBeenCalledTimes(1);
+
+       const dialogParams = {
+         width: '1000px',
+         height: '440px',
+         panelClass: 'build-editor',
+         data: {
+           build: {
+             name: build.name,
+             file_url: build.file_url,
+             size: build.size,
+             labels: build.labels,
+           }
+         },
+       };
+       expect(dialog.open).toHaveBeenCalledWith(BuildEditor, dialogParams);
      }));
 });

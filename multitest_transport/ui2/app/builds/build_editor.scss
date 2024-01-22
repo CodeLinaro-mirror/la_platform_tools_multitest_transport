@@ -1,5 +1,5 @@
 /**
- * Copyright 2023 Google LLC
+ * Copyright 2024 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,13 @@
  * limitations under the License.
  */
 
-@import 'third_party/py/multitest_transport/ui2/constants';
-@import '../shared/shared';
-
-.mat-mdc-card {
-  margin: 10px;
-  padding: 8px 16px 16px;
-
-  h2 {
-    font-size: 20px;
-    font-weight: normal;
+mat-dialog-content {
+  mat-form-field {
+    display: block;
+    width: 800px;
   }
 
-  .detect-button,
-  .update-button {
-    margin: 12px;
+  .name-field {
+    padding-top: 24px;
   }
 }

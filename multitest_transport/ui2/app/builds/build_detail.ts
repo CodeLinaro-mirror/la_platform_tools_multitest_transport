@@ -27,6 +27,7 @@ import * as mttModels from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
 import {buildApiErrorMessage} from '../shared/util';
 
+import {BuildEditor, BuildEditorData} from './build_editor';
 import {XtsRequirementDetect, XtsRequirementDetectData} from './xts_requirement_detect';
 
 /** A component for displaying the details of a build. */
@@ -89,6 +90,41 @@ export class BuildDetail implements OnInit, AfterViewInit {
                   buildApiErrorMessage(error));
             },
         );
+  }
+
+  update() {
+    const buildEditorData: BuildEditorData = {
+      build: {
+        name: this.build!.name,
+        file_url: this.build!.file_url,
+        size: this.build!.size,
+        labels: this.build!.labels || [],
+      }
+    };
+
+    const dialogRef = this.matDialog.open(BuildEditor, {
+      width: '1000px',
+      height: '440px',
+      panelClass: 'build-editor',
+      data: buildEditorData,
+    });
+
+    dialogRef.componentInstance.buildSubmitted
+        .pipe(takeUntil(dialogRef.afterClosed()))
+        .subscribe((buildToUpdate: mttModels.Build) => {
+          this.mttClient.builds.update(this.buildId, buildToUpdate)
+              .pipe(takeUntil(this.destroy))
+              .subscribe(
+                  updatedBuild => {
+                    this.build = updatedBuild;
+                  },
+                  error => {
+                    this.notifier.showError(
+                        `Failed to update build '${this.buildId}'.`,
+                        buildApiErrorMessage(error));
+                  },
+              );
+        });
   }
 
   back() {
