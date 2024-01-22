@@ -33,6 +33,7 @@ import {BuildEditor} from './build_editor';
 import {BuildFileSelector} from './build_file_selector';
 import {BuildList} from './build_list';
 import {BuildListPage} from './build_list_page';
+import {TestRequirements} from './test_requirements';
 import {XtsRequirementDetect} from './xts_requirement_detect';
 
 const COMPONENTS = [
@@ -43,6 +44,7 @@ const COMPONENTS = [
   BuildFileSelector,
   BuildList,
   BuildListPage,
+  TestRequirements,
   XtsRequirementDetect,
 ];
 

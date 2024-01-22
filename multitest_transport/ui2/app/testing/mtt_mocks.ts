@@ -619,7 +619,8 @@ export function toTitleCase(str: string) {
 /** Creates a Build object. */
 export function newMockBuild(
     id = BUILD_ID, name = BUILD_NAME, fileUrl = BUILD_URL,
-    labels = [LABEL1, LABEL2]) {
+    labels = [LABEL1, LABEL2],
+    detectionStatus = mttModels.XtsRequirementsDetectionStatus.NOT_STARTED) {
   return {
     id,
     name,
@@ -627,9 +628,15 @@ export function newMockBuild(
     size: 123123123,
     labels,
     xts_requirements: {
-      detection_status:
-          mttModels.XtsRequirementsDetectionStatus.SIGNALS_COLLECTING,
+      detection_status: detectionStatus,
       detection_test_run_id: TEST_RUN_ID,
+      required_reports: [
+        {
+          'type': mttModels.ReportType.GTS,
+          'test_plan': 'gts-interactive',
+        },
+        {'type': mttModels.ReportType.CTS}
+      ],
     },
   };
 }

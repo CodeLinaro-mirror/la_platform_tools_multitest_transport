@@ -96,7 +96,7 @@
             <table class="table-content">
               <tr>
                 <td class="title-field">
-                  <mat-label>Detection status</mat-label>
+                  <mat-label>Detection Status</mat-label>
                 </td>
                 <td class="value-field">
                   <status-button class="xts-requirements-detection"
@@ -106,7 +106,7 @@
               </tr>
               <tr>
                 <td class="title-field">
-                  <mat-label>Invocation run</mat-label>
+                  <mat-label>Invocation Run</mat-label>
                 </td>
                 <td class="value-field">
                   <ng-container *ngIf="build.xts_requirements?.detection_test_run_id">
@@ -120,6 +120,20 @@
                 </td>
               </tr>
               <tr>
+                <td class="title-field">
+                  <mat-label>Detection Results</mat-label>
+                </td>
+                <td class="value-field">
+                  <test-requirements
+                      *ngIf="testRequirementsAvailable"
+                      [dataSource]="build.xts_requirements!.required_reports!">
+                  </test-requirements>
+                  <ng-container *ngIf="!testRequirementsAvailable">
+                    N/A
+                  </ng-container>
+                </td>
+              </tr>
+              <tr *ngIf="showDetectButton">
                 <button mat-flat-button
                     class="detect-button"
                     color="accent"

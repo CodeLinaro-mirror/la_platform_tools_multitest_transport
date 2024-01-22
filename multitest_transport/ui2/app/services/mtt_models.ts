@@ -1092,12 +1092,50 @@ export enum XtsRequirementsDetectionStatus {
   ERROR = 'ERROR',
 }
 
+/** Type of a report. */
+export enum ReportType {
+  REPORT_TYPE_UNKNOWN = 'REPORT_TYPE_UNKNOWN',
+  CTS = 'CTS',
+  CTS_VERIFIER = 'CTS_VERIFIER',
+  GTS = 'GTS',
+  CAT = 'CAT',
+  WTS = 'WTS',
+  WTS_VERIFIER = 'WTS_VERIFIER',
+  TVTS = 'TVTS',
+  CRT = 'CRT',
+  PCTS = 'PCTS',
+  VTS = 'VTS',
+  ATS = 'ATS',
+  ATS_VERIFIER = 'ATS_VERIFIER',
+  GOATS = 'GOATS',
+  STS = 'STS',
+  CTS_INSTANT = 'CTS_INSTANT',
+  BTS_V2 = 'BTS_V2',
+  ENTS = 'ENTS',
+  CTS_ON_GSI = 'CTS_ON_GSI',
+  CATBOX = 'CATBOX',
+  APTS = 'APTS',
+  DTS = 'DTS',
+  GTS_VERIFIER = 'GTS_VERIFIER',
+  WTS_CHECKLIST = 'WTS_CHECKLIST',
+  GCATBOX = 'GCATBOX',
+  WPTS = 'WPTS',
+}
+
+/** A required report of a build. */
+export declare interface RequiredReport {
+  type: ReportType;
+  test_plan?: string;
+}
+
 /** Xts requirements of a build. */
 export declare interface XtsRequirements {
   /** Status of xTS requirements detection */
   detection_status: XtsRequirementsDetectionStatus;
   /** Test run id of xTS requirements detection */
   detection_test_run_id: string;
+  /** Required reports to get approval */
+  required_reports?: RequiredReport[];
 }
 
 /** Build info. */
@@ -1129,7 +1167,7 @@ export function initBuild(): Partial<Build> {
 
 /** List of Builds. */
 export declare interface BuildList {
-  builds: Build[];
+  builds?: Build[];
 }
 
 /** Initializes a new test run config for xTS requirements detection. */

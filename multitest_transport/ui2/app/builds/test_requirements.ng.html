@@ -1,0 +1,66 @@
+<!--
+ Copyright 2024 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<mat-table
+  [dataSource]="tableDataSource"
+  aria-label="Test requirements">
+
+  <!-- Report type -->
+  <ng-container matColumnDef="report_type">
+    <mat-header-cell *matHeaderCellDef fxFlex> Test Type </mat-header-cell>
+    <mat-cell *matCellDef="let requiredReport" fxFlex> {{requiredReport.type}} </mat-cell>
+  </ng-container>
+
+  <!-- Test plan -->
+  <ng-container matColumnDef="test_plan">
+    <mat-header-cell *matHeaderCellDef fxFlex> Test Plan </mat-header-cell>
+    <mat-cell *matCellDef="let requiredReport" fxFlex>
+      {{requiredReport.test_plan}}
+    </mat-cell>
+  </ng-container>
+
+  <!-- Test run -->
+  <ng-container matColumnDef="test_run">
+    <mat-header-cell *matHeaderCellDef fxFlex class="test-run-column"> Test Run </mat-header-cell>
+    <!-- TODO: Supports test run link -->
+    <mat-cell *matCellDef="let requiredReport" fxFlex class="test-run-column">
+      N/A
+    </mat-cell>
+  </ng-container>
+
+  <!-- Test run status -->
+  <ng-container matColumnDef="test_run_status">
+    <mat-header-cell *matHeaderCellDef fxFlex> Test Run Status </mat-header-cell>
+    <mat-cell *matCellDef="let requiredReport" fxFlex>
+      <status-button class="xts-requirements-detection"
+          [state]="testRunStatus">
+      </status-button>
+    </mat-cell>
+  </ng-container>
+
+  <!-- Run test button -->
+  <ng-container matColumnDef="run_test" stickyEnd>
+    <mat-header-cell *matHeaderCellDef fxFlex="100px"></mat-header-cell>
+    <mat-cell *matCellDef="let requiredReport" fxFlex="100px">
+      <a mat-stroked-button class="run-button" color="accent">
+         Run
+      </a>
+    </mat-cell>
+  </ng-container>
+
+  <mat-header-row *matHeaderRowDef="displayColumns"></mat-header-row>
+  <mat-row *matRowDef="let row; columns: displayColumns;"></mat-row>
+</mat-table>

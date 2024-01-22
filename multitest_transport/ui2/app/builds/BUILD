@@ -44,6 +44,13 @@ sass_binary(
 )
 
 sass_binary(
+    name = "test_requirements",
+    src = "test_requirements.scss",
+    output_name = "test_requirements.css",
+    visibility = ["//multitest_transport"],
+)
+
+sass_binary(
     name = "xts_requirement_detect",
     src = "xts_requirement_detect.scss",
     output_name = "xts_requirement_detect.css",
@@ -61,6 +68,7 @@ ng_module(
         "build_list.ts",
         "build_list_page.ts",
         "builds_module.ts",
+        "test_requirements.ts",
         "xts_requirement_detect.ts",
     ],
     assets = [
@@ -69,6 +77,7 @@ ng_module(
         ":build_editor",
         ":build_file_selector",
         ":build_list",
+        ":test_requirements",
         ":xts_requirement_detect",
         "build_create_page.ng.html",
         "build_detail.ng.html",
@@ -77,6 +86,7 @@ ng_module(
         "build_file_selector.ng.html",
         "build_list.ng.html",
         "build_list_page.ng.html",
+        "test_requirements.ng.html",
         "xts_requirement_detect.ng.html",
     ],
     visibility = ["//multitest_transport"],
@@ -109,6 +119,7 @@ ng_module(
         "build_editor_test.ts",
         "build_file_selector_test.ts",
         "build_list_test.ts",
+        "test_requirements_test.ts",
         "xts_requirement_detect_test.ts",
     ],
     visibility = ["//multitest_transport"],

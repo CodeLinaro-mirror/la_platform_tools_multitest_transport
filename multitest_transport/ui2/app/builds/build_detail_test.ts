@@ -127,4 +127,20 @@ describe('BuildDetail', () => {
        };
        expect(dialog.open).toHaveBeenCalledWith(BuildEditor, dialogParams);
      }));
+
+  it('should check test requirements availability correctly', () => {
+    expect(buildDetail.testRequirementsAvailable).toBe(false);
+    buildDetail.build!.xts_requirements!.detection_status =
+        mttModels.XtsRequirementsDetectionStatus.COMPLETED;
+    expect(buildDetail.testRequirementsAvailable).toBe(true);
+  });
+
+  it('should check detection button eligibility correctly', () => {
+    buildDetail.build!.xts_requirements!.detection_status =
+        mttModels.XtsRequirementsDetectionStatus.SIGNALS_COLLECTING;
+    expect(buildDetail.showDetectButton).toBe(false);
+    buildDetail.build!.xts_requirements!.detection_status =
+        mttModels.XtsRequirementsDetectionStatus.ERROR;
+    expect(buildDetail.showDetectButton).toBe(true);
+  });
 });

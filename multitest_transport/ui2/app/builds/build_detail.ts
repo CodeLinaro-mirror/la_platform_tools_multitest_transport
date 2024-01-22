@@ -44,7 +44,25 @@ export class BuildDetail implements OnInit, AfterViewInit {
 
   build?: mttModels.Build;
 
+  readonly XtsRequirementsDetectionStatus =
+      mttModels.XtsRequirementsDetectionStatus;
+
   private readonly destroy = new ReplaySubject<void>();
+  private readonly DETECTABLE_STATUSES = [
+    mttModels.XtsRequirementsDetectionStatus.CANCELED,
+    mttModels.XtsRequirementsDetectionStatus.ERROR,
+    mttModels.XtsRequirementsDetectionStatus.NOT_STARTED,
+  ];
+
+  get testRequirementsAvailable(): boolean {
+    return this.build?.xts_requirements?.detection_status ===
+        mttModels.XtsRequirementsDetectionStatus.COMPLETED;
+  }
+
+  get showDetectButton(): boolean {
+    return this.DETECTABLE_STATUSES.includes(
+        this.build!.xts_requirements!.detection_status);
+  }
 
   constructor(
       private readonly liveAnnouncer: LiveAnnouncer,
