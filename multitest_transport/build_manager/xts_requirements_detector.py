@@ -13,12 +13,14 @@
 # limitations under the License.
 
 """A module to process xTS requirements detection requests."""
+import datetime
 import json
 import logging
 
 import flask
 from protorpc import messages
 from protorpc import protojson
+import pytz
 
 
 
@@ -30,6 +32,7 @@ from tradefed_cluster import common
 from tradefed_cluster.services import task_scheduler
 from tradefed_cluster.util import ndb_shim as ndb
 
+MAX_ATTEMPT_COUNT = 10
 MAX_RETRY_COUNT = 5
 
 XTS_REQUIREMENTS_DETECTION_EVENT_QUEUE = (
@@ -40,11 +43,24 @@ XTS_REQUIREMENTS_DETECTION_EVENT_QUEUE = (
 APP = flask.Flask(__name__)
 
 
-def FetchRequiredReports(build_id):
+def _GetCurrentTime():
+  """Returns naive current UTC time."""
+  return datetime.datetime.utcnow()
+
+
+def _GetNextSyncTime(delta_minutes=1):
+  """Calculate the next sync UTC time for required reports."""
+  now = _GetCurrentTime()
+  next_sync_time = now + datetime.timedelta(minutes=delta_minutes)
+  return next_sync_time
+
+
+def SyncRequiredReports(build_id, attempt_count):
   """Retrieves and stores the required reports for a build.
 
   Args:
     build_id: a build ID.
+    attempt_count: attempt count of required reports syncing.
   """
   build = mtt_messages.ConvertToKey(ndb_models.Build, build_id).get()
   if not build:
@@ -56,7 +72,7 @@ def FetchRequiredReports(build_id):
     return
   # TODO: Gets build fingerprint.
   fingerprint = ''
-  # Uses the default credentials to fetch required reports from APFE.
+  # Uses the default credentials to sync required reports from APFE.
   private_node_config = ndb_models.GetPrivateNodeConfig()
   client = apfe_client.ApfeClient(
       constant.ANDROID_PARTNER_API_NAME,
@@ -69,15 +85,36 @@ def FetchRequiredReports(build_id):
       for required_report in required_report_info.requiredReports
   ]
 
-  # Update detection status to COMPLETED and store required reports.
-  def _Txn():
-    build.xts_requirements.required_reports = required_reports
-    build.xts_requirements.detection_status = (
-        ndb_models.XtsRequirementsDetectionStatus.COMPLETED
-    )
-    build.put()
+  if required_reports:
+    # Updates detection status to COMPLETED and store required reports.
+    def _Txn():
+      build = mtt_messages.ConvertToKey(ndb_models.Build, build_id).get()
+      if not build:
+        return
+      build.xts_requirements.required_reports = required_reports
+      build.xts_requirements.detection_status = (
+          ndb_models.XtsRequirementsDetectionStatus.COMPLETED
+      )
+      build.put()
 
-  ndb.transaction(_Txn)
+    ndb.transaction(_Txn)
+  elif attempt_count < MAX_ATTEMPT_COUNT:
+    # Schedules a next sync task.
+    payload = json.dumps(
+        {'build_id': build_id, 'attempt_count': attempt_count + 1}
+    )
+    next_sync_time = _GetNextSyncTime()
+    task_scheduler.AddTask(
+        queue_name=XTS_REQUIREMENTS_DETECTION_EVENT_QUEUE,
+        payload=payload,
+        target='default',
+        eta=pytz.UTC.localize(next_sync_time),
+    )
+  else:
+    # Updates detection status to ERROR.
+    SetDetectionStatus(
+        build_id, ndb_models.XtsRequirementsDetectionStatus.ERROR
+    )
 
 
 def HandleFinalizedTestRun(test_run_key):
@@ -101,16 +138,18 @@ def HandleFinalizedTestRun(test_run_key):
       build_id, ndb_models.XtsRequirementsDetectionStatus.ANALYSIS_RUNNING
   )
 
-  task_name = str(build_id)
-  payload = json.dumps({'build_id': build_id})
+  payload = json.dumps({'build_id': build_id, 'attempt_count': 1})
+  # Holds for 5 minutes to allow for analysis to complete.
+  next_sync_time = _GetNextSyncTime(delta_minutes=5)
   task_scheduler.AddTask(
       queue_name=XTS_REQUIREMENTS_DETECTION_EVENT_QUEUE,
-      name=task_name,
       payload=payload,
       target='default',
+      eta=pytz.UTC.localize(next_sync_time),
   )
 
 
+@ndb.transactional()
 def SetDetectionStatus(build_id, detection_status):
   """Updates a build's detection status.
 
@@ -158,8 +197,9 @@ def TaskHandler(fake):
   )
   payload = json.loads(flask.request.get_data())
   build_id = payload['build_id']
+  attempt_count = payload['attempt_count']
   try:
-    FetchRequiredReports(build_id)
+    SyncRequiredReports(build_id, attempt_count)
   except Exception:  
     if retry_count < MAX_RETRY_COUNT:
       logging.exception(

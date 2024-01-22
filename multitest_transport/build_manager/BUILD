@@ -22,6 +22,7 @@ pytype_strict_library(
         "@tradefed_cluster//tradefed_cluster/util:ndb_shim_lib",
         third_party("flask"),
         third_party("protorpc"),
+        third_party("pytz"),
     ],
 )
 

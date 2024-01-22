@@ -59,9 +59,11 @@ class XtsRequirementsDetectorTest(testbed_dependent_test.TestbedDependentTest):
         ),
     )
     self.mock_build.put()
+    self.attempt_count = 2
 
+  @mock.patch.object(task_scheduler, 'AddTask')
   @mock.patch.object(apfe_client, 'ApfeClient')
-  def testFetchRequiredReports(self, mock_client_factory):
+  def testSyncRequiredReports(self, mock_client_factory, mock_add_task):
     self.mock_build.xts_requirements.detection_status = (
         ndb_models.XtsRequirementsDetectionStatus.ANALYSIS_RUNNING
     )
@@ -86,8 +88,8 @@ class XtsRequirementsDetectorTest(testbed_dependent_test.TestbedDependentTest):
     }
     """
 
-    xts_requirements_detector.FetchRequiredReports(
-        str(self.mock_build.key.id())
+    xts_requirements_detector.SyncRequiredReports(
+        str(self.mock_build.key.id()), self.attempt_count
     )
     self.mock_build = self.mock_build.key.get()
 
@@ -107,13 +109,78 @@ class XtsRequirementsDetectorTest(testbed_dependent_test.TestbedDependentTest):
             ),
         ],
     )
+    mock_add_task.assert_not_called()
+
+  @mock.patch.object(task_scheduler, 'AddTask')
+  @mock.patch.object(apfe_client, 'ApfeClient')
+  def testSyncRequiredReports_emptyRequiredReports(
+      self, mock_client_factory, mock_add_task
+  ):
+    self.mock_build.xts_requirements.detection_status = (
+        ndb_models.XtsRequirementsDetectionStatus.ANALYSIS_RUNNING
+    )
+    self.mock_build.put()
+    mock_client = mock.MagicMock()
+    mock_client_factory.return_value = mock_client
+    mock_client.GetRequiredReports.return_value = ''
+
+    xts_requirements_detector.SyncRequiredReports(
+        str(self.mock_build.key.id()), self.attempt_count
+    )
+    self.mock_build = self.mock_build.key.get()
+
+    self.assertEqual(
+        self.mock_build.xts_requirements.detection_status,
+        ndb_models.XtsRequirementsDetectionStatus.ANALYSIS_RUNNING,
+    )
+    _, task_args = mock_add_task.call_args
+    self.assertEqual(
+        task_args['queue_name'],
+        xts_requirements_detector.XTS_REQUIREMENTS_DETECTION_EVENT_QUEUE,
+    )
+    self.assertEqual(
+        json.loads(task_args['payload']),
+        {
+            'build_id': str(self.mock_build.key.id()),
+            'attempt_count': self.attempt_count + 1,
+        },
+    )
+    self.assertEqual(
+        task_args['target'],
+        'default',
+    )
+
+  @mock.patch.object(task_scheduler, 'AddTask')
+  @mock.patch.object(apfe_client, 'ApfeClient')
+  def testSyncRequiredReports_maxAttemptCountReached(
+      self, mock_client_factory, mock_add_task
+  ):
+    self.mock_build.xts_requirements.detection_status = (
+        ndb_models.XtsRequirementsDetectionStatus.ANALYSIS_RUNNING
+    )
+    self.mock_build.put()
+    mock_client = mock.MagicMock()
+    mock_client_factory.return_value = mock_client
+    mock_client.GetRequiredReports.return_value = ''
+
+    xts_requirements_detector.SyncRequiredReports(
+        str(self.mock_build.key.id()),
+        xts_requirements_detector.MAX_ATTEMPT_COUNT,
+    )
+    self.mock_build = self.mock_build.key.get()
+
+    self.assertEqual(
+        self.mock_build.xts_requirements.detection_status,
+        ndb_models.XtsRequirementsDetectionStatus.ERROR,
+    )
+    mock_add_task.assert_not_called()
 
   @mock.patch.object(apfe_client, 'ApfeClient')
-  def testFetchRequiredReports_signalsCollectingStatus(
+  def testSyncRequiredReports_signalsCollectingStatus(
       self, mock_client_factory
   ):
-    xts_requirements_detector.FetchRequiredReports(
-        str(self.mock_build.key.id())
+    xts_requirements_detector.SyncRequiredReports(
+        str(self.mock_build.key.id()), self.attempt_count
     )
     self.mock_build = self.mock_build.key.get()
 
@@ -139,13 +206,10 @@ class XtsRequirementsDetectorTest(testbed_dependent_test.TestbedDependentTest):
         xts_requirements_detector.XTS_REQUIREMENTS_DETECTION_EVENT_QUEUE,
     )
     self.assertEqual(
-        task_args['name'],
-        str(self.mock_build.key.id()),
-    )
-    self.assertEqual(
         json.loads(task_args['payload']),
         {
             'build_id': self.mock_build.key.id(),
+            'attempt_count': 1,
         },
     )
     self.assertEqual(
