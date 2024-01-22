@@ -66,6 +66,8 @@ export class XtsRequirementDetect extends FormChangeTracker implements
   errorMessage = '';
   buildChannels: mttModels.BuildChannel[] = [];
 
+  readonly deviceWarningMessage =
+      'Select a device that has been flashed with the build.';
   readonly resetStepCompletion = resetStepCompletion;
   readonly Step = Step;
   readonly TestResourceClassType = TestResourceClassType;

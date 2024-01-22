@@ -90,6 +90,8 @@ describe('XtsRequirementDetect', () => {
     const textContent = getTextContent(el);
     expect(textContent).toContain('Detect xTS Requirements');
     expect(textContent).toContain('Select Devices');
+    expect(textContent)
+        .toContain('Select a device that has been flashed with the build.');
     expect(textContent).toContain('Set Resources');
   });
 

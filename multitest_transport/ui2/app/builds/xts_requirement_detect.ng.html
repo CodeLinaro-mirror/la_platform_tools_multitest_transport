@@ -30,6 +30,9 @@
   <mat-step [completed]="!!stepCompletionStatusMap[Step.SELECT_RUN_TARGETS]">
     <ng-template matStepLabel>Select Devices</ng-template>
 
+    <!-- A warning message to inform the user to select an eligible device -->
+    <form-error-info [warningMessage]="deviceWarningMessage">
+    </form-error-info>
     <test-run-target-picker
         [autoUpdate]="true"
         [(deviceSpecs)]="data.testRunConfig.device_specs!">
