@@ -22,6 +22,7 @@ from protorpc import protojson
 from tradefed_cluster import api_messages
 
 from com_google_deviceinfra.src.devtools.mobileharness.api.model.proto import device_pb2
+from com_google_deviceinfra.src.devtools.mobileharness.api.model.proto import lab_pb2
 from com_google_deviceinfra.src.devtools.mobileharness.infra.master.rpc.proto import lab_info_service_pb2
 
 
@@ -127,6 +128,7 @@ class HostApiTest(api_test_util.TestCase):
       lab_data = response.lab_query_result.lab_view.lab_data.add()
       lab_data.lab_info.lab_locator.ip = '127.0.0.1'
       lab_data.lab_info.lab_locator.host_name = 'localhost'
+      lab_data.lab_info.lab_status = lab_pb2.LabStatus.LAB_RUNNING
       host_property = (
           lab_data.lab_info.lab_server_feature.host_properties.host_property.add()
       )

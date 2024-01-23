@@ -25,6 +25,7 @@ from protorpc import remote
 from tradefed_cluster import api_messages
 
 from com_google_deviceinfra.src.devtools.mobileharness.api.model.proto import device_pb2
+from com_google_deviceinfra.src.devtools.mobileharness.api.model.proto import lab_pb2
 from com_google_deviceinfra.src.devtools.mobileharness.infra.master.rpc.proto import lab_info_service_pb2
 
 
@@ -237,6 +238,12 @@ class HostApi(remote.Service):
         offline_devices += 1
         device_count_summary.offline += 1
       device_infos.append(device_info)
+    host_state = 'UNKNOWN'
+    if host_info.lab_info.lab_status == lab_pb2.LabStatus.LAB_RUNNING:
+      host_state = 'RUNNING'
+    elif host_info.lab_info.lab_status == lab_pb2.LabStatus.LAB_MISSING:
+      host_state = 'GONE'
+
     return api_messages.HostInfo(
         hostname=host_info.lab_info.lab_locator.host_name,
         lab_name=lab_name,
@@ -258,7 +265,7 @@ class HostApi(remote.Service):
         extra_info=[],
         next_cluster_ids=[],
         pools=[],
-        host_state='RUNNING',
+        host_state=host_state,
         state_history=[],
         assignee='',
         device_count_summaries=list(device_count_summaries.values()),
