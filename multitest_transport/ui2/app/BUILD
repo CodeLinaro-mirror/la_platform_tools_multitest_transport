@@ -9,7 +9,6 @@ licenses(["notice"])
 sass_library(
     name = "app_styles_lib",
     srcs = ["app.scss"],
-    strict_deps = False,
     visibility = ["//multitest_transport"],
     deps = ["//multitest_transport/ui2:constants"],
 )

@@ -31,7 +31,6 @@ ng_module(
 sass_library(
     name = "constants",
     srcs = ["_constants.scss"],
-    strict_deps = False,
     visibility = ["//multitest_transport"],
 )
 
@@ -39,7 +38,6 @@ sass_library(
 sass_library(
     name = "styles_lib",
     srcs = ["styles.scss"],
-    strict_deps = False,
     visibility = ["//multitest_transport"],
     deps = [
         ":constants",
