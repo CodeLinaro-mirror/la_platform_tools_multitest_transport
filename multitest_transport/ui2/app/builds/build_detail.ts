@@ -19,7 +19,7 @@ import {AfterViewInit, Component, Input, OnInit, ViewChild} from '@angular/core'
 import {MatButton} from '@angular/material/button';
 import {MatDialog} from '@angular/material/dialog';
 import {Router} from '@angular/router';
-import {ReplaySubject} from 'rxjs';
+import {interval, ReplaySubject} from 'rxjs';
 import {finalize, takeUntil} from 'rxjs/operators';
 
 import {MttClient} from '../services/mtt_client';
@@ -74,6 +74,7 @@ export class BuildDetail implements OnInit, AfterViewInit {
 
   ngOnInit() {
     this.load();
+    this.autoRefreshBuild();
   }
 
   ngAfterViewInit() {
@@ -84,6 +85,13 @@ export class BuildDetail implements OnInit, AfterViewInit {
     this.destroy.next();
     this.destroy.complete();
     this.liveAnnouncer.clear();
+  }
+
+  autoRefreshBuild() {
+    // Auto-load the latest build every 60 seconds.
+    interval(60_000).pipe(takeUntil(this.destroy)).subscribe(() => {
+      this.load();
+    });
   }
 
   load() {

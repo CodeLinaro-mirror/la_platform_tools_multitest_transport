@@ -16,7 +16,7 @@
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {DebugElement} from '@angular/core';
-import {ComponentFixture, inject, TestBed} from '@angular/core/testing';
+import {ComponentFixture, discardPeriodicTasks, fakeAsync, inject, TestBed, tick} from '@angular/core/testing';
 import {MatDialog} from '@angular/material/dialog';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {RouterTestingModule} from '@angular/router/testing';
@@ -143,4 +143,16 @@ describe('BuildDetail', () => {
         mttModels.XtsRequirementsDetectionStatus.ERROR;
     expect(buildDetail.showDetectButton).toBe(true);
   });
+
+  it('should refresh build data periodically', fakeAsync(() => {
+       buildDetail.autoRefreshBuild();
+       expect(buildClient.get).toHaveBeenCalledTimes(1);
+       tick(60_000);
+       expect(buildClient.get).toHaveBeenCalledTimes(2);
+       tick(30_000);
+       expect(buildClient.get).toHaveBeenCalledTimes(2);
+       tick(30_000);
+       expect(buildClient.get).toHaveBeenCalledTimes(3);
+       discardPeriodicTasks();
+     }));
 });
