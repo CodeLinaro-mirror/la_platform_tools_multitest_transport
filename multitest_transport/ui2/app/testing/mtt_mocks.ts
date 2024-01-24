@@ -632,10 +632,10 @@ export function newMockBuild(
       detection_test_run_id: TEST_RUN_ID,
       required_reports: [
         {
-          'type': mttModels.ReportType.GTS,
-          'test_plan': 'gts-interactive',
+          type: mttModels.ReportType.GTS,
+          test_plans: ['gts-interactive'],
         },
-        {'type': mttModels.ReportType.CTS}
+        {type: mttModels.ReportType.CTS}
       ],
     },
   };

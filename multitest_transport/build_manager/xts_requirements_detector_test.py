@@ -78,7 +78,9 @@ class XtsRequirementsDetectorTest(testbed_dependent_test.TestbedDependentTest):
             },
             {
                 "type": "GTS",
-                "testPlan": "gts-interactive"
+                "testPlans": [
+                    "gts-interactive"
+                ]
             },
             {
                 "type": "VTS",
@@ -102,7 +104,7 @@ class XtsRequirementsDetectorTest(testbed_dependent_test.TestbedDependentTest):
         [
             ndb_models.RequiredReport(type=ndb_models.ReportType.CTS),
             ndb_models.RequiredReport(
-                type=ndb_models.ReportType.GTS, test_plan='gts-interactive'
+                type=ndb_models.ReportType.GTS, test_plans=['gts-interactive']
             ),
             ndb_models.RequiredReport(
                 type=ndb_models.ReportType.VTS, available=True

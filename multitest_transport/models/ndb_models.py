@@ -1080,12 +1080,12 @@ class RequiredReport(ndb.Model):
 
   Attributes:
     type: the type of a report.
-    test_plan: the test plan of a report.
+    test_plans: the qualified test plans of a report.
     available: whether the report is available on APFE.
   """
 
   type = ndb.EnumProperty(ReportType, required=True)
-  test_plan = ndb.StringProperty()
+  test_plans = ndb.StringProperty(repeated=True)
   available = ndb.BooleanProperty()
 
 
@@ -1113,7 +1113,7 @@ class XtsRequirements(ndb.Model):
       default=XtsRequirementsDetectionStatus.NOT_STARTED,
   )
   detection_test_run_key = ndb.KeyProperty(TestRun)
-  required_reports = ndb.StructuredProperty(RequiredReport, repeated=True)
+  required_reports = ndb.LocalStructuredProperty(RequiredReport, repeated=True)
 
 
 class Build(ndb.Model):

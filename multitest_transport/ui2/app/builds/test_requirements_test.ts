@@ -51,8 +51,10 @@ describe('TestRequirements', () => {
     const textContent = getTextContent(el);
     for (const requiredReport of requiredReports) {
       expect(textContent).toContain(requiredReport.type);
-      if (requiredReport.test_plan) {
-        expect(textContent).toContain(requiredReport.test_plan);
+      if (requiredReport.test_plans) {
+        for (const testPlan of requiredReport.test_plans) {
+          expect(textContent).toContain(testPlan);
+        }
       }
     }
   });

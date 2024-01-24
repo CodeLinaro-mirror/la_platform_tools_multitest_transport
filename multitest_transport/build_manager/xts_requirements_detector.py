@@ -169,14 +169,17 @@ class _RequiredReport(messages.Message):
   """A required report."""
 
   type = messages.EnumField(ndb_models.ReportType, 1)
-  testPlan = messages.StringField(2)  
+  testPlans = messages.StringField(2, repeated=True)  
   available = messages.BooleanField(3)
 
 
 @mtt_messages.Converter(_RequiredReport, ndb_models.RequiredReport)
 def _RequiredReportConverter(msg):
+  test_plans = [
+      test_plan.strip() for test_plan in msg.testPlans if test_plan.strip()
+  ]
   return ndb_models.RequiredReport(
-      type=msg.type, test_plan=msg.testPlan, available=msg.available
+      type=msg.type, test_plans=test_plans, available=msg.available
   )
 
 

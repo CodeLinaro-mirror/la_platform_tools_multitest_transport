@@ -1489,14 +1489,14 @@ class RequiredReport(messages.Message):
   """A required report."""
 
   type = messages.EnumField(ndb_models.ReportType, 1)
-  test_plan = messages.StringField(2)
+  test_plans = messages.StringField(2, repeated=True)
   available = messages.BooleanField(3)
 
 
 @Converter(ndb_models.RequiredReport, RequiredReport)
 def _RequiredReportConverter(obj):
   return RequiredReport(
-      type=obj.type, test_plan=obj.test_plan, available=obj.available
+      type=obj.type, test_plans=obj.test_plans, available=obj.available
   )
 
 

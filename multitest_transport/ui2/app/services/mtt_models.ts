@@ -1125,7 +1125,7 @@ export enum ReportType {
 /** A required report of a build. */
 export declare interface RequiredReport {
   type: ReportType;
-  test_plan?: string;
+  test_plans?: string[];
 }
 
 /** Xts requirements of a build. */
