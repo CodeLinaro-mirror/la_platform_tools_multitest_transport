@@ -84,8 +84,7 @@ describe('BuildDetail', () => {
     expect(textContent).toContain(build.file_url);
     expect(textContent).toContain(build.labels.join(','));
     expect(textContent).toContain('xTS Testing Requirements');
-    expect(textContent)
-        .toContain(build.xts_requirements!.detection_test_run_id);
+    expect(textContent).toContain(build.detection_test_run_id!);
   });
 
   it('should open xts requirement detect dialog when clicking detect button',
@@ -130,16 +129,16 @@ describe('BuildDetail', () => {
 
   it('should check test requirements availability correctly', () => {
     expect(buildDetail.testRequirementsAvailable).toBe(false);
-    buildDetail.build!.xts_requirements!.detection_status =
+    buildDetail.build!.detection_status =
         mttModels.XtsRequirementsDetectionStatus.COMPLETED;
     expect(buildDetail.testRequirementsAvailable).toBe(true);
   });
 
   it('should check detection button eligibility correctly', () => {
-    buildDetail.build!.xts_requirements!.detection_status =
+    buildDetail.build!.detection_status =
         mttModels.XtsRequirementsDetectionStatus.SIGNALS_COLLECTING;
     expect(buildDetail.showDetectButton).toBe(false);
-    buildDetail.build!.xts_requirements!.detection_status =
+    buildDetail.build!.detection_status =
         mttModels.XtsRequirementsDetectionStatus.ERROR;
     expect(buildDetail.showDetectButton).toBe(true);
   });

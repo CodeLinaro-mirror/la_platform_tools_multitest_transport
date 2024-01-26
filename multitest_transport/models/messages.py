@@ -1488,36 +1488,19 @@ class NetdataAlarmList(messages.Message):
 class RequiredReport(messages.Message):
   """A required report."""
 
-  type = messages.EnumField(ndb_models.ReportType, 1)
-  test_plans = messages.StringField(2, repeated=True)
-  available = messages.BooleanField(3)
+  id = messages.StringField(1, required=True)
+  type = messages.EnumField(ndb_models.ReportType, 2)
+  test_plans = messages.StringField(3, repeated=True)
+  available = messages.BooleanField(4)
 
 
 @Converter(ndb_models.RequiredReport, RequiredReport)
 def _RequiredReportConverter(obj):
   return RequiredReport(
-      type=obj.type, test_plans=obj.test_plans, available=obj.available
-  )
-
-
-class XtsRequirements(messages.Message):
-  """Xts requirements of a build."""
-
-  detection_status = messages.EnumField(
-      ndb_models.XtsRequirementsDetectionStatus, 1
-  )
-  detection_test_run_id = messages.StringField(2)
-  required_reports = messages.MessageField(RequiredReport, 3, repeated=True)
-
-
-@Converter(ndb_models.XtsRequirements, XtsRequirements)
-def _XtsRequirementsConverter(obj):
-  return XtsRequirements(
-      detection_status=obj.detection_status,
-      detection_test_run_id=str(obj.detection_test_run_key.id())
-      if obj.detection_test_run_key
-      else None,
-      required_reports=ConvertList(obj.required_reports, RequiredReport),
+      id=str(obj.key.id()),
+      type=obj.type,
+      test_plans=obj.test_plans,
+      available=obj.available,
   )
 
 
@@ -1530,11 +1513,20 @@ class Build(messages.Message):
   labels = messages.StringField(5, repeated=True)
   create_time = message_types.DateTimeField(6)
   update_time = message_types.DateTimeField(7)
-  xts_requirements = messages.MessageField(XtsRequirements, 8)
+  detection_status = messages.EnumField(
+      ndb_models.XtsRequirementsDetectionStatus, 8
+  )
+  detection_test_run_id = messages.StringField(9)
+  required_reports = messages.MessageField(RequiredReport, 10, repeated=True)
 
 
 @Converter(ndb_models.Build, Build)
 def _BuildConverter(obj):
+  required_reports = list(
+      ndb_models.RequiredReport.query(
+          ndb_models.RequiredReport.build_key == obj.key
+      )
+  )
   return Build(
       id=str(obj.key.id()) if obj.key else None,
       name=obj.name,
@@ -1543,7 +1535,11 @@ def _BuildConverter(obj):
       labels=obj.labels,
       create_time=_AddTimezone(obj.create_time),
       update_time=_AddTimezone(obj.update_time),
-      xts_requirements=Convert(obj.xts_requirements, XtsRequirements),
+      detection_status=obj.detection_status,
+      detection_test_run_id=str(obj.detection_test_run_key.id())
+      if obj.detection_test_run_key
+      else None,
+      required_reports=ConvertList(required_reports, RequiredReport),
   )
 
 

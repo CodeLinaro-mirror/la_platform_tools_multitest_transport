@@ -53,10 +53,8 @@ class XtsRequirementsDetectorTest(testbed_dependent_test.TestbedDependentTest):
         file_url='file:///root/file/path',
         size=123456,
         labels=['label1', 'label2'],
-        xts_requirements=ndb_models.XtsRequirements(
-            detection_status=ndb_models.XtsRequirementsDetectionStatus.SIGNALS_COLLECTING,
-            detection_test_run_key=self.mock_test_run.key,
-        ),
+        detection_status=ndb_models.XtsRequirementsDetectionStatus.SIGNALS_COLLECTING,
+        detection_test_run_key=self.mock_test_run.key,
     )
     self.mock_build.put()
     self.attempt_count = 2
@@ -64,7 +62,7 @@ class XtsRequirementsDetectorTest(testbed_dependent_test.TestbedDependentTest):
   @mock.patch.object(task_scheduler, 'AddTask')
   @mock.patch.object(apfe_client, 'ApfeClient')
   def testSyncRequiredReports(self, mock_client_factory, mock_add_task):
-    self.mock_build.xts_requirements.detection_status = (
+    self.mock_build.detection_status = (
         ndb_models.XtsRequirementsDetectionStatus.ANALYSIS_RUNNING
     )
     self.mock_build.put()
@@ -96,18 +94,33 @@ class XtsRequirementsDetectorTest(testbed_dependent_test.TestbedDependentTest):
     self.mock_build = self.mock_build.key.get()
 
     self.assertEqual(
-        self.mock_build.xts_requirements.detection_status,
+        self.mock_build.detection_status,
         ndb_models.XtsRequirementsDetectionStatus.COMPLETED,
     )
+    required_reports = list(
+        ndb_models.RequiredReport.query(
+            ndb_models.RequiredReport.build_key == self.mock_build.key
+        ).order(ndb_models.RequiredReport.type)
+    )
+    # Reset key to verify other fields.
+    for required_report in required_reports:
+      required_report.key = None
     self.assertEqual(
-        self.mock_build.xts_requirements.required_reports,
+        required_reports,
         [
-            ndb_models.RequiredReport(type=ndb_models.ReportType.CTS),
             ndb_models.RequiredReport(
-                type=ndb_models.ReportType.GTS, test_plans=['gts-interactive']
+                build_key=self.mock_build.key,
+                type=ndb_models.ReportType.CTS,
             ),
             ndb_models.RequiredReport(
-                type=ndb_models.ReportType.VTS, available=True
+                build_key=self.mock_build.key,
+                type=ndb_models.ReportType.GTS,
+                test_plans=['gts-interactive'],
+            ),
+            ndb_models.RequiredReport(
+                build_key=self.mock_build.key,
+                type=ndb_models.ReportType.VTS,
+                available=True,
             ),
         ],
     )
@@ -118,7 +131,7 @@ class XtsRequirementsDetectorTest(testbed_dependent_test.TestbedDependentTest):
   def testSyncRequiredReports_emptyRequiredReports(
       self, mock_client_factory, mock_add_task
   ):
-    self.mock_build.xts_requirements.detection_status = (
+    self.mock_build.detection_status = (
         ndb_models.XtsRequirementsDetectionStatus.ANALYSIS_RUNNING
     )
     self.mock_build.put()
@@ -132,7 +145,7 @@ class XtsRequirementsDetectorTest(testbed_dependent_test.TestbedDependentTest):
     self.mock_build = self.mock_build.key.get()
 
     self.assertEqual(
-        self.mock_build.xts_requirements.detection_status,
+        self.mock_build.detection_status,
         ndb_models.XtsRequirementsDetectionStatus.ANALYSIS_RUNNING,
     )
     _, task_args = mock_add_task.call_args
@@ -157,7 +170,7 @@ class XtsRequirementsDetectorTest(testbed_dependent_test.TestbedDependentTest):
   def testSyncRequiredReports_maxAttemptCountReached(
       self, mock_client_factory, mock_add_task
   ):
-    self.mock_build.xts_requirements.detection_status = (
+    self.mock_build.detection_status = (
         ndb_models.XtsRequirementsDetectionStatus.ANALYSIS_RUNNING
     )
     self.mock_build.put()
@@ -172,7 +185,7 @@ class XtsRequirementsDetectorTest(testbed_dependent_test.TestbedDependentTest):
     self.mock_build = self.mock_build.key.get()
 
     self.assertEqual(
-        self.mock_build.xts_requirements.detection_status,
+        self.mock_build.detection_status,
         ndb_models.XtsRequirementsDetectionStatus.ERROR,
     )
     mock_add_task.assert_not_called()
@@ -187,7 +200,7 @@ class XtsRequirementsDetectorTest(testbed_dependent_test.TestbedDependentTest):
     self.mock_build = self.mock_build.key.get()
 
     self.assertEqual(
-        self.mock_build.xts_requirements.detection_status,
+        self.mock_build.detection_status,
         ndb_models.XtsRequirementsDetectionStatus.SIGNALS_COLLECTING,
     )
     mock_client_factory.assert_not_called()
@@ -199,7 +212,7 @@ class XtsRequirementsDetectorTest(testbed_dependent_test.TestbedDependentTest):
 
     self.assertEqual(
         ndb_models.XtsRequirementsDetectionStatus.ANALYSIS_RUNNING,
-        self.mock_build.xts_requirements.detection_status,
+        self.mock_build.detection_status,
     )
 
     _, task_args = mock_add_task.call_args
@@ -227,27 +240,27 @@ class XtsRequirementsDetectorTest(testbed_dependent_test.TestbedDependentTest):
     self.mock_build = self.mock_build.key.get()
 
     self.assertEqual(
-        self.mock_build.xts_requirements.detection_status,
+        self.mock_build.detection_status,
         ndb_models.XtsRequirementsDetectionStatus.SIGNALS_COLLECTING,
     )
     mock_add_task.assert_not_called()
 
   @mock.patch.object(task_scheduler, 'AddTask')
   def testHandleFinalizedTestRun_testRunKeyMismatch(self, mock_add_task):
-    self.mock_build.xts_requirements.detection_test_run_key = None
+    self.mock_build.detection_test_run_key = None
     self.mock_build.put()
     xts_requirements_detector.HandleFinalizedTestRun(self.mock_test_run.key)
     self.mock_build = self.mock_build.key.get()
 
     self.assertEqual(
-        self.mock_build.xts_requirements.detection_status,
+        self.mock_build.detection_status,
         ndb_models.XtsRequirementsDetectionStatus.SIGNALS_COLLECTING,
     )
     mock_add_task.assert_not_called()
 
   def testSetDetectionStatus(self):
     self.assertEqual(
-        self.mock_build.xts_requirements.detection_status,
+        self.mock_build.detection_status,
         ndb_models.XtsRequirementsDetectionStatus.SIGNALS_COLLECTING,
     )
 
@@ -257,7 +270,7 @@ class XtsRequirementsDetectorTest(testbed_dependent_test.TestbedDependentTest):
     )
     self.mock_build = self.mock_build.key.get()
     self.assertEqual(
-        self.mock_build.xts_requirements.detection_status,
+        self.mock_build.detection_status,
         ndb_models.XtsRequirementsDetectionStatus.ERROR,
     )
 

@@ -66,7 +66,7 @@ def SyncRequiredReports(build_id, attempt_count):
   if not build:
     return
   if (
-      build.xts_requirements.detection_status
+      build.detection_status
       != ndb_models.XtsRequirementsDetectionStatus.ANALYSIS_RUNNING
   ):
     return
@@ -80,19 +80,19 @@ def SyncRequiredReports(build_id, attempt_count):
   )
   response = client.GetRequiredReports(fingerprint)
   required_report_info = protojson.decode_message(_RequiredReportInfo, response)  # pytype: disable=module-attr
-  required_reports = [
-      _RequiredReportConverter(required_report)
-      for required_report in required_report_info.requiredReports
-  ]
 
-  if required_reports:
+  if required_report_info.requiredReports:
     # Updates detection status to COMPLETED and store required reports.
     def _Txn():
       build = mtt_messages.ConvertToKey(ndb_models.Build, build_id).get()
       if not build:
         return
-      build.xts_requirements.required_reports = required_reports
-      build.xts_requirements.detection_status = (
+      required_reports = [
+          _RequiredReportConverter(required_report, build.key)
+          for required_report in required_report_info.requiredReports
+      ]
+      ndb.put_multi(required_reports)
+      build.detection_status = (
           ndb_models.XtsRequirementsDetectionStatus.COMPLETED
       )
       build.put()
@@ -128,7 +128,7 @@ def HandleFinalizedTestRun(test_run_key):
     return
 
   build = ndb_models.Build.query(
-      ndb_models.Build.xts_requirements.detection_test_run_key == test_run_key
+      ndb_models.Build.detection_test_run_key == test_run_key
   ).get()
   if not build:
     return
@@ -161,7 +161,7 @@ def SetDetectionStatus(build_id, detection_status):
   if not build:
     return
 
-  build.xts_requirements.detection_status = detection_status
+  build.detection_status = detection_status
   build.put()
 
 
@@ -174,12 +174,15 @@ class _RequiredReport(messages.Message):
 
 
 @mtt_messages.Converter(_RequiredReport, ndb_models.RequiredReport)
-def _RequiredReportConverter(msg):
+def _RequiredReportConverter(msg, build_key):
   test_plans = [
       test_plan.strip() for test_plan in msg.testPlans if test_plan.strip()
   ]
   return ndb_models.RequiredReport(
-      type=msg.type, test_plans=test_plans, available=msg.available
+      build_key=build_key,
+      type=msg.type,
+      test_plans=test_plans,
+      available=msg.available,
   )
 
 

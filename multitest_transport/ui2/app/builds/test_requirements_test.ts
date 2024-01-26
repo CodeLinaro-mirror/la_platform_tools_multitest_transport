@@ -45,7 +45,7 @@ describe('TestRequirements', () => {
   });
 
   it('should display test requirements correctly', () => {
-    const requiredReports = newMockBuild().xts_requirements.required_reports;
+    const requiredReports = newMockBuild().required_reports;
     testRequirements.dataSource = requiredReports;
     testRequirementsFixture.detectChanges();
     const textContent = getTextContent(el);

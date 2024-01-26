@@ -1124,18 +1124,9 @@ export enum ReportType {
 
 /** A required report of a build. */
 export declare interface RequiredReport {
+  id: string;
   type: ReportType;
   test_plans?: string[];
-}
-
-/** Xts requirements of a build. */
-export declare interface XtsRequirements {
-  /** Status of xTS requirements detection */
-  detection_status: XtsRequirementsDetectionStatus;
-  /** Test run id of xTS requirements detection */
-  detection_test_run_id: string;
-  /** Required reports to get approval */
-  required_reports?: RequiredReport[];
 }
 
 /** Build info. */
@@ -1152,8 +1143,12 @@ export declare interface Build {
   labels: string[];
   /** Created time of this build */
   create_time?: string;
-  /** Xts requirements of this build */
-  xts_requirements?: XtsRequirements;
+  /** Status of xTS requirements detection */
+  detection_status?: XtsRequirementsDetectionStatus;
+  /** Test run id of xTS requirements detection */
+  detection_test_run_id?: string;
+  /** Required reports to get approval */
+  required_reports?: RequiredReport[];
 }
 
 /** Initializes a build. */

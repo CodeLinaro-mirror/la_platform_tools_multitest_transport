@@ -55,13 +55,12 @@ export class BuildDetail implements OnInit, AfterViewInit {
   ];
 
   get testRequirementsAvailable(): boolean {
-    return this.build?.xts_requirements?.detection_status ===
+    return this.build?.detection_status ===
         mttModels.XtsRequirementsDetectionStatus.COMPLETED;
   }
 
   get showDetectButton(): boolean {
-    return this.DETECTABLE_STATUSES.includes(
-        this.build!.xts_requirements!.detection_status);
+    return this.DETECTABLE_STATUSES.includes(this.build!.detection_status!);
   }
 
   constructor(

@@ -100,7 +100,7 @@
                 </td>
                 <td class="value-field">
                   <status-button class="xts-requirements-detection"
-                      [state]="build.xts_requirements!.detection_status">
+                      [state]="build.detection_status!">
                   </status-button>
                 </td>
               </tr>
@@ -109,12 +109,12 @@
                   <mat-label>Invocation Run</mat-label>
                 </td>
                 <td class="value-field">
-                  <ng-container *ngIf="build.xts_requirements?.detection_test_run_id">
-                    <a href="/test_runs/{{build.xts_requirements!.detection_test_run_id!}}">
-                      {{build.xts_requirements!.detection_test_run_id!}}
+                  <ng-container *ngIf="build.detection_test_run_id">
+                    <a href="/test_runs/{{build.detection_test_run_id!}}">
+                      {{build.detection_test_run_id!}}
                     </a>
                   </ng-container>
-                  <ng-container *ngIf="!build.xts_requirements?.detection_test_run_id">
+                  <ng-container *ngIf="!build.detection_test_run_id">
                     N/A
                   </ng-container>
                 </td>
@@ -126,7 +126,7 @@
                 <td class="value-field">
                   <test-requirements
                       *ngIf="testRequirementsAvailable"
-                      [dataSource]="build.xts_requirements!.required_reports!">
+                      [dataSource]="build.required_reports!">
                   </test-requirements>
                   <ng-container *ngIf="!testRequirementsAvailable">
                     N/A

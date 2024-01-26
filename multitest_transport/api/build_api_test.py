@@ -256,10 +256,10 @@ class BuildApiTest(api_test_util.TestCase):
     build = self._CreateMockBuild()
     build_msg = messages.Convert(build, messages.Build)
     self.assertEqual(
-        build_msg.xts_requirements.detection_status,
+        build_msg.detection_status,
         ndb_models.XtsRequirementsDetectionStatus.NOT_STARTED,
     )
-    self.assertIsNone(build_msg.xts_requirements.detection_test_run_id)
+    self.assertIsNone(build_msg.detection_test_run_id)
 
     res = self.app.post_json(
         '/_ah/api/mtt/v1/builds/%s/detect' % build.key.id(),
@@ -281,11 +281,11 @@ class BuildApiTest(api_test_util.TestCase):
     )
     updated_build_msg = protojson.decode_message(messages.Build, res.body)
     self.assertEqual(
-        updated_build_msg.xts_requirements.detection_status,
+        updated_build_msg.detection_status,
         ndb_models.XtsRequirementsDetectionStatus.SIGNALS_COLLECTING,
     )
     self.assertEqual(
-        updated_build_msg.xts_requirements.detection_test_run_id,
+        updated_build_msg.detection_test_run_id,
         str(test_run.key.id()),
     )
 

@@ -627,16 +627,15 @@ export function newMockBuild(
     file_url: fileUrl,
     size: 123123123,
     labels,
-    xts_requirements: {
-      detection_status: detectionStatus,
-      detection_test_run_id: TEST_RUN_ID,
-      required_reports: [
-        {
-          type: mttModels.ReportType.GTS,
-          test_plans: ['gts-interactive'],
-        },
-        {type: mttModels.ReportType.CTS}
-      ],
-    },
+    detection_status: detectionStatus,
+    detection_test_run_id: TEST_RUN_ID,
+    required_reports: [
+      {
+        id: 'id-1',
+        type: mttModels.ReportType.GTS,
+        test_plans: ['gts-interactive'],
+      },
+      {id: 'id-2', type: mttModels.ReportType.CTS}
+    ],
   };
 }

@@ -197,10 +197,10 @@ class BuildApi(remote.Service):
       _, build = self._getBuild(request.build_id)
       if not test_run:
         return
-      build.xts_requirements.detection_status = (
+      build.detection_status = (
           ndb_models.XtsRequirementsDetectionStatus.SIGNALS_COLLECTING
       )
-      build.xts_requirements.detection_test_run_key = test_run.key
+      build.detection_test_run_key = test_run.key
       build.put()
       return build
 

@@ -1075,20 +1075,6 @@ class ReportType(messages.Enum):
   WPTS = 27  # Wear Performance Test Suite.
 
 
-class RequiredReport(ndb.Model):
-  """A required report for a build.
-
-  Attributes:
-    type: the type of a report.
-    test_plans: the qualified test plans of a report.
-    available: whether the report is available on APFE.
-  """
-
-  type = ndb.EnumProperty(ReportType, required=True)
-  test_plans = ndb.StringProperty(repeated=True)
-  available = ndb.BooleanProperty()
-
-
 class XtsRequirementsDetectionStatus(messages.Enum):
   NOT_STARTED = 0  # Xts requirements detection is not yet started.
   SIGNALS_COLLECTING = 1  # A task is collecting build integrity signals.
@@ -1096,24 +1082,6 @@ class XtsRequirementsDetectionStatus(messages.Enum):
   COMPLETED = 3  # Xts requirements detection is completed.
   CANCELED = 4  # Xts requirements detection is canceled.
   ERROR = 5  # Xts requirements detection is aborted with an error.
-
-
-class XtsRequirements(ndb.Model):
-  """Xts requirements of a build.
-
-  Attributes:
-    detection_status: status of xts requirements detection for a build.
-    detection_test_run_key: test run key of xts requirements detection for a
-      build.
-    required_reports: required reports to get approval for a build.
-  """
-
-  detection_status = ndb.EnumProperty(
-      XtsRequirementsDetectionStatus,
-      default=XtsRequirementsDetectionStatus.NOT_STARTED,
-  )
-  detection_test_run_key = ndb.KeyProperty(TestRun)
-  required_reports = ndb.LocalStructuredProperty(RequiredReport, repeated=True)
 
 
 class Build(ndb.Model):
@@ -1126,7 +1094,9 @@ class Build(ndb.Model):
     labels: list of strings users can use to categorize builds.
     create_time: time a build is created.
     update_time: time a build is last updated.
-    xts_requirements: xts requirements of a build.
+    detection_status: status of xts requirements detection for a build.
+    detection_test_run_key: test run key of xts requirements detection for a
+      build.
   """
   name = ndb.StringProperty()
   file_url = ndb.StringProperty()
@@ -1134,6 +1104,31 @@ class Build(ndb.Model):
   labels = ndb.StringProperty(repeated=True)
   create_time = ndb.DateTimeProperty(auto_now_add=True)
   update_time = ndb.DateTimeProperty(auto_now=True)
-  xts_requirements = ndb.StructuredProperty(
-      XtsRequirements, default=XtsRequirements()
+  detection_status = ndb.EnumProperty(
+      XtsRequirementsDetectionStatus,
+      default=XtsRequirementsDetectionStatus.NOT_STARTED,
   )
+  detection_test_run_key = ndb.KeyProperty(TestRun)
+
+  @classmethod
+  def _post_delete_hook(cls, key, future):
+    keys_to_delete = RequiredReport.query(
+        RequiredReport.build_key == key
+    ).fetch(keys_only=True)
+    ndb.delete_multi(keys_to_delete)
+
+
+class RequiredReport(ndb.Model):
+  """A required report for a build.
+
+  Attributes:
+    build_key: the build key.
+    type: the type of a report.
+    test_plans: the qualified test plans of a report.
+    available: whether the report is available on APFE.
+  """
+
+  build_key = ndb.KeyProperty(Build, required=True)
+  type = ndb.EnumProperty(ReportType, required=True)
+  test_plans = ndb.StringProperty(repeated=True)
+  available = ndb.BooleanProperty()
