@@ -22,8 +22,14 @@
   <!-- Name Field -->
   <mat-form-field class="name-field" appearance="outline" [floatLabel]="'always'" fxLayout="column">
     <mat-label> Name </mat-label>
-    <input matInput type="text" [(ngModel)]="data.build.name" name="name" required #name="ngModel">
+    <input matInput type="text" [(ngModel)]="data.build.name" name="name" required #name="ngModel"/>
     <mat-error *ngIf="name.invalid && name.touched">Name is required</mat-error>
+  </mat-form-field>
+
+  <!-- Fingerprint Field -->
+  <mat-form-field appearance="outline" [floatLabel]="'always'" fxLayout="column">
+    <mat-label> Fingerprint </mat-label>
+    <input matInput type="text" [(ngModel)]="data.build.fingerprint" disabled readonly required/>
   </mat-form-field>
 
   <!-- Labels Field -->

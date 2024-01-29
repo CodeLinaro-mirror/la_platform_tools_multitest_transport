@@ -38,6 +38,7 @@ DETECTION_REQUEST = {
         'url': GTS_ZIP_URL,
     }],
 }
+FINGERPRINT = 'brand/product/device:plaform_version/build_id:user/release-keys'
 
 
 class BuildApiTest(api_test_util.TestCase):
@@ -49,6 +50,7 @@ class BuildApiTest(api_test_util.TestCase):
   def _CreateBuildToRequest(self):
     build_to_request = {
         'name': 'Foo',
+        'fingerprint': FINGERPRINT,
         'file_url': FILE_URL,
         'size': '123123123',
         'labels': [
@@ -62,6 +64,7 @@ class BuildApiTest(api_test_util.TestCase):
     build = ndb_models.Build(
         id=str(uuid.uuid4()),
         name='Foo',
+        fingerprint=FINGERPRINT,
         file_url=FILE_URL,
         size=123123123,
         labels=[
@@ -102,6 +105,7 @@ class BuildApiTest(api_test_util.TestCase):
     obj = json.loads(res.body)
     build = ndb_models.Build.get_by_id(obj['id'])
     self.assertEqual(data['name'], build.name)
+    self.assertEqual(data['fingerprint'], build.fingerprint)
     self.assertEqual(data['file_url'], build.file_url)
     self.assertEqual(data['size'], str(build.size))
     self.assertEqual(data['labels'], build.labels)
@@ -116,6 +120,19 @@ class BuildApiTest(api_test_util.TestCase):
     self.assertEqual('400 Bad Request', res.status)
     self.assertIn(
         'Name in the request is unset.',
+        str(res.body),
+    )
+
+  def testCreate_fingerprintName(self):
+    """Tests builds.create API with unset fingerprint."""
+    data = self._CreateBuildToRequest()
+    data.pop('fingerprint')
+
+    res = self.app.post_json('/_ah/api/mtt/v1/builds', data, expect_errors=True)
+
+    self.assertEqual('400 Bad Request', res.status)
+    self.assertIn(
+        'Fingerprint in the request is unset.',
         str(res.body),
     )
 
@@ -194,6 +211,7 @@ class BuildApiTest(api_test_util.TestCase):
     build = self._CreateMockBuild()
     build_msg = messages.Convert(build, messages.Build)
     build_msg.name = 'Bar'
+    build_msg.fingerprint = 'new_fingerprint'
     build_msg.file_url = 'file:///root/file/new_path'
     data = protojson.encode_message(build_msg)
 
@@ -202,6 +220,8 @@ class BuildApiTest(api_test_util.TestCase):
     updated_build_msg = protojson.decode_message(messages.Build, res.body)
     # Verify that the name field is updated.
     self.assertEqual(updated_build_msg.name, 'Bar')
+    # Verify that the fingerprint field remains the same as before.
+    self.assertEqual(updated_build_msg.fingerprint, FINGERPRINT)
     # Verify that the file_url field remains the same as before.
     self.assertEqual(updated_build_msg.file_url, FILE_URL)
 

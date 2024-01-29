@@ -51,6 +51,7 @@ class TestRunApiTest(api_test_util.TestCase):
     """Create a mock ndb_models.Build object."""
     build = ndb_models.Build(
         name='build',
+        fingerprint='fingerprint',
         file_url='file:///root/file/path',
         size=123456,
         labels=['label1', 'label2'],

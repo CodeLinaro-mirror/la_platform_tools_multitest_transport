@@ -128,6 +128,7 @@ describe('BuildDetail', () => {
          data: {
            build: {
              name: build.name,
+             fingerprint: build.fingerprint,
              file_url: build.file_url,
              size: build.size,
              labels: build.labels,

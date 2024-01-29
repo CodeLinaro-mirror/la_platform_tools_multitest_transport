@@ -70,15 +70,13 @@ def SyncRequiredReports(build_id, attempt_count):
       != ndb_models.XtsRequirementsDetectionStatus.ANALYSIS_RUNNING
   ):
     return
-  # TODO: Gets build fingerprint.
-  fingerprint = ''
   # Uses the default credentials to sync required reports from APFE.
   private_node_config = ndb_models.GetPrivateNodeConfig()
   client = apfe_client.ApfeClient(
       constant.ANDROID_PARTNER_API_NAME,
       credentials=private_node_config.default_credentials,
   )
-  response = client.GetRequiredReports(fingerprint)
+  response = client.GetRequiredReports(build.fingerprint)
   required_report_info = protojson.decode_message(_RequiredReportInfo, response)  # pytype: disable=module-attr
 
   if required_report_info.requiredReports:

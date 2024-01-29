@@ -1089,6 +1089,7 @@ class Build(ndb.Model):
 
   Attributes:
     name: a build name
+    fingerprint: fingerprint of a build.
     file_url: file URL of a build.
     size: size of a build.
     labels: list of strings users can use to categorize builds.
@@ -1098,8 +1099,9 @@ class Build(ndb.Model):
     detection_test_run_key: test run key of xts requirements detection for a
       build.
   """
-  name = ndb.StringProperty()
-  file_url = ndb.StringProperty()
+  name = ndb.StringProperty(required=True)
+  fingerprint = ndb.StringProperty(required=True)
+  file_url = ndb.StringProperty(required=True)
   size = ndb.IntegerProperty()
   labels = ndb.StringProperty(repeated=True)
   create_time = ndb.DateTimeProperty(auto_now_add=True)

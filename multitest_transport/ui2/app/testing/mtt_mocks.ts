@@ -39,6 +39,8 @@ const DATE_FUTURE = addTime(DATE, 0, 5, 0);  // 5 minutes later
 const DEVICE_ACTION_ID = 'reset';
 const DEVICE_ACTION_NAME = 'Factory Reset';
 const FAILED_TEST_COUNT = 13;
+const FINGERPRINT =
+    'brand/product/device:plaform_version/build_id:user/release-keys';
 const HOSTNAME = 'hostname';
 const LABEL1 = 'label1';
 const LABEL2 = 'label2';
@@ -618,12 +620,13 @@ export function toTitleCase(str: string) {
 
 /** Creates a Build object. */
 export function newMockBuild(
-    id = BUILD_ID, name = BUILD_NAME, fileUrl = BUILD_URL,
-    labels = [LABEL1, LABEL2],
+    id = BUILD_ID, name = BUILD_NAME, fingerprint = FINGERPRINT,
+    fileUrl = BUILD_URL, labels = [LABEL1, LABEL2],
     detectionStatus = mttModels.XtsRequirementsDetectionStatus.NOT_STARTED) {
   return {
     id,
     name,
+    fingerprint,
     file_url: fileUrl,
     size: 123123123,
     labels,

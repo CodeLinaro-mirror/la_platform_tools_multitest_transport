@@ -1511,16 +1511,17 @@ class Build(messages.Message):
   """A build."""
   id = messages.StringField(1)
   name = messages.StringField(2)
-  file_url = messages.StringField(3)
-  size = messages.IntegerField(4)
-  labels = messages.StringField(5, repeated=True)
-  create_time = message_types.DateTimeField(6)
-  update_time = message_types.DateTimeField(7)
+  fingerprint = messages.StringField(3)
+  file_url = messages.StringField(4)
+  size = messages.IntegerField(5)
+  labels = messages.StringField(6, repeated=True)
+  create_time = message_types.DateTimeField(7)
+  update_time = message_types.DateTimeField(8)
   detection_status = messages.EnumField(
-      ndb_models.XtsRequirementsDetectionStatus, 8
+      ndb_models.XtsRequirementsDetectionStatus, 9
   )
-  detection_test_run_id = messages.StringField(9)
-  required_reports = messages.MessageField(RequiredReport, 10, repeated=True)
+  detection_test_run_id = messages.StringField(10)
+  required_reports = messages.MessageField(RequiredReport, 11, repeated=True)
 
 
 @Converter(ndb_models.Build, Build)
@@ -1533,6 +1534,7 @@ def _BuildConverter(obj):
   return Build(
       id=str(obj.key.id()) if obj.key else None,
       name=obj.name,
+      fingerprint=obj.fingerprint,
       file_url=obj.file_url,
       size=obj.size,
       labels=obj.labels,

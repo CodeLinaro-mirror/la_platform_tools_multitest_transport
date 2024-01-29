@@ -121,6 +121,7 @@ export class BuildDetail implements OnInit, AfterViewInit {
     const buildEditorData: BuildEditorData = {
       build: {
         name: this.build!.name,
+        fingerprint: this.build!.fingerprint,
         file_url: this.build!.file_url,
         size: this.build!.size,
         labels: this.build!.labels || [],

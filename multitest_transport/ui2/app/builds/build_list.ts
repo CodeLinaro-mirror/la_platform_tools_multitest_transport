@@ -37,8 +37,10 @@ import {buildApiErrorMessage} from '../shared/util';
 })
 export class BuildList implements OnInit, OnDestroy {
   isLoading = false;
-  displayColumns =
-      ['select', 'name', 'source', 'size', 'labels', 'create_time', 'view'];
+  displayColumns = [
+    'select', 'name', 'fingerprint', 'source', 'size', 'labels', 'create_time',
+    'view'
+  ];
   dataSource = new MatTableDataSource<Build>();
   selection = new SelectionModel<Build>(
       /*allow multi select*/ true, []);

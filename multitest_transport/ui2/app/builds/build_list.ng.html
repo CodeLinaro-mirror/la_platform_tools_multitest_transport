@@ -69,6 +69,12 @@
     <mat-cell *matCellDef="let build" fxFlex> {{build.name}} </mat-cell>
   </ng-container>
 
+  <!-- Build fingerprint -->
+  <ng-container matColumnDef="fingerprint">
+    <mat-header-cell *matHeaderCellDef fxFlex> Fingerprint </mat-header-cell>
+    <mat-cell *matCellDef="let build" fxFlex> {{build.fingerprint}} </mat-cell>
+  </ng-container>
+
   <!-- Build source url -->
   <ng-container matColumnDef="source">
     <mat-header-cell *matHeaderCellDef fxFlex class="build-source-column"> Source </mat-header-cell>

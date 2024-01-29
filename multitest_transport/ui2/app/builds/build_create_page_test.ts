@@ -39,9 +39,7 @@ describe('BuildCreatePage', () => {
 
   beforeEach(() => {
     buildClient = jasmine.createSpyObj('buildClient', ['create']);
-    buildClient.create.and.returnValue(observableOf(newMockBuild(
-        'build_id_1', 'name_1', 'file:///file/path_1',
-        ['label_1', 'label_2'])));
+    buildClient.create.and.returnValue(observableOf(newMockBuild()));
 
     TestBed.configureTestingModule({
       imports: [BuildsModule, NoopAnimationsModule, RouterTestingModule],

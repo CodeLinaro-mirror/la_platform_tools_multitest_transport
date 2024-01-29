@@ -845,6 +845,7 @@ describe('BuildClient', () => {
   const build: Build = {
     id: '123456',
     name: 'Foo',
+    fingerprint: 'fingerprint',
     file_url: 'file:///root/file/path',
     size: 123123123,
     labels: [

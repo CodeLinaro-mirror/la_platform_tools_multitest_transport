@@ -141,6 +141,7 @@ export class BuildCreatePage extends FormChangeTracker implements
 
     const build: mttModels.Build = {
       name: this.data.name!.trim(),
+      fingerprint: this.data.fingerprint!.trim(),
       file_url: this.data.file_url!.trim(),
       size: this.data.size || 0,
       labels: this.data.labels!,

@@ -73,7 +73,8 @@ class BuildApi(remote.Service):
     """
     build = ndb_models.Build(
         id=str(uuid.uuid4()),
-        name=self._stripName(request.name),
+        name=self._strip(request.name),
+        fingerprint=self._strip(request.fingerprint),
         file_url=request.file_url,
         size=request.size,
         labels=request.labels,
@@ -121,7 +122,7 @@ class BuildApi(remote.Service):
       build_id: Build ID
     """
     _, existing_build = self._getBuild(request.build_id)
-    existing_build.name = self._stripName(request.name)
+    existing_build.name = self._strip(request.name)
     existing_build.labels = request.labels
     self._ValidateBuild(existing_build)
     existing_build.put()
@@ -252,11 +253,11 @@ class BuildApi(remote.Service):
       )
     return report_upload_action.key, report_upload_action
 
-  def _stripName(self, name):
-    """Strips build name."""
-    if not name:
+  def _strip(self, build_property):
+    """Strips build property."""
+    if not build_property:
       return None
-    return name.strip()
+    return build_property.strip()
 
   def _ValidateBuild(self, build):
     """Check validity of a given build.
@@ -266,6 +267,10 @@ class BuildApi(remote.Service):
     """
     if not build.name:
       raise endpoints.BadRequestException('Name in the request is unset.')
+    if not build.fingerprint:
+      raise endpoints.BadRequestException(
+          'Fingerprint in the request is unset.'
+      )
     if not build.file_url:
       raise endpoints.BadRequestException('File url in the request is unset.')
     local_file_path = file_util.GetLocalFilePath(build.file_url)

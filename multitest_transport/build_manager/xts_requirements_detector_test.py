@@ -50,6 +50,7 @@ class XtsRequirementsDetectorTest(testbed_dependent_test.TestbedDependentTest):
     self.mock_test_run.put()
     self.mock_build = ndb_models.Build(
         name='build',
+        fingerprint='fingerprint',
         file_url='file:///root/file/path',
         size=123456,
         labels=['label1', 'label2'],

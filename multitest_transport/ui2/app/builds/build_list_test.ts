@@ -36,10 +36,10 @@ describe('BuildList', () => {
   const BUILDS = {
     builds: [
       newMockBuild(
-          'build_id_1', 'name_1', 'file:///file/path_1',
+          'build_id_1', 'name_1', 'fingerprint_1', 'file:///file/path_1',
           ['label_1', 'label_2']),
       newMockBuild(
-          'build_id_2', 'name_2', 'file:///file/path_2', ['label_3', 'label_4'])
+          'build_id_2', 'name_2', 'fingerprint_2', 'file:///file/path_2', ['label_3', 'label_4'])
     ],
   };
 

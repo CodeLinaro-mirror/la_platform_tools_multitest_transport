@@ -1142,6 +1142,8 @@ export declare interface Build {
   id?: string;
   /** A build name */
   name: string;
+  /** A build fingerprint */
+  fingerprint: string;
   /** A file URL for this build */
   file_url: string;
   /** Size of this build (bytes) */
@@ -1162,6 +1164,7 @@ export declare interface Build {
 export function initBuild(): Partial<Build> {
   return {
     name: '',
+    fingerprint: '',
     file_url: '',
     labels: [],
   };

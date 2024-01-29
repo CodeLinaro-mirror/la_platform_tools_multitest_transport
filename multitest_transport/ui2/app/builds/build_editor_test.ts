@@ -26,7 +26,7 @@ import {BuildsModule} from './builds_module';
 
 describe('BuildEditor', () => {
   const build = newMockBuild(
-      'build_id_1', 'name_1', 'file:///file/path_1',
+      'build_id_1', 'name_1', 'fingerprint_1', 'file:///file/path_1',
       ['label1', 'label2', 'label3']);
   const dialogData: BuildEditorData = {build};
 
