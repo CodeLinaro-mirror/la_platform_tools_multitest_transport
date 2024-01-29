@@ -14,10 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {Component, Input} from '@angular/core';
+import {Component, EventEmitter, Input, OnDestroy, OnInit, Output} from '@angular/core';
+import {MatDialog} from '@angular/material/dialog';
 import {MatTableDataSource} from '@angular/material/table';
+import {ReplaySubject} from 'rxjs';
+import {takeUntil} from 'rxjs/operators';
 
-import {RequiredReport} from '../services/mtt_models';
+import {MttClient} from '../services/mtt_client';
+import {initTestRunConfig, NewTestRunRequest, RequiredReport, Test, TestRunConfig} from '../services/mtt_models';
+import {MttObjectMapService, newMttObjectMap} from '../services/mtt_object_map';
+import {TestRunConfigEditor, TestRunConfigEditorData} from '../test_runs/test_run_config_editor';
+
+/** Test requirement data to initialize a TestRunConfig. */
+interface TestRequirementData {
+  defaultTest?: Test;
+  selectedTestPlan?: string;
+}
 
 /**
  * A component for displaying a list of test requirements for a build.
@@ -27,18 +39,133 @@ import {RequiredReport} from '../services/mtt_models';
   styleUrls: ['test_requirements.css'],
   templateUrl: './test_requirements.ng.html',
 })
-export class TestRequirements {
+export class TestRequirements implements OnDestroy, OnInit {
   @Input()
   set dataSource(value: RequiredReport[]) {
+    this.resetTestRequirementDataMap(value);
     this.tableDataSource.data = value;
   }
+
+  @Output() readonly testRunRequested = new EventEmitter<void>();
 
   displayColumns =
       ['report_type', 'test_plan', 'test_run', 'test_run_status', 'run_test'];
   tableDataSource = new MatTableDataSource<RequiredReport>();
 
+  testRequirementDataMap: {[reportId: string]: TestRequirementData} = {};
+
+  mttObjectMap = newMttObjectMap();
+
+  private readonly destroy = new ReplaySubject<void>();
+
   get testRunStatus(): string {
     // TODO: Supports test run status.
     return 'NOT_STARTED';
+  }
+
+  constructor(
+      private readonly mttObjectMapService: MttObjectMapService,
+      private readonly matDialog: MatDialog,
+      private readonly mttClient: MttClient,
+  ) {}
+
+  ngOnInit() {
+    this.mttObjectMapService.getMttObjectMap().subscribe((res) => {
+      this.mttObjectMap = res;
+      for (const requiredReport of this.tableDataSource.data) {
+        const testRequirementData =
+            this.testRequirementDataMap[requiredReport.id];
+        testRequirementData.defaultTest = this.getDefaultTest(requiredReport);
+      }
+    });
+  }
+
+  ngOnDestroy() {
+    this.destroy.next();
+    this.destroy.complete();
+  }
+
+  /**
+   * Resets the test requirement data map.
+   */
+  resetTestRequirementDataMap(requiredReports: RequiredReport[]) {
+    this.testRequirementDataMap = {};
+    for (const requiredReport of requiredReports) {
+      this.testRequirementDataMap[requiredReport.id] = {
+        selectedTestPlan: this.getDefaultTestPlan(requiredReport),
+      };
+    }
+  }
+
+  /**
+   * Gets the default test that is eligible to run for a required report.
+   */
+  getDefaultTest(requiredReport: RequiredReport): Test|undefined {
+    for (const test of Object.values(this.mttObjectMap.testMap)) {
+      if (test.id!.includes(requiredReport.type.toLowerCase())) {
+        return test;
+      }
+    }
+    return undefined;
+  }
+
+  /**
+   * Gets the default test plan to run for a required report.
+   */
+  getDefaultTestPlan(requiredReport: RequiredReport): string|undefined {
+    if (!requiredReport.test_plans) {
+      return undefined;
+    }
+    return requiredReport.test_plans[0];
+  }
+
+  /**
+   * Whether the required report has qualified test plans.
+   */
+  hasTestPlans(requiredReport: RequiredReport): boolean {
+    return requiredReport.test_plans !== undefined;
+  }
+
+  getTestRequirementData(requiredReport: RequiredReport): TestRequirementData {
+    return this.testRequirementDataMap[requiredReport.id];
+  }
+
+  /**
+   * Opens the test run config editor to set up a test run for a required
+   * report.
+   */
+  openTestRunConfigEditor(requiredReport: RequiredReport): void {
+    const testRequirementData = this.testRequirementDataMap[requiredReport.id];
+    let commandToAppend = undefined;
+    if (testRequirementData.selectedTestPlan) {
+      commandToAppend = ` --plan ${testRequirementData.selectedTestPlan}`;
+    }
+    const testRunConfig =
+        initTestRunConfig(testRequirementData.defaultTest, commandToAppend);
+    const testRunConfigEditorData: TestRunConfigEditorData = {
+      editMode: false,
+      testRunConfig,
+      commandToAppend,
+    };
+
+    const dialogRef = this.matDialog.open(TestRunConfigEditor, {
+      panelClass: 'test-run-config-editor-dialog',
+      data: testRunConfigEditorData,
+    });
+
+    dialogRef.componentInstance.configSubmitted
+        .pipe(takeUntil(dialogRef.afterClosed()))
+        .subscribe((newConfig: TestRunConfig) => {
+          const newTestRunRequest: NewTestRunRequest = {
+            labels: ['test requirement', requiredReport.id],
+            test_run_config: {...newConfig} as TestRunConfig,
+            required_report_id: requiredReport.id,
+          };
+          return this.mttClient.createNewTestRunRequest(newTestRunRequest)
+              .pipe(takeUntil(this.destroy))
+              .subscribe(() => {
+                this.testRunRequested.emit();
+              });
+        });
   }
 }

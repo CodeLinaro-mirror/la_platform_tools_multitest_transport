@@ -49,6 +49,8 @@ export class TestRunConfigForm extends FormChangeTracker implements OnInit,
   @Input() enableRerun = true;
   /** Local previous test run ID. */
   @Input() prevTestRunId?: string;
+  /** Command to append when initializing a test run config. */
+  @Input() commandToAppend?: string;
 
   /** Emits the updated config for two-way binding with parent */
   @Output()
@@ -104,7 +106,8 @@ export class TestRunConfigForm extends FormChangeTracker implements OnInit,
     if (!this.testMap[testId]) {
       return;
     }
-    this.testRunConfig = initTestRunConfig(this.testMap[testId]);
+    this.testRunConfig =
+        initTestRunConfig(this.testMap[testId], this.commandToAppend);
     this.testRunConfigChange.emit(this.testRunConfig);
   }
 

@@ -34,6 +34,7 @@ import {resetStepCompletion} from '../shared/util';
 export interface TestRunConfigEditorData {
   editMode: boolean;
   testRunConfig: Partial<mttModels.TestRunConfig>;
+  commandToAppend?: string;
 }
 
 enum Step {

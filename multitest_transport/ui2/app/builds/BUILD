@@ -135,6 +135,7 @@ ng_module(
         third_party_js("angular_components:material_dialog"),
         third_party_js("rxjs"),
         "//multitest_transport/ui2/app/services",
+        "//multitest_transport/ui2/app/test_runs",
         "//multitest_transport/ui2/app/testing:jasmine_util",
         "//multitest_transport/ui2/app/testing:test_util",
     ],

@@ -1289,6 +1289,7 @@ class NewTestRunRequest(messages.Message):
   test_run_config = messages.MessageField(TestRunConfig, 2)
   rerun_context = messages.MessageField(RerunContext, 3)
   rerun_configs = messages.MessageField(TestRunConfig, 4, repeated=True)
+  required_report_id = messages.StringField(5)
 
 
 class NodeConfig(messages.Message):
@@ -1492,6 +1493,7 @@ class RequiredReport(messages.Message):
   type = messages.EnumField(ndb_models.ReportType, 2)
   test_plans = messages.StringField(3, repeated=True)
   available = messages.BooleanField(4)
+  test_run_id = messages.StringField(5)
 
 
 @Converter(ndb_models.RequiredReport, RequiredReport)
@@ -1501,6 +1503,7 @@ def _RequiredReportConverter(obj):
       type=obj.type,
       test_plans=obj.test_plans,
       available=obj.available,
+      test_run_id=str(obj.test_run_key.id()) if obj.test_run_key else None,
   )
 
 

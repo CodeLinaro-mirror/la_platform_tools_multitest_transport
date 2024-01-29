@@ -37,6 +37,7 @@ from multitest_transport.test_scheduler import test_run_manager
 from multitest_transport.util import env
 from multitest_transport.util import file_util
 from multitest_transport.util import tfc_client
+from tradefed_cluster.util import ndb_shim as ndb
 
 
 @base.MTT_API.api_class(resource_name='test_run', path='test_runs')
@@ -198,6 +199,20 @@ class TestRunApi(remote.Service):
         rerun_context=request.rerun_context,
         rerun_configs=mtt_messages.ConvertList(
             request.rerun_configs, ndb_models.TestRunConfig))
+
+    if request.required_report_id:
+
+      def _Txn():
+        required_report = mtt_messages.ConvertToKey(
+            ndb_models.RequiredReport, request.required_report_id
+        ).get()
+        if not required_report:
+          return
+        required_report.test_run_key = test_run.key
+        required_report.put()
+        return required_report
+
+      ndb.transaction(_Txn)
     return mtt_messages.Convert(test_run, mtt_messages.TestRun)
 
   @base.ApiMethod(

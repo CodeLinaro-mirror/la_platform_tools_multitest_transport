@@ -363,6 +363,8 @@ export declare interface NewTestRunRequest {
   rerun_context?: RerunContext;
   /** List of configs to retry with */
   rerun_configs?: TestRunConfig[];
+  /** ID of required report to be associated with */
+  required_report_id?: string;
 }
 
 /**
@@ -686,7 +688,8 @@ export declare interface TestRunConfig {
 }
 
 /** initialize a new test run config */
-export function initTestRunConfig(test?: Test): Partial<TestRunConfig> {
+export function initTestRunConfig(
+    test?: Test, commandToAppend?: string): Partial<TestRunConfig> {
   const config = {
     test_id: '',
     cluster: DEFAULT_CLUSTER,
@@ -724,6 +727,9 @@ export function initTestRunConfig(test?: Test): Partial<TestRunConfig> {
           parameters.output_idle_timeout_seconds ||
           DEFAULT_OUTPUT_IDLE_TIMEOUT_SECONDS;
     }
+  }
+  if (commandToAppend) {
+    config.command += commandToAppend;
   }
 
   return config;
@@ -1127,6 +1133,7 @@ export declare interface RequiredReport {
   id: string;
   type: ReportType;
   test_plans?: string[];
+  test_run_id?: string;
 }
 
 /** Build info. */

@@ -25,6 +25,7 @@ import {of as observableOf} from 'rxjs';
 import {APP_DATA} from '../services';
 import {BuildClient, MttClient} from '../services/mtt_client';
 import * as mttModels from '../services/mtt_models';
+import {MttObjectMap, MttObjectMapService, newMttObjectMap} from '../services/mtt_object_map';
 import {getEl, getTextContent} from '../testing/jasmine_util';
 import {newMockAppData} from '../testing/mtt_lab_mocks';
 import {newMockBuild} from '../testing/mtt_mocks';
@@ -42,6 +43,8 @@ describe('BuildDetail', () => {
   let buildDetailFixture: ComponentFixture<BuildDetail>;
   let liveAnnouncer: jasmine.SpyObj<LiveAnnouncer>;
   let buildClient: jasmine.SpyObj<BuildClient>;
+  let mttObjectMapService: jasmine.SpyObj<MttObjectMapService>;
+  let mttObjectMap: MttObjectMap;
 
   let el: DebugElement;
 
@@ -51,12 +54,19 @@ describe('BuildDetail', () => {
     buildClient = jasmine.createSpyObj('buildClient', ['get']);
     buildClient.get.and.returnValue(observableOf(build));
 
+    mttObjectMapService =
+        jasmine.createSpyObj('mttObjectMapService', ['getMttObjectMap']);
+    mttObjectMap = newMttObjectMap();
+    mttObjectMapService.getMttObjectMap.and.returnValue(
+        observableOf(mttObjectMap));
+
     TestBed.configureTestingModule({
       imports: [BuildsModule, NoopAnimationsModule, RouterTestingModule],
       providers: [
         {provide: APP_DATA, useValue: appData},
         {provide: LiveAnnouncer, useValue: liveAnnouncer},
         {provide: MttClient, useValue: {builds: buildClient}},
+        {provide: MttObjectMapService, useValue: mttObjectMapService},
       ],
     });
 

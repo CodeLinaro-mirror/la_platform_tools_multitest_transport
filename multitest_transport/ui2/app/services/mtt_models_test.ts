@@ -46,6 +46,19 @@ describe('MttModels', () => {
       expect(config.output_idle_timeout_seconds)
           .toEqual(parameters.output_idle_timeout_seconds);
     });
+
+    it('creates a config with a command to append', () => {
+      const test = testUtil.newMockTest();
+      const config = mttModels.initTestRunConfig(test, 'command to append');
+      const parameters = test.default_test_run_parameters;
+      expect(config.test_id).toEqual(test.id);
+      expect(config.command).toEqual(test.command + 'command to append');
+      expect(config.retry_command).toEqual(test.retry_command_line);
+      expect(config.max_retry_on_test_failures)
+          .toEqual(parameters.max_retry_on_test_failures);
+      expect(config.output_idle_timeout_seconds)
+          .toEqual(parameters.output_idle_timeout_seconds);
+    });
   });
 
   describe('updateSelectedDeviceActions', () => {

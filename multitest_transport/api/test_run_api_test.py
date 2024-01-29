@@ -47,6 +47,25 @@ class TestRunApiTest(api_test_util.TestCase):
     test.put()
     return test
 
+  def _createMockBuild(self):
+    """Create a mock ndb_models.Build object."""
+    build = ndb_models.Build(
+        name='build',
+        file_url='file:///root/file/path',
+        size=123456,
+        labels=['label1', 'label2'],
+    )
+    build.put()
+    return build
+
+  def _createMockRequiredReport(self, build_key):
+    """Create a mock ndb_models.RequiredReport object."""
+    required_report = ndb_models.RequiredReport(
+        build_key=build_key, type=ndb_models.ReportType.CTS
+    )
+    required_report.put()
+    return required_report
+
   def _createMockTestRuns(
       self,
       test=None,
@@ -370,6 +389,65 @@ class TestRunApiTest(api_test_util.TestCase):
             test_resource_objs=[
                 ndb_models.TestResourceObj(name='bar', url='bar_url'),
                 ndb_models.TestResourceObj(name='zzz', url='zzz_url'),
+            ],
+        ),
+        rerun_context=None,
+        rerun_configs=[],
+    )
+    self.assertEqual('200 OK', res.status)
+    test_run_msg = protojson.decode_message(messages.TestRun, res.body)
+    self.assertEqual(messages.Convert(test_run, messages.TestRun), test_run_msg)
+
+  @mock.patch.object(test_kicker, 'CreateTestRun', autospec=True)
+  def testNew_withRequiredReportId(self, mock_run_test):
+    test = self._createMockTest()
+    build = self._createMockBuild()
+    required_report = self._createMockRequiredReport(build.key)
+    request = {
+        'labels': ['label'],
+        'test_run_config': {
+            'test_id': str(test.key.id()),
+            'cluster': 'cluster',
+            'device_specs': ['foo', 'bar'],
+            'run_count': 10,
+            'shard_count': 100,
+            'max_retry_on_test_failures': 1000,
+            'test_resource_objs': [
+                {'name': 'bar', 'url': 'bar_url'},
+                {'name': 'zzz', 'url': 'zzz_url'},
+            ],
+        },
+        'required_report_id': str(required_report.key.id()),
+    }
+    test_run = ndb_models.TestRun(
+        test=test,
+        labels=['label'],
+        test_run_config=ndb_models.TestRunConfig(
+            test_key=test.key,
+            cluster='cluster',
+            device_specs=['foo', 'bar'],
+            run_count=10,
+            shard_count=100,
+            max_retry_on_test_failures=1000,
+        ),
+    )
+    test_run.put()
+    mock_run_test.return_value = test_run
+
+    res = self.app.post_json('/_ah/api/mtt/v1/test_runs', request)
+
+    mock_run_test.assert_called_with(
+        labels=['label'],
+        test_run_config=ndb_models.TestRunConfig(
+            test_key=test.key,
+            cluster='cluster',
+            device_specs=['foo', 'bar'],
+            run_count=10,
+            shard_count=100,
+            max_retry_on_test_failures=1000,
+            test_resource_objs=[
+                ndb_models.TestResourceObj(name='bar', url='bar_url'),
+                ndb_models.TestResourceObj(name='zzz', url='zzz_url'),
             ]),
         rerun_context=None,
         rerun_configs=[]
@@ -378,6 +456,8 @@ class TestRunApiTest(api_test_util.TestCase):
     test_run_msg = protojson.decode_message(messages.TestRun, res.body)
     self.assertEqual(
         messages.Convert(test_run, messages.TestRun), test_run_msg)
+    required_report = required_report.key.get()
+    self.assertEqual(required_report.test_run_key, test_run.key)
 
   @mock.patch.object(test_run_manager, 'SetTestRunState', autospec=True)
   def testCancel(self, mock_set_test_run_state):

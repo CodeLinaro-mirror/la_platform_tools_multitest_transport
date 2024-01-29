@@ -15,23 +15,66 @@
  */
 
 import {DebugElement} from '@angular/core';
-import {ComponentFixture, TestBed} from '@angular/core/testing';
+import {ComponentFixture, inject, TestBed} from '@angular/core/testing';
+import {MatDialog} from '@angular/material/dialog';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
+import {RouterTestingModule} from '@angular/router/testing';
+import {of as observableOf} from 'rxjs';
 
+import {APP_DATA} from '../services/app_data';
+import * as mttModels from '../services/mtt_models';
+import {MttObjectMap, MttObjectMapService, newMttObjectMap} from '../services/mtt_object_map';
+import {TestRunConfigEditor} from '../test_runs/test_run_config_editor';
 import {getTextContent} from '../testing/jasmine_util';
-import {newMockBuild} from '../testing/mtt_mocks';
 
 import {BuildsModule} from './builds_module';
 import {TestRequirements} from './test_requirements';
 
 describe('TestRequirements', () => {
+  const REQUIRED_REPORTS = [
+    {
+      id: 'id1',
+      type: mttModels.ReportType.CTS,
+      test_plans: ['cts', 'cts-system']
+    },
+    {
+      id: 'id2',
+      type: mttModels.ReportType.GTS,
+      test_plans: ['gts-interactive'],
+    },
+    {
+      id: 'id3',
+      type: mttModels.ReportType.VTS,
+    },
+  ];
+  const TEST_MAP: {[id: string]: mttModels.Test} = {
+    'test_id_1': {id: 'android.cts.11_0', name: 'name1'},
+    'test_id_2': {id: 'android.gts.11_0.android11_14', name: 'name2'},
+  };
+
+  let mttObjectMapService: jasmine.SpyObj<MttObjectMapService>;
+  let mttObjectMap: MttObjectMap;
   let testRequirements: TestRequirements;
   let testRequirementsFixture: ComponentFixture<TestRequirements>;
   let el: DebugElement;
 
   beforeEach(() => {
+    mttObjectMapService =
+        jasmine.createSpyObj('mttObjectMapService', ['getMttObjectMap']);
+    mttObjectMap = newMttObjectMap();
+    mttObjectMapService.getMttObjectMap.and.returnValue(
+        observableOf(mttObjectMap));
+
     TestBed.configureTestingModule({
-      imports: [BuildsModule, NoopAnimationsModule],
+      imports: [
+        BuildsModule,
+        NoopAnimationsModule,
+        RouterTestingModule,
+      ],
+      providers: [
+        {provide: APP_DATA, useValue: {}},
+        {provide: MttObjectMapService, useValue: mttObjectMapService},
+      ],
     });
 
     testRequirementsFixture = TestBed.createComponent(TestRequirements);
@@ -45,17 +88,55 @@ describe('TestRequirements', () => {
   });
 
   it('should display test requirements correctly', () => {
-    const requiredReports = newMockBuild().required_reports;
-    testRequirements.dataSource = requiredReports;
+    testRequirements.dataSource = REQUIRED_REPORTS;
     testRequirementsFixture.detectChanges();
     const textContent = getTextContent(el);
-    for (const requiredReport of requiredReports) {
+    for (const requiredReport of REQUIRED_REPORTS) {
       expect(textContent).toContain(requiredReport.type);
-      if (requiredReport.test_plans) {
-        for (const testPlan of requiredReport.test_plans) {
-          expect(textContent).toContain(testPlan);
-        }
-      }
     }
   });
+
+  it('should reset testRequirementDataMap correctly', () => {
+    testRequirements.resetTestRequirementDataMap(REQUIRED_REPORTS);
+    expect(testRequirements.testRequirementDataMap).toEqual({
+      'id1': {selectedTestPlan: 'cts'},
+      'id2': {selectedTestPlan: 'gts-interactive'},
+      'id3': {selectedTestPlan: undefined},
+    });
+  });
+
+  it('should get default test for a required report correctly', () => {
+    testRequirements.mttObjectMap.testMap = TEST_MAP;
+    expect(testRequirements.getDefaultTest(REQUIRED_REPORTS[0]))
+        .toEqual(TEST_MAP['test_id_1']);
+    expect(testRequirements.getDefaultTest(REQUIRED_REPORTS[1]))
+        .toEqual(TEST_MAP['test_id_2']);
+    expect(testRequirements.getDefaultTest(REQUIRED_REPORTS[2]))
+        .toEqual(undefined);
+  });
+
+  it('should open test run config editor with correct initial data',
+     inject([MatDialog], (dialog: MatDialog) => {
+       spyOn(dialog, 'open').and.callThrough();
+       const defaultTest = TEST_MAP['test_id_1'];
+       testRequirements.testRequirementDataMap = {
+         'id1': {defaultTest, selectedTestPlan: 'cts-system'},
+       };
+
+       testRequirements.openTestRunConfigEditor(REQUIRED_REPORTS[0]);
+       expect(dialog.open).toHaveBeenCalledTimes(1);
+
+       const commandToAppend = ' --plan cts-system';
+       const dialogParams = {
+         panelClass: 'test-run-config-editor-dialog',
+         data: {
+           editMode: false,
+           testRunConfig:
+               mttModels.initTestRunConfig(defaultTest, commandToAppend),
+           commandToAppend,
+         },
+       };
+       expect(dialog.open)
+           .toHaveBeenCalledWith(TestRunConfigEditor, dialogParams);
+     }));
 });

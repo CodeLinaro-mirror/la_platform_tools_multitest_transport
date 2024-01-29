@@ -126,7 +126,8 @@
                 <td class="value-field">
                   <test-requirements
                       *ngIf="testRequirementsAvailable"
-                      [dataSource]="build.required_reports!">
+                      [dataSource]="build.required_reports!"
+                      (testRunRequested)="load()">
                   </test-requirements>
                   <ng-container *ngIf="!testRequirementsAvailable">
                     N/A

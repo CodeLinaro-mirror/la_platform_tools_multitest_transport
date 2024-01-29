@@ -28,16 +28,29 @@
   <ng-container matColumnDef="test_plan">
     <mat-header-cell *matHeaderCellDef fxFlex> Test Plan </mat-header-cell>
     <mat-cell *matCellDef="let requiredReport" fxFlex>
-      {{requiredReport.test_plans}}
+      <mat-select *ngIf="hasTestPlans(requiredReport)"
+          [(ngModel)]="getTestRequirementData(requiredReport).selectedTestPlan">
+        <mat-option *ngFor="let test_plan of requiredReport.test_plans"
+            [value]="test_plan"
+            aria-label="Select a test plan">
+          {{test_plan}}
+        </mat-option>
+      </mat-select>
     </mat-cell>
   </ng-container>
 
   <!-- Test run -->
   <ng-container matColumnDef="test_run">
     <mat-header-cell *matHeaderCellDef fxFlex class="test-run-column"> Test Run </mat-header-cell>
-    <!-- TODO: Supports test run link -->
     <mat-cell *matCellDef="let requiredReport" fxFlex class="test-run-column">
-      N/A
+      <ng-container *ngIf="requiredReport.test_run_id">
+        <a href="/test_runs/{{requiredReport.test_run_id!}}">
+          {{requiredReport.test_run_id!}}
+        </a>
+      </ng-container>
+      <ng-container *ngIf="!requiredReport.test_run_id">
+        N/A
+      </ng-container>
     </mat-cell>
   </ng-container>
 
@@ -55,7 +68,11 @@
   <ng-container matColumnDef="run_test" stickyEnd>
     <mat-header-cell *matHeaderCellDef fxFlex="100px"></mat-header-cell>
     <mat-cell *matCellDef="let requiredReport" fxFlex="100px">
-      <a mat-stroked-button class="run-button" color="accent">
+      <a
+          mat-stroked-button
+          class="run-button"
+          color="accent"
+          (click)="openTestRunConfigEditor(requiredReport)">
          Run
       </a>
     </mat-cell>

@@ -1126,9 +1126,11 @@ class RequiredReport(ndb.Model):
     type: the type of a report.
     test_plans: the qualified test plans of a report.
     available: whether the report is available on APFE.
+    test_run_key: the test run key a required report is associated with.
   """
 
   build_key = ndb.KeyProperty(Build, required=True)
   type = ndb.EnumProperty(ReportType, required=True)
   test_plans = ndb.StringProperty(repeated=True)
   available = ndb.BooleanProperty()
+  test_run_key = ndb.KeyProperty(TestRun)
