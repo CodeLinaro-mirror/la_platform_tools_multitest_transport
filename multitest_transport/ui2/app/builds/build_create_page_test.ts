@@ -105,11 +105,11 @@ describe('BuildCreatePage', () => {
     });
   });
 
-  describe('create button', () => {
+  describe('add button', () => {
     it('should display correct aria-label', () => {
-      const createButton = getEl(el, '.create-button');
-      expect(createButton).toBeTruthy();
-      expect(createButton.getAttribute('aria-label')).toBe('Create');
+      const addButton = getEl(el, '.add-button');
+      expect(addButton).toBeTruthy();
+      expect(addButton.getAttribute('aria-label')).toBe('Add');
     });
   });
 
@@ -133,23 +133,23 @@ describe('BuildCreatePage', () => {
        expect(dialogRefSpy.afterClosed).toHaveBeenCalled();
      });
 
-  it('creates new build', inject([Router], (router: Router) => {
+  it('adds new build', inject([Router], (router: Router) => {
        spyOn(router, 'navigate');
        buildCreatePage.data = {
          name: 'build_name',
          file_url: 'file:///file/path',
        };
        buildCreatePageFixture.whenStable().then(() => {
-         getEl(el, '.create-button').click();
+         getEl(el, '.add-button').click();
          expect(buildClient.create).toHaveBeenCalled();
          expect(router.navigate).toHaveBeenCalledWith([`builds/build_id_1`]);
        });
      }));
 
-  it('should not create new build if data is invalid',
+  it('should not add new build if data is invalid',
      inject([Router], (router: Router) => {
        spyOn(router, 'navigate');
-       getEl(el, '.create-button').click();
+       getEl(el, '.add-button').click();
        buildCreatePageFixture.detectChanges();
        const textContent = getTextContent(el);
        expect(textContent).toContain('Name is required');
