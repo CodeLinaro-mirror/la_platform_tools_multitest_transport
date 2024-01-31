@@ -58,6 +58,8 @@ export class TestRequirements implements OnDestroy, OnInit {
 
   private readonly destroy = new ReplaySubject<void>();
 
+  private static readonly REGEXP = /android.[\w]*\.(\d+)_(\d+)/i;
+
   constructor(
       private readonly mttObjectMapService: MttObjectMapService,
       private readonly matDialog: MatDialog,
@@ -97,12 +99,42 @@ export class TestRequirements implements OnDestroy, OnInit {
    * Gets the default test that is eligible to run for a required report.
    */
   getDefaultTest(requiredReport: RequiredReport): Test|undefined {
+    let defaultTest = undefined;
     for (const test of Object.values(this.mttObjectMap.testMap)) {
-      if (test.id!.includes(requiredReport.type.toLowerCase())) {
-        return test;
+      if (this.isTestEligibleForRun(test, requiredReport) &&
+          this.greaterThan(test, defaultTest)) {
+        defaultTest = test;
       }
     }
-    return undefined;
+    return defaultTest;
+  }
+
+  /**
+   * Whether the test is eligible to run for a required report.
+   */
+  isTestEligibleForRun(test: Test, requiredReport: RequiredReport): boolean {
+    return test.id!.includes(`.${requiredReport.type.toLowerCase()}.`);
+  }
+
+  /**
+   * Whether the suite version of the left test is greater than right.
+   * Returns true if right test is undefined.
+   */
+  greaterThan(left: Test, right: Test|undefined): boolean {
+    if (right === undefined) {
+      return true;
+    }
+    const leftMatch = TestRequirements.REGEXP.exec(left.id!);
+    const leftMajorVersion = leftMatch ? Number(leftMatch[1]) : 0;
+    const leftMinorVersion = leftMatch ? Number(leftMatch[2]) : 0;
+
+    const rightMatch = TestRequirements.REGEXP.exec(right.id!);
+    const rightMajorVersion = rightMatch ? Number(rightMatch[1]) : 0;
+    const rightMinorVersion = rightMatch ? Number(rightMatch[2]) : 0;
+
+    return (leftMajorVersion > rightMajorVersion) ||
+        (leftMajorVersion === rightMajorVersion &&
+         leftMinorVersion > rightMinorVersion);
   }
 
   /**

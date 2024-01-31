@@ -48,8 +48,10 @@ describe('TestRequirements', () => {
     },
   ];
   const TEST_MAP: {[id: string]: mttModels.Test} = {
-    'test_id_1': {id: 'android.cts.11_0', name: 'name1'},
-    'test_id_2': {id: 'android.gts.11_0.android11_14', name: 'name2'},
+    'test_id_1': {id: 'android.cts.9_0', name: 'name1'},
+    'test_id_2': {id: 'android.cts.11_0', name: 'name2'},
+    'test_id_3': {id: 'android.gts.11_0.android11_14', name: 'name3'},
+    'test_id_4': {id: 'android.gts.11_1.android11_14', name: 'name4'},
   };
 
   let mttObjectMapService: jasmine.SpyObj<MttObjectMapService>;
@@ -100,10 +102,10 @@ describe('TestRequirements', () => {
     testRequirements.mttObjectMap.testMap = TEST_MAP;
     testRequirements.resetTestRequirementDataMap(REQUIRED_REPORTS);
     expect(testRequirements.testRequirementDataMap).toEqual({
-      'id1': {selectedTestPlan: 'cts', defaultTest: TEST_MAP['test_id_1']},
+      'id1': {selectedTestPlan: 'cts', defaultTest: TEST_MAP['test_id_2']},
       'id2': {
         selectedTestPlan: 'gts-interactive',
-        defaultTest: TEST_MAP['test_id_2']
+        defaultTest: TEST_MAP['test_id_4']
       },
       'id3': {selectedTestPlan: undefined, defaultTest: undefined},
     });
@@ -112,11 +114,22 @@ describe('TestRequirements', () => {
   it('should get default test for a required report correctly', () => {
     testRequirements.mttObjectMap.testMap = TEST_MAP;
     expect(testRequirements.getDefaultTest(REQUIRED_REPORTS[0]))
-        .toEqual(TEST_MAP['test_id_1']);
-    expect(testRequirements.getDefaultTest(REQUIRED_REPORTS[1]))
         .toEqual(TEST_MAP['test_id_2']);
+    expect(testRequirements.getDefaultTest(REQUIRED_REPORTS[1]))
+        .toEqual(TEST_MAP['test_id_4']);
     expect(testRequirements.getDefaultTest(REQUIRED_REPORTS[2]))
         .toEqual(undefined);
+  });
+
+  it('should compare suite version of tests correctly', () => {
+    expect(testRequirements.greaterThan(TEST_MAP['test_id_1'], undefined))
+        .toEqual(true);
+    expect(testRequirements.greaterThan(
+               TEST_MAP['test_id_1'], TEST_MAP['test_id_2']))
+        .toEqual(false);
+    expect(testRequirements.greaterThan(
+               TEST_MAP['test_id_3'], TEST_MAP['test_id_4']))
+        .toEqual(false);
   });
 
   it('should open test run config editor with correct initial data',
