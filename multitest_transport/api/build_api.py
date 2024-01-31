@@ -30,9 +30,7 @@ from protorpc import remote
 from tradefed_cluster.util import ndb_shim as ndb
 
 # LINT.IfChange(xts_requirements_detection_test_key)
-XTS_REQUIREMENTS_DETECTION_TEST_KEY = (
-    'android.gts.latest_release.xts_requirements_detection'
-)
+XTS_REQUIREMENTS_DETECTION_TEST_KEY = 'gs://android-test-catalog/prod/gms.yaml::android.gts.latest_release.xts_requirements_detection'
 # LINT.ThenChange(
 #     //depot/google3/third_party/py/multitest_transport/ui2/app/services/mtt_models.ts:xts_requirements_detection_test_id,
 # )
