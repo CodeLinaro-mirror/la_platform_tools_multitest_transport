@@ -29,6 +29,7 @@ from multitest_transport.util import tfc_client
 QUEUE_NAME = 'analytics-queue'
 
 # GA categories
+BUILD_CATEGORY = 'build'
 BUILD_CHANNEL_CATEGORY = 'build_channel'
 DEVICE_ACTION_CATEGORY = 'device_action'
 SYSTEM_CATEGORY = 'system'
@@ -41,12 +42,17 @@ WORKER_COUNT_CATEGORY = 'worker_count'
 
 # GA actions
 CRASH_ACTION = 'crash'
+CREATE_ACTION = 'create'
+DELETE_ACTION = 'delete'
+DETECT_ACTION = 'detect'
 DOWNLOAD_ACTION = 'download'
 END_ACTION = 'end'
 EXECUTE_ACTION = 'execute'
 HEARTBEAT_ACTION = 'heartbeat'
+RUN_TEST_ACTION = 'run_test'
 START_ACTION = 'start'
 TARGET_PREPARER_ACTION = 'target_preparer'
+UPDATE_ACTION = 'update'
 
 
 def Log(category: str, action: str, **kwargs):

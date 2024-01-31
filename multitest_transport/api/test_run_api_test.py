@@ -31,6 +31,7 @@ from multitest_transport.models import ndb_models
 from multitest_transport.models import sql_models
 from multitest_transport.test_scheduler import test_kicker
 from multitest_transport.test_scheduler import test_run_manager
+from multitest_transport.util import analytics
 from multitest_transport.util import env
 from multitest_transport.util import file_util
 from multitest_transport.util import tfc_client
@@ -399,8 +400,9 @@ class TestRunApiTest(api_test_util.TestCase):
     test_run_msg = protojson.decode_message(messages.TestRun, res.body)
     self.assertEqual(messages.Convert(test_run, messages.TestRun), test_run_msg)
 
+  @mock.patch.object(analytics, 'Log')
   @mock.patch.object(test_kicker, 'CreateTestRun', autospec=True)
-  def testNew_withRequiredReportId(self, mock_run_test):
+  def testNew_withRequiredReportId(self, mock_run_test, mock_log):
     test = self._createMockTest()
     build = self._createMockBuild()
     required_report = self._createMockRequiredReport(build.key)
@@ -459,6 +461,11 @@ class TestRunApiTest(api_test_util.TestCase):
         messages.Convert(test_run, messages.TestRun), test_run_msg)
     required_report = required_report.key.get()
     self.assertEqual(required_report.test_run_key, test_run.key)
+    mock_log.assert_called_with(
+        analytics.BUILD_CATEGORY,
+        analytics.RUN_TEST_ACTION,
+        label=str(required_report.type),
+    )
 
   @mock.patch.object(test_run_manager, 'SetTestRunState', autospec=True)
   def testCancel(self, mock_set_test_run_state):

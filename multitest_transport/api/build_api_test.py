@@ -25,6 +25,7 @@ from multitest_transport.api import build_api
 from multitest_transport.models import messages
 from multitest_transport.models import ndb_models
 from multitest_transport.test_scheduler import test_kicker
+from multitest_transport.util import analytics
 from protorpc import protojson
 
 FILE_URL = 'file:///root/file/path/build.zip'
@@ -126,7 +127,8 @@ class BuildApiTest(api_test_util.TestCase):
     res = self.app.get('/_ah/api/mtt/v1/builds')
     self.assertIsNotNone(res)
 
-  def testCreate(self):
+  @mock.patch.object(analytics, 'Log')
+  def testCreate(self, mock_log):
     """Tests builds.create API."""
     data = self._CreateBuildToRequest()
 
@@ -139,6 +141,9 @@ class BuildApiTest(api_test_util.TestCase):
     self.assertEqual(data['file_url'], build.file_url)
     self.assertEqual(data['size'], str(build.size))
     self.assertEqual(data['labels'], build.labels)
+    mock_log.assert_called_with(
+        analytics.BUILD_CATEGORY, analytics.CREATE_ACTION
+    )
 
   def testCreate_unsetName(self):
     """Tests builds.create API with unset name."""
@@ -221,7 +226,8 @@ class BuildApiTest(api_test_util.TestCase):
     res = self.app.get('/_ah/api/mtt/v1/builds/%s' % 123456, expect_errors=True)
     self.assertEqual('404 Not Found', res.status)
 
-  def testUpdate(self):
+  @mock.patch.object(analytics, 'Log')
+  def testUpdate(self, mock_log):
     """Tests builds.update API."""
     build = self._CreateMockBuild()
     build_msg = messages.Convert(build, messages.Build)
@@ -238,6 +244,9 @@ class BuildApiTest(api_test_util.TestCase):
     updated_build_msg.update_time = None
     build_msg.update_time = None
     self.assertEqual(build_msg, updated_build_msg)
+    mock_log.assert_called_with(
+        analytics.BUILD_CATEGORY, analytics.UPDATE_ACTION
+    )
 
   def testUpdate_skipChangesToReadOnlyFields(self):
     """Tests builds.update API with changes to read only fields."""
@@ -258,7 +267,8 @@ class BuildApiTest(api_test_util.TestCase):
     # Verify that the file_url field remains the same as before.
     self.assertEqual(updated_build_msg.file_url, FILE_URL)
 
-  def testDelete(self):
+  @mock.patch.object(analytics, 'Log')
+  def testDelete(self, mock_log):
     """Tests builds.delete API."""
     build = self._CreateMockBuild()
     self.assertIsNotNone(build.key.get())
@@ -266,6 +276,9 @@ class BuildApiTest(api_test_util.TestCase):
         '/_ah/api/mtt/v1/builds', params={'build_ids': [build.key.id()]}
     )
     self.assertIsNone(build.key.get())
+    mock_log.assert_called_with(
+        analytics.BUILD_CATEGORY, analytics.DELETE_ACTION
+    )
 
   def testDelete_skipFailedBuilds(self):
     """Tests builds.delete API with unknown ID."""
@@ -279,8 +292,9 @@ class BuildApiTest(api_test_util.TestCase):
     self.assertIsNone(build.key.get())
     self.assertEqual('400 Bad Request', res.status)
 
+  @mock.patch.object(analytics, 'Log')
   @mock.patch.object(test_kicker, 'CreateTestRun', autospec=True)
-  def testDetect(self, mock_run_test):
+  def testDetect(self, mock_run_test, mock_log):
     """Tests builds.detect API."""
     test = self._createMockTest()
     action = self._CreateTestRunAction(
@@ -328,6 +342,9 @@ class BuildApiTest(api_test_util.TestCase):
     self.assertEqual(
         updated_build_msg.detection_test_run_id,
         str(test_run.key.id()),
+    )
+    mock_log.assert_called_with(
+        analytics.BUILD_CATEGORY, analytics.DETECT_ACTION
     )
 
   def testDetect_testNotFound(self):

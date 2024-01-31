@@ -49,6 +49,7 @@ pytype_strict_library(
         "//multitest_transport/build_manager:xts_requirements_detector_lib",
         "//multitest_transport/models",
         "//multitest_transport/test_scheduler:test_kicker_lib",
+        "//multitest_transport/util:analytics_lib",
         "//multitest_transport/util:file_util_lib",
         "@tradefed_cluster//tradefed_cluster/util:ndb_shim_lib",
         third_party("google-endpoints"),

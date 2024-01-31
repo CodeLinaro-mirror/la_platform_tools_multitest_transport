@@ -34,6 +34,7 @@ from multitest_transport.models import ndb_models
 from multitest_transport.models import sql_models
 from multitest_transport.test_scheduler import test_kicker
 from multitest_transport.test_scheduler import test_run_manager
+from multitest_transport.util import analytics
 from multitest_transport.util import env
 from multitest_transport.util import file_util
 from multitest_transport.util import tfc_client
@@ -212,7 +213,13 @@ class TestRunApi(remote.Service):
         required_report.put()
         return required_report
 
-      ndb.transaction(_Txn)
+      required_report = ndb.transaction(_Txn)
+      report_type = required_report.type if required_report else 'unknown'
+      analytics.Log(
+          analytics.BUILD_CATEGORY,
+          analytics.RUN_TEST_ACTION,
+          label=str(report_type),
+      )
     return mtt_messages.Convert(test_run, mtt_messages.TestRun)
 
   @base.ApiMethod(

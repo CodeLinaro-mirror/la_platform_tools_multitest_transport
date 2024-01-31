@@ -23,6 +23,7 @@ from multitest_transport.api import base
 from multitest_transport.models import messages as mtt_messages
 from multitest_transport.models import ndb_models
 from multitest_transport.test_scheduler import test_kicker
+from multitest_transport.util import analytics
 from multitest_transport.util import file_util
 from protorpc import message_types
 from protorpc import messages
@@ -69,6 +70,7 @@ class BuildApi(remote.Service):
     Body:
       Build data
     """
+    analytics.Log(analytics.BUILD_CATEGORY, analytics.CREATE_ACTION)
     build = ndb_models.Build(
         id=str(uuid.uuid4()),
         name=self._strip(request.name),
@@ -119,6 +121,7 @@ class BuildApi(remote.Service):
     Parameters:
       build_id: Build ID
     """
+    analytics.Log(analytics.BUILD_CATEGORY, analytics.UPDATE_ACTION)
     _, existing_build = self._getBuild(request.build_id)
     existing_build.name = self._strip(request.name)
     existing_build.labels = request.labels
@@ -142,6 +145,7 @@ class BuildApi(remote.Service):
     If any deletion fails, it will continue with remaining and raise an
     exception at the end.
     """
+    analytics.Log(analytics.BUILD_CATEGORY, analytics.DELETE_ACTION)
     failed_ids = []
     for build_id in request.build_ids:
       try:
@@ -172,6 +176,10 @@ class BuildApi(remote.Service):
     Parameters:
       build_id: Build ID
     """
+    analytics.Log(
+        analytics.BUILD_CATEGORY,
+        analytics.DETECT_ACTION,
+    )
     test_key, test = self._getXtsRequirementsDetectionTest()
     report_upload_action_key, _ = self._getReportUploadAction()
 
