@@ -1494,16 +1494,19 @@ class RequiredReport(messages.Message):
   test_plans = messages.StringField(3, repeated=True)
   available = messages.BooleanField(4)
   test_run_id = messages.StringField(5)
+  test_run_state = messages.EnumField(ndb_models.TestRunState, 6)
 
 
 @Converter(ndb_models.RequiredReport, RequiredReport)
 def _RequiredReportConverter(obj):
+  test_run = obj.test_run_key.get() if obj.test_run_key else None
   return RequiredReport(
       id=str(obj.key.id()),
       type=obj.type,
       test_plans=obj.test_plans,
       available=obj.available,
       test_run_id=str(obj.test_run_key.id()) if obj.test_run_key else None,
+      test_run_state=test_run.state if test_run else None,
   )
 
 

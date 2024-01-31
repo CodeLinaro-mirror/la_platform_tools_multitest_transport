@@ -97,11 +97,15 @@ describe('TestRequirements', () => {
   });
 
   it('should reset testRequirementDataMap correctly', () => {
+    testRequirements.mttObjectMap.testMap = TEST_MAP;
     testRequirements.resetTestRequirementDataMap(REQUIRED_REPORTS);
     expect(testRequirements.testRequirementDataMap).toEqual({
-      'id1': {selectedTestPlan: 'cts'},
-      'id2': {selectedTestPlan: 'gts-interactive'},
-      'id3': {selectedTestPlan: undefined},
+      'id1': {selectedTestPlan: 'cts', defaultTest: TEST_MAP['test_id_1']},
+      'id2': {
+        selectedTestPlan: 'gts-interactive',
+        defaultTest: TEST_MAP['test_id_2']
+      },
+      'id3': {selectedTestPlan: undefined, defaultTest: undefined},
     });
   });
 

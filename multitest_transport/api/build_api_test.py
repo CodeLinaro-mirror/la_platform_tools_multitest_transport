@@ -91,6 +91,36 @@ class BuildApiTest(api_test_util.TestCase):
     action.put()
     return action
 
+  def _createMockTestRun(self, test, test_run_action_refs=None, labels=None):
+    """Create a mock ndb_models.TestRun object."""
+    test_run = ndb_models.TestRun(
+        test=test,
+        labels=labels or [],
+        test_run_config=ndb_models.TestRunConfig(
+            test_key=test.key,
+            cluster='cluster',
+            command=test.command,
+            device_specs=[DEVICE_SPEC],
+            test_run_action_refs=test_run_action_refs or [],
+            test_resource_objs=[
+                ndb_models.TestResourceObj(name=GTS_ZIP_NAME, url=GTS_ZIP_URL),
+            ],
+        ),
+        state=ndb_models.TestRunState.RUNNING,
+    )
+    test_run.put()
+    return test_run
+
+  def _createMockRequiredReport(self, build_key, test_run_key):
+    """Create a mock ndb_models.RequiredReport object."""
+    required_report = ndb_models.RequiredReport(
+        build_key=build_key,
+        type=ndb_models.ReportType.CTS,
+        test_run_key=test_run_key,
+    )
+    required_report.put()
+    return required_report
+
   def testList(self):
     """Tests builds.list API."""
     res = self.app.get('/_ah/api/mtt/v1/builds')
@@ -178,6 +208,9 @@ class BuildApiTest(api_test_util.TestCase):
   def testGet(self):
     """Tests builds.get API."""
     build = self._CreateMockBuild()
+    test = self._createMockTest()
+    test_run = self._createMockTestRun(test)
+    self._createMockRequiredReport(build.key, test_run.key)
 
     res = self.app.get('/_ah/api/mtt/v1/builds/%s' % build.key.id())
     msg = protojson.decode_message(messages.Build, res.body)
@@ -255,23 +288,11 @@ class BuildApiTest(api_test_util.TestCase):
         hook_class_name=build_api.REPORT_UPLOAD_HOOK_CLASS_NAME,
         credentials=authorized_user.Credentials(None),
     )
-    test_run = ndb_models.TestRun(
-        test=test,
-        labels=['xts_requirements_detection'],
-        test_run_config=ndb_models.TestRunConfig(
-            test_key=test.key,
-            cluster='cluster',
-            command=test.command,
-            device_specs=[DEVICE_SPEC],
-            test_run_action_refs=[
-                ndb_models.TestRunActionRef(action_key=action.key)
-            ],
-            test_resource_objs=[
-                ndb_models.TestResourceObj(name=GTS_ZIP_NAME, url=GTS_ZIP_URL),
-            ],
-        ),
+    test_run = self._createMockTestRun(
+        test,
+        [ndb_models.TestRunActionRef(action_key=action.key)],
+        ['xts_requirements_detection'],
     )
-    test_run.put()
     mock_run_test.return_value = test_run
     build = self._CreateMockBuild()
     build_msg = messages.Convert(build, messages.Build)

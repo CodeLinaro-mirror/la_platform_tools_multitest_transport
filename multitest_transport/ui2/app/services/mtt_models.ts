@@ -1134,6 +1134,7 @@ export declare interface RequiredReport {
   type: ReportType;
   test_plans?: string[];
   test_run_id?: string;
+  test_run_state?: TestRunState;
 }
 
 /** Build info. */

@@ -58,11 +58,6 @@ export class TestRequirements implements OnDestroy, OnInit {
 
   private readonly destroy = new ReplaySubject<void>();
 
-  get testRunStatus(): string {
-    // TODO: Supports test run status.
-    return 'NOT_STARTED';
-  }
-
   constructor(
       private readonly mttObjectMapService: MttObjectMapService,
       private readonly matDialog: MatDialog,
@@ -92,6 +87,7 @@ export class TestRequirements implements OnDestroy, OnInit {
     this.testRequirementDataMap = {};
     for (const requiredReport of requiredReports) {
       this.testRequirementDataMap[requiredReport.id] = {
+        defaultTest: this.getDefaultTest(requiredReport),
         selectedTestPlan: this.getDefaultTestPlan(requiredReport),
       };
     }

@@ -59,8 +59,12 @@
     <mat-header-cell *matHeaderCellDef fxFlex> Test Run Status </mat-header-cell>
     <mat-cell *matCellDef="let requiredReport" fxFlex>
       <status-button class="xts-requirements-detection"
-          [state]="testRunStatus">
+          *ngIf="requiredReport.test_run_state"
+          [state]="requiredReport.test_run_state">
       </status-button>
+      <ng-container *ngIf="!requiredReport.test_run_state">
+        N/A
+      </ng-container>
     </mat-cell>
   </ng-container>
 
