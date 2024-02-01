@@ -23,7 +23,6 @@ ng_module(
 sass_binary(
     name = "app_style",
     src = "app.scss",
-    strict_deps = False,
 )
 
 # Angular module
@@ -113,7 +112,6 @@ karma_web_test_suite(
 sass_binary(
     name = "styles",
     src = "styles.scss",
-    strict_deps = False,
     deps = [
         third_party_js("angular_components:material_sass"),
         third_party_js("angular_components:deprecated_sass"),

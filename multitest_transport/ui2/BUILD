@@ -50,7 +50,6 @@ sass_binary(
     src = "styles.scss",
     output_name = "styles.css",
     sass_stack = False,
-    strict_deps = False,
     visibility = ["//multitest_transport"],
     deps = [
         ":constants",
