@@ -76,6 +76,7 @@
           mat-stroked-button
           class="run-button"
           color="accent"
+          [disabled]="runButtonDisabled(requiredReport)"
           (click)="openTestRunConfigEditor(requiredReport)">
          Run
       </a>

@@ -102,7 +102,8 @@ describe('TestRequirements', () => {
     testRequirements.mttObjectMap.testMap = TEST_MAP;
     testRequirements.resetTestRequirementDataMap(REQUIRED_REPORTS);
     expect(testRequirements.testRequirementDataMap).toEqual({
-      'id1': {selectedTestPlan: 'cts', defaultTest: TEST_MAP['test_id_2']},
+      'id1':
+          {selectedTestPlan: 'cts-system', defaultTest: TEST_MAP['test_id_2']},
       'id2': {
         selectedTestPlan: 'gts-interactive',
         defaultTest: TEST_MAP['test_id_4']
@@ -130,6 +131,17 @@ describe('TestRequirements', () => {
     expect(testRequirements.greaterThan(
                TEST_MAP['test_id_3'], TEST_MAP['test_id_4']))
         .toEqual(false);
+  });
+
+  it('should disable the run button correctly', () => {
+    testRequirements.mttObjectMap.testMap = TEST_MAP;
+    testRequirements.resetTestRequirementDataMap(REQUIRED_REPORTS);
+    expect(testRequirements.runButtonDisabled(REQUIRED_REPORTS[0]))
+        .toEqual(false);
+    expect(testRequirements.runButtonDisabled(REQUIRED_REPORTS[1]))
+        .toEqual(false);
+    expect(testRequirements.runButtonDisabled(REQUIRED_REPORTS[2]))
+        .toEqual(true);
   });
 
   it('should open test run config editor with correct initial data',

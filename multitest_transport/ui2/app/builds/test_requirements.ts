@@ -21,7 +21,7 @@ import {ReplaySubject} from 'rxjs';
 import {takeUntil} from 'rxjs/operators';
 
 import {MttClient} from '../services/mtt_client';
-import {initTestRunConfig, NewTestRunRequest, RequiredReport, Test, TestRunConfig} from '../services/mtt_models';
+import {initTestRunConfig, isFinalTestRunState, NewTestRunRequest, RequiredReport, Test, TestRunConfig} from '../services/mtt_models';
 import {MttObjectMapService, newMttObjectMap} from '../services/mtt_object_map';
 import {TestRunConfigEditor, TestRunConfigEditorData} from '../test_runs/test_run_config_editor';
 
@@ -141,10 +141,16 @@ export class TestRequirements implements OnDestroy, OnInit {
    * Gets the default test plan to run for a required report.
    */
   getDefaultTestPlan(requiredReport: RequiredReport): string|undefined {
+    let defaultTestPlan = undefined;
     if (!requiredReport.test_plans) {
-      return undefined;
+      return defaultTestPlan;
     }
-    return requiredReport.test_plans[0];
+    for (const testPlan of requiredReport.test_plans) {
+      if (defaultTestPlan === undefined || testPlan.includes('system')) {
+        defaultTestPlan = testPlan;
+      }
+    }
+    return defaultTestPlan;
   }
 
   /**
@@ -156,6 +162,20 @@ export class TestRequirements implements OnDestroy, OnInit {
 
   getTestRequirementData(requiredReport: RequiredReport): TestRequirementData {
     return this.testRequirementDataMap[requiredReport.id];
+  }
+
+  /**
+   * Whether the run button is disabled for a required report.
+   */
+  runButtonDisabled(requiredReport: RequiredReport): boolean {
+    const testRequirementData = this.testRequirementDataMap[requiredReport.id];
+    if (!testRequirementData.defaultTest) {
+      return true;
+    }
+    if (!requiredReport.test_run_state) {
+      return false;
+    }
+    return !isFinalTestRunState(requiredReport.test_run_state);
   }
 
   /**
