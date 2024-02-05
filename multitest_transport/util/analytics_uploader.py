@@ -61,6 +61,7 @@ _EVENT_METRIC_KEYS = frozenset([
     'is_sequence_run',
     'operation_mode',
     'worker_id',
+    'user_tag',
     # Custom Metrics
     'duration_seconds',
     'device_count',
@@ -76,10 +77,6 @@ _EVENT_METRIC_KEYS = frozenset([
     'used_disk_size_byte',
     'free_disk_size_byte',
     'worker_count',
-])
-_USER_PROPERTIES_KEYS = frozenset([
-    # Custom Dimension
-    'user_tag',
 ])
 
 
@@ -100,13 +97,13 @@ def _UploadEvent(category: str, action: str, **kwargs) -> bool:
       _UPLOAD_ERROR_COUNT.value >= MAX_CONSECUTIVE_UPLOAD_ERRORS):  # pytype: disable=attribute-error  # re-none
     logging.debug('Metrics disabled - skipping %s:%s', category, action)
     return False
-  params = _EventParams(category=category, **kwargs)
+  params = _EventParams(
+      category=category, user_tag=private_node_config.gms_client_id, **kwargs
+  )
   data = _BuildMeasurementProtocol(
       server_uuid=private_node_config.server_uuid,
       action=action,
-      params=params,
-      # User properties
-      user_tag=private_node_config.gms_client_id,
+      params=params
   )
   request = urllib.request.Request(
       url=_GA_ENDPOINT, data=data, headers={'User-Agent': 'MTT'}
@@ -158,16 +155,11 @@ class _EventParams(object):
 
 
 def _BuildMeasurementProtocol(
-    server_uuid: str, action: str, params: _EventParams, **user_properties
+    server_uuid: str, action: str, params: _EventParams
 ) -> bytes:
   """Builds GA measurement protocol JSON post body."""
   mp = {
       'client_id': server_uuid,
-      'user_properties': {
-          key: value
-          for key, value in user_properties.items()
-          if key in _USER_PROPERTIES_KEYS and value is not None
-      },
       'events': [{'name': action, 'params': dict(params)}],
   }
   return json.dumps(mp).encode()

@@ -43,9 +43,8 @@ class AnalyticsUploaderTest(testbed_dependent_test.TestbedDependentTest):
 
   def assertValidEvent(self, data, server, category, action):
     """Confirms the base event information is present."""
-    self.assertListEqual(['client_id', 'user_properties', 'events'], list(data))
+    self.assertListEqual(['client_id', 'events'], list(data))
     self.assertEqual(server, data['client_id'])
-    self.assertDictEqual({'user_tag': 'test_user_tag'}, data['user_properties'])
     # Assert event
     self.assertLen(data['events'], 1)
     self.assertListEqual(['name', 'params'], list(data['events'][0]))
@@ -55,6 +54,7 @@ class AnalyticsUploaderTest(testbed_dependent_test.TestbedDependentTest):
             'event_category': category,
             'app_version': env.VERSION,
             'is_google': True,
+            'user_tag': 'test_user_tag',
         },
         data['events'][0]['params'],
     )
@@ -127,6 +127,7 @@ class AnalyticsUploaderTest(testbed_dependent_test.TestbedDependentTest):
             'event_category': 'category',
             'app_version': env.VERSION,
             'is_google': True,
+            'user_tag': 'test_user_tag',
             'test_name': 'name',
             'test_version': 'version',
             'state': 'COMPLETED',
@@ -157,7 +158,8 @@ class AnalyticsUploaderTest(testbed_dependent_test.TestbedDependentTest):
     self.assertTrue(uploaded)
     request = mock_urlopen.call_args[0][0]
     data = json.loads(request.data.decode())
-    self.assertEmpty(data['user_properties'])
+
+    self.assertNotIn('user_tag', data['events'][0]['params'])
 
 
 if __name__ == '__main__':
