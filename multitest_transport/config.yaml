@@ -464,7 +464,7 @@ tests:
   name: CTS 11.0 (ARM)
   description: Compatibility Test Suite 11.0 (ARM)
   test_resource_defs:
-  - default_download_url: https://dl.google.com/dl/android/cts/android-cts-11_r14-linux_x86-arm.zip
+  - default_download_url: https://dl.google.com/dl/android/cts/android-cts-11_r15-linux_x86-arm.zip
     name: android-cts.zip
     test_resource_type: TEST_PACKAGE
     decompress: true
@@ -502,7 +502,7 @@ tests:
   name: CTS 12.0 (ARM)
   description: Compatibility Test Suite 12.0 (ARM)
   test_resource_defs:
-  - default_download_url: https://dl.google.com/dl/android/cts/android-cts-12_r10-linux_x86-arm.zip
+  - default_download_url: https://dl.google.com/dl/android/cts/android-cts-12_r11-linux_x86-arm.zip
     name: android-cts.zip
     test_resource_type: TEST_PACKAGE
     decompress: true
@@ -542,7 +542,7 @@ tests:
   name: CTS 12.1 (ARM)
   description: Compatibility Test Suite 12.1 (ARM)
   test_resource_defs:
-  - default_download_url: https://dl.google.com/dl/android/cts/android-cts-12.1_r8-linux_x86-arm.zip
+  - default_download_url: https://dl.google.com/dl/android/cts/android-cts-12.1_r9-linux_x86-arm.zip
     name: android-cts.zip
     test_resource_type: TEST_PACKAGE
     decompress: true
@@ -582,7 +582,7 @@ tests:
   name: CTS 13.0 (ARM)
   description: Compatibility Test Suite 13.0 (ARM)
   test_resource_defs:
-  - default_download_url: https://dl.google.com/dl/android/cts/android-cts-13_r6-linux_x86-arm.zip
+  - default_download_url: https://dl.google.com/dl/android/cts/android-cts-13_r7-linux_x86-arm.zip
     name: android-cts.zip
     test_resource_type: TEST_PACKAGE
     decompress: true
@@ -622,7 +622,7 @@ tests:
   name: CTS 14.0 (ARM)
   description: Compatibility Test Suite 14.0 (ARM)
   test_resource_defs:
-  - default_download_url: https://dl.google.com/dl/android/cts/android-cts-14_r2-linux_x86-arm.zip
+  - default_download_url: https://dl.google.com/dl/android/cts/android-cts-14_r3-linux_x86-arm.zip
     name: android-cts.zip
     test_resource_type: TEST_PACKAGE
     decompress: true
