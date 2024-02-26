@@ -24,9 +24,11 @@ ENV PATH /tmp/custom_sdk_tools:${PATH}
 RUN echo 'Acquire::Retries "3";' > /etc/apt/apt.conf.d/80retries
 
 RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -y \
+        apt-transport-https \
         apt-utils \
         cec-utils \
         cron \
+        curl \
         daemontools \
         fuse-zip \
         git \
@@ -53,6 +55,24 @@ RUN export DEBIAN_FRONTEND=noninteractive; apt update -qq; apt install -y -qq \
   python python3.8 python3.9 python3-pip python3.9-dev \
   python3-distutils python3.9-distutils
 
+# Install rabbitmq from official channel.
+# Add the Erlang repository maintained by RabbitMQ
+RUN add-apt-repository ppa:rabbitmq/rabbitmq-erlang
+RUN curl -s https://packagecloud.io/install/repositories/rabbitmq/rabbitmq-server/script.deb.sh | bash
+# Install Erlang packages
+RUN export DEBIAN_FRONTEND=noninteractive && \
+    apt-get update && \
+    apt-get install -y erlang-base \
+                       erlang-asn1 erlang-crypto erlang-eldap erlang-ftp erlang-inets \
+                       erlang-mnesia erlang-os-mon erlang-parsetools erlang-public-key \
+                       erlang-runtime-tools erlang-snmp erlang-ssl \
+                       erlang-syntax-tools erlang-tftp erlang-tools erlang-xmerl
+# Pin rabbitmq-server to 3.12.13-1
+RUN export DEBIAN_FRONTEND=noninteractive && apt-get install -y rabbitmq-server=3.12.13-1 --fix-missing
+
+# Enable rabbitmq management plugin for reliability checking
+RUN rabbitmq-plugins enable rabbitmq_management
+
 # Set minimal Python version that client supports.
 RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 1000
 RUN pip3 install --upgrade setuptools pip
@@ -67,29 +87,6 @@ RUN pip3 install \
 RUN wget -q --retry-connrefused -O /tmp/get-pip.py https://bootstrap.pypa.io/pip/2.7/get-pip.py && \
     python /tmp/get-pip.py && \
     rm /tmp/get-pip.py
-
-# Install erlang which is used by rabbitmq.
-RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -y \
-        curl \
-        apt-transport-https \
-        lsb-release
-RUN curl -fsSL https://packages.erlang-solutions.com/ubuntu/erlang_solutions.asc \
-        | gpg --dearmor -o /etc/apt/trusted.gpg.d/erlang.gpg
-RUN echo "deb https://packages.erlang-solutions.com/ubuntu $(lsb_release -cs) contrib" \
-        | tee /etc/apt/sources.list.d/erlang.list
-# Install erlang-nox to save container image size (=3.68GB).
-# With erlang, container image size could go to 4.78GB.
-RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -y \
-        erlang-nox
-
-# Install rabbitmq from official channel.
-RUN curl -s https://packagecloud.io/install/repositories/rabbitmq/rabbitmq-server/script.deb.sh \
-        | bash
-RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -y \
-        rabbitmq-server
-
-# Enable rabbitmq management plugin for reliability checking
-RUN rabbitmq-plugins enable rabbitmq_management
 
 # Installing dependencies for VTS
 # Reference: https://android.googlesource.com/platform/test/vts/+/refs/heads/android10-tests-dev/script/setup.sh
@@ -157,13 +154,11 @@ ENV LD_LIBRARY_PATH /sdk_tools/lib64:${LD_LIBRARY_PATH}
 ENV CLOUD_SDK_VERSION=363.0.0
 ENV CLOUD_SDK_ROOT=/usr/lib/google-cloud-sdk
 RUN apt-get -qqy update && apt-get install -qqy \
-        curl \
         gcc \
         python3-dev \
         python3-pip \
         apt-transport-https \
         openssh-client \
-        git \
         make \
         gnupg && \
     pip3 install -U crcmod && \
