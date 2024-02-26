@@ -50,7 +50,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -
 
 RUN add-apt-repository ppa:deadsnakes/ppa
 RUN export DEBIAN_FRONTEND=noninteractive; apt update -qq; apt install -y -qq \
-  python python3.8 python3.9 python3-pip \
+  python python3.8 python3.9 python3-pip python3.9-dev \
   python3-distutils python3.9-distutils
 
 # Set minimal Python version that client supports.
@@ -61,7 +61,6 @@ RUN pip3 install \
         attrs \
         cachetools \
         flask \
-        grpcio \
         bcrypt \
         gunicorn==20.1.0
 # Install python2 pip.
@@ -112,6 +111,15 @@ RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -
 # suites, but pin the version to one with a proven compatibility with VTS.
 # VTS 9.0 will require "--python-venv:python-version=2.7".
 RUN pip3 install virtualenv==20.19.0
+
+# Install grpcio from source b/326532770
+RUN git clone https://github.com/grpc/grpc && \
+    cd grpc && \
+    git submodule update --init && \
+    pip3 install -r requirements.txt && \
+    GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip3 install . && \
+    cd - && \
+    rm -rf grpc
 
 # Install JDK11 from AOSP (https://android.googlesource.com/platform/prebuilts/jdk/jdk11.git/+/4b776e23b6964354047211b1e343dc3ca14ce60a)
 RUN mkdir -p /jdk/jdk11 && \
