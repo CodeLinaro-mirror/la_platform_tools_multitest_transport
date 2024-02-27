@@ -14,17 +14,75 @@
 
 """A OLCS session service stub that is providing similar functionality as tfc_client."""
 
+import logging
+from typing import List, Optional
+
 from multitest_transport.util import olcs_session_client
 from tradefed_cluster import api_messages
+from tradefed_cluster import common
 
 from google3.google.protobuf import duration_pb2
 from com_google_deviceinfra.src.devtools.mobileharness.infra.ats.server.proto import service_pb2
 from com_google_deviceinfra.src.devtools.mobileharness.infra.client.longrunningservice.proto import session_service_pb2
 
+
 SESSION_PLUGIN_CLASS_NAME = "com.google.devtools.mobileharness.infra.ats.server.sessionplugin.AtsServerSessionPlugin"
+SESSION_MODULE_CLASS_NAME = "com.google.devtools.mobileharness.infra.ats.server.sessionplugin.AtsServerSessionPluginModule"
 SESSION_PLUGIN_LABEL = "AtsServerSessionPlugin"
 NANOS_PER_MILLISECOND = 1000000
 MILLIS_PER_SECOND = 1000
+
+
+_REQUEST_STATE_MAP = {
+    service_pb2.RequestDetail.RequestState.UNKNOWN: common.RequestState.UNKNOWN,
+    service_pb2.RequestDetail.RequestState.QUEUED: common.RequestState.QUEUED,
+    service_pb2.RequestDetail.RequestState.RUNNING: common.RequestState.RUNNING,
+    service_pb2.RequestDetail.RequestState.CANCELED: (
+        common.RequestState.CANCELED
+    ),
+    service_pb2.RequestDetail.RequestState.COMPLETED: (
+        common.RequestState.COMPLETED
+    ),
+    service_pb2.RequestDetail.RequestState.ERROR: common.RequestState.ERROR,
+}
+
+_COMMAND_STATE_MAP = {
+    service_pb2.CommandState.UNKNOWN_STATE: common.CommandState.UNKNOWN,
+    service_pb2.CommandState.QUEUED: common.CommandState.QUEUED,
+    service_pb2.CommandState.RUNNING: common.CommandState.RUNNING,
+    service_pb2.CommandState.CANCELED: common.CommandState.CANCELED,
+    service_pb2.CommandState.COMPLETED: common.CommandState.COMPLETED,
+    service_pb2.CommandState.ERROR: common.CommandState.ERROR,
+}
+
+_TEST_RUN_CANCEL_REASON_MAP = {
+    service_pb2.CancelReason.UNKNOWN_CANCEL_REASON: common.CancelReason.UNKNOWN,
+    service_pb2.CancelReason.REQUEST_API: common.CancelReason.REQUEST_API,
+    service_pb2.CancelReason.QUEUE_TIMEOUT: common.CancelReason.QUEUE_TIMEOUT,
+    service_pb2.CancelReason.COMMAND_ALREADY_CANCELED: (
+        common.CancelReason.COMMAND_ALREADY_CANCELED
+    ),
+    service_pb2.CancelReason.REQUEST_ALREADY_CANCELED: (
+        common.CancelReason.REQUEST_ALREADY_CANCELED
+    ),
+    service_pb2.CancelReason.COMMAND_NOT_EXECUTABLE: (
+        common.CancelReason.COMMAND_NOT_EXECUTABLE
+    ),
+    service_pb2.CancelReason.INVALID_REQUEST: (
+        common.CancelReason.INVALID_REQUEST
+    ),
+    # No corresponding id for invalid resource error, need to add.
+    service_pb2.CancelReason.INVALID_RESOURCE: (
+        common.CancelReason.INVALID_REQUEST
+    ),
+}
+
+_ERROR_REASON_MAP = {
+    service_pb2.ErrorReason.UNKNOWN_REASON: common.ErrorReason.UNKNOWN,
+    service_pb2.ErrorReason.TOO_MANY_LOST_DEVICES: (
+        common.ErrorReason.TOO_MANY_LOST_DEVICES
+    ),
+}
 
 
 class OlcsSessionStub:
@@ -36,27 +94,157 @@ class OlcsSessionStub:
     else:
       self._client = client
 
-  def create_new_request(
+  def CreateNewRequest(
       self, request: api_messages.NewMultiCommandRequestMessage
   ) -> str:
     response = self._client.create_session(
-        OlcsSessionStub.generate_request_proto(request)
+        OlcsSessionStub.GenerateRequestProto(request)
     )
     return response.session_id.id
 
-  def get_request(self, request_id: str) -> api_messages.RequestMessage:
+  def GetLatestFinishedAttempts(
+      self, request_id: str
+  ) -> List[api_messages.CommandAttemptMessage]:
+    request = self.GetRequest(request_id)
+    attempt_map = {}
+    for attempt in request.command_attempts:
+      if not common.IsFinalCommandState(attempt.state):
+        continue
+      attempt_map[attempt.command_id] = attempt
+    return list(attempt_map.values())
+
+  def GetRequest(self, request_id: str) -> api_messages.RequestMessage:
+    """Get request from OLCS.
+
+    Args:
+      request_id: The request id of the request.
+
+    Returns:
+      The request message defined by TFC.
+    """
     request = session_service_pb2.GetSessionRequest()
-    request.session_id = request_id
+    request.session_id.id = request_id
     response = self._client.get_session(request)
-    request_detail = service_pb2.RequestDetail
+    request_detail = service_pb2.RequestDetail()
     response.session_detail.session_output.session_plugin_output[
-        SESSION_PLUGIN_CLASS_NAME
+        SESSION_PLUGIN_LABEL
     ].output.Unpack(request_detail)
-    # TODO: decoding from request detail proto to be implemented.
-    return api_messages.RequestMessage(id=request_detail.id)
+    logging.info(
+        "Fetched request detail proto from OLCS: %s", request_detail.__str__()
+    )
+
+    request_message = api_messages.RequestMessage()
+    request_message.id = request_id
+    request_message.user = request_detail.user
+    request_message.command_infos = list(
+        map(self._ConvertProtoToCommandInfo, request_detail.command_infos)
+    )
+    request_message.priority = request_detail.priority
+    request_message.queue_timeout_seconds = request_detail.queue_timeout.seconds
+    request_message.cancel_reason = _TEST_RUN_CANCEL_REASON_MAP.get(
+        request_detail.cancel_reason, common.CancelReason.UNKNOWN
+    )
+    request_message.max_retry_on_test_failures = (
+        request_detail.max_retry_on_test_failures
+    )
+    # TODO: add (prev_test_context)
+    request_message.max_concurrent_tasks = request_detail.max_concurrent_tasks
+    # TODO: add (affinity_tag)
+
+    request_message.state = _REQUEST_STATE_MAP.get(
+        request_detail.state, common.RequestState.UNKNOWN
+    )
+    request_message.start_time = request_detail.start_time.ToDatetime()
+    request_message.end_time = request_detail.end_time.ToDatetime()
+
+    request_message.create_time = request_detail.create_time.ToDatetime()
+    request_message.update_time = request_detail.update_time.ToDatetime()
+    # TODO: cancel message is deprecated.
+
+    request_message.commands = list(
+        map(
+            self._ConvertCommandDetail,
+            request_detail.command_details.values(),
+        )
+    )
+    return request_message
+
+  def GetAttempt(
+      self, request_id: str, attempt_id: str
+  ) -> Optional[api_messages.CommandAttemptMessage]:
+    """Find a OLC command attempt.
+
+    Args:
+      request_id: request ID.
+      attempt_id: attempt ID.
+
+    Returns:
+      TFC command attempt, or None if not found
+    """
+    request = self.GetRequest(request_id)
+    attempts = request.command_attempts or []
+    return next((a for a in attempts if a.attempt_id == attempt_id), None)
+
+  def GetRequestInvocationStatus(
+      self,
+      request_id: str,
+  ) -> api_messages.InvocationStatus:
+    """Get invocation status from OLCS.
+
+    Args:
+      request_id: The request id of the request.
+
+    Returns:
+      The invocation status of the request.
+    """
+    del request_id  # TODO: To be completed.
+    return api_messages.InvocationStatus()
+
+  def _ConvertProtoToCommandInfo(
+      self, proto: service_pb2.CommandInfo
+  ) -> api_messages.CommandInfo:
+    command_info_message = api_messages.CommandInfo()
+    command_info_message.name = proto.name
+    command_info_message.command_line = proto.command_line
+    # TODO: add cluster
+    command_info_message.run_count = proto.run_count
+    command_info_message.shard_count = proto.shard_count
+    return command_info_message
+
+  def _ConvertCommandDetail(
+      self, command_detail: service_pb2.CommandDetail
+  ) -> api_messages.CommandMessage:
+    """Convert Command Detail from Request Detail proto to TFC CommandMessage.
+
+    Args:
+      command_detail: Command Detail from Request Detail proto.
+
+    Returns:
+      The CommandMessage defined by TFC.
+    """
+    command_message = api_messages.CommandMessage()
+    command_message.id = command_detail.id
+    command_message.request_id = command_detail.request_id
+    command_message.command_line = command_detail.command_line
+
+    # TODO: fill run target and cluster
+    command_message.state = _COMMAND_STATE_MAP.get(
+        command_detail.state, common.CommandState.UNKNOWN
+    )
+    command_message.cancel_reason = _TEST_RUN_CANCEL_REASON_MAP.get(
+        command_detail.cancel_reason, common.CancelReason.UNKNOWN
+    )
+    command_message.error_reason = _ERROR_REASON_MAP.get(
+        command_detail.error_reason, common.ErrorReason.UNKNOWN
+    )
+    command_message.run_count = command_detail.original_command_info.run_count
+    command_message.shard_count = (
+        command_detail.original_command_info.shard_count
+    )
+    return command_message
 
   @staticmethod
-  def generate_request_proto(
+  def GenerateRequestProto(
       request: api_messages.NewMultiCommandRequestMessage,
   ) -> session_service_pb2.CreateSessionRequest:
     """Generate request message sent to OLCS client.
@@ -77,6 +265,13 @@ class OlcsSessionStub:
       command_info_proto.command_line = command_info.command_line
       command_info_proto.run_count = command_info.run_count
       command_info_proto.shard_count = command_info.shard_count
+      device_serial = (
+          command_info.test_bench.host.groups[0]
+          .run_targets[0]
+          .device_attributes[0]
+          .value
+      )
+      command_info_proto.device_dimensions["serial"] = device_serial
       # TODO: add device dimension
     if request.max_retry_on_test_failures:
       request_proto.max_retry_on_test_failures = (
@@ -123,13 +318,13 @@ class OlcsSessionStub:
         )
       if request.test_environment.invocation_timeout_millis:
         request_proto.test_environment.invocation_timeout.CopyFrom(
-            _millisec_to_duration(
+            _MillisecToDuration(
                 request.test_environment.invocation_timeout_millis
             )
         )
       if request.test_environment.output_idle_timeout_millis:
         request_proto.test_environment.output_idle_timeout.CopyFrom(
-            _millisec_to_duration(
+            _MillisecToDuration(
                 request.test_environment.output_idle_timeout_millis
             )
         )
@@ -159,15 +354,20 @@ class OlcsSessionStub:
     session_plugin_config = (
         end_request.session_config.session_plugin_configs.session_plugin_config.add()
     )
-    session_plugin_config.execution_config.config.Pack(request_proto)
+    session_request = service_pb2.SessionRequest()
+    session_request.new_multi_command_request.CopyFrom(request_proto)
+    session_plugin_config.execution_config.config.Pack(session_request)
     session_plugin_config.loading_config.plugin_class_name = (
         SESSION_PLUGIN_CLASS_NAME
+    )
+    session_plugin_config.loading_config.plugin_module_class_name = (
+        SESSION_MODULE_CLASS_NAME
     )
     session_plugin_config.explicit_label.label = SESSION_PLUGIN_LABEL
     return end_request
 
 
-def _millisec_to_duration(millis: int) -> duration_pb2.Duration:
+def _MillisecToDuration(millis: int) -> duration_pb2.Duration:
   return duration_pb2.Duration(
       seconds=int(millis / MILLIS_PER_SECOND),
       nanos=int(millis % MILLIS_PER_SECOND * NANOS_PER_MILLISECOND),

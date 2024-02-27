@@ -73,6 +73,7 @@ pytype_strict_library(
         ":test_run_manager_lib",
         "//multitest_transport/models",
         "//multitest_transport/util",
+        "//multitest_transport/util:olcs_session_stub",
         "@tradefed_cluster//tradefed_cluster:api_messages_lib",
         "@tradefed_cluster//tradefed_cluster:common_lib",
         "@tradefed_cluster//tradefed_cluster/services:task_scheduler_lib",
@@ -156,6 +157,7 @@ pytype_strict_library(
     deps = [
         "//multitest_transport/models",
         "//multitest_transport/util",
+        "//multitest_transport/util:olcs_session_stub",
         "@tradefed_cluster//tradefed_cluster/services:task_scheduler_lib",
         "@tradefed_cluster//tradefed_cluster/util:ndb_shim_lib",
     ],
@@ -218,6 +220,7 @@ pytype_strict_library(
         "//multitest_transport/build_manager:xts_requirements_detector_lib",
         "//multitest_transport/models",
         "//multitest_transport/util",
+        "//multitest_transport/util:olcs_session_stub",
         "@tradefed_cluster//tradefed_cluster:api_messages_lib",
         "@tradefed_cluster//tradefed_cluster:common_lib",
         "@tradefed_cluster//tradefed_cluster/services:task_scheduler_lib",

@@ -77,7 +77,7 @@ class TestResultApi(remote.Service):
       result_list.results.extend(self._GetTestModuleResults(attempt.attempt_id))
     if not result_list.results:
       # No results found for latest attempt, try fetching legacy results instead
-      return self._GetLegacyTestModuleResults(test_run.request_id)
+      return self._GetLegacyTestModuleResults(str(test_run.request_id))
     return result_list
 
   def _GetTestModuleResults(
@@ -93,7 +93,8 @@ class TestResultApi(remote.Service):
     return mtt_messages.ConvertList(modules, mtt_messages.TestModuleResult)
 
   def _GetLegacyTestModuleResults(
-      self, request_id: int) -> mtt_messages.TestModuleResultList:
+      self, request_id: str
+  ) -> mtt_messages.TestModuleResultList:
     """Fetch legacy test module results from TFC."""
     invocation_status = tfc_client.GetRequestInvocationStatus(request_id)
     test_group_statuses = sorted(

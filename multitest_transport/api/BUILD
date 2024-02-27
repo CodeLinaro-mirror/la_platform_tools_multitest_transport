@@ -1,3 +1,5 @@
+load("//devtools/python/blaze:strict.bzl", "py_strict_test")
+
 # MTT API handlers.
 load("@tradefed_cluster//tradefed_cluster:adapter.bzl", "py_test", "pytype_strict_library", "third_party")
 
@@ -343,6 +345,7 @@ pytype_strict_library(
         ":node_config_api_lib",
         ":openapi_lib",
         ":private_node_config_api_lib",
+        ":request_api",
         ":test_api_lib",
         ":test_plan_api_lib",
         ":test_result_api_lib",
@@ -425,6 +428,7 @@ pytype_strict_library(
         "//multitest_transport/util",
         third_party("google-endpoints"),
         third_party("protorpc"),
+        "//multitest_transport/util:olcs_session_stub",
     ],
 )
 
@@ -485,6 +489,7 @@ pytype_strict_library(
         "//multitest_transport/test_scheduler:test_kicker_lib",
         "//multitest_transport/test_scheduler:test_run_manager_lib",
         "//multitest_transport/util",
+        "//multitest_transport/util:olcs_session_stub",
         "@tradefed_cluster//tradefed_cluster:common_lib",
         "@tradefed_cluster//tradefed_cluster:datastore_util_lib",
         "@tradefed_cluster//tradefed_cluster/util:ndb_shim_lib",
@@ -543,6 +548,38 @@ pytype_strict_library(
         third_party("google-endpoints"),
         third_party("protorpc"),
         third_party("requests"),
+    ],
+)
+
+pytype_strict_library(
+    name = "request_api",
+    srcs = ["request_api.py"],
+    deps = [
+        ":base_lib",
+        "//third_party/py/endpoints:endpoints_library",
+        "//multitest_transport/models:messages_lib",
+        "//multitest_transport/models:ndb_models_lib",
+        "//multitest_transport/models:sql_models_lib",
+        "//multitest_transport/test_scheduler:tfc_event_handler_lib",
+        "//multitest_transport/util:olcs_session_stub",
+        "//multitest_transport/util:tfc_client_lib",
+        "//multitest_transport/util:xts_result_lib",
+        "//third_party/py/protorpc:protorpc_all",
+        "@tradefed_cluster//tradefed_cluster:api_messages_lib",
+        "@tradefed_cluster//tradefed_cluster:common_lib",
+    ],
+)
+
+py_strict_test(
+    name = "request_api_test",
+    srcs = ["request_api_test.py"],
+    deps = [
+        ":api_test_util_lib",
+        ":request_api",
+        "//testing/pybase",
+        "//multitest_transport/util:olcs_session_stub",
+        "//third_party/py/protorpc:protorpc_all",
+        "@tradefed_cluster//tradefed_cluster:api_messages_lib",
     ],
 )
 

@@ -14,6 +14,7 @@
 
 """A TFC client module."""
 import json
+import os
 import threading
 from typing import List, Optional
 
@@ -26,7 +27,9 @@ from tradefed_cluster.common import IsFinalCommandState
 from tradefed_cluster.services import app_manager
 
 
+
 from multitest_transport.util import env
+from multitest_transport.util import olcs_session_stub
 
 API_NAME = 'tradefed_cluster'
 API_VERSION = 'v1'
@@ -74,6 +77,13 @@ def _GetAPIClient():
   return _tls.api_client
 
 
+def _GetOlcsSessionStub():
+  """Returns a OlcsSessionStub for TFC."""
+  if not hasattr(_tls, 'olcs_session_stub'):
+    _tls.olcs_session_stub = olcs_session_stub.OlcsSessionStub(None)
+  return _tls.olcs_session_stub
+
+
 def BackfillCommands():
   """Backfill commands for timeout monitoring."""
   _GetAPIClient().coordinator().backfillCommands().execute()
@@ -99,12 +109,20 @@ def NewRequest(
   Returns:
     A api_messages.Request object.
   """
-  body = json.loads(protojson.encode_message(new_request_msg))  # pytype: disable=module-attr
-  res = _GetAPIClient().requests().newMultiCommandRequest(body=body).execute()
-  return protojson.decode_message(api_messages.RequestMessage, json.dumps(res))  # pytype: disable=module-attr
+  if os.environ.get('IS_OMNILAB_BASED') == 'true':
+    request_id = _GetOlcsSessionStub().CreateNewRequest(new_request_msg)
+    return _GetOlcsSessionStub().GetRequest(request_id)
+  else:
+    body = json.loads(protojson.encode_message(new_request_msg))  # pytype: disable=module-attr
+    res = _GetAPIClient().requests().newMultiCommandRequest(body=body).execute()
+    # pytype: disable=module-attr
+    return protojson.decode_message(
+        api_messages.RequestMessage, json.dumps(res)
+    )
+    # pytype: enable=module-attr
 
 
-def GetRequest(request_id: int) -> api_messages.RequestMessage:
+def GetRequest(request_id: str) -> api_messages.RequestMessage:
   """Gets a TFC request.
 
   Args:
@@ -112,8 +130,16 @@ def GetRequest(request_id: int) -> api_messages.RequestMessage:
   Returns:
     A TFC Request object.
   """
-  res = _GetAPIClient().requests().get(request_id=request_id).execute()
-  return protojson.decode_message(api_messages.RequestMessage, json.dumps(res))  # pytype: disable=module-attr
+  if os.environ.get('IS_OMNILAB_BASED') == 'true':
+    return _GetOlcsSessionStub().GetRequest(request_id)
+  else:
+    request_id = int(request_id)
+    res = _GetAPIClient().requests().get(request_id=request_id).execute()
+    # pytype: disable=module-attr
+    return protojson.decode_message(
+        api_messages.RequestMessage, json.dumps(res)
+    )
+    # pytype: enable=module-attr
 
 
 def CancelRequest(request_id: int):
@@ -141,8 +167,9 @@ def GetTestContext(request_id: int,
   return protojson.decode_message(api_messages.TestContext, json.dumps(res))  # pytype: disable=module-attr
 
 
-def GetAttempt(request_id: int,
-               attempt_id: str) -> Optional[api_messages.CommandAttemptMessage]:
+def GetAttempt(
+    request_id: str, attempt_id: str
+) -> Optional[api_messages.CommandAttemptMessage]:
   """Find a TFC command attempt.
 
   Args:
@@ -151,13 +178,17 @@ def GetAttempt(request_id: int,
   Returns:
     TFC command attempt, or None if not found
   """
-  request = GetRequest(request_id)
-  attempts = request.command_attempts or []
-  return next((a for a in attempts if a.attempt_id == attempt_id), None)
+  if os.environ.get('IS_OMNILAB_BASED') == 'true':
+    return _GetOlcsSessionStub().GetAttempt(request_id, attempt_id)
+  else:
+    request = GetRequest(request_id)
+    attempts = request.command_attempts or []
+    return next((a for a in attempts if a.attempt_id == attempt_id), None)
 
 
 def GetLatestFinishedAttempts(
-    request_id: int) -> List[api_messages.CommandAttemptMessage]:
+    request_id: str,
+) -> List[api_messages.CommandAttemptMessage]:
   """Find the latest TFC command attempts in a final state.
 
   Args:
@@ -165,13 +196,16 @@ def GetLatestFinishedAttempts(
   Returns:
     A list of finished TFC command attempts
   """
-  request = GetRequest(request_id)
-  attempt_map = {}
-  for attempt in request.command_attempts:
-    if not IsFinalCommandState(attempt.state):
-      continue
-    attempt_map[attempt.command_id] = attempt
-  return list(attempt_map.values())
+  if os.environ.get('IS_OMNILAB_BASED') == 'true':
+    return _GetOlcsSessionStub().GetLatestFinishedAttempts(request_id)
+  else:
+    request = GetRequest(request_id)
+    attempt_map = {}
+    for attempt in request.command_attempts:
+      if not IsFinalCommandState(attempt.state):
+        continue
+      attempt_map[attempt.command_id] = attempt
+    return list(attempt_map.values())
 
 
 def ListDevices() -> Optional[api_messages.DeviceInfoCollection]:
@@ -203,9 +237,20 @@ def GetDeviceInfo(serial_num: str) -> Optional[api_messages.DeviceInfo]:
 
 
 def GetRequestInvocationStatus(
-    request_id: int) -> api_messages.InvocationStatus:
+    request_id: str,
+) -> api_messages.InvocationStatus:
   """Fetches the invocation status for a request."""
-  res = _GetAPIClient().requests().invocationStatus().get(
-      request_id=request_id).execute()
-  return protojson.decode_message(  # pytype: disable=module-attr
-      api_messages.InvocationStatus, json.dumps(res))
+  if os.environ.get('IS_OMNILAB_BASED') == 'true':
+    return _GetOlcsSessionStub().GetRequestInvocationStatus(request_id)
+  else:
+    request_id = int(request_id)
+    res = (
+        _GetAPIClient()
+        .requests()
+        .invocationStatus()
+        .get(request_id=request_id)
+        .execute()
+    )
+    return protojson.decode_message(  # pytype: disable=module-attr
+        api_messages.InvocationStatus, json.dumps(res)
+    )

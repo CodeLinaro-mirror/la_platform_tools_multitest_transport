@@ -209,6 +209,7 @@ pytype_strict_library(
         ":ndb_models_lib",
         "//multitest_transport/plugins:plugin_base",
         "//multitest_transport/util",
+        "//multitest_transport/util:olcs_session_stub",
         "@tradefed_cluster//tradefed_cluster:api_messages_lib",
         "@tradefed_cluster//tradefed_cluster/plugins:base_lib",
     ],

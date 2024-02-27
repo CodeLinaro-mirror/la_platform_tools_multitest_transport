@@ -173,6 +173,7 @@ pytype_strict_library(
     ],
     deps = [
         ":env_lib",
+        ":olcs_session_stub",
         "@tradefed_cluster//tradefed_cluster:api_messages_lib",
         "@tradefed_cluster//tradefed_cluster:common_lib",
         "@tradefed_cluster//tradefed_cluster/services:app_manager_lib",
@@ -265,6 +266,7 @@ py_test(
         "olcs_session_stub_test.py",
     ],
     data = [
+        "test_data/request_detail.textproto",
         "test_data/test_new_request_msg.json",
     ],
     deps = [
@@ -276,6 +278,7 @@ py_test(
         "@com_google_deviceinfra//src/devtools/mobileharness/infra/client/longrunningservice/proto:session_service_py_grpc",
         "@com_google_deviceinfra//src/devtools/mobileharness/infra/client/longrunningservice/proto:session_service_py_proto",
         third_party("protorpc"),
+        "//third_party/py/google/protobuf",
         "@tradefed_cluster//tradefed_cluster:api_messages_lib",
     ],
 )
@@ -285,10 +288,11 @@ pytype_strict_library(
     srcs = ["olcs_session_stub.py"],
     deps = [
         ":olcs_session_client_lib",
+        "//google/protobuf:duration_py_pb2",
         "@com_google_deviceinfra//src/devtools/mobileharness/infra/ats/server/proto:service_py_proto",
         "@com_google_deviceinfra//src/devtools/mobileharness/infra/client/longrunningservice/proto:session_service_py_proto",
-        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         "@tradefed_cluster//tradefed_cluster:api_messages_lib",
+        "@tradefed_cluster//tradefed_cluster:common_lib",
     ],
 )
 

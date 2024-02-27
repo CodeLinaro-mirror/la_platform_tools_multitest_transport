@@ -147,7 +147,7 @@ class TestResultApiTest(api_test_util.TestCase):
                                        mock_invocation_status):
     """Tests that legacy module results are fetched if not found in DB."""
     # Create test run with a COMPLETED legacy attempts
-    ndb_models.TestRun(id='test_run_id', request_id='request_id').put()
+    ndb_models.TestRun(id='test_run_id', request_id='123').put()
     attempt = mock.MagicMock(attempt_id='LEGACY', state=CommandState.COMPLETED)
     mock_request.return_value = mock.MagicMock(command_attempts=[attempt])
     # Return three test group statuses (2nd is incomplete, 3rd has failures)

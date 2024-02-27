@@ -1,0 +1,90 @@
+id: "2dfee231-5525-498b-bf35-e0104bf3e39b"
+command_infos {
+  command_line: "cts --enable-token-sharding --max-testcase-run-count 2 --retry-strategy RETRY_ANY_FAILURE --invocation-data mtt=1"
+  run_count: 1
+  shard_count: 1
+  device_dimensions {
+    key: "serial"
+    value: "29081FDH200D3U"
+  }
+}
+state: RUNNING
+command_details {
+  key: "2f6dcf43-7280-48e2-b579-595c4604e980"
+  value {
+    id: "2f6dcf43-7280-48e2-b579-595c4604e980"
+    command_line: "cts --enable-token-sharding --max-testcase-run-count 2 --retry-strategy RETRY_ANY_FAILURE --invocation-data mtt=1"
+    state: RUNNING
+    original_command_info {
+      command_line: "cts --enable-token-sharding --max-testcase-run-count 2 --retry-strategy RETRY_ANY_FAILURE --invocation-data mtt=1"
+      run_count: 1
+      shard_count: 1
+      device_dimensions {
+        key: "serial"
+        value: "29081FDH200D3U"
+      }
+    }
+  }
+}
+original_request {
+  user_id: "test_kicker"
+  commands {
+    command_line: "cts --enable-token-sharding --max-testcase-run-count 2 --retry-strategy RETRY_ANY_FAILURE --invocation-data mtt=1"
+    run_count: 1
+    shard_count: 1
+    device_dimensions {
+      key: "serial"
+      value: "29081FDH200D3U"
+    }
+  }
+  max_retry_on_test_failures: 3
+  test_environment {
+    env_vars {
+      key: "JAVA_HOME"
+      value: "${TF_WORK_DIR}/android-cts/jdk"
+    }
+    env_vars {
+      key: "LD_LIBRARY_PATH"
+      value: "${TF_WORK_DIR}/android-cts/lib:${TF_WORK_DIR}/android-cts/lib64"
+    }
+    env_vars {
+      key: "TF_PATH"
+      value: "${TF_WORK_DIR}/android-cts/tools:${TF_WORK_DIR}/android-cts/testcases"
+    }
+    env_vars {
+      key: "WIFI_PSK"
+    }
+    env_vars {
+      key: "WIFI_SSID"
+    }
+    output_file_patterns: "android-cts/logs/.*"
+    output_file_patterns: "android-cts/results/[^/]+/[^/]+\\.html"
+    output_file_patterns: "android-cts/results/[^/]+/compatibility_result\\..*"
+    output_file_patterns: "android-cts/results/[^/]+/logo.png"
+    output_file_patterns: "android-cts/results/[^/]+/test_result.xml"
+    output_file_patterns: "android-cts/results/[^/]+/proto/test-record\\.pb.*"
+    output_file_upload_url: "file:///usr/local/google/home/jiuchangz/ats/app_default_bucket/test_runs/0c5866c5-2529-4097-ad3b-55b81abba294/output"
+    use_subprocess_reporting: true
+    output_idle_timeout {
+      seconds: 3600
+    }
+    jvm_options: "-Xmx6g"
+    java_properties {
+      key: "CTS_ROOT"
+      value: "${TF_WORK_DIR}"
+    }
+    context_file_pattern: "android-cts/results/[\\d_\\.]+\\.zip"
+    extra_context_files: "mtt.json"
+    retry_command_line: "retry --retry 0 --invocation-data mtt=1"
+  }
+  test_resources {
+    url: "file:///usr/local/google/home/jiuchangz/ats/test_resources/de8ecbe01ba254a9f426c2b9a6b6b3264d6b90eae19e962d381eb14085a23dd2"
+    name: "android-cts.zip"
+    decompress: true
+    mount_zip: true
+  }
+  test_resources {
+    url: "http://jiuchangz1.bej.corp.google.com:8000/_ah/api/mtt/v1/test_runs/0c5866c5-2529-4097-ad3b-55b81abba294/metadata"
+    name: "mtt.json"
+  }
+}

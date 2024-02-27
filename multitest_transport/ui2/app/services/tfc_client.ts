@@ -72,7 +72,7 @@ export class TfcClient {
 
   getRequest(requestId: string): Observable<Request> {
     return this.http.get<Request>(
-        `${this.tfcApiUrl}/requests/${encodeURIComponent(requestId)}`);
+        `${this.apiUrl}/requests/${encodeURIComponent(requestId)}`);
   }
 
   listCommands(

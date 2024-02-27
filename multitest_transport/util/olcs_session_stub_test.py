@@ -17,6 +17,7 @@ import os
 from unittest import mock
 
 from absl.testing import absltest
+from google.protobuf import text_format
 from multitest_transport.util import olcs_session_client
 from multitest_transport.util import olcs_session_stub
 from protorpc import protojson
@@ -47,8 +48,10 @@ class OlcsSessionStubTest(absltest.TestCase):
 
     # Create the expected request proto sent to session service.
     request_proto = session_service_pb2.CreateSessionRequest()
+    session_request_proto = service_pb2.SessionRequest()
+    session_request_proto.new_multi_command_request.user_id = 'test_user'
     request_proto.session_config.session_plugin_configs.session_plugin_config.add().execution_config.config.Pack(
-        service_pb2.NewMultiCommandRequest(user_id=request_message.user)
+        session_request_proto
     )
     request_proto.session_config.session_plugin_configs.session_plugin_config[
         0
@@ -58,8 +61,12 @@ class OlcsSessionStubTest(absltest.TestCase):
     ].loading_config.plugin_class_name = (
         olcs_session_stub.SESSION_PLUGIN_CLASS_NAME
     )
-
-    stub_response = self.session_stub.create_new_request(request_message)
+    request_proto.session_config.session_plugin_configs.session_plugin_config[
+        0
+    ].loading_config.plugin_module_class_name = (
+        olcs_session_stub.SESSION_MODULE_CLASS_NAME
+    )
+    stub_response = self.session_stub.CreateNewRequest(request_message)
 
     # Assert session service received the expected request proto.
     self.stubby_client._stub.CreateSession.assert_called_once_with(
@@ -67,6 +74,41 @@ class OlcsSessionStubTest(absltest.TestCase):
     )
     # Assert service response.
     self.assertEqual(stub_response, client_response.session_id.id)
+
+  def testGetRequest(self):
+    with open(
+        os.path.join(TEST_DATA_DIR, 'request_detail.textproto')
+    ) as text_format_file:
+      request_detail = text_format.Parse(
+          text_format_file.read(), service_pb2.RequestDetail()
+      )
+    client_response = session_service_pb2.GetSessionResponse()
+    client_response.session_detail.session_output.session_plugin_output[
+        olcs_session_stub.SESSION_PLUGIN_LABEL
+    ].output.Pack(request_detail)
+    self.stubby_client._stub.GetSession.return_value = client_response
+
+    # Trigger the request.
+    request_message = self.session_stub.GetRequest(request_detail.id)
+
+    self.assertEqual(request_message.id, request_detail.id)
+    self.assertEqual(request_message.state, api_messages.RequestState.RUNNING)
+    self.assertEqual(
+        request_message.command_infos[0].command_line,
+        request_detail.command_infos[0].command_line,
+    )
+    command_message = request_message.commands[0]
+    command_detail = list(request_detail.command_details.values())[0]
+    self.assertEqual(command_message.command_line, command_detail.command_line)
+    self.assertEqual(command_message.state, api_messages.CommandState.RUNNING)
+    self.assertEqual(
+        command_message.run_count,
+        command_detail.original_command_info.run_count,
+    )
+    self.assertEqual(
+        command_message.shard_count,
+        command_detail.original_command_info.shard_count,
+    )
 
   def test_generate_request_proto(self):
     with open(
@@ -76,16 +118,18 @@ class OlcsSessionStubTest(absltest.TestCase):
           api_messages.NewMultiCommandRequestMessage, f.read()
       )
       create_session_request = (
-          olcs_session_stub.OlcsSessionStub.generate_request_proto(
+          olcs_session_stub.OlcsSessionStub.GenerateRequestProto(
               new_request_msg
           )
       )
-      request_proto = service_pb2.NewMultiCommandRequest()
+      session_request_proto = service_pb2.SessionRequest()
       create_session_request.session_config.session_plugin_configs.session_plugin_config[
           0
       ].execution_config.config.Unpack(
-          request_proto
+          session_request_proto
       )
+      request_proto = session_request_proto.new_multi_command_request
+
       self.assertEqual(request_proto.user_id, new_request_msg.user)
       self.assertEqual(request_proto.user_id, 'test_kicker')
       self.assertEqual(
