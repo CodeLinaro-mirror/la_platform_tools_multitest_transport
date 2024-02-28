@@ -262,8 +262,8 @@ class BuildApiTest(api_test_util.TestCase):
     updated_build_msg = protojson.decode_message(messages.Build, res.body)
     # Verify that the name field is updated.
     self.assertEqual(updated_build_msg.name, 'Bar')
-    # Verify that the fingerprint field remains the same as before.
-    self.assertEqual(updated_build_msg.fingerprint, FINGERPRINT)
+    # Verify that the fingerprint is updated.
+    self.assertEqual(updated_build_msg.fingerprint, 'new_fingerprint')
     # Verify that the file_url field remains the same as before.
     self.assertEqual(updated_build_msg.file_url, FILE_URL)
 

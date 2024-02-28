@@ -114,7 +114,7 @@ class BuildApi(remote.Service):
   def Update(self, request):
     """Updates a build.
 
-    Only name and labels fields are updatable.
+    Only name, fingerprint and labels fields are updatable.
 
     Body:
       Build data
@@ -124,6 +124,7 @@ class BuildApi(remote.Service):
     analytics.Log(analytics.BUILD_CATEGORY, analytics.UPDATE_ACTION)
     _, existing_build = self._getBuild(request.build_id)
     existing_build.name = self._strip(request.name)
+    existing_build.fingerprint = self._strip(request.fingerprint)
     existing_build.labels = request.labels
     self._ValidateBuild(existing_build)
     existing_build.put()

@@ -29,7 +29,14 @@
   <!-- Fingerprint Field -->
   <mat-form-field appearance="outline" [floatLabel]="'always'" fxLayout="column">
     <mat-label> Fingerprint </mat-label>
-    <input matInput type="text" [(ngModel)]="data.build.fingerprint" disabled readonly required/>
+    <input matInput type="text"
+      [(ngModel)]="data.build.fingerprint"
+      name="fingerprint"
+      required
+      #fingerprint="ngModel"/>
+    <mat-error *ngIf="fingerprint.invalid && fingerprint.touched">
+      Fingerprint is required
+    </mat-error>
   </mat-form-field>
 
   <!-- Labels Field -->
