@@ -19,6 +19,7 @@ from typing import Optional
 import endpoints
 from multitest_transport.api import base
 from multitest_transport.util import olcs_lab_info_client
+from multitest_transport.util import olcs_lab_record_client
 from protorpc import message_types
 from protorpc import messages
 from protorpc import remote
@@ -26,6 +27,7 @@ from tradefed_cluster import api_messages
 
 from com_google_deviceinfra.src.devtools.mobileharness.api.model.proto import device_pb2
 from com_google_deviceinfra.src.devtools.mobileharness.infra.master.rpc.proto import lab_info_service_pb2
+from com_google_deviceinfra.src.devtools.mobileharness.infra.master.rpc.proto import lab_record_service_pb2
 
 
 @base.MTT_API.api_class(resource_name='device', path='devices')
@@ -34,13 +36,22 @@ class DeviceApi(remote.Service):
 
   def __init__(
       self,
-      olcs_client: Optional[olcs_lab_info_client.OlcsLabInfoClient] = None,
+      lab_info_client: Optional[olcs_lab_info_client.OlcsLabInfoClient] = None,
+      lab_record_client: Optional[
+          olcs_lab_record_client.OlcsLabRecordClient
+      ] = None,
   ):
-    if olcs_client:
-      self._olcs_lab_info_client = olcs_client
+    if lab_info_client:
+      self._olcs_lab_info_client = lab_info_client
     else:
       self._olcs_lab_info_client = (
           olcs_lab_info_client.OlcsLabInfoClient.create()
+      )
+    if lab_record_client:
+      self._olcs_lab_record_client = lab_record_client
+    else:
+      self._olcs_lab_record_client = (
+          olcs_lab_record_client.OlcsLabRecordClient.create()
       )
 
   DEVICE_LIST_RESOURCE = endpoints.ResourceContainer(
@@ -175,6 +186,52 @@ class DeviceApi(remote.Service):
         )
     raise endpoints.NotFoundException(
         "Device {0} doesn't exist.".format(device_serial)
+    )
+
+  HISTORIES_LIST_RESOURCE = endpoints.ResourceContainer(
+      device_serial=messages.StringField(1, required=True),
+      count=messages.IntegerField(2, default=100),
+      cursor=messages.StringField(3),
+      backwards=messages.BooleanField(4, default=False),
+  )
+
+  @base.ApiMethod(
+      HISTORIES_LIST_RESOURCE,
+      api_messages.DeviceInfoHistoryCollection,
+      path='{device_serial}/histories',
+      http_method='GET',
+      name='listHistories',
+  )
+  def ListHistories(self, request):
+    """List histories of a device.
+
+    Args:
+      request: an API request.
+
+    Returns:
+      an api_messages.DeviceInfoHistoryCollection object.
+    """
+    get_device_record_request = lab_record_service_pb2.GetDeviceRecordRequest()
+    get_device_record_request.device_record_query.filter.devie_uuid = (
+        request.device_serial
+    )
+
+    get_device_record_response = self._olcs_lab_record_client.get_device_record(
+        get_device_record_request
+    )
+    device_record_list = (
+        get_device_record_response.device_record_query_result.device_record
+    )
+    histories = []
+    for device_record in device_record_list:
+      histories.append(
+          DeviceApi.ConvertDeviceInfo(
+              device_record.device_info, device_record.timestamp
+          )
+      )
+
+    return api_messages.DeviceInfoHistoryCollection(
+        histories=histories, next_cursor='', prev_cursor=''
     )
 
   @staticmethod
