@@ -825,6 +825,61 @@ class TestRunSummary(ndb.Model):
   update_time = ndb.DateTimeProperty()
 
 
+class ReportType(messages.Enum):
+  """Type of a report."""
+
+  REPORT_TYPE_UNKNOWN = 0  # Unknown test report.
+  CTS = 1  # Android Compatibility Test Suite.
+  CTS_VERIFIER = 2  # Android Compatibility Test Suite Verifier.
+  GTS = 3  # GMS Core Test Suite.
+  CAT = 4  # CTS Auto Test Suite.
+  WTS = 5  # Wearable Test Suite.
+  WTS_VERIFIER = 6  # Wearable Test Suite Verifier.
+  TVTS = 7  # TV Test Suite.
+  CRT = 8  # Cast Ready Test.
+  PCTS = 9  # Automotive Projected Test Suite.
+  VTS = 10  # Vendor Test Suite (Treble).
+  ATS = 11  # Automotive Test Suite.
+  ATS_VERIFIER = 12  # Automotive Test Suite Verifier.
+  GOATS = 13  # Android Go Test Suite.
+  STS = 14  # Security Test Suite.
+  CTS_INSTANT = 15  # Instant App mode of CTS.
+  BTS_V2 = 17  # Athena Report (BTS v2).
+  ENTS = 18  # Exposure Notification Test Suite.
+  CTS_ON_GSI = 19  # Compatibility Test Suite on GSI (go/android-gsi).
+  CATBOX = 20  # CATBox Test Suite.
+  APTS = 21  # Android Performance Test Suite.
+  DTS = 22  # Driveable Test Suite.
+  GTS_VERIFIER = 23  # GMS Core Manual Test Suite.
+  WTS_CHECKLIST = 25  # Wear Test Suite Checklist.
+  GCATBOX = 26  # GAS CATBox Test Suite.
+  WPTS = 27  # Wear Performance Test Suite.
+
+
+class ApfeReport(ndb.Model):
+  """An APFE report.
+
+  Attributes:
+    name: the unique resource name.
+    type: report type, for example, CTS.
+    company_id: the unique company identifier.
+    company_name: company name.
+    device_name: the name of the device which this build belongs to.
+    product_name: the name of the product which this build belongs to.
+    model_name: model name, for example, Nexus 6.
+    build_fingerprint: build fingerprint.
+  """
+
+  name = ndb.StringProperty()
+  type = ndb.EnumProperty(ReportType)
+  company_id = ndb.IntegerProperty()
+  company_name = ndb.StringProperty()
+  device_name = ndb.StringProperty()
+  product_name = ndb.StringProperty()
+  model_name = ndb.StringProperty()
+  build_fingerprint = ndb.StringProperty()
+
+
 class NodeConfig(ndb.Model):
   """A MTT node configuration.
 
@@ -1042,37 +1097,6 @@ def GetFileCleanerSettings():
   """
   obj = ndb.Key(FileCleanerSettings, FILE_CLEANER_SETTINGS_ID).get()
   return obj or DEFAULT_FILE_CLEANER_SETTINGS
-
-
-class ReportType(messages.Enum):
-  """Type of a report."""
-
-  REPORT_TYPE_UNKNOWN = 0  # Unknown test report.
-  CTS = 1  # Android Compatibility Test Suite.
-  CTS_VERIFIER = 2  # Android Compatibility Test Suite Verifier.
-  GTS = 3  # GMS Core Test Suite.
-  CAT = 4  # CTS Auto Test Suite.
-  WTS = 5  # Wearable Test Suite.
-  WTS_VERIFIER = 6  # Wearable Test Suite Verifier.
-  TVTS = 7  # TV Test Suite.
-  CRT = 8  # Cast Ready Test.
-  PCTS = 9  # Automotive Projected Test Suite.
-  VTS = 10  # Vendor Test Suite (Treble).
-  ATS = 11  # Automotive Test Suite.
-  ATS_VERIFIER = 12  # Automotive Test Suite Verifier.
-  GOATS = 13  # Android Go Test Suite.
-  STS = 14  # Security Test Suite.
-  CTS_INSTANT = 15  # Instant App mode of CTS.
-  BTS_V2 = 17  # Athena Report (BTS v2).
-  ENTS = 18  # Exposure Notification Test Suite.
-  CTS_ON_GSI = 19  # Compatibility Test Suite on GSI (go/android-gsi).
-  CATBOX = 20  # CATBox Test Suite.
-  APTS = 21  # Android Performance Test Suite.
-  DTS = 22  # Driveable Test Suite.
-  GTS_VERIFIER = 23  # GMS Core Manual Test Suite.
-  WTS_CHECKLIST = 25  # Wear Test Suite Checklist.
-  GCATBOX = 26  # GAS CATBox Test Suite.
-  WPTS = 27  # Wear Performance Test Suite.
 
 
 class XtsRequirementsDetectionStatus(messages.Enum):

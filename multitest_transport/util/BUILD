@@ -70,6 +70,8 @@ pytype_strict_library(
         ":constant_lib",
         ":file_util_lib",
         ":oauth2_util_lib",
+        "//multitest_transport/models:ndb_models_lib",
+        "//third_party/py/protorpc:protorpc_all",
         third_party("apiclient"),
         third_party("httplib2"),
     ],
@@ -204,7 +206,6 @@ pytype_strict_library(
     visibility = ["//multitest_transport"],
     deps = [
         ":analytics_lib",
-        ":apfe_client_lib",
         ":constant_lib",
         ":env_lib",
         ":errors_lib",

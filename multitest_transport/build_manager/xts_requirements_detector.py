@@ -18,8 +18,6 @@ import json
 import logging
 
 import flask
-from protorpc import messages
-from protorpc import protojson
 import pytz
 
 
@@ -76,8 +74,7 @@ def SyncRequiredReports(build_id, attempt_count):
       constant.ANDROID_PARTNER_API_NAME,
       credentials=private_node_config.default_credentials,
   )
-  response = client.GetRequiredReports(build.fingerprint)
-  required_report_info = protojson.decode_message(_RequiredReportInfo, response)  # pytype: disable=module-attr
+  required_report_info = client.GetRequiredReports(build.fingerprint)
 
   if required_report_info.requiredReports:
     # Updates detection status to COMPLETED and store required reports.
@@ -86,7 +83,7 @@ def SyncRequiredReports(build_id, attempt_count):
       if not build:
         return
       required_reports = [
-          _RequiredReportConverter(required_report, build.key)
+          apfe_client.ConvertRequiredReport(required_report, build.key)
           for required_report in required_report_info.requiredReports
       ]
       ndb.put_multi(required_reports)
@@ -161,33 +158,6 @@ def SetDetectionStatus(build_id, detection_status):
 
   build.detection_status = detection_status
   build.put()
-
-
-class _RequiredReport(messages.Message):
-  """A required report."""
-
-  type = messages.EnumField(ndb_models.ReportType, 1)
-  testPlans = messages.StringField(2, repeated=True)  
-  available = messages.BooleanField(3)
-
-
-@mtt_messages.Converter(_RequiredReport, ndb_models.RequiredReport)
-def _RequiredReportConverter(msg, build_key):
-  test_plans = [
-      test_plan.strip() for test_plan in msg.testPlans if test_plan.strip()
-  ]
-  return ndb_models.RequiredReport(
-      build_key=build_key,
-      type=msg.type,
-      test_plans=test_plans,
-      available=msg.available,
-  )
-
-
-class _RequiredReportInfo(messages.Message):
-  """Required reports to get approval for a build."""
-
-  requiredReports = messages.MessageField(_RequiredReport, 1, repeated=True)  
 
 
 @APP.route('/', methods=['POST'])

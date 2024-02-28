@@ -17,6 +17,11 @@ import urllib.parse
 
 import apiclient
 import httplib2
+from protorpc import messages
+from protorpc import protojson
+
+
+from multitest_transport.models import ndb_models
 from multitest_transport.util import constant
 from multitest_transport.util import file_util
 from multitest_transport.util import oauth2_util
@@ -99,7 +104,8 @@ class ApfeClient(object):
         )
         .execute(http=self._GetHttp(), num_retries=constant.NUM_RETRIES)
     )
-    return res
+    apfe_report = protojson.decode_message(ApfeReport, res)  # pytype: disable=module-attr
+    return apfe_report
 
   def GetRequiredReports(self, fingerprint):
     """Gets required reports for a build from APFE."""
@@ -117,4 +123,62 @@ class ApfeClient(object):
         )
         .execute(http=self._GetHttp(), num_retries=constant.NUM_RETRIES)
     )
-    return res
+    required_report_info = protojson.decode_message(RequiredReportInfo, res)  # pytype: disable=module-attr
+    return required_report_info
+
+
+class ApfeReport(messages.Message):
+  """an APFE report."""
+
+  name = messages.StringField(1)
+  type = messages.EnumField(ndb_models.ReportType, 2)
+  companyId = messages.IntegerField(3)  
+  companyName = messages.StringField(4)  
+  deviceName = messages.StringField(5)  
+  productName = messages.StringField(6)  
+  modelName = messages.StringField(7)  
+  buildFingerprint = messages.StringField(8)  
+
+
+def ConvertApfeReport(msg, test_run_key):
+  if not isinstance(msg, ApfeReport):
+    return None
+  return ndb_models.ApfeReport(
+      parent=test_run_key,
+      name=msg.name,
+      type=msg.type,
+      company_id=msg.companyId,
+      company_name=msg.companyName,
+      device_name=msg.deviceName,
+      product_name=msg.productName,
+      model_name=msg.modelName,
+      build_fingerprint=msg.buildFingerprint,
+  )
+
+
+class RequiredReport(messages.Message):
+  """A required report."""
+
+  type = messages.EnumField(ndb_models.ReportType, 1)
+  testPlans = messages.StringField(2, repeated=True)  
+  available = messages.BooleanField(3)
+
+
+def ConvertRequiredReport(msg, build_key):
+  if not isinstance(msg, RequiredReport):
+    return None
+  test_plans = [
+      test_plan.strip() for test_plan in msg.testPlans if test_plan.strip()
+  ]
+  return ndb_models.RequiredReport(
+      build_key=build_key,
+      type=msg.type,
+      test_plans=test_plans,
+      available=msg.available,
+  )
+
+
+class RequiredReportInfo(messages.Message):
+  """Required reports to get approval for a build."""
+
+  requiredReports = messages.MessageField(RequiredReport, 1, repeated=True)  

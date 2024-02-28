@@ -141,7 +141,13 @@ class APFEReportUploadHook(base.TestRunHook):
           '[APFE Report Upload] Result file type is not zip, skipping upload.')
       return
 
-    self._apfe_client.UploadReport(result_url, self.company_id)
+    apfe_report_msg = self._apfe_client.UploadReport(
+        result_url, self.company_id
+    )
+    # Saves the APFE report with the test run key as parent.
+    apfe_report = apfe_client.ConvertApfeReport(apfe_report_msg, test_run.key)
+    if apfe_report:
+      apfe_report.put()
     event_log.Info(test_run, f'[APFE Report Upload] Uploaded {result_url}.')
 
 

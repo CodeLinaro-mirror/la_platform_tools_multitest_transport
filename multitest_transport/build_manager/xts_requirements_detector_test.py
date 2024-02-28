@@ -69,25 +69,22 @@ class XtsRequirementsDetectorTest(testbed_dependent_test.TestbedDependentTest):
     self.mock_build.put()
     mock_client = mock.MagicMock()
     mock_client_factory.return_value = mock_client
-    mock_client.GetRequiredReports.return_value = """
-    {
-        "requiredReports": [
-            {
-                "type": "CTS"
-            },
-            {
-                "type": "GTS",
-                "testPlans": [
-                    "gts-interactive"
-                ]
-            },
-            {
-                "type": "VTS",
-                "available": true
-            }
-        ]
-    }
-    """
+    mock_client.GetRequiredReports.return_value = (
+        apfe_client.RequiredReportInfo(
+            requiredReports=[
+                apfe_client.RequiredReport(
+                    type=ndb_models.ReportType.CTS,
+                ),
+                apfe_client.RequiredReport(
+                    type=ndb_models.ReportType.GTS,
+                    testPlans=['gts-interactive'],
+                ),
+                apfe_client.RequiredReport(
+                    type=ndb_models.ReportType.VTS, available=True
+                ),
+            ]
+        )
+    )
 
     xts_requirements_detector.SyncRequiredReports(
         str(self.mock_build.key.id()), self.attempt_count
@@ -138,7 +135,9 @@ class XtsRequirementsDetectorTest(testbed_dependent_test.TestbedDependentTest):
     self.mock_build.put()
     mock_client = mock.MagicMock()
     mock_client_factory.return_value = mock_client
-    mock_client.GetRequiredReports.return_value = ''
+    mock_client.GetRequiredReports.return_value = (
+        apfe_client.RequiredReportInfo(requiredReports=[])
+    )
 
     xts_requirements_detector.SyncRequiredReports(
         str(self.mock_build.key.id()), self.attempt_count
@@ -177,7 +176,9 @@ class XtsRequirementsDetectorTest(testbed_dependent_test.TestbedDependentTest):
     self.mock_build.put()
     mock_client = mock.MagicMock()
     mock_client_factory.return_value = mock_client
-    mock_client.GetRequiredReports.return_value = ''
+    mock_client.GetRequiredReports.return_value = (
+        apfe_client.RequiredReportInfo(requiredReports=[])
+    )
 
     xts_requirements_detector.SyncRequiredReports(
         str(self.mock_build.key.id()),

@@ -42,11 +42,12 @@ pytype_strict_library(
     ],
     deps = [
         ":plugin_base",
-        "//third_party/py/apiclient",
-        "//third_party/py/httplib2",
         "//multitest_transport/models:event_log_lib",
+        "//multitest_transport/models:messages_lib",
         "//multitest_transport/models:ndb_models_lib",
         "//multitest_transport/util",
+        "//multitest_transport/util:apfe_client_lib",
+        "//third_party/py/protorpc:protorpc_all",
     ],
 )
 
@@ -59,6 +60,7 @@ py_test(
         ":apfe_lib",
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         "//multitest_transport/models:ndb_models_lib",
+        "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
         third_party("absl/testing:absltest"),
     ],
 )
