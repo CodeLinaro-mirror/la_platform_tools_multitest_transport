@@ -58,7 +58,7 @@ class BuildChannelApiTest(api_test_util.TestCase):
     super(BuildChannelApiTest, self).setUp(build_channel_api.BuildChannelApi)
 
   def _CreateMockBuildChannel(self, name='android', provider='Android'):
-    return build.AddBuildChannel(name, provider, {})
+    return build.AddBuildChannel(None, name, provider, {})
 
   def testList(self):
     self._CreateMockBuildChannel(name='android', provider='Android')

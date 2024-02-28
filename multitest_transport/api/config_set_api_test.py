@@ -45,7 +45,7 @@ class ConfigSetApiTest(api_test_util.TestCase):
 
   def _CreateMockBuildChannel(self, name='google_cloud_storage',
                               provider='Google Cloud Storage'):
-    return build.AddBuildChannel(name, provider, {})
+    return build.AddBuildChannel(None, name, provider, {})
 
   def _CreateConfigSetInfo(self, name='Test Config',
                            url='some.url/some.bucket', hash_value='123'):

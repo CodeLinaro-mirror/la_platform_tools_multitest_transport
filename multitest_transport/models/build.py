@@ -279,10 +279,11 @@ class BuildChannel(object):
     return self.provider.FindBuildItemPath(url)
 
 
-def AddBuildChannel(name, provider_name, options):
+def AddBuildChannel(build_channel_id, name, provider_name, options):
   """Adds a new build channel.
 
   Args:
+    build_channel_id: ID for build channel.
     name: a build channel name.
     provider_name: a build provider name.
     options: a option dict.
@@ -297,7 +298,7 @@ def AddBuildChannel(name, provider_name, options):
   # Validate options.
   provider.UpdateOptions(**options)
   new_config = ndb_models.BuildChannelConfig(
-      id=str(uuid.uuid4()),
+      id=build_channel_id or str(uuid.uuid4()),
       name=name,
       provider_name=provider_name,
       options=ndb_models.NameValuePair.FromDict(options))

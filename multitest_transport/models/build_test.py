@@ -185,7 +185,7 @@ class BuildTest(testbed_dependent_test.TestbedDependentTest):
 
   def testAddBuildChannel(self):
     """Tests that new build channel configurations can be created."""
-    config = build.AddBuildChannel('test', 'url_provider', {})
+    config = build.AddBuildChannel(None, 'test', 'url_provider', {})
     config_id = config.key.id()
     self.assertEqual(config.name, 'test')
     self.assertEqual(config.provider_name, 'url_provider')
@@ -194,7 +194,7 @@ class BuildTest(testbed_dependent_test.TestbedDependentTest):
   def testAddBuildChannel_invalid(self):
     """Tests that the provider is validated when creating a configuration."""
     with self.assertRaises(errors.PluginError):
-      build.AddBuildChannel('test', 'unknown_provider', {})
+      build.AddBuildChannel(None, 'test', 'unknown_provider', {})
 
   def testGetBuildChannel(self):
     """Tests that build channels can be retrieved by ID."""

@@ -415,7 +415,7 @@ def _ServiceAccountCredentialsConverter(obj):
 
 class BuildChannelConfig(messages.Message):
   """A build channel configuration."""
-  id = messages.StringField(1, required=True)
+  id = messages.StringField(1)
   name = messages.StringField(2, required=True)
   provider_name = messages.StringField(3, required=True)
   options = messages.MessageField(NameValuePair, 4, repeated=True)
