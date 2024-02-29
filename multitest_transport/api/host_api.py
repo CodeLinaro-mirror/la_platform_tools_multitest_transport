@@ -19,6 +19,7 @@ import endpoints
 from multitest_transport.api import base
 from multitest_transport.api import device_api
 from multitest_transport.util import olcs_lab_info_client
+from multitest_transport.util import olcs_lab_record_client
 from protorpc import message_types
 from protorpc import messages
 from protorpc import remote
@@ -27,6 +28,7 @@ from tradefed_cluster import api_messages
 from com_google_deviceinfra.src.devtools.mobileharness.api.model.proto import device_pb2
 from com_google_deviceinfra.src.devtools.mobileharness.api.model.proto import lab_pb2
 from com_google_deviceinfra.src.devtools.mobileharness.infra.master.rpc.proto import lab_info_service_pb2
+from com_google_deviceinfra.src.devtools.mobileharness.infra.master.rpc.proto import lab_record_service_pb2
 
 
 class Operator(messages.Enum):
@@ -46,13 +48,22 @@ class HostApi(remote.Service):
 
   def __init__(
       self,
-      olcs_client: Optional[olcs_lab_info_client.OlcsLabInfoClient] = None,
+      lab_info_client: Optional[olcs_lab_info_client.OlcsLabInfoClient] = None,
+      lab_record_client: Optional[
+          olcs_lab_record_client.OlcsLabRecordClient
+      ] = None,
   ):
-    if olcs_client:
-      self._olcs_lab_info_client = olcs_client
+    if lab_info_client:
+      self._olcs_lab_info_client = lab_info_client
     else:
       self._olcs_lab_info_client = (
           olcs_lab_info_client.OlcsLabInfoClient.create()
+      )
+    if lab_record_client:
+      self._olcs_lab_record_client = lab_record_client
+    else:
+      self._olcs_lab_record_client = (
+          olcs_lab_record_client.OlcsLabRecordClient.create()
       )
 
   HOST_LIST_RESOURCE = endpoints.ResourceContainer(
@@ -172,6 +183,45 @@ class HostApi(remote.Service):
         "Host {0} doesn't exist.".format(host_name)
     )
 
+  HISTORIES_LIST_RESOURCE = endpoints.ResourceContainer(
+      hostname=messages.StringField(1, required=True),
+      count=messages.IntegerField(2, default=100),
+      cursor=messages.StringField(3),
+      backwards=messages.BooleanField(4, default=False),
+  )
+
+  @base.ApiMethod(
+      HISTORIES_LIST_RESOURCE,
+      api_messages.HostInfoHistoryCollection,
+      path='{hostname}/histories',
+      http_method='GET',
+      name='listHistories',
+  )
+  def ListHistories(self, request):
+    """List histories of a host.
+
+    Args:
+      request: an API request.
+
+    Returns:
+      an api_messages.HostInfoHistoryCollection object.
+    """
+    get_lab_record_request = lab_record_service_pb2.GetLabRecordRequest()
+    get_lab_record_request.lab_record_query.filter.host_name = request.hostname
+
+    get_lab_record_response = self._olcs_lab_record_client.get_lab_record(
+        get_lab_record_request
+    )
+    lab_record_list = get_lab_record_response.lab_record_query_result.lab_record
+    histories = []
+    for lab_record in lab_record_list:
+      histories.append(
+          HostApi.ConvertLabInfo(lab_record.lab_info, lab_record.timestamp)
+      )
+    return api_messages.HostInfoHistoryCollection(
+        histories=histories, next_cursor='', prev_cursor=''
+    )
+
   @staticmethod
   def ConvertHostInfo(host_info, timestamp):
     """Converts an OmniLab host info to an ATS host info.
@@ -183,19 +233,7 @@ class HostApi(remote.Service):
     Returns:
       an ATS host info
     """
-    lab_name = ''
-    test_runner_version = ''
-    host_group = 'default'
     device_count_summaries = {}
-    for (
-        host_property
-    ) in host_info.lab_info.lab_server_feature.host_properties.host_property:
-      if host_property.key == 'lab_location':
-        lab_name = host_property.value
-      elif host_property.key == 'host_version':
-        test_runner_version = host_property.value
-      elif host_property.key == 'host_group':
-        host_group = host_property.value
     total_devices = 0
     available_devices = 0
     allocated_devices = 0
@@ -238,25 +276,85 @@ class HostApi(remote.Service):
         offline_devices += 1
         device_count_summary.offline += 1
       device_infos.append(device_info)
+    ats_host_info = HostApi.ConvertLabInfo(host_info.lab_info, timestamp)
+
+    return api_messages.HostInfo(
+        hostname=ats_host_info.hostname,
+        lab_name=ats_host_info.lab_name,
+        cluster=ats_host_info.cluster,
+        host_group=ats_host_info.host_group,
+        test_runner=ats_host_info.test_runner,
+        test_runner_version=ats_host_info.test_harness_version,
+        device_infos=device_infos,
+        timestamp=ats_host_info.timestamp,
+        total_devices=total_devices,
+        offline_devices=offline_devices,
+        available_devices=available_devices,
+        allocated_devices=allocated_devices,
+        device_count_timestamp=ats_host_info.device_count_timestamp,
+        hidden=ats_host_info.hidden,
+        notes=ats_host_info.notes,
+        extra_info=ats_host_info.extra_info,
+        next_cluster_ids=ats_host_info.next_cluster_ids,
+        pools=ats_host_info.pools,
+        host_state=ats_host_info.host_state,
+        state_history=ats_host_info.state_history,
+        assignee=ats_host_info.assignee,
+        device_count_summaries=list(device_count_summaries.values()),
+        is_bad=ats_host_info.is_bad,
+        test_harness=ats_host_info.test_harness,
+        test_harness_version=ats_host_info.test_harness_version,
+        flated_extra_info=ats_host_info.flated_extra_info,
+        last_recovery_time=ats_host_info.last_recovery_time,
+        recovery_state=ats_host_info.recovery_state,
+        update_state=ats_host_info.update_state,
+        update_state_display_message=ats_host_info.update_state_display_message,
+        bad_reason=ats_host_info.bad_reason,
+        update_timestamp=ats_host_info.update_timestamp,
+    )
+
+  @staticmethod
+  def ConvertLabInfo(lab_info, timestamp):
+    """Converts an OmniLab lab info to an ATS host info.
+
+    Args:
+      lab_info: the OmniLab host info
+      timestamp: the timestamp when this host info is returned
+
+    Returns:
+      an ATS host info
+    """
+    lab_name = ''
+    test_runner_version = ''
+    host_group = 'default'
+    for (
+        host_property
+    ) in lab_info.lab_server_feature.host_properties.host_property:
+      if host_property.key == 'lab_location':
+        lab_name = host_property.value
+      elif host_property.key == 'host_version':
+        test_runner_version = host_property.value
+      elif host_property.key == 'host_group':
+        host_group = host_property.value
     host_state = 'UNKNOWN'
-    if host_info.lab_info.lab_status == lab_pb2.LabStatus.LAB_RUNNING:
+    if lab_info.lab_status == lab_pb2.LabStatus.LAB_RUNNING:
       host_state = 'RUNNING'
-    elif host_info.lab_info.lab_status == lab_pb2.LabStatus.LAB_MISSING:
+    elif lab_info.lab_status == lab_pb2.LabStatus.LAB_MISSING:
       host_state = 'GONE'
 
     return api_messages.HostInfo(
-        hostname=host_info.lab_info.lab_locator.host_name,
+        hostname=lab_info.lab_locator.host_name,
         lab_name=lab_name,
         cluster=host_group,
         host_group=host_group,
         test_runner='OMNILAB',
         test_runner_version=test_runner_version,
-        device_infos=device_infos,
+        device_infos=[],
         timestamp=datetime.datetime.fromtimestamp(timestamp.seconds),
-        total_devices=total_devices,
-        offline_devices=offline_devices,
-        available_devices=available_devices,
-        allocated_devices=allocated_devices,
+        total_devices=0,
+        offline_devices=0,
+        available_devices=0,
+        allocated_devices=0,
         device_count_timestamp=datetime.datetime.fromtimestamp(
             timestamp.seconds
         ),
@@ -268,7 +366,7 @@ class HostApi(remote.Service):
         host_state=host_state,
         state_history=[],
         assignee='',
-        device_count_summaries=list(device_count_summaries.values()),
+        device_count_summaries=[],
         is_bad=False,
         test_harness='OMNILAB',
         test_harness_version=test_runner_version,

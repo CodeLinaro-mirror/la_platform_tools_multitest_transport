@@ -128,7 +128,7 @@ export class TfcClient {
     const params = this.getHttpParams(count, cursor, backwards);
     return this.http
         .get<tfcModels.DeviceInfoHistoryList>(
-            `${this.tfcApiUrl}/devices/${serial}/histories`, {params})
+            `${this.apiUrl}/devices/${serial}/histories`, {params})
         .pipe(map(
             result => mttLabModels.convertToLabDeviceInfoHistoryList(result)));
   }
@@ -329,7 +329,7 @@ export class TfcClient {
     const params = this.getHttpParams(count, cursor, backwards);
     return this.http
         .get<tfcModels.HostInfoHistoryList>(
-            `${this.tfcApiUrl}/hosts/${id}/histories`, {params})
+            `${this.apiUrl}/hosts/${id}/histories`, {params})
         .pipe(map(
             result => mttLabModels.convertToLabHostInfoHistoryList(result)));
   }

@@ -212,7 +212,7 @@ class DeviceApi(remote.Service):
       an api_messages.DeviceInfoHistoryCollection object.
     """
     get_device_record_request = lab_record_service_pb2.GetDeviceRecordRequest()
-    get_device_record_request.device_record_query.filter.devie_uuid = (
+    get_device_record_request.device_record_query.filter.device_uuid = (
         request.device_serial
     )
 

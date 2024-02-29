@@ -230,10 +230,12 @@ pytype_strict_library(
         ":device_api_lib",
         "@com_google_deviceinfra//src/devtools/mobileharness/api/model/proto:device_py_pb2",
         "@com_google_deviceinfra//src/devtools/mobileharness/infra/master/rpc/proto:lab_info_service_py_proto",
+        "@com_google_deviceinfra//src/devtools/mobileharness/infra/master/rpc/proto:lab_record_service_py_proto",
         "//third_party/py/endpoints:endpoints_library",
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         "//multitest_transport/util:olcs_lab_info_client_lib",
         third_party("protorpc"),
+        "//multitest_transport/util:olcs_lab_record_client_lib",
         "@tradefed_cluster//tradefed_cluster:api_messages_lib",
     ],
 )
