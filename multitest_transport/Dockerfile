@@ -135,12 +135,12 @@ ENV PATH ${JAVA_HOME}/bin:${PATH}
 # Install SDK tools (aapt, adb, fastboot, mke2fs)
 RUN mkdir -p /sdk_tools/lib64
 # Use wget for more reliable retries
-RUN wget -q --retry-connrefused -O build-tools.zip https://dl.google.com/android/repository/build-tools_r33.0.2-linux.zip \
-    && unzip -jq build-tools.zip -d /sdk_tools android-13/aapt \
-    && unzip -jq build-tools.zip -d /sdk_tools android-13/aapt2 \
-    && unzip -jq build-tools.zip -d /sdk_tools/lib64 android-13/lib64/* \
+RUN wget -q --retry-connrefused -O build-tools.zip https://dl.google.com/android/repository/build-tools_r34-linux.zip \
+    && unzip -jq build-tools.zip -d /sdk_tools android-14/aapt \
+    && unzip -jq build-tools.zip -d /sdk_tools android-14/aapt2 \
+    && unzip -jq build-tools.zip -d /sdk_tools/lib64 android-14/lib64/* \
     && rm build-tools.zip
-RUN wget -q --retry-connrefused -O platform-tools.zip https://dl.google.com/android/repository/platform-tools_r33.0.3-linux.zip \
+RUN wget -q --retry-connrefused -O platform-tools.zip https://dl.google.com/android/repository/platform-tools_r34.0.5-linux.zip \
     && unzip -jq platform-tools.zip -d /sdk_tools \
         platform-tools/adb \
         platform-tools/fastboot \
