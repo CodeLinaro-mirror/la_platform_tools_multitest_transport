@@ -689,7 +689,7 @@ export declare interface TestRunConfig {
 
 /** initialize a new test run config */
 export function initTestRunConfig(
-    test?: Test, commandToAppend?: string): Partial<TestRunConfig> {
+    test?: Test, testPlanToOverride?: string): Partial<TestRunConfig> {
   const config = {
     test_id: '',
     cluster: DEFAULT_CLUSTER,
@@ -728,8 +728,8 @@ export function initTestRunConfig(
           DEFAULT_OUTPUT_IDLE_TIMEOUT_SECONDS;
     }
   }
-  if (commandToAppend) {
-    config.command += commandToAppend;
+  if (testPlanToOverride) {
+    config.command = config.command.replace(/^[^ ]*/, testPlanToOverride);
   }
 
   return config;

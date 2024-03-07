@@ -184,16 +184,12 @@ export class TestRequirements implements OnDestroy, OnInit {
    */
   openTestRunConfigEditor(requiredReport: RequiredReport): void {
     const testRequirementData = this.testRequirementDataMap[requiredReport.id];
-    let commandToAppend = undefined;
-    if (testRequirementData.selectedTestPlan) {
-      commandToAppend = ` --plan ${testRequirementData.selectedTestPlan}`;
-    }
-    const testRunConfig =
-        initTestRunConfig(testRequirementData.defaultTest, commandToAppend);
+    const testRunConfig = initTestRunConfig(
+        testRequirementData.defaultTest, testRequirementData.selectedTestPlan);
     const testRunConfigEditorData: TestRunConfigEditorData = {
       editMode: false,
       testRunConfig,
-      commandToAppend,
+      testPlanToOverride: testRequirementData.selectedTestPlan,
     };
 
     const dialogRef = this.matDialog.open(TestRunConfigEditor, {

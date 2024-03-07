@@ -30,11 +30,12 @@ import {resetStepCompletion} from '../shared/util';
  * @param editMode determine whether the editor is editing existed config or
  *     creating a new config.
  * @param testRunConfig target config to edit.
+ * @param testPlanToOverride test plan to override.
  */
 export interface TestRunConfigEditorData {
   editMode: boolean;
   testRunConfig: Partial<mttModels.TestRunConfig>;
-  commandToAppend?: string;
+  testPlanToOverride?: string;
 }
 
 enum Step {

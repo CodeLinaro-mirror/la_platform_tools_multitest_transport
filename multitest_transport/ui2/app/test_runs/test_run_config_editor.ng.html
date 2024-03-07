@@ -28,9 +28,9 @@
   <mat-step [completed]="!!stepCompletionStatusMap[step.CONFIGURATION]">
     <ng-template matStepLabel>Configuration</ng-template>
     <test-run-config-form
-      [commandToAppend]="data.commandToAppend"
       [enableRerun]="false"
       [testMap]="mttObjectMap.testMap"
+      [testPlanToOverride]="data.testPlanToOverride"
       [(testRunConfig)]="data.testRunConfig"
       (testRunConfigChange)="updateTestResources()">
     ></test-run-config-form>

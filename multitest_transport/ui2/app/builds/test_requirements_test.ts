@@ -155,14 +155,13 @@ describe('TestRequirements', () => {
        testRequirements.openTestRunConfigEditor(REQUIRED_REPORTS[0]);
        expect(dialog.open).toHaveBeenCalledTimes(1);
 
-       const commandToAppend = ' --plan cts-system';
        const dialogParams = {
          panelClass: 'test-run-config-editor-dialog',
          data: {
            editMode: false,
            testRunConfig:
-               mttModels.initTestRunConfig(defaultTest, commandToAppend),
-           commandToAppend,
+               mttModels.initTestRunConfig(defaultTest, 'cts-system'),
+           testPlanToOverride: 'cts-system',
          },
        };
        expect(dialog.open)
