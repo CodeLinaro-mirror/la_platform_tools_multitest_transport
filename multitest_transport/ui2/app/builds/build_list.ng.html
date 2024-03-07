@@ -91,10 +91,9 @@
 
   <!-- Build labels -->
   <ng-container matColumnDef="labels">
-    <mat-header-cell *matHeaderCellDef fxFlex="120px"> Labels </mat-header-cell>
-    <mat-cell *matCellDef="let build" fxFlex="120px">
-      <overflow-list [data]="build.labels || []"
-      [overflowListType]="OverflowListType.CHIP">
+    <mat-header-cell *matHeaderCellDef fxFlex="220px"> Labels </mat-header-cell>
+    <mat-cell *matCellDef="let build" fxFlex="220px">
+      <overflow-list [data]="build.labels || []" [overflowListType]="OverflowListType.CHIP">
       </overflow-list>
     </mat-cell>
   </ng-container>
