@@ -32,23 +32,27 @@ _COMPRESSED_ROW_FORMAT = {'mysql_row_format': 'compressed'}
 _TEXT_MAX_LENGTH = 65535
 # Default number of test result rows to insert at a time
 RESULTS_BATCH_SIZE = 100000
+# Maximum length of a module/test name
+_NAME_MAX_LENGTH = 255
 
 # Database manager singleton
 db = sql_util.Database(
     uri=env.SQL_DATABASE_URI,
     pool_pre_ping=True,
-    pool_recycle=_CONNECTION_RECYCLE_SECONDS)
+    pool_recycle=_CONNECTION_RECYCLE_SECONDS,
+)
 
 
 class TestModuleResult(db.Model):
   """Test module containing multiple test case results."""
+
   __tablename__ = 'test_module_result'
   __table_args__ = (_COMPRESSED_ROW_FORMAT,)
 
   id = sa.Column(sa.String(36), primary_key=True)
   test_run_id = sa.Column(sa.String(36), nullable=False, index=True)
   attempt_id = sa.Column(sa.String(36), nullable=False, index=True)
-  name = sa.Column(sa.String(255), nullable=False)
+  name = sa.Column(sa.String(_NAME_MAX_LENGTH), nullable=False)
   duration_ms = sa.Column(sa.Integer, nullable=False)
   complete = sa.Column(sa.Boolean, nullable=False)
   test_cases = sa.orm.relationship(
@@ -56,7 +60,8 @@ class TestModuleResult(db.Model):
       backref='module',
       lazy=True,
       cascade='all, delete-orphan',
-      passive_deletes=True)
+      passive_deletes=True,
+  )
   passed_tests = sa.Column(sa.Integer, nullable=False)
   failed_tests = sa.Column(sa.Integer, nullable=False)
   total_tests = sa.Column(sa.Integer, nullable=False)
@@ -65,6 +70,7 @@ class TestModuleResult(db.Model):
 
 class TestCaseResult(db.Model):
   """Test case with result and debugging information."""
+
   __tablename__ = 'test_case_result'
   __table_args__ = (_COMPRESSED_ROW_FORMAT,)
 
@@ -72,8 +78,9 @@ class TestCaseResult(db.Model):
   module_id = sa.Column(
       sa.String(36),
       sa.ForeignKey('test_module_result.id', ondelete='CASCADE'),
-      nullable=False)
-  name = sa.Column(sa.String(255), nullable=False)
+      nullable=False,
+  )
+  name = sa.Column(sa.String(_NAME_MAX_LENGTH), nullable=False)
   status = sa.Column(sql_util.IntEnum(xts_result.TestStatus), nullable=False)
   error_message = sa.Column(sa.Text)
   stack_trace = sa.Column(sa.Text)
@@ -82,14 +89,16 @@ class TestCaseResult(db.Model):
 def _Truncate(value: Optional[str], max_length: int) -> Optional[str]:
   """Truncate a string if it exceeds the maximum length."""
   if value and len(value) > max_length:
-    return value[:max_length - 3] + '...'
+    return value[: max_length - 3] + '...'
   return value
 
 
-def InsertTestResults(test_run_id: str,
-                      attempt_id: str,
-                      test_results: Iterable[xts_result.Module],
-                      batch_size: int = RESULTS_BATCH_SIZE):
+def InsertTestResults(
+    test_run_id: str,
+    attempt_id: str,
+    test_results: Iterable[xts_result.Module],
+    batch_size: int = RESULTS_BATCH_SIZE,
+):
   """Efficiently inserts large test results into the database.
 
   Extracts raw test case data and executes batch inserts with pre-populated IDs.
@@ -115,13 +124,14 @@ def InsertTestResults(test_run_id: str,
           id=str(uuid.uuid4()),
           test_run_id=test_run_id,
           attempt_id=attempt_id,
-          name=module.name,
+          name=_Truncate(module.name, _NAME_MAX_LENGTH),
           complete=module.complete,
           duration_ms=module.duration_ms,
           passed_tests=0,
           failed_tests=0,
           total_tests=0,
-          error_message=_Truncate(module.error_message, _TEXT_MAX_LENGTH))
+          error_message=_Truncate(module.error_message, _TEXT_MAX_LENGTH),
+      )
       session.add(module_entity)
 
       # Iterate over test cases, convert to dicts, and set module ID
@@ -137,12 +147,14 @@ def InsertTestResults(test_run_id: str,
         test_case_data.append(
             dict(
                 module_id=module_entity.id,
-                name=test_case.name,
+                name=_Truncate(test_case.name, _NAME_MAX_LENGTH),
                 status=test_case.status,
-                error_message=_Truncate(test_case.error_message,
-                                        _TEXT_MAX_LENGTH),
+                error_message=_Truncate(
+                    test_case.error_message, _TEXT_MAX_LENGTH
+                ),
                 stack_trace=_Truncate(test_case.stack_trace, _TEXT_MAX_LENGTH),
-            ))
+            )
+        )
         # Bulk insert raw test case data in batches to reduce memory usage
         if len(test_case_data) >= batch_size:
           session.commit()  # Persist modules (ensure foreign keys are valid)
@@ -162,6 +174,7 @@ def GetTestModuleResults(attempt_ids: List[str]) -> List[TestModuleResult]:
 
   Args:
     attempt_ids: attempt IDs.
+
   Returns:
     a list of test module results.
   """
