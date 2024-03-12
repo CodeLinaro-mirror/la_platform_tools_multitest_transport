@@ -339,6 +339,7 @@ class BuildApiTest(api_test_util.TestCase):
         updated_build_msg.detection_status,
         ndb_models.XtsRequirementsDetectionStatus.SIGNALS_COLLECTING,
     )
+    self.assertIsNone(updated_build_msg.detection_error_reason)
     self.assertEqual(
         updated_build_msg.detection_test_run_id,
         str(test_run.key.id()),

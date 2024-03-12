@@ -1120,6 +1120,7 @@ class Build(ndb.Model):
     create_time: time a build is created.
     update_time: time a build is last updated.
     detection_status: status of xts requirements detection for a build.
+    detection_error_reason: error reason, only used for ERROR detection status.
     detection_test_run_key: test run key of xts requirements detection for a
       build.
   """
@@ -1134,6 +1135,7 @@ class Build(ndb.Model):
       XtsRequirementsDetectionStatus,
       default=XtsRequirementsDetectionStatus.NOT_STARTED,
   )
+  detection_error_reason = ndb.TextProperty()
   detection_test_run_key = ndb.KeyProperty(TestRun)
 
   @classmethod

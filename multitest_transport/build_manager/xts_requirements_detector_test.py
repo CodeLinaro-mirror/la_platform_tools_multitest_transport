@@ -190,6 +190,10 @@ class XtsRequirementsDetectorTest(testbed_dependent_test.TestbedDependentTest):
         self.mock_build.detection_status,
         ndb_models.XtsRequirementsDetectionStatus.ERROR,
     )
+    self.assertEqual(
+        self.mock_build.detection_error_reason,
+        'Build analysis times out',
+    )
     mock_add_task.assert_not_called()
 
   @mock.patch.object(apfe_client, 'ApfeClient')

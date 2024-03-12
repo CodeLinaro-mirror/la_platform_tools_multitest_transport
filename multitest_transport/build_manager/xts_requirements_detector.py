@@ -108,7 +108,9 @@ def SyncRequiredReports(build_id, attempt_count):
   else:
     # Updates detection status to ERROR.
     SetDetectionStatus(
-        build_id, ndb_models.XtsRequirementsDetectionStatus.ERROR
+        build_id,
+        ndb_models.XtsRequirementsDetectionStatus.ERROR,
+        detection_error_reason='Build analysis times out',
     )
 
 
@@ -118,7 +120,7 @@ def HandleFinalizedTestRun(test_run_key):
   Args:
     test_run_key: a test run key.
   """
-  test_run = test_run_key.get()
+  test_run = test_run_key.get(use_cache=False)
   if not test_run or not test_run.is_finalized:
     return
 
@@ -145,18 +147,22 @@ def HandleFinalizedTestRun(test_run_key):
 
 
 @ndb.transactional()
-def SetDetectionStatus(build_id, detection_status):
+def SetDetectionStatus(build_id, detection_status, detection_error_reason=None):
   """Updates a build's detection status.
 
   Args:
     build_id: build ID.
     detection_status: new detection status.
+    detection_error_reason: detection error reason, only used for ERROR
+      detection status.
   """
   build = mtt_messages.ConvertToKey(ndb_models.Build, build_id).get()
   if not build:
     return
 
   build.detection_status = detection_status
+  if detection_status == ndb_models.XtsRequirementsDetectionStatus.ERROR:
+    build.detection_error_reason = detection_error_reason
   build.put()
 
 
@@ -174,7 +180,7 @@ def TaskHandler(fake):
   attempt_count = payload['attempt_count']
   try:
     SyncRequiredReports(build_id, attempt_count)
-  except Exception:  
+  except Exception as e:  
     if retry_count < MAX_RETRY_COUNT:
       logging.exception(
           'Failed to fetch required reports for build %s, retry_count = %d',
@@ -189,6 +195,8 @@ def TaskHandler(fake):
           MAX_RETRY_COUNT,
       )
       SetDetectionStatus(
-          build_id, ndb_models.XtsRequirementsDetectionStatus.ERROR
+          build_id,
+          ndb_models.XtsRequirementsDetectionStatus.ERROR,
+          detection_error_reason=str(e),
       )
   return common.HTTP_OK

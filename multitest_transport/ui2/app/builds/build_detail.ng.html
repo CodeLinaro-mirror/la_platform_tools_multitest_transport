@@ -110,6 +110,14 @@
                   </status-button>
                 </td>
               </tr>
+              <tr *ngIf="build.detection_error_reason">
+                <td class="title-field">
+                  <mat-label>Error Details</mat-label>
+                </td>
+                <td class="value-field error-reason">
+                  {{build.detection_error_reason}}
+                </td>
+              </tr>
               <tr>
                 <td class="title-field">
                   <mat-label>Invocation Run</mat-label>

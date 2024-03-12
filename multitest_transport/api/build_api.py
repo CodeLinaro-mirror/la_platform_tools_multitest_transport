@@ -208,6 +208,8 @@ class BuildApi(remote.Service):
       build.detection_status = (
           ndb_models.XtsRequirementsDetectionStatus.SIGNALS_COLLECTING
       )
+      # Reset detection_error_reason.
+      build.detection_error_reason = None
       build.detection_test_run_key = test_run.key
       build.put()
       return build

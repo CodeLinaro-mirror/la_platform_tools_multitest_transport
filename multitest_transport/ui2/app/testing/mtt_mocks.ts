@@ -36,6 +36,7 @@ const CONFIG_SET_NAME = 'Test Config Set';
 const CONFIG_SET_HASH = 'someconfigsethash12345';
 const DATE = new Date().toISOString();
 const DATE_FUTURE = addTime(DATE, 0, 5, 0);  // 5 minutes later
+const DETECTION_ERROR_REASON = 'detection_error_reason';
 const DEVICE_ACTION_ID = 'reset';
 const DEVICE_ACTION_NAME = 'Factory Reset';
 const FAILED_TEST_COUNT = 13;
@@ -622,7 +623,8 @@ export function toTitleCase(str: string) {
 export function newMockBuild(
     id = BUILD_ID, name = BUILD_NAME, fingerprint = FINGERPRINT,
     fileUrl = BUILD_URL, labels = [LABEL1, LABEL2],
-    detectionStatus = mttModels.XtsRequirementsDetectionStatus.NOT_STARTED) {
+    detectionStatus = mttModels.XtsRequirementsDetectionStatus.NOT_STARTED,
+    detectionErrorReason = DETECTION_ERROR_REASON) {
   return {
     id,
     name,
@@ -631,6 +633,7 @@ export function newMockBuild(
     size: 123123123,
     labels,
     detection_status: detectionStatus,
+    detection_error_reason: detectionErrorReason,
     detection_test_run_id: TEST_RUN_ID,
     required_reports: [
       {
