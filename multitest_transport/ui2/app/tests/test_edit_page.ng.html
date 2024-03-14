@@ -98,6 +98,15 @@
     (removeItem)="onRemoveOutputFilePattern($event)">
   </list-form>
 
+  <!-- Upload File Patterns -->
+  <h2> Upload File Patterns </h2>
+  <list-form
+    [data]="uploadFilePattern"
+    label="File Pattern"
+    (addItem)="onAddUploadFilePattern()"
+    (removeItem)="onRemoveUploadFilePattern($event)">
+  </list-form>
+
   <mat-divider></mat-divider>
 
   <!-- Result File -->

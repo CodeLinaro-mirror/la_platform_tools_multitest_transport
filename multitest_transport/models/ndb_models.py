@@ -263,6 +263,8 @@ class Test(ndb.Model):
     module_config_pattern: a regex pattern for module config files.
     module_execution_args: extra args to run a specific module.
     visibility_type: the visibility of a test.
+    upload_file_patterns: a list of regex patterns for the filenames of the test
+      artifacts which need to be uploaded to GCS.
   """
   name = ndb.StringProperty(required=True)
   description = ndb.StringProperty()
@@ -284,6 +286,7 @@ class Test(ndb.Model):
   visibility_type = ndb.EnumProperty(
       VisibilityType, default=VisibilityType.PUBLIC
   )
+  upload_file_patterns = ndb.StringProperty(repeated=True)
 
 
 class ShardingMode(messages.Enum):

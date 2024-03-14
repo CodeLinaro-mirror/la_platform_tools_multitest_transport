@@ -327,6 +327,7 @@ class Test(messages.Message):
   visibility_type = messages.EnumField(
       ndb_models.VisibilityType, 19, default=ndb_models.VisibilityType.PUBLIC
   )
+  upload_file_patterns = messages.StringField(20, repeated=True)
 
 
 @Converter(ndb_models.Test, Test)
@@ -353,6 +354,7 @@ def _TestConverter(obj):
       module_config_pattern=obj.module_config_pattern,
       module_execution_args=obj.module_execution_args,
       visibility_type=obj.visibility_type,
+      upload_file_patterns=obj.upload_file_patterns,
   )
 
 
@@ -384,6 +386,7 @@ def _TestMessageConverter(msg):
       module_config_pattern=msg.module_config_pattern,
       module_execution_args=msg.module_execution_args,
       visibility_type=msg.visibility_type,
+      upload_file_patterns=msg.upload_file_patterns,
   )
 
 

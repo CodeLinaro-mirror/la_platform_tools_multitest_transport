@@ -42,6 +42,7 @@ export class TestEditPage extends FormChangeTracker implements OnInit,
 
   data: Partial<Test> = initTest();
   outputFilePatterns: Partial<string[]> = [];
+  uploadFilePattern: Partial<string[]> = [];
   setupScripts: Partial<string[]> = [];
   defaultTestRunParameters: Partial<TestRunParameters> = {};
 
@@ -80,6 +81,7 @@ export class TestEditPage extends FormChangeTracker implements OnInit,
           this.data = result;
           this.setupScripts = result.setup_scripts || [];
           this.outputFilePatterns = result.output_file_patterns || [];
+          this.uploadFilePattern = result.upload_file_patterns || [];
           this.data.env_vars = result.env_vars || [];
           this.data.test_resource_defs = result.test_resource_defs || [];
           this.data.jvm_options = result.jvm_options || [];
@@ -118,6 +120,10 @@ export class TestEditPage extends FormChangeTracker implements OnInit,
     this.outputFilePatterns.push(undefined);
   }
 
+  onAddUploadFilePattern() {
+    this.uploadFilePattern.push(undefined);
+  }
+
   onAddJvmOption() {
     this.data.jvm_options!.push('');
   }
@@ -143,6 +149,10 @@ export class TestEditPage extends FormChangeTracker implements OnInit,
 
   onRemoveOutputFilePattern(i: number) {
     this.outputFilePatterns.splice(i, 1);
+  }
+
+  onRemoveUploadFilePattern(i: number) {
+    this.uploadFilePattern.splice(i, 1);
   }
 
   onRemoveJvmOption(i: number) {
@@ -184,6 +194,8 @@ export class TestEditPage extends FormChangeTracker implements OnInit,
     const resultTest: Test = {...this.data} as Test;
     resultTest.output_file_patterns =
         this.outputFilePatterns.filter(item => item !== undefined) as string[];
+    resultTest.upload_file_patterns =
+        this.uploadFilePattern.filter(item => item !== undefined) as string[];
     resultTest.setup_scripts =
         this.setupScripts.filter(item => item !== undefined) as string[];
     resultTest.default_test_run_parameters = this.defaultTestRunParameters;

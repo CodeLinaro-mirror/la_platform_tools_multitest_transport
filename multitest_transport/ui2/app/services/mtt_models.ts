@@ -480,6 +480,11 @@ export declare interface Test {
   module_config_pattern?: string;
   /** Command argument used to run a specific module */
   module_execution_args?: string;
+  /**
+   * A list of regex patterns for the filenames of the test artifacts
+   * which need to be uploaded to GCS.
+   */
+  upload_file_patterns?: string[];
 }
 
 /** Initialize a test */
@@ -488,6 +493,7 @@ export function initTest(): Partial<Test> {
     test_resource_defs: [],
     env_vars: [],
     output_file_patterns: [],
+    upload_file_patterns: [],
     setup_scripts: [],
     jvm_options: [],
     java_properties: []
