@@ -1108,6 +1108,13 @@ class XtsRequirementsDetectionStatus(messages.Enum):
   ERROR = 5  # Xts requirements detection is aborted with an error.
 
 
+FINAL_XTS_REQUIREMENT_DETECTION_STATES = {
+    XtsRequirementsDetectionStatus.COMPLETED,
+    XtsRequirementsDetectionStatus.CANCELED,
+    XtsRequirementsDetectionStatus.ERROR,
+}
+
+
 class Build(ndb.Model):
   """A build.
 
@@ -1144,6 +1151,15 @@ class Build(ndb.Model):
         RequiredReport.build_key == key
     ).fetch(keys_only=True)
     ndb.delete_multi(keys_to_delete)
+
+  def IsFinalDetectionStatus(self):
+    """Returns whether an xts requirements detection is in a final state.
+
+    Returns:
+      True if an xts requirements detection is in a final state. Otherwise
+      false.
+    """
+    return self.detection_status in FINAL_XTS_REQUIREMENT_DETECTION_STATES
 
 
 class RequiredReport(ndb.Model):

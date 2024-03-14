@@ -67,6 +67,36 @@ def SyncRequiredReports(build_id, attempt_count):
       build.detection_status
       != ndb_models.XtsRequirementsDetectionStatus.ANALYSIS_RUNNING
   ):
+    if not build.IsFinalDetectionStatus():
+      SetDetectionStatus(
+          build_id,
+          ndb_models.XtsRequirementsDetectionStatus.ERROR,
+          detection_error_reason='Invalid detection request.',
+      )
+    return
+  apfe_report = ndb_models.ApfeReport.query(
+      ancestor=build.detection_test_run_key
+  ).get()
+  if not apfe_report:
+    SetDetectionStatus(
+        build_id,
+        ndb_models.XtsRequirementsDetectionStatus.ERROR,
+        detection_error_reason=(
+            'Failed to upload GTS reports to APFE. Please click the invocation'
+            ' run and navigate to Progress tab to get more details.'
+        ),
+    )
+    return
+  if build.fingerprint != apfe_report.build_fingerprint:
+    SetDetectionStatus(
+        build_id,
+        ndb_models.XtsRequirementsDetectionStatus.ERROR,
+        detection_error_reason=(
+            "The provided fingerprint %s doesn't match the one %s collected "
+            'from devices.'
+        )
+        % (build.fingerprint, apfe_report.build_fingerprint),
+    )
     return
   # Uses the default credentials to sync required reports from APFE.
   private_node_config = ndb_models.GetPrivateNodeConfig()
@@ -110,7 +140,7 @@ def SyncRequiredReports(build_id, attempt_count):
     SetDetectionStatus(
         build_id,
         ndb_models.XtsRequirementsDetectionStatus.ERROR,
-        detection_error_reason='Build analysis times out',
+        detection_error_reason='Build analysis times out.',
     )
 
 

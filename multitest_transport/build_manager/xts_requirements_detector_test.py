@@ -58,6 +58,18 @@ class XtsRequirementsDetectorTest(testbed_dependent_test.TestbedDependentTest):
         detection_test_run_key=self.mock_test_run.key,
     )
     self.mock_build.put()
+    self.mock_apfe_report = ndb_models.ApfeReport(
+        parent=self.mock_test_run.key,
+        name='apfe_report',
+        type=ndb_models.ReportType.GTS,
+        company_id=1,
+        company_name='company_name',
+        device_name='device_name',
+        product_name='product_name',
+        model_name='model_name',
+        build_fingerprint=self.mock_build.fingerprint,
+    )
+    self.mock_apfe_report.put()
     self.attempt_count = 2
 
   @mock.patch.object(task_scheduler, 'AddTask')
@@ -192,7 +204,7 @@ class XtsRequirementsDetectorTest(testbed_dependent_test.TestbedDependentTest):
     )
     self.assertEqual(
         self.mock_build.detection_error_reason,
-        'Build analysis times out',
+        'Build analysis times out.',
     )
     mock_add_task.assert_not_called()
 
@@ -207,7 +219,66 @@ class XtsRequirementsDetectorTest(testbed_dependent_test.TestbedDependentTest):
 
     self.assertEqual(
         self.mock_build.detection_status,
-        ndb_models.XtsRequirementsDetectionStatus.SIGNALS_COLLECTING,
+        ndb_models.XtsRequirementsDetectionStatus.ERROR,
+    )
+    self.assertEqual(
+        self.mock_build.detection_error_reason,
+        'Invalid detection request.',
+    )
+    mock_client_factory.assert_not_called()
+
+  @mock.patch.object(apfe_client, 'ApfeClient')
+  def testSyncRequiredReports_apfeReportMissing(self, mock_client_factory):
+    self.mock_apfe_report.key.delete()
+    self.mock_build.detection_status = (
+        ndb_models.XtsRequirementsDetectionStatus.ANALYSIS_RUNNING
+    )
+    self.mock_build.put()
+    xts_requirements_detector.SyncRequiredReports(
+        str(self.mock_build.key.id()), self.attempt_count
+    )
+    self.mock_build = self.mock_build.key.get()
+
+    self.assertEqual(
+        self.mock_build.detection_status,
+        ndb_models.XtsRequirementsDetectionStatus.ERROR,
+    )
+    self.assertEqual(
+        self.mock_build.detection_error_reason,
+        (
+            'Failed to upload GTS reports to APFE. Please click the invocation'
+            ' run and navigate to Progress tab to get more details.'
+        ),
+    )
+    mock_client_factory.assert_not_called()
+
+  @mock.patch.object(apfe_client, 'ApfeClient')
+  def testSyncRequiredReports_buildFingerprintMismatch(
+      self, mock_client_factory
+  ):
+    self.mock_apfe_report.build_fingerprint = 'other_fingerprint'
+    self.mock_apfe_report.put()
+    self.mock_build.detection_status = (
+        ndb_models.XtsRequirementsDetectionStatus.ANALYSIS_RUNNING
+    )
+    self.mock_build.put()
+    xts_requirements_detector.SyncRequiredReports(
+        str(self.mock_build.key.id()), self.attempt_count
+    )
+    self.mock_build = self.mock_build.key.get()
+
+    self.assertEqual(
+        self.mock_build.detection_status,
+        ndb_models.XtsRequirementsDetectionStatus.ERROR,
+    )
+    self.assertEqual(
+        self.mock_build.detection_error_reason,
+        "The provided fingerprint %s doesn't match the one %s collected from"
+        ' devices.'
+        % (
+            self.mock_build.fingerprint,
+            self.mock_apfe_report.build_fingerprint,
+        ),
     )
     mock_client_factory.assert_not_called()
 
