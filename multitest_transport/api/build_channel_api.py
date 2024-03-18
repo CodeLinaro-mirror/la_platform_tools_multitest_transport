@@ -163,7 +163,11 @@ class BuildChannelApi(remote.Service):
         continue
       options[pair.name] = pair.value
     build_channel_config = build.AddBuildChannel(
-        build_channel_id=request.id, name=request.name, provider_name=request.provider_name, options=options)
+        build_channel_id=request.id,
+        name=request.name,
+        provider_name=request.provider_name,
+        options=options,
+    )
     return mtt_messages.Convert(build_channel_config,
                                 mtt_messages.BuildChannelConfig)
 
