@@ -151,8 +151,9 @@ def CancelRequest(request_id: int):
   _GetAPIClient().requests().cancel(request_id=request_id).execute()
 
 
-def GetTestContext(request_id: int,
-                   command_id: str) -> api_messages.TestContext:
+def GetTestContext(
+    request_id: str, command_id: str
+) -> api_messages.TestContext:
   """Gets a test context.
 
   Args:
@@ -161,6 +162,8 @@ def GetTestContext(request_id: int,
   Returns:
     A TFC TestContext object.
   """
+  if os.environ.get('IS_OMNILAB_BASED') == 'true':
+    return _GetOlcsSessionStub().GetTestContext(request_id, command_id)
   req = _GetAPIClient().requests().testContext().get(
       request_id=request_id, command_id=command_id)
   res = req.execute()

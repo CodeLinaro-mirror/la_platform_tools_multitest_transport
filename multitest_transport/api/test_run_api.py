@@ -15,8 +15,10 @@
 """A module to provide test run APIs."""
 # Non-standard docstrings are used to generate the API documentation.
 
+import datetime
 import logging
 import os
+from typing import Optional
 import zipfile
 
 import endpoints
@@ -24,6 +26,8 @@ from protorpc import message_types
 from protorpc import messages
 from protorpc import protojson
 from protorpc import remote
+from tradefed_cluster import api_messages
+from tradefed_cluster import common
 from tradefed_cluster import datastore_util
 from tradefed_cluster.common import IsFinalCommandState
 
@@ -33,17 +37,28 @@ from multitest_transport.models import messages as mtt_messages
 from multitest_transport.models import ndb_models
 from multitest_transport.models import sql_models
 from multitest_transport.test_scheduler import test_kicker
+from multitest_transport.test_scheduler import tfc_event_handler
 from multitest_transport.test_scheduler import test_run_manager
 from multitest_transport.util import analytics
 from multitest_transport.util import env
 from multitest_transport.util import file_util
 from multitest_transport.util import tfc_client
+from multitest_transport.util import olcs_session_stub
 from tradefed_cluster.util import ndb_shim as ndb
 
 
 @base.MTT_API.api_class(resource_name='test_run', path='test_runs')
 class TestRunApi(remote.Service):
   """A handler for Test Run API."""
+
+  def __init__(
+      self,
+      olcs_client: Optional[olcs_session_stub.OlcsSessionStub] = None,
+  ):
+    if olcs_client:
+      self._olcs_session_stub = olcs_client
+    else:
+      self._olcs_session_stub = olcs_session_stub.OlcsSessionStub(None)
 
   @base.ApiMethod(
       endpoints.ResourceContainer(
@@ -169,6 +184,20 @@ class TestRunApi(remote.Service):
     if not test_run:
       raise endpoints.NotFoundException(
           'no test run found for ID %s' % request.test_run_id)
+    # TODO: This is a workaround to fetch test result.
+    # Will remove after active message push from OLCS to MTT server is ready.
+    if os.environ.get('IS_OMNILAB_BASED') == 'true' and test_run.request_id:
+      test_request = self._olcs_session_stub.GetRequest(test_run.request_id)
+      if test_request and test_request.state:
+        request_event = api_messages.RequestEventMessage(
+            type=common.ObjectEventType.REQUEST_STATE_CHANGED,
+            request_id=test_run.request_id,
+            new_state=test_request.state,
+            request=test_request,
+            event_time=datetime.datetime.now(),
+        )
+        tfc_event_handler.ProcessRequestEvent(request_event)
+        test_run = ndb_models.TestRun.get_by_id(request.test_run_id)
     return mtt_messages.Convert(test_run, mtt_messages.TestRun)
 
   @base.ApiMethod(

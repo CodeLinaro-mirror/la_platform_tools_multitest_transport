@@ -20,7 +20,7 @@ import {toArray} from 'rxjs/operators';
 
 import {AppData} from './app_data';
 import {DEFAULT_UPLOAD_CONFIG, encodePath, FILE_BROWSER_PATH, FileNode, FileService, FileType, getDirectoryPath, joinPath, PROXY_PATH} from './file_service';
-import {TestRun} from './mtt_models';
+import {TestRun, TestRunState} from './mtt_models';
 import {CommandAttempt, CommandState} from './tfc_models';
 
 describe('FileService', () => {
@@ -60,6 +60,28 @@ describe('FileService', () => {
     const expected = 'output_url/command_id/attempt_id/path/to/file';
     expect(fs.getTestRunFileUrl(testRun, attempt, path)).toEqual(expected);
   });
+
+  it('can get file URL for Omnilab attempts', () => {
+    const newAppData: AppData = {
+      fileServerRoot: '/root',
+      isOmniLabBased: true,
+    };
+    fs = new FileService(newAppData, http, DEFAULT_UPLOAD_CONFIG);
+    const testRun:
+        TestRun = {output_url: 'output_url', state: TestRunState.COMPLETED};
+    const attempt: CommandAttempt = {
+      command_id: 'command_id',
+      attempt_id: 'attempt_id',
+      request_id: 'request_id',
+      state: CommandState.COMPLETED,
+      hostname: 'hostname',
+    };
+    const path = 'path/to/file';
+    const expected =
+        'output_url/tradefed_logs/XtsTradefedTest_test_attempt_id/path/to/file';
+    expect(fs.getTestRunFileUrl(testRun, attempt, path)).toEqual(expected);
+  });
+
 
   it('can get file browse URL for absolute file URLs', () => {
     const url = 'file:///root/path/to/file';

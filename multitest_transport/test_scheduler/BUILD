@@ -239,8 +239,21 @@ py_test(
     deps = [
         ":test_result_handler_lib",
         ":tfc_event_handler_lib",
+        "//third_party/py/absl/testing:absltest",
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
+        "//multitest_transport/build_manager:xts_requirements_detector_lib",
+        "//multitest_transport/models:event_log_lib",
+        "//multitest_transport/models:ndb_models_lib",
+        "//multitest_transport/models:sql_models_lib",
+        "//multitest_transport/models:test_run_hook_lib",
+        "//multitest_transport/util:analytics_lib",
+        "//multitest_transport/util:file_util_lib",
+        "//multitest_transport/util:tfc_client_lib",
+        "@tradefed_cluster//tradefed_cluster:api_messages_lib",
+        "@tradefed_cluster//tradefed_cluster:common_lib",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
+        "@tradefed_cluster//tradefed_cluster/services:task_scheduler_lib",
+        "@tradefed_cluster//tradefed_cluster/util:ndb_shim_lib",
     ],
 )
 

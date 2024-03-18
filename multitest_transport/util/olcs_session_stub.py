@@ -113,6 +113,14 @@ class OlcsSessionStub:
       attempt_map[attempt.command_id] = attempt
     return list(attempt_map.values())
 
+  # TODO: To be implemented
+  def GetTestContext(
+      self, request_id: str, command_id: str
+  ) -> api_messages.TestContext:
+    del request_id, command_id  # TODO: To be completed.
+    test_context = api_messages.TestContext()
+    return test_context
+
   def GetRequest(self, request_id: str) -> api_messages.RequestMessage:
     """Get request from OLCS.
 
@@ -165,6 +173,12 @@ class OlcsSessionStub:
         map(
             self._ConvertCommandDetail,
             request_detail.command_details.values(),
+        )
+    )
+    request_message.command_attempts = list(
+        map(
+            self._ConvertCommandAttemptDetail,
+            request_detail.command_attempt_details,
         )
     )
     return request_message
@@ -241,7 +255,55 @@ class OlcsSessionStub:
     command_message.shard_count = (
         command_detail.original_command_info.shard_count
     )
+    command_message.total_test_count = command_detail.total_test_count
+    command_message.passed_test_count = command_detail.passed_test_count
+    command_message.failed_test_count = command_detail.failed_test_count
     return command_message
+
+  def _ConvertCommandAttemptDetail(
+      self, command_attempt_detail: service_pb2.CommandAttemptDetail
+  ) -> api_messages.CommandAttemptMessage:
+    """Convert Command Attempt Detail from Request Detail proto to TFC CommandAttemptMessage.
+
+    Args:
+      command_attempt_detail: Command Attempt Detail from Request Detail proto.
+
+    Returns:
+      The CommandAttemptMessage defined by TFC.
+    """
+    command_attempt_message = api_messages.CommandAttemptMessage()
+    command_attempt_message.request_id = command_attempt_detail.request_id
+    command_attempt_message.attempt_id = command_attempt_detail.id
+    command_attempt_message.command_id = command_attempt_detail.command_id
+    command_attempt_message.task_id = "0"  # TODO: what is this
+    command_attempt_message.state = _COMMAND_STATE_MAP.get(
+        command_attempt_detail.state, common.CommandState.UNKNOWN
+    )
+    command_attempt_message.device_serials.append(
+        command_attempt_detail.device_serial
+    )
+    command_attempt_message.start_time = (
+        command_attempt_detail.start_time.ToDatetime()
+    )
+    command_attempt_message.end_time = (
+        command_attempt_detail.end_time.ToDatetime()
+    )
+    command_attempt_message.create_time = (
+        command_attempt_detail.create_time.ToDatetime()
+    )
+    command_attempt_message.update_time = (
+        command_attempt_detail.update_time.ToDatetime()
+    )
+    command_attempt_message.passed_test_count = (
+        command_attempt_detail.passed_test_count
+    )
+    command_attempt_message.failed_test_count = (
+        command_attempt_detail.failed_test_count
+    )
+    command_attempt_message.total_test_count = (
+        command_attempt_detail.total_test_count
+    )
+    return command_attempt_message
 
   @staticmethod
   def GenerateRequestProto(

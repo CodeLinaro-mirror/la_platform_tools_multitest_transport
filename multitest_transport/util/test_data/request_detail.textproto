@@ -1,6 +1,6 @@
-id: "2dfee231-5525-498b-bf35-e0104bf3e39b"
+id: "96cf2dab-7b5b-43c4-8e06-9c29ca4e4fdf"
 command_infos {
-  command_line: "cts --enable-token-sharding --max-testcase-run-count 2 --retry-strategy RETRY_ANY_FAILURE --invocation-data mtt=1"
+  command_line: "cts --enable-token-sharding --max-testcase-run-count 2 --retry-strategy RETRY_ANY_FAILURE -m CtsAccelerationTestCases --invocation-data mtt=1"
   run_count: 1
   shard_count: 1
   device_dimensions {
@@ -8,15 +8,27 @@ command_infos {
     value: "29081FDH200D3U"
   }
 }
-state: RUNNING
+state: COMPLETED
+start_time {
+  seconds: 1709696757
+  nanos: 67000000
+}
+create_time {
+  seconds: 1709696757
+  nanos: 67000000
+}
+update_time {
+  seconds: 1709697035
+  nanos: 188000000
+}
 command_details {
-  key: "2f6dcf43-7280-48e2-b579-595c4604e980"
+  key: "1ef69581-b7c5-4819-abb7-73af521f2367"
   value {
-    id: "2f6dcf43-7280-48e2-b579-595c4604e980"
-    command_line: "cts --enable-token-sharding --max-testcase-run-count 2 --retry-strategy RETRY_ANY_FAILURE --invocation-data mtt=1"
-    state: RUNNING
+    id: "1ef69581-b7c5-4819-abb7-73af521f2367"
+    command_line: "cts --enable-token-sharding --max-testcase-run-count 2 --retry-strategy RETRY_ANY_FAILURE -m CtsAccelerationTestCases --invocation-data mtt=1"
+    state: COMPLETED
     original_command_info {
-      command_line: "cts --enable-token-sharding --max-testcase-run-count 2 --retry-strategy RETRY_ANY_FAILURE --invocation-data mtt=1"
+      command_line: "cts --enable-token-sharding --max-testcase-run-count 2 --retry-strategy RETRY_ANY_FAILURE -m CtsAccelerationTestCases --invocation-data mtt=1"
       run_count: 1
       shard_count: 1
       device_dimensions {
@@ -24,12 +36,41 @@ command_details {
         value: "29081FDH200D3U"
       }
     }
+    passed_test_count: 12
+    failed_test_count: 0
+    total_test_count: 12
   }
+}
+command_attempt_details {
+  id: "6106f32c-763f-408b-abf3-05b3399191d3"
+  request_id: "96cf2dab-7b5b-43c4-8e06-9c29ca4e4fdf"
+  command_id: "1ef69581-b7c5-4819-abb7-73af521f2367"
+  device_serial: "29081FDH200D3U"
+  start_time {
+    seconds: 1709696759
+    nanos: 517000000
+  }
+  end_time {
+    seconds: 1709697035
+    nanos: 124000000
+  }
+  create_time {
+    seconds: 1709696759
+    nanos: 2000000
+  }
+  update_time {
+    seconds: 1709697035
+    nanos: 187000000
+  }
+  state: COMPLETED
+  passed_test_count: 12
+  failed_test_count: 0
+  total_test_count: 12
 }
 original_request {
   user_id: "test_kicker"
   commands {
-    command_line: "cts --enable-token-sharding --max-testcase-run-count 2 --retry-strategy RETRY_ANY_FAILURE --invocation-data mtt=1"
+    command_line: "cts --enable-token-sharding --max-testcase-run-count 2 --retry-strategy RETRY_ANY_FAILURE -m CtsAccelerationTestCases --invocation-data mtt=1"
     run_count: 1
     shard_count: 1
     device_dimensions {
@@ -63,7 +104,7 @@ original_request {
     output_file_patterns: "android-cts/results/[^/]+/logo.png"
     output_file_patterns: "android-cts/results/[^/]+/test_result.xml"
     output_file_patterns: "android-cts/results/[^/]+/proto/test-record\\.pb.*"
-    output_file_upload_url: "file:///usr/local/google/home/jiuchangz/ats/app_default_bucket/test_runs/0c5866c5-2529-4097-ad3b-55b81abba294/output"
+    output_file_upload_url: "file:///usr/local/google/home/jiuchangz/ats/app_default_bucket/test_runs/e34ee0aa-4ebb-49ef-ac07-fb2a6ab30874/output"
     use_subprocess_reporting: true
     output_idle_timeout {
       seconds: 3600
@@ -78,13 +119,13 @@ original_request {
     retry_command_line: "retry --retry 0 --invocation-data mtt=1"
   }
   test_resources {
-    url: "file:///usr/local/google/home/jiuchangz/ats/test_resources/de8ecbe01ba254a9f426c2b9a6b6b3264d6b90eae19e962d381eb14085a23dd2"
+    url: "file:///usr/local/google/home/jiuchangz/ats/local_file_store/android-cts-13_r6-linux_x86-arm.zip"
     name: "android-cts.zip"
     decompress: true
     mount_zip: true
   }
   test_resources {
-    url: "http://jiuchangz1.bej.corp.google.com:8000/_ah/api/mtt/v1/test_runs/0c5866c5-2529-4097-ad3b-55b81abba294/metadata"
+    url: "http://jiuchangz1.bej.corp.google.com:8000/_ah/api/mtt/v1/test_runs/e34ee0aa-4ebb-49ef-ac07-fb2a6ab30874/metadata"
     name: "mtt.json"
   }
 }

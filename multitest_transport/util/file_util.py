@@ -571,6 +571,13 @@ def GetOutputFileUrl(test_run, attempt, file_path: str = '') -> str:
   Returns:
     attempt's output URL
   """
+  if os.environ.get('IS_OMNILAB_BASED') == 'true':
+    return GetAppStorageUrl([
+        test_run.output_path,
+        'tradefed_logs',
+        'XtsTradefedTest_test_' + attempt.attempt_id,
+        file_path,
+    ])
   return GetAppStorageUrl(
       [test_run.output_path, attempt.command_id, attempt.attempt_id, file_path])
 
@@ -609,6 +616,13 @@ def GetResultUrl(test_run, attempt) -> Optional[str]:
   result_file = test_run.test.result_file
   if not result_file:
     return None
+  if os.environ.get('IS_OMNILAB_BASED') == 'true':
+    return GetAppStorageUrl([
+        test_run.output_path,
+        'tradefed_results',
+        'XtsTradefedTest_test_' + attempt.attempt_id,
+        test_run.test.result_file,
+    ])
   return GetOutputFileUrl(test_run, attempt, result_file)
 
 

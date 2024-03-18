@@ -32,7 +32,19 @@ class RequestApiTest(api_test_util.TestCase):
       self._olcs_session_stub.GetRequest = mock.MagicMock()
       response = api_messages.RequestMessage()
       response.id = "request_id"
-
+      command = api_messages.CommandMessage()
+      command.id = "command_id"
+      command.request_id = "request_id"
+      command.command_line = "command_line"
+      command.state = api_messages.CommandState.RUNNING
+      command_attempt = api_messages.CommandAttemptMessage()
+      command_attempt.attempt_id = "command_attempt_id"
+      command_attempt.request_id = "request_id"
+      command_attempt.command_id = "command_id"
+      command_attempt.state = api_messages.CommandState.RUNNING
+      command_attempt.task_id = "task_id"
+      response.command_attempts = [command_attempt]
+      response.commands = [command]
       self._olcs_session_stub.GetRequest.return_value = response
 
   def setUp(self):
@@ -42,6 +54,38 @@ class RequestApiTest(api_test_util.TestCase):
     res = self.app.get("/_ah/api/mtt/v1/requests/%s" % "request_id")
     res_msg = protojson.decode_message(api_messages.RequestMessage, res.body)
     self.assertEqual(res_msg.id, "request_id")
+
+  def testListCommandAttempts(self):
+    res = self.app.get(
+        "/_ah/api/mtt/v1/requests/%s/commands/%s/command_attempts"
+        % ("request_id", "command_id")
+    )
+    res_msg = protojson.decode_message(
+        api_messages.CommandAttemptMessageCollection, res.body
+    )
+    command_attempt = res_msg.command_attempts[0]
+    self.assertEqual(command_attempt.attempt_id, "command_attempt_id")
+    self.assertEqual(command_attempt.request_id, "request_id")
+    self.assertEqual(command_attempt.command_id, "command_id")
+    self.assertEqual(command_attempt.state, api_messages.CommandState.RUNNING)
+
+  def testGetStateStats(self):
+    res = self.app.get(
+        "/_ah/api/mtt/v1/requests/%s/commands/state_counts" % "request_id"
+    )
+    res_msg = protojson.decode_message(api_messages.CommandStateStats, res.body)
+    command_state = res_msg.state_stats[0]
+    self.assertEqual(command_state.state, api_messages.CommandState.RUNNING)
+    self.assertEqual(command_state.count, 1)
+
+  def testListCommands(self):
+    res = self.app.get("/_ah/api/mtt/v1/requests/%s/commands" % "request_id")
+    res_msg = protojson.decode_message(
+        api_messages.CommandMessageCollection, res.body
+    )
+    command = res_msg.commands[0]
+    self.assertEqual(command.id, "command_id")
+    self.assertEqual(command.request_id, "request_id")
 
 
 if __name__ == "__main__":

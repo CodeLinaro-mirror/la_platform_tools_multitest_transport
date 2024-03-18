@@ -23,6 +23,7 @@ import {RouterTestingModule} from '@angular/router/testing';
 import {of as observableOf} from 'rxjs';
 
 import {AnalyticsService} from '../services/analytics_service';
+import {APP_DATA, AppData} from '../services/app_data';
 import {FileService} from '../services/file_service';
 import {MttClient, TestResultClient, TestRunActionClient} from '../services/mtt_client';
 import {Test, TestPackageInfo, TestRun, TestRunAction, TestRunPhase, TestRunState} from '../services/mtt_models';
@@ -102,7 +103,7 @@ describe('TestRunDetail', () => {
     //  'Observable<DeviceInfosResponse>'.
     tfcClient.getDeviceInfos.and.returnValue(observableOf(testDevices));
     tfcClient.getRequest.and.returnValue(observableOf(request));
-
+    const appData: AppData = {};
     TestBed.configureTestingModule({
       imports: [TestRunsModule, NoopAnimationsModule, RouterTestingModule],
       providers: [
@@ -111,6 +112,7 @@ describe('TestRunDetail', () => {
         {provide: TfcClient, useValue: tfcClient},
         {provide: LiveAnnouncer, useValue: liveAnnouncer},
         {provide: AnalyticsService, useValue: {}},
+        {provide: APP_DATA, useValue: appData},
       ],
     });
     testRunDetailFixture = TestBed.createComponent(TestRunDetail);

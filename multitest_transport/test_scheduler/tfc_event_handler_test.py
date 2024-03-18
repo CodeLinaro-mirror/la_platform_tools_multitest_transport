@@ -14,6 +14,7 @@
 
 """Unit tests for tfc_event_handler module."""
 import datetime
+import os
 from unittest import mock
 
 from absl.testing import absltest
@@ -27,6 +28,7 @@ from tradefed_cluster.util import ndb_shim as ndb
 from multitest_transport.build_manager import xts_requirements_detector
 from multitest_transport.models import event_log
 from multitest_transport.models import ndb_models
+from multitest_transport.models import sql_models
 from multitest_transport.models import test_run_hook
 from multitest_transport.test_scheduler import tfc_event_handler
 from multitest_transport.test_scheduler import test_result_handler
@@ -62,8 +64,14 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
     return api_messages.RequestEventMessage(
         type=common.ObjectEventType.REQUEST_STATE_CHANGED,
         request_id=self.mock_test_run.request_id,
+        request=api_messages.RequestMessage(
+            command_attempts=[
+                api_messages.CommandAttemptMessage(attempt_id='attempt_id')
+            ]
+        ),
         new_state=state or ndb_models.TestRunState.UNKNOWN,
-        event_time=self.mock_test_run.update_time + timedelta)
+        event_time=self.mock_test_run.update_time + timedelta,
+    )
 
   def CreateMockCommandAttemptEvent(self, timedelta, state=None, serials=None):
     """Create a placeholder TFC command attempt change event."""
@@ -123,6 +131,76 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
                      self.mock_test_run.state)
     mock_update_summary.assert_called_once_with(self.mock_test_run.key.id())
     mock_after_test.assert_called_with(self.mock_test_run.key.id())
+
+  @mock.patch.object(sql_models, 'GetTestModuleResults')
+  @mock.patch.object(file_util, 'GetResultUrl')
+  @mock.patch.object(test_result_handler, 'StoreTestResults')
+  @mock.patch.object(tfc_event_handler, '_AfterTestRunHandler')
+  @mock.patch.object(test_result_handler, 'UpdateTestRunSummary')
+  @mock.patch.dict(os.environ, {'IS_OMNILAB_BASED': 'true'}, clear=True)
+  def testProcessRequestEventWithOmnilabEnabled_completed_loadResultToDB(
+      self,
+      mock_update_summary,
+      mock_after_test,
+      mock_store_test_results,
+      mock_get_result_url,
+      mock_get_test_module_results,
+  ):
+    # state changed to COMPLETED from UNKNOWN
+    mock_get_result_url.return_value = 'test_results_url'
+    mock_get_test_module_results.return_value = []
+    mock_event = self.CreateMockRequestEvent(
+        datetime.timedelta(hours=1), state=api_messages.RequestState.COMPLETED
+    )
+
+    tfc_event_handler.ProcessRequestEvent(mock_event)
+    self.mock_test_run = self.mock_test_run.key.get()
+
+    # test run information updated and post-run actions executed
+    self.assertEqual(mock_event.event_time, self.mock_test_run.update_time)
+    self.assertEqual(
+        ndb_models.TestRunState.COMPLETED, self.mock_test_run.state
+    )
+    mock_get_test_module_results.assert_called_once_with(['attempt_id'])
+    mock_update_summary.assert_called_once_with(self.mock_test_run.key.id())
+    mock_after_test.assert_called_with(self.mock_test_run.key.id())
+    mock_store_test_results.assert_called_once_with(
+        self.mock_test_run.key.id(), 'attempt_id', 'test_results_url'
+    )
+
+  @mock.patch.object(sql_models, 'GetTestModuleResults')
+  @mock.patch.object(file_util, 'GetResultUrl')
+  @mock.patch.object(test_result_handler, 'StoreTestResults')
+  @mock.patch.object(tfc_event_handler, '_AfterTestRunHandler')
+  @mock.patch.object(test_result_handler, 'UpdateTestRunSummary')
+  @mock.patch.dict(os.environ, {'IS_OMNILAB_BASED': 'true'}, clear=True)
+  def testProcessRequestEventWithOmnilabEnabled_ResultAlreadyInDB_skipLoading(
+      self,
+      mock_update_summary,
+      mock_after_test,
+      mock_store_test_results,
+      mock_get_result_url,
+      mock_get_test_module_results,
+  ):
+    # state changed to COMPLETED from UNKNOWN
+    mock_get_result_url.return_value = 'test_results_url'
+    mock_get_test_module_results.return_value = ['results']
+    mock_event = self.CreateMockRequestEvent(
+        datetime.timedelta(hours=1), state=api_messages.RequestState.COMPLETED
+    )
+
+    tfc_event_handler.ProcessRequestEvent(mock_event)
+    self.mock_test_run = self.mock_test_run.key.get()
+
+    # test run information updated and post-run actions executed
+    self.assertEqual(mock_event.event_time, self.mock_test_run.update_time)
+    self.assertEqual(
+        ndb_models.TestRunState.COMPLETED, self.mock_test_run.state
+    )
+    mock_get_test_module_results.assert_called_once_with(['attempt_id'])
+    mock_update_summary.assert_called_once_with(self.mock_test_run.key.id())
+    mock_after_test.assert_called_with(self.mock_test_run.key.id())
+    mock_store_test_results.assert_not_called()
 
   @mock.patch.object(tfc_event_handler, '_AfterTestRunHandler')
   @mock.patch.object(test_result_handler, 'UpdateTestRunSummary')

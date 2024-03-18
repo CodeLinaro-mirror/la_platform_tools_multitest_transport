@@ -86,21 +86,21 @@ export class TfcClient {
       params = params.append('page_token', pageToken);
     }
     return this.http.get<tfcModels.CommandMessageCollection>(
-        `${this.tfcApiUrl}/requests/${encodeURIComponent(requestId)}/commands`,
+        `${this.apiUrl}/requests/${encodeURIComponent(requestId)}/commands`,
         {params});
   }
 
   getCommandStateStats(requestId: string):
       Observable<tfcModels.CommandStateStats> {
     return this.http.get<tfcModels.CommandStateStats>(
-        `${this.tfcApiUrl}/requests/${
+        `${this.apiUrl}/requests/${
             encodeURIComponent(requestId)}/commands/state_counts`);
   }
 
   listCommandAttempts(requestId: string, commandId: string):
       Observable<tfcModels.CommandAttemptMessageCollection> {
     return this.http.get<tfcModels.CommandAttemptMessageCollection>(
-        `${this.tfcApiUrl}/requests/${encodeURIComponent(requestId)}/commands/${
+        `${this.apiUrl}/requests/${encodeURIComponent(requestId)}/commands/${
             encodeURIComponent(commandId)}/command_attempts`);
   }
 

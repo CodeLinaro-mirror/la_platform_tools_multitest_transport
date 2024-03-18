@@ -78,6 +78,11 @@ export class FileService {
     if (isFinalCommandState(attempt.state)) {
       // Completed run files are stored in the configured output location.
       const outputUrl = testRun.output_url || '';
+      if (this.appData.isOmniLabBased) {
+        return joinPath(
+            outputUrl, 'tradefed_logs',
+            'XtsTradefedTest_test_' + attempt.attempt_id, path);
+      }
       return joinPath(outputUrl, attempt.command_id, attempt.attempt_id, path);
     }
     // Active run files are stored in a local temporary location.

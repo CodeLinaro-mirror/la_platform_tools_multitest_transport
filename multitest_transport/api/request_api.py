@@ -13,7 +13,6 @@
 # limitations under the License.
 
 """Test request APIs."""
-import datetime
 from typing import Optional
 
 # Non-standard docstrings are used to generate the API documentation.
@@ -27,7 +26,6 @@ from protorpc import remote
 from multitest_transport.api import base
 from tradefed_cluster import api_messages
 from tradefed_cluster import common
-from multitest_transport.test_scheduler import tfc_event_handler
 
 from multitest_transport.util import olcs_session_stub
 
@@ -57,13 +55,78 @@ class TestRequestApi(remote.Service):
   )
   def GetRequest(self, request):
     test_request = self._olcs_session_stub.GetRequest(request.request_id)
-    if test_request and test_request.state:
-      request_event = api_messages.RequestEventMessage(
-          type=common.ObjectEventType.REQUEST_STATE_CHANGED,
-          request_id=request.request_id,
-          new_state=test_request.state,
-          request=test_request,
-          event_time=datetime.datetime.now(),
-      )
-      tfc_event_handler.ProcessRequestEvent(request_event)
     return test_request
+
+  @base.ApiMethod(
+      endpoints.ResourceContainer(
+          message_types.VoidMessage,
+          request_id=messages.StringField(1, required=True),
+          command_id=messages.StringField(2, required=True),
+      ),
+      api_messages.CommandAttemptMessageCollection,
+      path='{request_id}/commands/{command_id}/command_attempts',
+      http_method='GET',
+      name='command_attempts',
+  )
+  def ListCommandAttempts(self, request):
+    test_request = self._olcs_session_stub.GetRequest(request.request_id)
+    attempt_list = []
+    for attempt in test_request.command_attempts:
+      if attempt.command_id != request.command_id:
+        continue
+      attempt_list.append(attempt)
+
+    attempt_collection = api_messages.CommandAttemptMessageCollection(
+        command_attempts=attempt_list
+    )
+    return attempt_collection
+
+  @base.ApiMethod(
+      endpoints.ResourceContainer(
+          message_types.VoidMessage,
+          request_id=messages.StringField(1, required=True),
+      ),
+      api_messages.CommandStateStats,
+      path='{request_id}/commands/state_counts',
+      http_method='GET',
+      name='state_counts',
+  )
+  def GetCommandStateStats(self, request):
+    test_request = self._olcs_session_stub.GetRequest(request.request_id)
+    state_count_map = {}
+    for command in test_request.commands:
+      if command.state in state_count_map:
+        state_count_map[command.state] += 1
+      else:
+        state_count_map[command.state] = 1
+    command_state_stats = api_messages.CommandStateStats()
+    state_list = []
+    for state, count in state_count_map.items():
+      command_state = api_messages.CommandStateStat()
+      command_state.state = state
+      command_state.count = count
+      state_list.append(command_state)
+    command_state_stats.state_stats = state_list
+    command_state_stats.create_time = test_request.start_time
+    return command_state_stats
+
+  # TODO: implement pages.
+  @base.ApiMethod(
+      endpoints.ResourceContainer(
+          message_types.VoidMessage,
+          request_id=messages.StringField(1, required=True),
+          state=messages.EnumField(common.CommandState, 2),
+          page_size=messages.IntegerField(3, default=10),
+          page_token=messages.StringField(4, default=None),
+      ),
+      api_messages.CommandMessageCollection,
+      path='{request_id}/commands',
+      http_method='GET',
+      name='commands',
+  )
+  def ListCommands(self, request):
+    test_request = self._olcs_session_stub.GetRequest(request.request_id)
+    command_collection = api_messages.CommandMessageCollection()
+    command_collection.commands = test_request.commands
+    command_collection.page_token = None
+    return command_collection

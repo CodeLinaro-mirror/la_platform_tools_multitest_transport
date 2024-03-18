@@ -43,8 +43,9 @@ class OlcsSessionStubTest(absltest.TestCase):
     self.stubby_client._stub.CreateSession.return_value = client_response
 
     # Create input to the session service stub.
-    request_message = api_messages.NewMultiCommandRequestMessage()
-    request_message.user = 'test_user'
+    request_message = api_messages.NewMultiCommandRequestMessage(
+        user='test_user'
+    )
 
     # Create the expected request proto sent to session service.
     request_proto = session_service_pb2.CreateSessionRequest()
@@ -92,15 +93,17 @@ class OlcsSessionStubTest(absltest.TestCase):
     request_message = self.session_stub.GetRequest(request_detail.id)
 
     self.assertEqual(request_message.id, request_detail.id)
-    self.assertEqual(request_message.state, api_messages.RequestState.RUNNING)
+    self.assertEqual(request_message.state, api_messages.RequestState.COMPLETED)
     self.assertEqual(
         request_message.command_infos[0].command_line,
         request_detail.command_infos[0].command_line,
     )
+
+    # Verify the command message.
     command_message = request_message.commands[0]
     command_detail = list(request_detail.command_details.values())[0]
     self.assertEqual(command_message.command_line, command_detail.command_line)
-    self.assertEqual(command_message.state, api_messages.CommandState.RUNNING)
+    self.assertEqual(command_message.state, api_messages.CommandState.COMPLETED)
     self.assertEqual(
         command_message.run_count,
         command_detail.original_command_info.run_count,
@@ -108,6 +111,60 @@ class OlcsSessionStubTest(absltest.TestCase):
     self.assertEqual(
         command_message.shard_count,
         command_detail.original_command_info.shard_count,
+    )
+    self.assertEqual(
+        command_message.passed_test_count, command_detail.passed_test_count
+    )
+    self.assertEqual(
+        command_message.failed_test_count, command_detail.failed_test_count
+    )
+    self.assertEqual(
+        command_message.total_test_count, command_detail.total_test_count
+    )
+
+    # Verify the command attempt message.
+    command_attempt_message = request_message.command_attempts[0]
+    command_attempt_detail = request_detail.command_attempt_details[0]
+    self.assertEqual(
+        command_attempt_message.request_id, command_attempt_detail.request_id
+    )
+    self.assertEqual(
+        command_attempt_message.command_id, command_attempt_detail.command_id
+    )
+    self.assertEqual(
+        command_attempt_message.state, api_messages.CommandState.COMPLETED
+    )
+    self.assertEqual(
+        command_attempt_message.passed_test_count,
+        command_attempt_detail.passed_test_count,
+    )
+    self.assertEqual(
+        command_attempt_message.failed_test_count,
+        command_attempt_detail.failed_test_count,
+    )
+    self.assertEqual(
+        command_attempt_message.total_test_count,
+        command_attempt_detail.total_test_count,
+    )
+    self.assertEqual(
+        command_attempt_message.device_serials[0],
+        command_attempt_detail.device_serial,
+    )
+    self.assertEqual(
+        command_attempt_message.start_time,
+        command_attempt_detail.start_time.ToDatetime(),
+    )
+    self.assertEqual(
+        command_attempt_message.end_time,
+        command_attempt_detail.end_time.ToDatetime(),
+    )
+    self.assertEqual(
+        command_attempt_message.create_time,
+        command_attempt_detail.create_time.ToDatetime(),
+    )
+    self.assertEqual(
+        command_attempt_message.update_time,
+        command_attempt_detail.update_time.ToDatetime(),
     )
 
   def test_generate_request_proto(self):

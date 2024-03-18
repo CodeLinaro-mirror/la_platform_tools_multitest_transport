@@ -16,6 +16,7 @@
 import datetime
 import json
 import logging
+import os
 from typing import Union
 import zlib
 
@@ -31,6 +32,7 @@ from multitest_transport.build_manager import xts_requirements_detector
 from multitest_transport.models import event_log
 from multitest_transport.models import ndb_models
 from multitest_transport.models import test_run_hook
+from multitest_transport.models import sql_models
 from multitest_transport.test_scheduler import test_result_handler
 from multitest_transport.test_scheduler import test_scheduler
 from multitest_transport.util import analytics
@@ -157,6 +159,12 @@ def _ProcessRequestEvent(test_run_id, message):
   if not test_run.IsFinal():
     test_run.state = TEST_RUN_STATE_MAP.get(
         message.new_state, ndb_models.TestRunState.UNKNOWN)
+    # TODO: This is a workaround to fetch test result when
+    # requested from UI.
+    # Check if the state has just changed from non-final state to final state.
+    # Only update test results at this moment to avoid redundent update.
+    if os.environ.get('IS_OMNILAB_BASED') == 'true' and test_run.IsFinal():
+      _ProcessCommandAttemptResult(test_run_id, test_run, message.request)
   if not test_run.test.result_file:
     # No test results file to parse, use partial test counts
     test_run.total_test_count = (message.failed_test_count +
@@ -166,6 +174,32 @@ def _ProcessRequestEvent(test_run_id, message):
   test_run.cancel_reason = (
       message.request.cancel_reason if message.request else None)
   test_run.put()
+
+
+def _ProcessCommandAttemptResult(test_run_id, test_run, request):
+  """Process command attempt result.
+
+  Args:
+    test_run_id: the id of the test run.
+    test_run: the test run entity.
+    request: the test run's request.
+  """
+  for attempt in request.command_attempts:
+    device_serials = {
+        device.device_serial for device in test_run.test_devices
+    }
+    logging.info('attempt.device_serials: %s', attempt.device_serials)
+    test_run.test_devices.extend(
+        _GetTestDeviceInfos(set(attempt.device_serials) - device_serials)
+    )
+    logging.info('test_run.test_devices: %s', test_run.test_devices)
+    results = sql_models.GetTestModuleResults([attempt.attempt_id])
+    result_url = file_util.GetResultUrl(test_run, attempt)
+    # Skip loading test results if they already exist in DB.
+    if result_url and not results:
+      test_result_handler.StoreTestResults(
+          test_run_id, attempt.attempt_id, result_url
+      )
 
 
 def ProcessCommandAttemptEvent(

@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-import {Component, ElementRef, Input, OnChanges, OnDestroy, OnInit, SimpleChanges, ViewChild} from '@angular/core';
+import {Component, ElementRef, Inject, Input, OnChanges, OnDestroy, OnInit, SimpleChanges, ViewChild} from '@angular/core';
 import {defer, EMPTY, iif, of, ReplaySubject, Subscription, timer} from 'rxjs';
 import {catchError, filter, repeat, switchMapTo, take, takeUntil} from 'rxjs/operators';
 
+import {APP_DATA, AppData} from '../services/app_data';
 import {FileService} from '../services/file_service';
 import {MttClient} from '../services/mtt_client';
 import {TestRun} from '../services/mtt_models';
@@ -32,6 +33,11 @@ export const FINAL_LOG_DIR = 'tool-logs/';
 export const LOG_TYPES = {
   'Host Log': 'host_log.txt',
   'Test Log': 'stdout.txt',
+};
+/** Omnilab log types and filenames. */
+export const OMNILAB_LOG_TYPES = {
+  'Host Log': 'test_output.txt',
+  'Test Log': 'xts_tf_output.log',
 };
 /** Maximum lines to keep. */
 export const MAX_CONSOLE_LENGTH = 200;
@@ -52,7 +58,7 @@ export class TestRunConsole implements OnInit, OnChanges, OnDestroy {
 
   invocations?: CommandAttempt[];
   selectedAttempt?: CommandAttempt;
-  readonly LOG_TYPES = LOG_TYPES;
+  LOG_TYPES = LOG_TYPES;
   selectedType = Object.values(LOG_TYPES)[0];
   /** True if current logs have been fetched at least once. */
   initialized = false;
@@ -66,8 +72,14 @@ export class TestRunConsole implements OnInit, OnChanges, OnDestroy {
 
   @ViewChild('outputContainer', {static: false}) outputContainer!: ElementRef;
 
-  constructor(private readonly fs: FileService,
-              private readonly mtt: MttClient) {}
+  constructor(
+      @Inject(APP_DATA) private readonly appData: AppData,
+      private readonly fs: FileService, private readonly mtt: MttClient) {
+    if (this.appData.isOmniLabBased) {
+      this.LOG_TYPES = OMNILAB_LOG_TYPES;
+      this.selectedType = Object.values(this.LOG_TYPES)[0];
+    }
+  }
 
   ngOnInit() {
     assertRequiredInput(this.testRun, 'testRun', 'test-run-console');
@@ -114,6 +126,9 @@ export class TestRunConsole implements OnInit, OnChanges, OnDestroy {
       return null;
     }
     const isActive = !isFinalCommandState(this.selectedAttempt.state);
+    if (this.appData.isOmniLabBased) {
+      return this.selectedType;
+    }
     return (isActive ? ACTIVE_LOG_DIR : FINAL_LOG_DIR) + this.selectedType;
   }
 
