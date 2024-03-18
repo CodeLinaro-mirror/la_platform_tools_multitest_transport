@@ -39,6 +39,7 @@
   .title-field {
     border-bottom: 1px solid $border-table;
     height: 50px;
+    line-height: 20px;
     padding-left: 12px;
     width: 20%;
   }
@@ -46,6 +47,7 @@
   .value-field {
     border-bottom: 1px solid $border-table;
     height: 50px;
+    line-height: 20px;
     width: 50%;
   }
 }
