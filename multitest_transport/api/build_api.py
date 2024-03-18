@@ -20,25 +20,14 @@ import uuid
 
 import endpoints
 from multitest_transport.api import base
+from multitest_transport.build_manager import xts_requirements_detector
 from multitest_transport.models import messages as mtt_messages
 from multitest_transport.models import ndb_models
-from multitest_transport.test_scheduler import test_kicker
 from multitest_transport.util import analytics
 from multitest_transport.util import file_util
 from protorpc import message_types
 from protorpc import messages
 from protorpc import remote
-from tradefed_cluster.util import ndb_shim as ndb
-
-# LINT.IfChange(xts_requirements_detection_test_key)
-XTS_REQUIREMENTS_DETECTION_TEST_KEY = 'gs://android-test-catalog/prod/gms.yaml::android.gts.latest_release.xts_requirements_detection'
-# LINT.ThenChange(
-#     //depot/google3/third_party/py/multitest_transport/ui2/app/services/mtt_models.ts:xts_requirements_detection_test_id,
-# )
-
-# LINT.IfChange(report_upload_hook_class_name)
-REPORT_UPLOAD_HOOK_CLASS_NAME = 'APFEReportUploadHook'
-# LINT.ThenChange(//depot/google3/third_party/py/multitest_transport/plugins/apfe.py:report_upload_hook_name)
 
 _ALLOWED_SOURCE_EXT = ['.zip', '.rar', '.tgz']
 
@@ -177,44 +166,9 @@ class BuildApi(remote.Service):
     Parameters:
       build_id: Build ID
     """
-    analytics.Log(
-        analytics.BUILD_CATEGORY,
-        analytics.DETECT_ACTION,
+    updated_build = xts_requirements_detector.KickDetection(
+        request.device_spec, request.test_resource_objs, request.build_id
     )
-    test_key, test = self._getXtsRequirementsDetectionTest()
-    report_upload_action_key, _ = self._getReportUploadAction()
-
-    test_run_config = ndb_models.TestRunConfig(
-        test_key=test_key,
-        command=test.command,
-        device_specs=[request.device_spec],
-        test_run_action_refs=[
-            ndb_models.TestRunActionRef(action_key=report_upload_action_key)
-        ],
-        test_resource_objs=mtt_messages.ConvertList(
-            request.test_resource_objs, ndb_models.TestResourceObj
-        ),
-    )
-    test_run = test_kicker.CreateTestRun(
-        labels=['xts_requirements_detection', request.build_id],
-        test_run_config=test_run_config,
-    )
-
-    # Update detection status to SIGNALS_COLLECTING and store test run key.
-    def _Txn():
-      _, build = self._getBuild(request.build_id)
-      if not test_run:
-        return
-      build.detection_status = (
-          ndb_models.XtsRequirementsDetectionStatus.SIGNALS_COLLECTING
-      )
-      # Reset detection_error_reason.
-      build.detection_error_reason = None
-      build.detection_test_run_key = test_run.key
-      build.put()
-      return build
-
-    updated_build = ndb.transaction(_Txn)
     return mtt_messages.Convert(updated_build, mtt_messages.Build)
 
   def _Delete(self, build_id):
@@ -229,38 +183,6 @@ class BuildApi(remote.Service):
     if not build:
       raise endpoints.NotFoundException('Build %s not found' % build_id)
     return build_key, build
-
-  def _getXtsRequirementsDetectionTest(self):
-    """Gets the default test for xts requirements detection."""
-    test_key = mtt_messages.ConvertToKey(
-        ndb_models.Test, XTS_REQUIREMENTS_DETECTION_TEST_KEY
-    )
-    test = test_key.get()
-    if not test:
-      raise endpoints.NotFoundException(
-          'Test %s not found' % XTS_REQUIREMENTS_DETECTION_TEST_KEY
-      )
-    return test_key, test
-
-  def _getReportUploadAction(self):
-    """Gets the report upload test action."""
-    actions = list(
-        ndb_models.TestRunAction.query(
-            ndb_models.TestRunAction.hook_class_name
-            == REPORT_UPLOAD_HOOK_CLASS_NAME
-        )
-    )
-    report_upload_action = None
-    for action in actions:
-      if action.credentials and all(opt.value for opt in action.options):
-        report_upload_action = action
-        break
-    if not report_upload_action:
-      raise endpoints.NotFoundException(
-          'Report upload test action with configed credentials and options %s'
-          ' not found' % REPORT_UPLOAD_HOOK_CLASS_NAME
-      )
-    return report_upload_action.key, report_upload_action
 
   def _strip(self, build_property):
     """Strips build property."""

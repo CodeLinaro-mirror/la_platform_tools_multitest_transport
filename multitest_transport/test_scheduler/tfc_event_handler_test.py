@@ -25,7 +25,6 @@ from tradefed_cluster.services import task_scheduler
 from tradefed_cluster.util import ndb_shim as ndb
 
 
-from multitest_transport.build_manager import xts_requirements_detector
 from multitest_transport.models import event_log
 from multitest_transport.models import ndb_models
 from multitest_transport.models import sql_models
@@ -371,10 +370,6 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
             self.mock_test_run.key,
             'Test run reached final state',
             _transactional=True,
-        ),
-        mock.call(
-            xts_requirements_detector.HandleFinalizedTestRun,
-            self.mock_test_run.key,
         ),
     ])
 

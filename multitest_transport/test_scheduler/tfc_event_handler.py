@@ -28,7 +28,6 @@ from tradefed_cluster.services import task_scheduler
 from tradefed_cluster.util import ndb_shim as ndb
 
 
-from multitest_transport.build_manager import xts_requirements_detector
 from multitest_transport.models import event_log
 from multitest_transport.models import ndb_models
 from multitest_transport.models import test_run_hook
@@ -124,12 +123,6 @@ def _AfterTestRunHandler(test_run_id):
   if test_run.sequence_id:
     task_scheduler.AddCallableTask(test_scheduler.ScheduleNextTestRun,
                                    test_run.sequence_id, test_run.key)
-
-  # Propagate finalized test run to xTS requirements detector
-  task_scheduler.AddCallableTask(
-      xts_requirements_detector.HandleFinalizedTestRun,
-      test_run.key,
-  )
 
 
 def ProcessRequestEvent(message: api_messages.RequestEventMessage):

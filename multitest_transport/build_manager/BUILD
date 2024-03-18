@@ -13,8 +13,11 @@ pytype_strict_library(
         "xts_requirements_detector.py",
     ],
     deps = [
+        "//third_party/py/endpoints:endpoints_library",
         "//multitest_transport/models:messages_lib",
         "//multitest_transport/models:ndb_models_lib",
+        "//multitest_transport/test_scheduler:test_kicker_lib",
+        "//multitest_transport/util:analytics_lib",
         "//multitest_transport/util:apfe_client_lib",
         "//multitest_transport/util:constant_lib",
         "@tradefed_cluster//tradefed_cluster:common_lib",

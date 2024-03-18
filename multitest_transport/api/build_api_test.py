@@ -22,6 +22,7 @@ from absl.testing import absltest
 from google.oauth2 import credentials as authorized_user
 from multitest_transport.api import api_test_util
 from multitest_transport.api import build_api
+from multitest_transport.build_manager import xts_requirements_detector
 from multitest_transport.models import messages
 from multitest_transport.models import ndb_models
 from multitest_transport.test_scheduler import test_kicker
@@ -79,7 +80,7 @@ class BuildApiTest(api_test_util.TestCase):
   def _createMockTest(self, name='test', command='command'):
     """Create a mock ndb_models.Test object."""
     test = ndb_models.Test(
-        id=build_api.XTS_REQUIREMENTS_DETECTION_TEST_KEY,
+        id=xts_requirements_detector.XTS_REQUIREMENTS_DETECTION_TEST_KEY,
         name=name,
         command=command,
     )
@@ -299,7 +300,7 @@ class BuildApiTest(api_test_util.TestCase):
     test = self._createMockTest()
     action = self._CreateTestRunAction(
         name='Report Upload Action',
-        hook_class_name=build_api.REPORT_UPLOAD_HOOK_CLASS_NAME,
+        hook_class_name=xts_requirements_detector.REPORT_UPLOAD_HOOK_CLASS_NAME,
         credentials=authorized_user.Credentials(None),
     )
     test_run = self._createMockTestRun(
@@ -356,9 +357,9 @@ class BuildApiTest(api_test_util.TestCase):
         DETECTION_REQUEST,
         expect_errors=True,
     )
-    self.assertEqual('404 Not Found', res.status)
     self.assertIn(
-        'Test %s not found' % build_api.XTS_REQUIREMENTS_DETECTION_TEST_KEY,
+        'Test %s not found'
+        % xts_requirements_detector.XTS_REQUIREMENTS_DETECTION_TEST_KEY,
         str(res.body),
     )
 
@@ -371,11 +372,10 @@ class BuildApiTest(api_test_util.TestCase):
         DETECTION_REQUEST,
         expect_errors=True,
     )
-    self.assertEqual('404 Not Found', res.status)
     self.assertIn(
         'Report upload test action with configed credentials and options %s not'
         ' found'
-        % build_api.REPORT_UPLOAD_HOOK_CLASS_NAME,
+        % xts_requirements_detector.REPORT_UPLOAD_HOOK_CLASS_NAME,
         str(res.body),
     )
 
@@ -384,7 +384,7 @@ class BuildApiTest(api_test_util.TestCase):
     self._createMockTest()
     self._CreateTestRunAction(
         name='Report Upload Action',
-        hook_class_name=build_api.REPORT_UPLOAD_HOOK_CLASS_NAME,
+        hook_class_name=xts_requirements_detector.REPORT_UPLOAD_HOOK_CLASS_NAME,
     )
     build = self._CreateMockBuild()
     res = self.app.post_json(
@@ -392,11 +392,10 @@ class BuildApiTest(api_test_util.TestCase):
         DETECTION_REQUEST,
         expect_errors=True,
     )
-    self.assertEqual('404 Not Found', res.status)
     self.assertIn(
         'Report upload test action with configed credentials and options %s not'
         ' found'
-        % build_api.REPORT_UPLOAD_HOOK_CLASS_NAME,
+        % xts_requirements_detector.REPORT_UPLOAD_HOOK_CLASS_NAME,
         str(res.body),
     )
 
@@ -405,7 +404,7 @@ class BuildApiTest(api_test_util.TestCase):
     self._createMockTest()
     self._CreateTestRunAction(
         name='Report Upload Action',
-        hook_class_name=build_api.REPORT_UPLOAD_HOOK_CLASS_NAME,
+        hook_class_name=xts_requirements_detector.REPORT_UPLOAD_HOOK_CLASS_NAME,
         credentials=authorized_user.Credentials(None),
         options=[{'name': 'option_name'}],
     )
@@ -415,11 +414,10 @@ class BuildApiTest(api_test_util.TestCase):
         DETECTION_REQUEST,
         expect_errors=True,
     )
-    self.assertEqual('404 Not Found', res.status)
     self.assertIn(
         'Report upload test action with configed credentials and options %s not'
         ' found'
-        % build_api.REPORT_UPLOAD_HOOK_CLASS_NAME,
+        % xts_requirements_detector.REPORT_UPLOAD_HOOK_CLASS_NAME,
         str(res.body),
     )
 

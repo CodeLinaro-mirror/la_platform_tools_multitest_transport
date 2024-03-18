@@ -46,7 +46,7 @@ const DEFAULT_CLUSTER = 'default';
 const XTS_REQUIREMENTS_DETECTION_TEST_ID =
     'gs://android-test-catalog/prod/gms.yaml::android.gts.latest_release.xts_requirements_detection';
 // LINT.ThenChange(
-//   //depot/google3/third_party/py/multitest_transport/api/build_api.py:xts_requirements_detection_test_key,
+//   //depot/google3/third_party/py/multitest_transport/build_manager/xts_requirements_detector.py:xts_requirements_detection_test_key,
 // )
 
 /** OAuth2 authorization information. */
