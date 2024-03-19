@@ -74,7 +74,7 @@ EXPECTED_HOST_INFO = api_messages.HostInfo(
             recovery_state='',
             last_recovery_time=datetime.datetime.fromtimestamp(0),
             is_stub_device=False,
-            display_serial='device1',
+            display_serial='device_uuid1',
             preconfigured_ip='127.0.0.1',
             preconfigured_device_num_offset=0,
         )
@@ -147,10 +147,9 @@ class HostApiTest(api_test_util.TestCase):
       host_property.key = 'host_group'
       host_property.value = 'presubmit'
       device_info = lab_data.device_list.device_info.add()
-      device_info.device_locator.id = 'device1'
+      device_info.device_locator.id = 'device_uuid1'
       device_info.device_locator.lab_locator.ip = '127.0.0.1'
       device_info.device_locator.lab_locator.host_name = 'localhost'
-      device_info.device_uuid = 'device_uuid1'
       device_info.device_status = device_pb2.DeviceStatus.IDLE
       device_info.device_feature.type.append('AndroidRealDevice')
       dimension = (

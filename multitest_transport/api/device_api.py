@@ -180,7 +180,7 @@ class DeviceApi(remote.Service):
         response.lab_query_result.device_view.grouped_devices.device_list.device_info
     ):
       # TODO: Do the filter in OLC server.
-      if device_info.device_uuid == device_serial:
+      if device_info.device_locator.id == device_serial:
         return DeviceApi.ConvertDeviceInfo(
             device_info, response.lab_query_result.timestamp
         )
@@ -298,7 +298,7 @@ class DeviceApi(remote.Service):
         sim_card_info = dimension.value
 
     return api_messages.DeviceInfo(
-        device_serial=device_info.device_uuid,
+        device_serial=device_info.device_locator.id,
         lab_name=lab_name,
         hostname=device_info.device_locator.lab_locator.host_name,
         run_target=product,
