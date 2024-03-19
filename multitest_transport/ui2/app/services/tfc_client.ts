@@ -207,7 +207,7 @@ export class TfcClient {
   }
 
   getHostInfo(id: string): Observable<mttLabModels.LabHostInfo> {
-    return this.http.get<tfcModels.HostInfo>(`${this.tfcApiUrl}/hosts/${id}`)
+    return this.http.get<tfcModels.HostInfo>(`${this.apiUrl}/hosts/${id}`)
         .pipe(map(result => mttLabModels.convertToLabHostInfo(result)));
   }
 
