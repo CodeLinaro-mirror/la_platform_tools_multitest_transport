@@ -74,7 +74,7 @@ EXPECTED_HOST_INFO = api_messages.HostInfo(
             recovery_state='',
             last_recovery_time=datetime.datetime.fromtimestamp(0),
             is_stub_device=False,
-            display_serial='device_uuid1',
+            display_serial='device1',
             preconfigured_ip='127.0.0.1',
             preconfigured_device_num_offset=0,
         )
@@ -157,6 +157,11 @@ class HostApiTest(api_test_util.TestCase):
       )
       dimension.name = 'product_board'
       dimension.value = 'panther'
+      dimension = (
+          device_info.device_feature.composite_dimension.supported_dimension.add()
+      )
+      dimension.name = 'control_id'
+      dimension.value = 'device1'
 
       self._olcs_lab_info_client.get_lab_info.return_value = (
           get_lab_info_response

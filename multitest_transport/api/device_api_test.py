@@ -110,6 +110,11 @@ class DeviceApiTest(api_test_util.TestCase):
       )
       dimension.name = 'sim_card_info'
       dimension.value = 'T-mobile'
+      dimension = (
+          device_info.device_feature.composite_dimension.supported_dimension.add()
+      )
+      dimension.name = 'control_id'
+      dimension.value = 'device1'
 
   def setUp(self):
     super(DeviceApiTest, self).setUp(DeviceApiTest.DeviceApiForTest)
@@ -162,7 +167,7 @@ class DeviceApiTest(api_test_util.TestCase):
             recovery_state='',
             last_recovery_time=datetime.datetime.fromtimestamp(0),
             is_stub_device=False,
-            display_serial='device_uuid1',
+            display_serial='device1',
             preconfigured_ip='127.0.0.1',
             preconfigured_device_num_offset=0,
         ),
@@ -213,7 +218,7 @@ class DeviceApiTest(api_test_util.TestCase):
             recovery_state='',
             last_recovery_time=datetime.datetime.fromtimestamp(0),
             is_stub_device=False,
-            display_serial='device_uuid1',
+            display_serial='device1',
             preconfigured_ip='127.0.0.1',
             preconfigured_device_num_offset=0,
         ),
@@ -266,7 +271,7 @@ class DeviceApiTest(api_test_util.TestCase):
             recovery_state='',
             last_recovery_time=datetime.datetime.fromtimestamp(0),
             is_stub_device=False,
-            display_serial='device_uuid1',
+            display_serial='device1',
             preconfigured_ip='127.0.0.1',
             preconfigured_device_num_offset=0,
         ),

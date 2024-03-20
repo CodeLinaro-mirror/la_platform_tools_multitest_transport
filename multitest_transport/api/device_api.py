@@ -279,6 +279,7 @@ class DeviceApi(remote.Service):
     lab_name = ''
     battery_level = '100'
     sim_card_info = ''
+    control_id = device_info.device_locator.id
     for dimension in dimensions:
       if dimension.name == 'build':
         build_id = dimension.value
@@ -296,6 +297,8 @@ class DeviceApi(remote.Service):
         battery_level = dimension.value
       elif dimension.name == 'sim_card_info':
         sim_card_info = dimension.value
+      elif dimension.name == 'control_id':
+        control_id = dimension.value
 
     return api_messages.DeviceInfo(
         device_serial=device_info.device_locator.id,
@@ -333,7 +336,7 @@ class DeviceApi(remote.Service):
         recovery_state='',
         last_recovery_time=datetime.datetime.fromtimestamp(0),
         is_stub_device=False,
-        display_serial=device_info.device_locator.id,
+        display_serial=control_id,
         preconfigured_ip=device_info.device_locator.lab_locator.ip,
         preconfigured_device_num_offset=0,
     )
