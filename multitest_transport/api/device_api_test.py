@@ -23,8 +23,8 @@ from protorpc import protojson
 from tradefed_cluster import api_messages
 
 from com_google_deviceinfra.src.devtools.mobileharness.api.model.proto import device_pb2
-from com_google_deviceinfra.src.devtools.mobileharness.infra.master.rpc.proto import lab_info_service_pb2
 from com_google_deviceinfra.src.devtools.mobileharness.infra.master.rpc.proto import lab_record_service_pb2
+from com_google_deviceinfra.src.devtools.mobileharness.shared.labinfo.proto import lab_info_service_pb2
 
 
 class DeviceApiTest(api_test_util.TestCase):

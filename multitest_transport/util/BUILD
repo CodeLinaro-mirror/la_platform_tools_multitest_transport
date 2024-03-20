@@ -326,8 +326,8 @@ pytype_strict_library(
     srcs = ["olcs_lab_info_client.py"],
     deps = [
         "@com_google_deviceinfra//src/devtools/common/metrics/stability/util:grpc_error_util_lib",
-        "@com_google_deviceinfra//src/devtools/mobileharness/infra/master/rpc/proto:lab_info_service_py_grpc",
-        "@com_google_deviceinfra//src/devtools/mobileharness/infra/master/rpc/proto:lab_info_service_py_proto",
+        "@com_google_deviceinfra//src/devtools/mobileharness/shared/labinfo/proto:lab_info_service_py_grpc",
+        "@com_google_deviceinfra//src/devtools/mobileharness/shared/labinfo/proto:lab_info_service_py_proto",
         third_party("grpc"),
     ],
 )
@@ -339,8 +339,8 @@ py_test(
     ],
     deps = [
         ":olcs_lab_info_client_lib",
-        "@com_google_deviceinfra//src/devtools/mobileharness/infra/master/rpc/proto:lab_info_service_py_grpc",
-        "@com_google_deviceinfra//src/devtools/mobileharness/infra/master/rpc/proto:lab_info_service_py_proto",
+        "@com_google_deviceinfra//src/devtools/mobileharness/shared/labinfo/proto:lab_info_service_py_grpc",
+        "@com_google_deviceinfra//src/devtools/mobileharness/shared/labinfo/proto:lab_info_service_py_proto",
         third_party("absl/testing:absltest"),
     ],
 )

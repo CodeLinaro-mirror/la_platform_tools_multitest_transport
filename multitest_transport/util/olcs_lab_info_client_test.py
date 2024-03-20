@@ -14,7 +14,7 @@
 from unittest import mock
 from absl.testing import absltest
 from multitest_transport.util import olcs_lab_info_client
-from com_google_deviceinfra.src.devtools.mobileharness.infra.master.rpc.proto import lab_info_service_pb2
+from com_google_deviceinfra.src.devtools.mobileharness.shared.labinfo.proto import lab_info_service_pb2
 
 
 class OlcsLabInfoClientTest(absltest.TestCase):

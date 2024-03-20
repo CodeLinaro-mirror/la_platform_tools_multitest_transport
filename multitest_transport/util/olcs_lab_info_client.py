@@ -15,8 +15,8 @@
 """A OLCS(OmniLab Long-running Client Service) lab info service client module."""
 import grpc
 from com_google_deviceinfra.src.devtools.common.metrics.stability.util import grpc_error_util
-from com_google_deviceinfra.src.devtools.mobileharness.infra.master.rpc.proto import lab_info_service_pb2
-from com_google_deviceinfra.src.devtools.mobileharness.infra.master.rpc.proto import lab_info_service_pb2_grpc
+from com_google_deviceinfra.src.devtools.mobileharness.shared.labinfo.proto import lab_info_service_pb2
+from com_google_deviceinfra.src.devtools.mobileharness.shared.labinfo.proto import lab_info_service_pb2_grpc
 
 OLCS_SERVER_ADDRESS = 'localhost:7030'
 
