@@ -110,6 +110,14 @@
                   </status-button>
                 </td>
               </tr>
+              <tr *ngIf="build.detection_start_time">
+                <td class="title-field">
+                  <mat-label>Detection Started</mat-label>
+                </td>
+                <td class="value-field">
+                  {{build.detection_start_time | utc | fromNow}}
+                </td>
+              </tr>
               <tr *ngIf="build.detection_error_reason">
                 <td class="title-field">
                   <mat-label>Error Details</mat-label>

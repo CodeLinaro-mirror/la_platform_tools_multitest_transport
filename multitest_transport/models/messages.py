@@ -1526,9 +1526,10 @@ class Build(messages.Message):
   detection_status = messages.EnumField(
       ndb_models.XtsRequirementsDetectionStatus, 9
   )
-  detection_error_reason = messages.StringField(10)
-  detection_test_run_id = messages.StringField(11)
-  required_reports = messages.MessageField(RequiredReport, 12, repeated=True)
+  detection_start_time = message_types.DateTimeField(10)
+  detection_error_reason = messages.StringField(11)
+  detection_test_run_id = messages.StringField(12)
+  required_reports = messages.MessageField(RequiredReport, 13, repeated=True)
 
 
 @Converter(ndb_models.Build, Build)
@@ -1548,6 +1549,7 @@ def _BuildConverter(obj):
       create_time=_AddTimezone(obj.create_time),
       update_time=_AddTimezone(obj.update_time),
       detection_status=obj.detection_status,
+      detection_start_time=_AddTimezone(obj.detection_start_time),
       detection_error_reason=obj.detection_error_reason,
       detection_test_run_id=str(obj.detection_test_run_key.id())
       if obj.detection_test_run_key

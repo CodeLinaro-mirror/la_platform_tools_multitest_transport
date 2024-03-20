@@ -633,6 +633,7 @@ export function newMockBuild(
     size: 123123123,
     labels,
     detection_status: detectionStatus,
+    detection_start_time: DATE,
     detection_error_reason: detectionErrorReason,
     detection_test_run_id: TEST_RUN_ID,
     required_reports: [

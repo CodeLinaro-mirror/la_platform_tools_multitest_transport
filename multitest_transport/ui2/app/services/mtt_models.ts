@@ -1161,6 +1161,8 @@ export declare interface Build {
   create_time?: string;
   /** Status of xTS requirements detection */
   detection_status?: XtsRequirementsDetectionStatus;
+  /** Start time of xTS requirements detection */
+  detection_start_time?: string;
   /** Error reason, only used for ERROR detection status. */
   detection_error_reason?: string;
   /** Test run id of xTS requirements detection */

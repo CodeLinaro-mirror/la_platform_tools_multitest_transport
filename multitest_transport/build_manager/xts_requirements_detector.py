@@ -253,6 +253,7 @@ def KickDetection(device_spec, test_resource_objs, build_id):
     build.detection_status = (
         ndb_models.XtsRequirementsDetectionStatus.SIGNALS_COLLECTING
     )
+    build.detection_start_time = datetime.datetime.utcnow()
     # Reset detection_error_reason.
     build.detection_error_reason = None
     build.detection_test_run_key = test_run.key

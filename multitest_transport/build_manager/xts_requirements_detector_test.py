@@ -105,6 +105,7 @@ class XtsRequirementsDetectorTest(testbed_dependent_test.TestbedDependentTest):
         ndb_models.XtsRequirementsDetectionStatus.SIGNALS_COLLECTING,
         self.mock_build.detection_status,
     )
+    self.assertIsNotNone(self.mock_build.detection_start_time)
     self.assertIsNotNone(self.mock_build.detection_test_run_key)
 
     _, task_args = mock_add_task.call_args
