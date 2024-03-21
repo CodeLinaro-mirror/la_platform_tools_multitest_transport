@@ -20,8 +20,8 @@ sass_library(
     srcs = [
         "shared.scss",
     ],
-    strict_deps = False,
     visibility = ["//multitest_transport"],
+    deps = ["//multitest_transport/ui2:constants"],
 )
 
 ng_module(
