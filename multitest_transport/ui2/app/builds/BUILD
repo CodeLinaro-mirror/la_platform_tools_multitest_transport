@@ -8,7 +8,9 @@ sass_binary(
     name = "build_create_page",
     src = "build_create_page.scss",
     output_name = "build_create_page.css",
-    visibility = ["//multitest_transport"],
+    visibility = [
+        "//visibility:private",  # Only private by automation, not intent. Owner may accept CLs adding visibility. See go/scheuklappen#explicit-private.
+    ],
 )
 
 sass_binary(
@@ -40,7 +42,9 @@ sass_binary(
     name = "build_list",
     src = "build_list.scss",
     output_name = "build_list.css",
-    visibility = ["//multitest_transport"],
+    visibility = [
+        "//visibility:private",  # Only private by automation, not intent. Owner may accept CLs adding visibility. See go/scheuklappen#explicit-private.
+    ],
 )
 
 sass_binary(
