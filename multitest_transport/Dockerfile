@@ -282,6 +282,8 @@ RUN python3 -m compileall -bq /mtt/google3 \
     && find /mtt/google3 -type f -iname "*.py" ! -iname "gunicorn_config.py" -exec rm -rf {} \;
 # Unzip the selected prebuilt TF runner
 RUN unzip -q /mtt/prebuilts/tradefed/${MTT_TRADEFED_PREBUILT} -d /tradefed
+# Unzip the device infra servers
+RUN unzip -q /mtt/prebuilts/deviceinfra/deviceinfra.zip -d /deviceinfra
 # Prepare the report generator jar used for merging reports
 RUN unzip -q /mtt/prebuilts/tools/report_generator.zip -d ${MTT_REPORT_GENERATOR_JAR_DIR}
 

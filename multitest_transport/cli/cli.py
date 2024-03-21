@@ -647,6 +647,19 @@ def _StartMttNode(args, host):
     docker_helper.AddFile(
         args.extra_ca_cert, '/usr/local/share/ca-certificates/')
 
+  if args.is_omnilab_based:
+    docker_helper.AddEnv('IS_OMNILAB_BASED', 'true')
+    if (
+        network == _DOCKER_BRIDGE_NETWORK
+        and operation_mode == lab_config_pb2.OperationMode.ON_PREMISE
+    ):
+      if control_server_url:
+        # Public lab server port of the worker
+        docker_helper.AddPort('0.0.0.0:%d' % 9994, 9994)
+      else:
+        # Public OLC server port of the controller
+        docker_helper.AddPort('0.0.0.0:%d' % 7030, 7030)
+
   docker_helper.Run(args.name)
 
   _CheckDockerImageVersion(docker_helper, args.name)
@@ -1147,6 +1160,11 @@ def _CreateStartArgParser():
           'Set in ON_PREMISE mode if file server URL cannot be inferred '
           'from the control server URL.'
       ))
+  parser.add_argument(
+      '--is_omnilab_based',
+      default=False,
+      help='Use Omnilab based servers.',
+  )
   parser.set_defaults(func=Start)
   return parser
 

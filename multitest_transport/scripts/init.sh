@@ -94,6 +94,24 @@ then
     FILE_SERVICE_ONLY="true"
   fi
 
+  if [[ ! -z "${IS_OMNILAB_BASED}" ]]
+  then
+    OLC_SERVER_PORT="${OLC_SERVER_PORT:-7030}"
+    OLC_SERVER_GRPC_TARGET="$(echo ${MTT_CONTROL_SERVER_URL} | sed 's,^\([^:/]\+://\)\?\([^:/]\+\)\(:\([0-9]\{1\,5\}\)\)\?\+.*$,\2,g'):${OLC_SERVER_PORT}"
+
+    if [[ "${FILE_SERVICE_ONLY}" == "false" ]]
+    then
+      # Start OLC server on the controller
+      java -jar /deviceinfra/ats_olc_server_deploy.jar \
+        --enable_ats_mode=true \
+        --enable_client_experiment_manager=false \
+        --enable_client_file_transfer=false \
+        --enable_grpc_lab_server=true \
+        --olc_server_port="${OLC_SERVER_PORT}" \
+        --public_dir="${MTT_LOG_DIR}" &> /dev/null &
+    fi
+  fi
+
   # Bind to IPv4 only because endpoints service cannot convert IPv6 addresses to
   # URLs correctly.
   BIND_ADDRESS="0.0.0.0"
@@ -108,6 +126,7 @@ then
       --sql_database_uri "" \
       --control_server_url "${MTT_CONTROL_SERVER_URL}" \
       --report_generator_jar "${MTT_REPORT_GENERATOR_JAR}" \
+      --is_omnilab_based "${IS_OMNILAB_BASED}" \
       2>&1 | multilog s10485760 n10 "${MTT_CONTROL_SERVER_LOG_DIR}" &
 fi
 
@@ -188,15 +207,30 @@ then
   fi
 fi
 
-# Start TF with the modified global config and at least 6GB of heap space (can
-# be adjusted by setting the -Xmx flag in the TRADEFED_OPTS variable).
 rm -rf "${MTT_TEST_WORK_DIR}"
 mkdir -p "${MTT_TEST_WORK_DIR}"
 MAX_HEAP_MB="$(expr `free -m | awk '/^Mem:/{print $2}'` / 4)"
 MAX_HEAP_MB=$(( MAX_HEAP_MB < 6000 ? 6000 : MAX_HEAP_MB ))
-MTT_TRADEFED_OPTS="-Djava.io.tmpdir=${MTT_TEST_WORK_DIR} -Xmx${MAX_HEAP_MB}m"
-TF_GLOBAL_CONFIG="${TF_CONFIG_FILE}"\
-  MTT_CONTROL_SERVER_URL="${MTT_CONTROL_SERVER_URL}"\
-  MTT_CONTROL_FILE_SERVER_URL="${MTT_CONTROL_FILE_SERVER_URL}"\
-  TRADEFED_OPTS="${MTT_TRADEFED_OPTS} ${TRADEFED_OPTS}"\
-  exec tradefed.sh
+if [[ -z "${IS_OMNILAB_BASED}" ]]
+then
+  # Start TF with the modified global config and at least 6GB of heap space (can
+  # be adjusted by setting the -Xmx flag in the TRADEFED_OPTS variable).
+  MTT_TRADEFED_OPTS="-Djava.io.tmpdir=${MTT_TEST_WORK_DIR} -Xmx${MAX_HEAP_MB}m"
+  TF_GLOBAL_CONFIG="${TF_CONFIG_FILE}"\
+    MTT_CONTROL_SERVER_URL="${MTT_CONTROL_SERVER_URL}"\
+    MTT_CONTROL_FILE_SERVER_URL="${MTT_CONTROL_FILE_SERVER_URL}"\
+    TRADEFED_OPTS="${MTT_TRADEFED_OPTS} ${TRADEFED_OPTS}"\
+    exec tradefed.sh
+else
+  # Start OSS lab server
+  java "-Xmx${MAX_HEAP_MB}m" -jar /deviceinfra/lab_server_oss_deploy.jar \
+    --enable_api_config=false \
+    --enable_external_master_server=true \
+    --master_grpc_target="${OLC_SERVER_GRPC_TARGET}" \
+    --public_dir="${MTT_LOG_DIR}" \
+    --serv_via_cloud_rpc=false \
+    --skip_lab_job_gen_file_cleanup=true \
+    --tmp_dir_root="${MTT_TEST_WORK_DIR}"
+fi
+
+
