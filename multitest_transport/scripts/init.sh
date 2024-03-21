@@ -108,7 +108,8 @@ then
         --enable_client_file_transfer=false \
         --enable_grpc_lab_server=true \
         --olc_server_port="${OLC_SERVER_PORT}" \
-        --public_dir="${MTT_LOG_DIR}" &> /dev/null &
+        --public_dir="${MTT_LOG_DIR}" \
+        ${OLC_SERVER_OPTS} &> /dev/null &
     fi
   fi
 
@@ -230,7 +231,8 @@ else
     --public_dir="${MTT_LOG_DIR}" \
     --serv_via_cloud_rpc=false \
     --skip_lab_job_gen_file_cleanup=true \
-    --tmp_dir_root="${MTT_TEST_WORK_DIR}"
+    --tmp_dir_root="${MTT_TEST_WORK_DIR}" \
+    ${LAB_SERVER_OPTS}
 fi
 
 
