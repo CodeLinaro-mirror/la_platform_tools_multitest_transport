@@ -118,14 +118,12 @@ describe('HostUpdateDialog', () => {
       hostCountByHarnessVersion,
     }));
     hostUpdateDialogFixture.detectChanges();
-    hostUpdateDialogFixture.whenStable().then(() => {
-      expect(hostUpdateDialog.labInfo).toBeTruthy();
-      expect(hostUpdateDialog.labInfo?.labName).toEqual('lab1');
-      expect(hostUpdateDialog.labInfo?.owners).toEqual(['user1']);
-      expect(hostUpdateDialog.labInfo?.hostUpdateStateSummary).toBeTruthy();
-      expect(hostUpdateDialog.labInfo?.hostCountByHarnessVersion)
-          .toEqual(hostCountByHarnessVersion);
-    });
+    expect(hostUpdateDialog.labInfo).toBeTruthy();
+    expect(hostUpdateDialog.labInfo?.labName).toEqual('lab1');
+    expect(hostUpdateDialog.labInfo?.owners).toEqual(['user1']);
+    expect(hostUpdateDialog.labInfo?.hostUpdateStateSummary).toBeTruthy();
+    expect(hostUpdateDialog.labInfo?.hostCountByHarnessVersion)
+        .toEqual(hostCountByHarnessVersion);
   });
 
   it('calculate HostUpdating count correctly', () => {
@@ -141,10 +139,8 @@ describe('HostUpdateDialog', () => {
     const hostConfigList = newMockHostConfigList(hostConfigs);
     tfcClient.getHostConfigs.and.returnValue(observableOf(hostConfigList));
     hostUpdateDialogFixture.detectChanges();
-    hostUpdateDialogFixture.whenStable().then(() => {
-      expect(hostUpdateDialog.hostConfigsInLab).toBeTruthy();
-      expect(hostUpdateDialog.hostConfigsInLab).toEqual(hostConfigs);
-    });
+    expect(hostUpdateDialog.hostConfigsInLab).toBeTruthy();
+    expect(hostUpdateDialog.hostConfigsInLab).toEqual(hostConfigs);
   });
 
   it('display all host groups and sorts them in alphabetical order.', () => {
@@ -161,15 +157,13 @@ describe('HostUpdateDialog', () => {
 
     hostUpdateDialogFixture.detectChanges();
 
-    hostUpdateDialogFixture.whenStable().then(() => {
-      expect(hostUpdateDialog.hostGroupNames).toEqual([
-        'cluster-1',
-        'cluster-2',
-        'cluster-3',
-        'cluster-4',
-        'cluster-5',
-      ]);
-    });
+    expect(hostUpdateDialog.hostGroupNames).toEqual([
+      'cluster-1',
+      'cluster-2',
+      'cluster-3',
+      'cluster-4',
+      'cluster-5',
+    ]);
   });
 
   it('gets candidate host configs when host group is selected', () => {
@@ -225,10 +219,8 @@ describe('HostUpdateDialog', () => {
     tfcClient.getTestHarnessImages.and.returnValue(
         observableOf(testHarnessImageList));
     hostUpdateDialogFixture.detectChanges();
-    hostUpdateDialogFixture.whenStable().then(() => {
-      expect(hostUpdateDialog.testHarnessImages).toBeTruthy();
-      expect(hostUpdateDialog.testHarnessImages).toEqual(testHarnessImages);
-    });
+    expect(hostUpdateDialog.testHarnessImages).toBeTruthy();
+    expect(hostUpdateDialog.testHarnessImages).toEqual(testHarnessImages);
   });
 
   it('resets data correctly when select lab update mode', () => {
@@ -343,48 +335,38 @@ describe('HostUpdateDialog', () => {
           }));
       hostUpdateDialog.selectedHostGroup = 'hostGroup1';
       hostUpdateDialogFixture.detectChanges();
-      hostUpdateDialogFixture.whenStable()
-          .then(() => {
-            expect(hostUpdateDialog.hostUpdateStateSummaryTableDataSource.data)
-                .toEqual([
-                  {state: HostUpdateState.PENDING, count: 5},
-                  {state: HostUpdateState.SYNCING, count: 2},
-                  {state: HostUpdateState.SHUTTING_DOWN, count: 10},
-                  {state: HostUpdateState.RESTARTING, count: 10},
-                  {state: HostUpdateState.SUCCEEDED, count: 1},
-                  {state: HostUpdateState.TIMED_OUT, count: 1},
-                  {state: HostUpdateState.ERRORED, count: 1},
-                  {state: HostUpdateState.UNKNOWN, count: 0},
-                ]);
-            expect(hostUpdateDialog.hostCountByVersionTableDataSource.data)
-                .toEqual([
-                  {version: 'v1', count: 3},
-                  {version: 'v2', count: 2},
-                ]);
-          })
-          .then(() => {
-            hostUpdateDialog.selectedHostGroup = 'hostGroup2';
-            hostUpdateDialogFixture.detectChanges();
-            hostUpdateDialogFixture.whenStable().then(() => {
-              expect(
-                  hostUpdateDialog.hostUpdateStateSummaryTableDataSource.data)
-                  .toEqual([
-                    {state: HostUpdateState.PENDING, count: 6},
-                    {state: HostUpdateState.SYNCING, count: 3},
-                    {state: HostUpdateState.SHUTTING_DOWN, count: 11},
-                    {state: HostUpdateState.RESTARTING, count: 11},
-                    {state: HostUpdateState.SUCCEEDED, count: 2},
-                    {state: HostUpdateState.TIMED_OUT, count: 2},
-                    {state: HostUpdateState.ERRORED, count: 2},
-                    {state: HostUpdateState.UNKNOWN, count: 1},
-                  ]);
-              expect(hostUpdateDialog.hostCountByVersionTableDataSource.data)
-                  .toEqual([
-                    {version: 'v3', count: 3},
-                    {version: 'v4', count: 2},
-                  ]);
-            });
-          });
+      expect(hostUpdateDialog.hostUpdateStateSummaryTableDataSource.data)
+          .toEqual([
+            {state: HostUpdateState.PENDING, count: 5},
+            {state: HostUpdateState.SYNCING, count: 2},
+            {state: HostUpdateState.SHUTTING_DOWN, count: 10},
+            {state: HostUpdateState.RESTARTING, count: 10},
+            {state: HostUpdateState.SUCCEEDED, count: 1},
+            {state: HostUpdateState.TIMED_OUT, count: 1},
+            {state: HostUpdateState.ERRORED, count: 1},
+            {state: HostUpdateState.UNKNOWN, count: 0},
+          ]);
+      expect(hostUpdateDialog.hostCountByVersionTableDataSource.data).toEqual([
+        {version: 'v1', count: 3},
+        {version: 'v2', count: 2},
+      ]);
+      hostUpdateDialog.selectedHostGroup = 'hostGroup2';
+      hostUpdateDialogFixture.detectChanges();
+      expect(hostUpdateDialog.hostUpdateStateSummaryTableDataSource.data)
+          .toEqual([
+            {state: HostUpdateState.PENDING, count: 6},
+            {state: HostUpdateState.SYNCING, count: 3},
+            {state: HostUpdateState.SHUTTING_DOWN, count: 11},
+            {state: HostUpdateState.RESTARTING, count: 11},
+            {state: HostUpdateState.SUCCEEDED, count: 2},
+            {state: HostUpdateState.TIMED_OUT, count: 2},
+            {state: HostUpdateState.ERRORED, count: 2},
+            {state: HostUpdateState.UNKNOWN, count: 1},
+          ]);
+      expect(hostUpdateDialog.hostCountByVersionTableDataSource.data).toEqual([
+        {version: 'v3', count: 3},
+        {version: 'v4', count: 2},
+      ]);
     });
 
     it('modifies table data sources when selected host group removes', () => {
@@ -430,24 +412,21 @@ describe('HostUpdateDialog', () => {
       ]);
       hostUpdateDialog.selectedHostGroup = '';
       hostUpdateDialogFixture.detectChanges();
-      hostUpdateDialogFixture.whenStable().then(() => {
-        expect(hostUpdateDialog.hostUpdateStateSummaryTableDataSource.data)
-            .toEqual([
-              {state: HostUpdateState.PENDING, count: 6},
-              {state: HostUpdateState.SYNCING, count: 3},
-              {state: HostUpdateState.SHUTTING_DOWN, count: 11},
-              {state: HostUpdateState.RESTARTING, count: 11},
-              {state: HostUpdateState.SUCCEEDED, count: 2},
-              {state: HostUpdateState.TIMED_OUT, count: 2},
-              {state: HostUpdateState.ERRORED, count: 2},
-              {state: HostUpdateState.UNKNOWN, count: 1},
-            ]);
-        expect(hostUpdateDialog.hostCountByVersionTableDataSource.data)
-            .toEqual([
-              {version: 'v3', count: 3},
-              {version: 'v4', count: 2},
-            ]);
-      });
+      expect(hostUpdateDialog.hostUpdateStateSummaryTableDataSource.data)
+          .toEqual([
+            {state: HostUpdateState.PENDING, count: 6},
+            {state: HostUpdateState.SYNCING, count: 3},
+            {state: HostUpdateState.SHUTTING_DOWN, count: 11},
+            {state: HostUpdateState.RESTARTING, count: 11},
+            {state: HostUpdateState.SUCCEEDED, count: 2},
+            {state: HostUpdateState.TIMED_OUT, count: 2},
+            {state: HostUpdateState.ERRORED, count: 2},
+            {state: HostUpdateState.UNKNOWN, count: 1},
+          ]);
+      expect(hostUpdateDialog.hostCountByVersionTableDataSource.data).toEqual([
+        {version: 'v3', count: 3},
+        {version: 'v4', count: 2},
+      ]);
     });
 
     it('loads lab update state summary for selected version', () => {

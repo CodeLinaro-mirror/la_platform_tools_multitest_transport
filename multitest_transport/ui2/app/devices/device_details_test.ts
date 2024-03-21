@@ -113,13 +113,14 @@ describe('DeviceDetails', () => {
     });
   });
 
-  it('should call HaTS client on device history display', () => {
+  it('should call HaTS client on device history display', async () => {
     getEls(el, '.mdc-tab').find(x => x.textContent === 'History')!.click();
     deviceDetailsFixture.detectChanges();
-    deviceDetailsFixture.whenStable().then(() => {
-      expect(feedbackService.startSurvey)
-          .toHaveBeenCalledWith(SurveyTrigger.DEVICE_HISTORY);
+    await new Promise(resolve => {
+      setTimeout(resolve);
     });
+    expect(feedbackService.startSurvey)
+        .toHaveBeenCalledWith(SurveyTrigger.DEVICE_HISTORY);
   });
 
   it('should call HaTS client on device navigation', () => {

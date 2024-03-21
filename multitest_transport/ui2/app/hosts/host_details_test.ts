@@ -136,13 +136,14 @@ describe('HostDetails', () => {
     });
   });
 
-  it('should call HaTS client on host notes display', () => {
+  it('should call HaTS client on host notes display', async () => {
     getEls(el, '.mdc-tab').find(x => x.textContent === 'Notes')!.click();
     hostDetailsFixture.detectChanges();
-    hostDetailsFixture.whenStable().then(() => {
-      expect(feedbackService.startSurvey)
-          .toHaveBeenCalledWith(SurveyTrigger.HOST_NOTES);
+    await new Promise(resolve => {
+      setTimeout(resolve);
     });
+    expect(feedbackService.startSurvey)
+        .toHaveBeenCalledWith(SurveyTrigger.HOST_NOTES);
   });
 
   it('should call HaTS client on host navigation', () => {
