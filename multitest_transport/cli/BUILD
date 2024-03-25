@@ -320,6 +320,7 @@ py_test(
     srcs = [
         "integration_test.py",
     ],
+    features = ["-enable_relr"],
     tags = ["local"],
     deps = [
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
