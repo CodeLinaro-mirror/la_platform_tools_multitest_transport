@@ -298,6 +298,10 @@ class OlcsSessionStubTest(absltest.TestCase):
           request_proto.test_environment.retry_command_line,
           new_request_msg.test_environment.retry_command_line,
       )
+      self.assertEqual(
+          request_proto.queue_timeout.seconds,
+          new_request_msg.queue_timeout_seconds,
+      )
 
 
 if __name__ == '__main__':

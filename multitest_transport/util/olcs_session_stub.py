@@ -341,6 +341,8 @@ class OlcsSessionStub:
       )
     if request.max_concurrent_tasks:
       request_proto.max_concurrent_tasks = request.max_concurrent_tasks
+    if request.queue_timeout_seconds:
+      request_proto.queue_timeout.seconds = request.queue_timeout_seconds
 
     for test_resource in request.test_resources:
       test_resource_proto = request_proto.test_resources.add()
