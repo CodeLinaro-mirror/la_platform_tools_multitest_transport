@@ -147,8 +147,8 @@ class OlcsSessionStubTest(absltest.TestCase):
         command_attempt_detail.total_test_count,
     )
     self.assertEqual(
-        command_attempt_message.device_serials[0],
-        command_attempt_detail.device_serial,
+        command_attempt_message.device_serials,
+        command_attempt_detail.device_serials,
     )
     self.assertEqual(
         command_attempt_message.start_time,

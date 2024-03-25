@@ -279,8 +279,8 @@ class OlcsSessionStub:
     command_attempt_message.state = _COMMAND_STATE_MAP.get(
         command_attempt_detail.state, common.CommandState.UNKNOWN
     )
-    command_attempt_message.device_serials.append(
-        command_attempt_detail.device_serial
+    command_attempt_message.device_serials = list(
+        command_attempt_detail.device_serials
     )
     command_attempt_message.start_time = (
         command_attempt_detail.start_time.ToDatetime()
@@ -327,13 +327,14 @@ class OlcsSessionStub:
       command_info_proto.command_line = command_info.command_line
       command_info_proto.run_count = command_info.run_count
       command_info_proto.shard_count = command_info.shard_count
-      device_serial = (
-          command_info.test_bench.host.groups[0]
-          .run_targets[0]
-          .device_attributes[0]
-          .value
-      )
-      command_info_proto.device_dimensions["serial"] = device_serial
+      for group in command_info.test_bench.host.groups:
+        device_attribute = group.run_targets[0].device_attributes[0]
+        device_attribute_requirement = service_pb2.CommandInfo.DeviceDimension(
+            name=device_attribute.name, value=device_attribute.value
+        )
+        command_info_proto.device_dimensions.append(
+            device_attribute_requirement
+        )
       # TODO: add device dimension
     if request.max_retry_on_test_failures:
       request_proto.max_retry_on_test_failures = (
