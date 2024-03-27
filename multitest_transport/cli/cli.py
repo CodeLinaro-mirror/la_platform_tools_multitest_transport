@@ -1163,7 +1163,7 @@ def _CreateStartArgParser():
   parser.add_argument(
       '--is_omnilab_based',
       default=False,
-      help='Use Omnilab based servers.',
+      help='Use OmniLab based servers.',
   )
   parser.set_defaults(func=Start)
   return parser
