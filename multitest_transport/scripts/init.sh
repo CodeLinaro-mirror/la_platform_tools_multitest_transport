@@ -102,7 +102,8 @@ then
     if [[ "${FILE_SERVICE_ONLY}" == "false" ]]
     then
       # Start OLC server on the controller
-      java -jar /deviceinfra/ats_olc_server_deploy.jar \
+      java -XX:+HeapDumpOnOutOfMemoryError \
+        -jar /deviceinfra/ats_olc_server_deploy.jar \
         --enable_ats_mode=true \
         --enable_client_experiment_manager=false \
         --enable_client_file_transfer=false \
@@ -224,7 +225,8 @@ then
     exec tradefed.sh
 else
   # Start OSS lab server
-  java "-Xmx${MAX_HEAP_MB}m" -jar /deviceinfra/lab_server_oss_deploy.jar \
+  java "-Xmx${MAX_HEAP_MB}m" -XX:+HeapDumpOnOutOfMemoryError \
+    -jar /deviceinfra/lab_server_oss_deploy.jar \
     --enable_api_config=false \
     --enable_external_master_server=true \
     --master_grpc_target="${OLC_SERVER_GRPC_TARGET}" \
