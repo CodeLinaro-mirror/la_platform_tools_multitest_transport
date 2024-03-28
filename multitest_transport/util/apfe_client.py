@@ -107,6 +107,22 @@ class ApfeClient(object):
     apfe_report = protojson.decode_message(ApfeReport, res)  # pytype: disable=module-attr
     return apfe_report
 
+  def GetLatestApfeReport(self, report_name):
+    """Gets the latest report from APFE."""
+
+    res = (
+        self._GetClient()
+        .compatibility()
+        .devices()
+        .products()
+        .builds()
+        .reports()
+        .get(name=report_name)
+        .execute(http=self._GetHttp(), num_retries=constant.NUM_RETRIES)
+    )
+    apfe_report = protojson.decode_message(ApfeReport, res)  # pytype: disable=module-attr
+    return apfe_report
+
   def GetRequiredReports(self, fingerprint):
     """Gets required reports for a build from APFE."""
 
@@ -127,6 +143,14 @@ class ApfeClient(object):
     return required_report_info
 
 
+class ProcessState(messages.Enum):
+  """Process state of a report."""
+
+  PROCESS_STATE_UNSPECIFIED = 0
+  IN_PROGRESS = 1
+  COMPLETE = 2
+
+
 class ApfeReport(messages.Message):
   """an APFE report."""
 
@@ -138,6 +162,7 @@ class ApfeReport(messages.Message):
   productName = messages.StringField(6)  
   modelName = messages.StringField(7)  
   buildFingerprint = messages.StringField(8)  
+  processState = messages.EnumField(ProcessState, 9)  
 
 
 def ConvertApfeReport(msg, test_run_key):

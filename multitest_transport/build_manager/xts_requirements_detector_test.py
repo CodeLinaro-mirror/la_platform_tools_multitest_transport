@@ -251,6 +251,9 @@ class XtsRequirementsDetectorTest(testbed_dependent_test.TestbedDependentTest):
     self.mock_build.put()
     mock_client = mock.MagicMock()
     mock_client_factory.return_value = mock_client
+    mock_client.GetLatestApfeReport.return_value = apfe_client.ApfeReport(
+        processState=apfe_client.ProcessState.COMPLETE,
+    )
     mock_client.GetRequiredReports.return_value = (
         apfe_client.RequiredReportInfo(
             requiredReports=[
@@ -308,7 +311,7 @@ class XtsRequirementsDetectorTest(testbed_dependent_test.TestbedDependentTest):
 
   @mock.patch.object(task_scheduler, 'AddTask')
   @mock.patch.object(apfe_client, 'ApfeClient')
-  def testProcessDetectionEvent_analysisRunning_emptyRequiredReports(
+  def testProcessDetectionEvent_analysisRunning_apfeReportInProgress(
       self, mock_client_factory, mock_add_task
   ):
     self.mock_build.detection_status = (
@@ -317,8 +320,8 @@ class XtsRequirementsDetectorTest(testbed_dependent_test.TestbedDependentTest):
     self.mock_build.put()
     mock_client = mock.MagicMock()
     mock_client_factory.return_value = mock_client
-    mock_client.GetRequiredReports.return_value = (
-        apfe_client.RequiredReportInfo(requiredReports=[])
+    mock_client.GetLatestApfeReport.return_value = apfe_client.ApfeReport(
+        processState=apfe_client.ProcessState.IN_PROGRESS,
     )
 
     xts_requirements_detector.ProcessDetectionEvent(
@@ -358,8 +361,8 @@ class XtsRequirementsDetectorTest(testbed_dependent_test.TestbedDependentTest):
     self.mock_build.put()
     mock_client = mock.MagicMock()
     mock_client_factory.return_value = mock_client
-    mock_client.GetRequiredReports.return_value = (
-        apfe_client.RequiredReportInfo(requiredReports=[])
+    mock_client.GetLatestApfeReport.return_value = apfe_client.ApfeReport(
+        processState=apfe_client.ProcessState.IN_PROGRESS,
     )
 
     xts_requirements_detector.ProcessDetectionEvent(

@@ -63,6 +63,7 @@ class ApfeClientTest(absltest.TestCase):
             'productName': self.mock_product_name,
             'modelName': self.mock_model_name,
             'buildFingerprint': self.mock_build_fingerprint,
+            'processState': 'IN_PROGRESS',
         })
     )
 
@@ -88,6 +89,7 @@ class ApfeClientTest(absltest.TestCase):
             productName=self.mock_product_name,
             modelName=self.mock_model_name,
             buildFingerprint=self.mock_build_fingerprint,
+            processState=apfe_client.ProcessState.IN_PROGRESS,
         ),
     )
     request = (
@@ -101,6 +103,50 @@ class ApfeClientTest(absltest.TestCase):
             },
             'companyId': self.mock_company_id,
         },
+    )
+
+  def testGetLatestApfeReport(self):
+    """Tests latest APFE report can be retrieved."""
+    self.client.compatibility().devices().products().builds().reports().get().execute.return_value = json.dumps({
+        'name': self.mock_report_name,
+        'type': 'GTS',
+        'companyId': self.mock_company_id,
+        'companyName': self.mock_company_name,
+        'deviceName': self.mock_device_name,
+        'productName': self.mock_product_name,
+        'modelName': self.mock_model_name,
+        'buildFingerprint': self.mock_build_fingerprint,
+        'processState': 'COMPLETE',
+    })
+
+    latest_apfe_report = self.apfe_client.GetLatestApfeReport(
+        self.mock_report_name
+    )
+    self.assertEqual(
+        latest_apfe_report,
+        apfe_client.ApfeReport(
+            name=self.mock_report_name,
+            type=ndb_models.ReportType.GTS,
+            companyId=self.mock_company_id,
+            companyName=self.mock_company_name,
+            deviceName=self.mock_device_name,
+            productName=self.mock_product_name,
+            modelName=self.mock_model_name,
+            buildFingerprint=self.mock_build_fingerprint,
+            processState=apfe_client.ProcessState.COMPLETE,
+        ),
+    )
+    request = (
+        self.client.compatibility()
+        .devices()
+        .products()
+        .builds()
+        .reports()
+        .get.call_args_list[1][1]
+    )
+    self.assertEqual(
+        request,
+        {'name': self.mock_report_name},
     )
 
   def testGetRequiredReports(self):

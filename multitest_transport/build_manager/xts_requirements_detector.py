@@ -180,9 +180,15 @@ def _HandleAnalysisRunningStatus(build_id, attempt_count):
       constant.ANDROID_PARTNER_API_NAME,
       credentials=private_node_config.default_credentials,
   )
-  required_report_info = client.GetRequiredReports(build.fingerprint)
+  apfe_report = ndb_models.ApfeReport.query(
+      ancestor=build.detection_test_run_key
+  ).get()
+  if not apfe_report:
+    return
+  latest_apfe_report = client.GetLatestApfeReport(apfe_report.name)
 
-  if required_report_info.requiredReports:
+  if latest_apfe_report.processState == apfe_client.ProcessState.COMPLETE:
+    required_report_info = client.GetRequiredReports(build.fingerprint)
     # Updates detection status to COMPLETED and store required reports.
     def _Txn():
       build = mtt_messages.ConvertToKey(ndb_models.Build, build_id).get()
