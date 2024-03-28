@@ -17,7 +17,7 @@ sass_binary(
     name = "build_detail",
     src = "build_detail.scss",
     output_name = "build_detail.css",
-    visibility = ["//multitest_transport"],
+    visibility = ["//visibility:private"],
     deps = [
         "//multitest_transport/ui2:constants",
         "//multitest_transport/ui2/app/shared:shared_styles",
@@ -35,7 +35,7 @@ sass_binary(
     name = "build_file_selector",
     src = "build_file_selector.scss",
     output_name = "build_file_selector.css",
-    visibility = ["//multitest_transport"],
+    visibility = ["//visibility:private"],
 )
 
 sass_binary(
