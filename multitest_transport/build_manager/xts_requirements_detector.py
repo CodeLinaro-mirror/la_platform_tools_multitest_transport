@@ -129,10 +129,14 @@ def _HandleSignalsCollectingStatus(build_id, attempt_count):
         % build.detection_test_run_key,
     )
     return
+  if not test_run.IsFinal():
+    # Waits for the test run to finish.
+    _ScheduleNextProcessTask(build_id, attempt_count)
+    return
   apfe_report = ndb_models.ApfeReport.query(
       ancestor=build.detection_test_run_key
   ).get()
-  if test_run.is_finalized and apfe_report is not None:
+  if apfe_report is not None:
     # Crosses check the build fingerprint.
     if build.fingerprint != apfe_report.build_fingerprint:
       SetDetectionStatus(

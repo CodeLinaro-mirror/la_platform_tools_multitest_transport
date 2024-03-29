@@ -159,6 +159,40 @@ class XtsRequirementsDetectorTest(testbed_dependent_test.TestbedDependentTest):
 
   @mock.patch.object(task_scheduler, 'AddTask')
   @mock.patch.object(apfe_client, 'ApfeClient')
+  def testProcessDetectionEvent_signalsCollecting_runningStateTestRun(
+      self, mock_client_factory, mock_add_task
+  ):
+    self.mock_test_run.state = ndb_models.TestRunState.RUNNING
+    self.mock_test_run.put()
+    xts_requirements_detector.ProcessDetectionEvent(
+        str(self.mock_build.key.id()), self.attempt_count
+    )
+    self.mock_build = self.mock_build.key.get()
+
+    self.assertEqual(
+        self.mock_build.detection_status,
+        ndb_models.XtsRequirementsDetectionStatus.SIGNALS_COLLECTING,
+    )
+    _, task_args = mock_add_task.call_args
+    self.assertEqual(
+        task_args['queue_name'],
+        xts_requirements_detector.XTS_REQUIREMENTS_DETECTION_EVENT_QUEUE,
+    )
+    self.assertEqual(
+        json.loads(task_args['payload']),
+        {
+            'build_id': str(self.mock_build.key.id()),
+            'attempt_count': self.attempt_count,
+        },
+    )
+    self.assertEqual(
+        task_args['target'],
+        'default',
+    )
+    mock_client_factory.assert_not_called()
+
+  @mock.patch.object(task_scheduler, 'AddTask')
+  @mock.patch.object(apfe_client, 'ApfeClient')
   def testProcessDetectionEvent_signalsCollecting_apfeReportMissing(
       self, mock_client_factory, mock_add_task
   ):
