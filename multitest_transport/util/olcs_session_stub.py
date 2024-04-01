@@ -414,6 +414,10 @@ class OlcsSessionStub:
         request_proto.test_environment.retry_command_line = (
             request.test_environment.retry_command_line
         )
+      if request.test_environment.use_parallel_setup:
+        request_proto.test_environment.use_parallel_setup = (
+            request.test_environment.use_parallel_setup
+        )
 
     end_request = session_service_pb2.CreateSessionRequest()
     session_plugin_config = (

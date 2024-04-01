@@ -205,6 +205,10 @@ class OlcsSessionStubTest(absltest.TestCase):
           request_proto.max_retry_on_test_failures,
           new_request_msg.max_retry_on_test_failures,
       )
+      self.assertEqual(
+          request_proto.queue_timeout.seconds,
+          new_request_msg.queue_timeout_seconds,
+      )
 
       # Verify test resources
       self.assertEqual(
@@ -299,8 +303,8 @@ class OlcsSessionStubTest(absltest.TestCase):
           new_request_msg.test_environment.retry_command_line,
       )
       self.assertEqual(
-          request_proto.queue_timeout.seconds,
-          new_request_msg.queue_timeout_seconds,
+          request_proto.test_environment.use_parallel_setup,
+          new_request_msg.test_environment.use_parallel_setup,
       )
 
 
