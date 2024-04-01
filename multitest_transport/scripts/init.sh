@@ -230,6 +230,7 @@ else
     --adb_max_no_device_detection_rounds=1200 \
     --check_device_interval=1h \
     --enable_api_config=false \
+    --enable_ats_file_server_uploader=true \
     --enable_external_master_server=true \
     --master_grpc_target="${OLC_SERVER_GRPC_TARGET}" \
     --public_dir="${MTT_LOG_DIR}" \
