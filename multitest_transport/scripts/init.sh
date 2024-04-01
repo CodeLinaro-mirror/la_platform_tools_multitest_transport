@@ -227,6 +227,7 @@ else
   # Start OSS lab server
   java "-Xmx${MAX_HEAP_MB}m" -XX:+HeapDumpOnOutOfMemoryError \
     -jar /deviceinfra/lab_server_oss_deploy.jar \
+    --check_device_interval=1h \
     --enable_api_config=false \
     --enable_external_master_server=true \
     --master_grpc_target="${OLC_SERVER_GRPC_TARGET}" \
