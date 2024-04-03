@@ -229,6 +229,7 @@ else
     -jar /deviceinfra/lab_server_oss_deploy.jar \
     --adb_max_no_device_detection_rounds=1200 \
     --check_device_interval=1h \
+    --enable_android_device_ready_check=false \
     --enable_api_config=false \
     --enable_ats_file_server_uploader=true \
     --enable_external_master_server=true \
