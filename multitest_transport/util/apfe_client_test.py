@@ -28,6 +28,7 @@ class ApfeClientTest(absltest.TestCase):
   def setUp(self):
     super(ApfeClientTest, self).setUp()
     self.mock_company_id = 1
+    self.mock_build_name = 'build_name'
     self.mock_report_name = 'report_name'
     self.mock_company_name = 'company_name'
     self.mock_device_name = 'device_name'
@@ -102,6 +103,88 @@ class ApfeClientTest(absltest.TestCase):
                 'name': self.mock_resource_name,
             },
             'companyId': self.mock_company_id,
+        },
+    )
+
+  def testGetLatestApfeBuild(self):
+    """Tests latest APFE build can be retrieved."""
+    self.client.compatibility().device_names().product_names().build_fingerprints().get().execute.return_value = json.dumps({
+        'name': self.mock_build_name,
+    })
+    build_fingerprint = (
+        'google/sunfish/sunfish:13/TQ1A.221205.006/9206830:user/release-keys'
+    )
+
+    apfe_build = self.apfe_client.GetLatestApfeBuild(build_fingerprint)
+    self.assertEqual(
+        apfe_build,
+        apfe_client.ApfeBuild(
+            name=self.mock_build_name,
+        ),
+    )
+    request = (
+        self.client.compatibility()
+        .device_names()
+        .product_names()
+        .build_fingerprints()
+        .get.call_args_list[1][1]
+    )
+    self.assertEqual(
+        request,
+        {
+            'name': 'device_names/*/product_names/*/build_fingerprints/google%2Fsunfish%2Fsunfish%3A13%2FTQ1A.221205.006%2F9206830%3Auser%2Frelease-keys'
+        },
+    )
+
+  def testGetLatestBtsReport(self):
+    """Tests latest BTS report can be retrieved from APFE."""
+    self.client.compatibility().devices().products().builds().nreports().list().execute.return_value = json.dumps({
+        'reports': [
+            {
+                'name': self.mock_report_name,
+                'type': 'BTS_V2',
+                'companyId': self.mock_company_id,
+                'companyName': self.mock_company_name,
+                'deviceName': self.mock_device_name,
+                'productName': self.mock_product_name,
+                'modelName': self.mock_model_name,
+                'buildFingerprint': self.mock_build_fingerprint,
+                'processState': 'COMPLETE',
+            },
+        ]
+    })
+
+    latest_bts_report = self.apfe_client.GetLatestBtsReport(
+        self.mock_build_name
+    )
+    self.assertEqual(
+        latest_bts_report,
+        apfe_client.ApfeReport(
+            name=self.mock_report_name,
+            type=ndb_models.ReportType.BTS_V2,
+            companyId=self.mock_company_id,
+            companyName=self.mock_company_name,
+            deviceName=self.mock_device_name,
+            productName=self.mock_product_name,
+            modelName=self.mock_model_name,
+            buildFingerprint=self.mock_build_fingerprint,
+            processState=apfe_client.ProcessState.COMPLETE,
+        ),
+    )
+    request = (
+        self.client.compatibility()
+        .devices()
+        .products()
+        .builds()
+        .nreports()
+        .list.call_args_list[1][1]
+    )
+    self.assertEqual(
+        request,
+        {
+            'parent': self.mock_build_name,
+            'n': 1,
+            'includeReportTypes': ['BTS_V2'],
         },
     )
 

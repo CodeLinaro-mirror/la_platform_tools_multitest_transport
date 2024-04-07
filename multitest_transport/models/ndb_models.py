@@ -1102,6 +1102,16 @@ def GetFileCleanerSettings():
   return obj or DEFAULT_FILE_CLEANER_SETTINGS
 
 
+class ApfeBuild(ndb.Model):
+  """An APFE build.
+
+  Attributes:
+    name: the unique resource name.
+  """
+
+  name = ndb.StringProperty()
+
+
 class XtsRequirementsDetectionStatus(messages.Enum):
   NOT_STARTED = 0  # Xts requirements detection is not yet started.
   SIGNALS_COLLECTING = 1  # A task is collecting build integrity signals.
@@ -1156,6 +1166,7 @@ class Build(ndb.Model):
         RequiredReport.build_key == key
     ).fetch(keys_only=True)
     ndb.delete_multi(keys_to_delete)
+    ndb.delete_multi(ndb.Query(ancestor=key).iter(keys_only=True))
 
   def IsFinalDetectionStatus(self):
     """Returns whether an xts requirements detection is in a final state.

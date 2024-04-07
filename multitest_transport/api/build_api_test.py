@@ -20,6 +20,10 @@ import uuid
 
 from absl.testing import absltest
 from google.oauth2 import credentials as authorized_user
+from protorpc import protojson
+from tradefed_cluster.services import task_scheduler
+
+
 from multitest_transport.api import api_test_util
 from multitest_transport.api import build_api
 from multitest_transport.build_manager import xts_requirements_detector
@@ -27,7 +31,7 @@ from multitest_transport.models import messages
 from multitest_transport.models import ndb_models
 from multitest_transport.test_scheduler import test_kicker
 from multitest_transport.util import analytics
-from protorpc import protojson
+from multitest_transport.util import apfe_client
 
 FILE_URL = 'file:///root/file/path/build.zip'
 DEVICE_SPEC = 'device_serial:2A151FDH20066K'
@@ -123,13 +127,25 @@ class BuildApiTest(api_test_util.TestCase):
     required_report.put()
     return required_report
 
+  def _mockApfeClientMethod(self, mock_client_factory):
+    """Mocks the apfe_client.ApfeClient method."""
+    mock_client = mock.MagicMock()
+    mock_client_factory.return_value = mock_client
+    mock_client.GetLatestApfeBuild.return_value = apfe_client.ApfeBuild(
+        name='apfe build',
+    )
+    mock_client.GetLatestBtsReport.return_value = apfe_client.ApfeReport(
+        processState=apfe_client.ProcessState.COMPLETE,
+    )
+
   def testList(self):
     """Tests builds.list API."""
     res = self.app.get('/_ah/api/mtt/v1/builds')
     self.assertIsNotNone(res)
 
   @mock.patch.object(analytics, 'Log')
-  def testCreate(self, mock_log):
+  @mock.patch.object(task_scheduler, 'AddCallableTask')
+  def testCreate(self, mock_add_task, mock_log):
     """Tests builds.create API."""
     data = self._CreateBuildToRequest()
 
@@ -142,6 +158,12 @@ class BuildApiTest(api_test_util.TestCase):
     self.assertEqual(data['file_url'], build.file_url)
     self.assertEqual(data['size'], str(build.size))
     self.assertEqual(data['labels'], build.labels)
+    mock_add_task.assert_has_calls([
+        mock.call(
+            xts_requirements_detector.SyncApfeBuild,
+            build.key.id(),
+        ),
+    ])
     mock_log.assert_called_with(
         analytics.BUILD_CATEGORY, analytics.CREATE_ACTION
     )
@@ -249,7 +271,8 @@ class BuildApiTest(api_test_util.TestCase):
         analytics.BUILD_CATEGORY, analytics.UPDATE_ACTION
     )
 
-  def testUpdate_skipChangesToReadOnlyFields(self):
+  @mock.patch.object(task_scheduler, 'AddCallableTask')
+  def testUpdate_skipChangesToReadOnlyFields(self, mock_add_task):
     """Tests builds.update API with changes to read only fields."""
     build = self._CreateMockBuild()
     build_msg = messages.Convert(build, messages.Build)
@@ -267,6 +290,12 @@ class BuildApiTest(api_test_util.TestCase):
     self.assertEqual(updated_build_msg.fingerprint, 'new_fingerprint')
     # Verify that the file_url field remains the same as before.
     self.assertEqual(updated_build_msg.file_url, FILE_URL)
+    mock_add_task.assert_has_calls([
+        mock.call(
+            xts_requirements_detector.SyncApfeBuild,
+            build.key.id(),
+        ),
+    ])
 
   @mock.patch.object(analytics, 'Log')
   def testDelete(self, mock_log):
@@ -295,8 +324,10 @@ class BuildApiTest(api_test_util.TestCase):
 
   @mock.patch.object(analytics, 'Log')
   @mock.patch.object(test_kicker, 'CreateTestRun', autospec=True)
-  def testDetect(self, mock_run_test, mock_log):
+  @mock.patch.object(apfe_client, 'ApfeClient')
+  def testDetect(self, mock_client_factory, mock_run_test, mock_log):
     """Tests builds.detect API."""
+    self._mockApfeClientMethod(mock_client_factory)
     test = self._createMockTest()
     action = self._CreateTestRunAction(
         name='Report Upload Action',
@@ -350,8 +381,10 @@ class BuildApiTest(api_test_util.TestCase):
         analytics.BUILD_CATEGORY, analytics.DETECT_ACTION
     )
 
-  def testDetect_testNotFound(self):
+  @mock.patch.object(apfe_client, 'ApfeClient')
+  def testDetect_testNotFound(self, mock_client_factory):
     """Tests builds.detect with test not added."""
+    self._mockApfeClientMethod(mock_client_factory)
     build = self._CreateMockBuild()
     res = self.app.post_json(
         '/_ah/api/mtt/v1/builds/%s/detect' % build.key.id(),
@@ -364,8 +397,10 @@ class BuildApiTest(api_test_util.TestCase):
         str(res.body),
     )
 
-  def testDetect_reportUploadActionNotFound(self):
+  @mock.patch.object(apfe_client, 'ApfeClient')
+  def testDetect_reportUploadActionNotFound(self, mock_client_factory):
     """Tests builds.detect with report upload action not added."""
+    self._mockApfeClientMethod(mock_client_factory)
     self._createMockTest()
     build = self._CreateMockBuild()
     res = self.app.post_json(
@@ -380,8 +415,12 @@ class BuildApiTest(api_test_util.TestCase):
         str(res.body),
     )
 
-  def testDetect_reportUploadActionNotFound_noCredentials(self):
+  @mock.patch.object(apfe_client, 'ApfeClient')
+  def testDetect_reportUploadActionNotFound_noCredentials(
+      self, mock_client_factory
+  ):
     """Tests builds.detect with credentials in report upload action unset."""
+    self._mockApfeClientMethod(mock_client_factory)
     self._createMockTest()
     self._CreateTestRunAction(
         name='Report Upload Action',
@@ -400,8 +439,12 @@ class BuildApiTest(api_test_util.TestCase):
         str(res.body),
     )
 
-  def testDetect_reportUploadActionNotFound_noOptionValues(self):
+  @mock.patch.object(apfe_client, 'ApfeClient')
+  def testDetect_reportUploadActionNotFound_noOptionValues(
+      self, mock_client_factory
+  ):
     """Tests builds.detect with option values in report upload action unset."""
+    self._mockApfeClientMethod(mock_client_factory)
     self._createMockTest()
     self._CreateTestRunAction(
         name='Report Upload Action',

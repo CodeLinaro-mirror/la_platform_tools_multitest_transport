@@ -89,13 +89,38 @@ class XtsRequirementsDetectorTest(testbed_dependent_test.TestbedDependentTest):
         )
     ]
 
+  @mock.patch.object(apfe_client, 'ApfeClient')
+  def testSyncApfeBuild(self, mock_client_factory):
+    mock_client = mock.MagicMock()
+    mock_client_factory.return_value = mock_client
+    mock_client.GetLatestApfeBuild.return_value = apfe_client.ApfeBuild(
+        name='apfe build',
+    )
+    xts_requirements_detector.SyncApfeBuild(self.mock_build.key.id())
+    apfe_build = ndb_models.ApfeBuild.query(ancestor=self.mock_build.key).get()
+    self.mock_build = self.mock_build.key.get()
+
+    self.assertEqual(
+        apfe_build.name,
+        'apfe build',
+    )
+
   @mock.patch.object(task_scheduler, 'AddTask')
-  def testKickDetection(self, mock_add_task):
+  @mock.patch.object(apfe_client, 'ApfeClient')
+  def testKickDetection(self, mock_client_factory, mock_add_task):
     self.mock_build.detection_status = (
         ndb_models.XtsRequirementsDetectionStatus.NOT_STARTED
     )
     self.mock_build.detection_test_run_key = None
     self.mock_build.put()
+    mock_client = mock.MagicMock()
+    mock_client_factory.return_value = mock_client
+    mock_client.GetLatestApfeBuild.return_value = apfe_client.ApfeBuild(
+        name='apfe build',
+    )
+    mock_client.GetLatestBtsReport.return_value = apfe_client.ApfeReport(
+        processState=apfe_client.ProcessState.COMPLETE,
+    )
     xts_requirements_detector.KickDetection(
         self.device_spec, self.test_resource_objs, str(self.mock_build.key.id())
     )
@@ -124,6 +149,36 @@ class XtsRequirementsDetectorTest(testbed_dependent_test.TestbedDependentTest):
         task_args['target'],
         'default',
     )
+
+  @mock.patch.object(apfe_client, 'ApfeClient')
+  def testKickDetection_btsReportMissing(self, mock_client_factory):
+    self.mock_build.detection_status = (
+        ndb_models.XtsRequirementsDetectionStatus.NOT_STARTED
+    )
+    self.mock_build.detection_test_run_key = None
+    self.mock_build.put()
+    mock_client = mock.MagicMock()
+    mock_client_factory.return_value = mock_client
+    mock_client.GetLatestApfeBuild.return_value = apfe_client.ApfeBuild(
+        name='apfe build',
+    )
+    mock_client.GetLatestBtsReport.return_value = None
+    xts_requirements_detector.KickDetection(
+        self.device_spec, self.test_resource_objs, str(self.mock_build.key.id())
+    )
+    self.mock_build = self.mock_build.key.get()
+
+    self.assertEqual(
+        ndb_models.XtsRequirementsDetectionStatus.ERROR,
+        self.mock_build.detection_status,
+    )
+    self.assertEqual(
+        self.mock_build.detection_error_reason,
+        'BTS report not ready. Please upload the software build to Android'
+        ' Firmware Analysis portal in advance.',
+    )
+    self.assertIsNone(self.mock_build.detection_start_time)
+    self.assertIsNone(self.mock_build.detection_test_run_key)
 
   @mock.patch.object(task_scheduler, 'AddTask')
   @mock.patch.object(apfe_client, 'ApfeClient')

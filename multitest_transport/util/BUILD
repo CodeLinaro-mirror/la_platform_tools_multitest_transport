@@ -72,6 +72,7 @@ pytype_strict_library(
         ":oauth2_util_lib",
         "//multitest_transport/models:ndb_models_lib",
         "//third_party/py/protorpc:protorpc_all",
+        "@tradefed_cluster//tradefed_cluster/util:ndb_shim_lib",
         third_party("apiclient"),
         third_party("httplib2"),
     ],

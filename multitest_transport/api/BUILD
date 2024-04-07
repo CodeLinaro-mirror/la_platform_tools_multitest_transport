@@ -53,6 +53,7 @@ pytype_strict_library(
         "//multitest_transport/test_scheduler:test_kicker_lib",
         "//multitest_transport/util:analytics_lib",
         "//multitest_transport/util:file_util_lib",
+        "@tradefed_cluster//tradefed_cluster/services:task_scheduler_lib",
         "@tradefed_cluster//tradefed_cluster/util:ndb_shim_lib",
         third_party("google-endpoints"),
         third_party("protorpc"),

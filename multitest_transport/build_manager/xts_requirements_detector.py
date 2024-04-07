@@ -19,7 +19,9 @@ import logging
 
 import flask
 import pytz
-
+from tradefed_cluster import common
+from tradefed_cluster.services import task_scheduler
+from tradefed_cluster.util import ndb_shim as ndb
 
 
 from multitest_transport.models import messages as mtt_messages
@@ -28,9 +30,6 @@ from multitest_transport.test_scheduler import test_kicker
 from multitest_transport.util import analytics
 from multitest_transport.util import apfe_client
 from multitest_transport.util import constant
-from tradefed_cluster import common
-from tradefed_cluster.services import task_scheduler
-from tradefed_cluster.util import ndb_shim as ndb
 
 MAX_ATTEMPT_COUNT = 15
 MAX_RETRY_COUNT = 5
@@ -75,6 +74,46 @@ def _ScheduleNextProcessTask(build_id, attempt_count, delta_minutes=1):
       target='default',
       eta=pytz.UTC.localize(next_process_time),
   )
+
+
+def _GetApfeClient():
+  """Returns a client to access APFE service."""
+  # Uses the default credentials to sync data from APFE.
+  private_node_config = ndb_models.GetPrivateNodeConfig()
+  client = apfe_client.ApfeClient(
+      constant.ANDROID_PARTNER_API_NAME,
+      credentials=private_node_config.default_credentials,
+  )
+  return client
+
+
+def _ValidateBuild(build_id):
+  """Validates that the build is ready to conduct xTS requirements detection."""
+  try:
+    apfe_build = SyncApfeBuild(build_id)
+    if apfe_build is None:
+      return False
+    client = _GetApfeClient()
+    bts_report = client.GetLatestBtsReport(apfe_build.name)
+    if (
+        bts_report is None
+        or bts_report.processState == apfe_client.ProcessState.IN_PROGRESS
+    ):
+      SetDetectionStatus(
+          build_id,
+          ndb_models.XtsRequirementsDetectionStatus.ERROR,
+          'BTS report not ready. Please upload the software build to Android'
+          ' Firmware Analysis portal in advance.',
+      )
+      return False
+  except Exception as e:  
+    SetDetectionStatus(
+        build_id,
+        ndb_models.XtsRequirementsDetectionStatus.ERROR,
+        detection_error_reason=str(e),
+    )
+    return False
+  return True
 
 
 def _GetXtsRequirementsDetectionTest():
@@ -178,17 +217,12 @@ def _HandleAnalysisRunningStatus(build_id, attempt_count):
   build = mtt_messages.ConvertToKey(ndb_models.Build, build_id).get()
   if not build:
     return
-  # Uses the default credentials to sync required reports from APFE.
-  private_node_config = ndb_models.GetPrivateNodeConfig()
-  client = apfe_client.ApfeClient(
-      constant.ANDROID_PARTNER_API_NAME,
-      credentials=private_node_config.default_credentials,
-  )
   apfe_report = ndb_models.ApfeReport.query(
       ancestor=build.detection_test_run_key
   ).get()
   if not apfe_report:
     return
+  client = _GetApfeClient()
   latest_apfe_report = client.GetLatestApfeReport(apfe_report.name)
 
   if latest_apfe_report.processState == apfe_client.ProcessState.COMPLETE:
@@ -221,6 +255,26 @@ def _HandleAnalysisRunningStatus(build_id, attempt_count):
     )
 
 
+def SyncApfeBuild(build_id):
+  """Syncs the APFE build with latest data.
+
+  Args:
+    build_id: a build ID.
+
+  Returns:
+    a latest ndb_models.ApfeBuild object.
+  """
+  build = mtt_messages.ConvertToKey(ndb_models.Build, build_id).get()
+  if not build:
+    return
+  client = _GetApfeClient()
+  apfe_build_msg = client.GetLatestApfeBuild(build.fingerprint)
+  apfe_build = apfe_client.ConvertApfeBuild(apfe_build_msg, build.key)
+  if apfe_build:
+    apfe_build.put()
+  return apfe_build
+
+
 def KickDetection(device_spec, test_resource_objs, build_id):
   """Kick off an xTS requirements detection for a build.
 
@@ -236,6 +290,10 @@ def KickDetection(device_spec, test_resource_objs, build_id):
       analytics.BUILD_CATEGORY,
       analytics.DETECT_ACTION,
   )
+  valid = _ValidateBuild(build_id)
+  if not valid:
+    build = mtt_messages.ConvertToKey(ndb_models.Build, build_id).get()
+    return build
   test_key, test = _GetXtsRequirementsDetectionTest()
   report_upload_action_key, _ = _GetReportUploadAction()
 

@@ -19,15 +19,18 @@ import os
 import uuid
 
 import endpoints
+from protorpc import message_types
+from protorpc import messages
+from protorpc import remote
+from tradefed_cluster.services import task_scheduler
+
+
 from multitest_transport.api import base
 from multitest_transport.build_manager import xts_requirements_detector
 from multitest_transport.models import messages as mtt_messages
 from multitest_transport.models import ndb_models
 from multitest_transport.util import analytics
 from multitest_transport.util import file_util
-from protorpc import message_types
-from protorpc import messages
-from protorpc import remote
 
 _ALLOWED_SOURCE_EXT = ['.zip', '.rar', '.tgz']
 
@@ -70,6 +73,9 @@ class BuildApi(remote.Service):
     )
     self._ValidateBuild(build)
     build.put()
+    task_scheduler.AddCallableTask(
+        xts_requirements_detector.SyncApfeBuild, build.key.id()
+    )
     return mtt_messages.Convert(build, mtt_messages.Build)
 
   @base.ApiMethod(
@@ -112,11 +118,16 @@ class BuildApi(remote.Service):
     """
     analytics.Log(analytics.BUILD_CATEGORY, analytics.UPDATE_ACTION)
     _, existing_build = self._getBuild(request.build_id)
+    existing_fingerprint = existing_build.fingerprint
     existing_build.name = self._strip(request.name)
     existing_build.fingerprint = self._strip(request.fingerprint)
     existing_build.labels = request.labels
     self._ValidateBuild(existing_build)
     existing_build.put()
+    if existing_fingerprint != existing_build.fingerprint:
+      task_scheduler.AddCallableTask(
+          xts_requirements_detector.SyncApfeBuild, request.build_id
+      )
     return mtt_messages.Convert(existing_build, mtt_messages.Build)
 
   @base.ApiMethod(

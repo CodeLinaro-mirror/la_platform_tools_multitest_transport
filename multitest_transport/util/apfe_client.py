@@ -19,6 +19,7 @@ import apiclient
 import httplib2
 from protorpc import messages
 from protorpc import protojson
+from tradefed_cluster.util import ndb_shim as ndb
 
 
 from multitest_transport.models import ndb_models
@@ -107,6 +108,43 @@ class ApfeClient(object):
     apfe_report = protojson.decode_message(ApfeReport, res)  # pytype: disable=module-attr
     return apfe_report
 
+  def GetLatestApfeBuild(self, fingerprint):
+    """Gets the latest build from APFE."""
+
+    res = (
+        self._GetClient()
+        .compatibility()
+        .device_names()
+        .product_names()
+        .build_fingerprints()
+        .get(
+            name=constant.BUILD_FINGERPRINTS_PATH
+            + '/'
+            + urllib.parse.quote_plus(fingerprint.strip())
+        )
+        .execute(http=self._GetHttp(), num_retries=constant.NUM_RETRIES)
+    )
+    apfe_build = protojson.decode_message(ApfeBuild, res)  # pytype: disable=module-attr
+    return apfe_build
+
+  def GetLatestBtsReport(self, build_name):
+    """Gets the latest BTS report from APFE for a build."""
+
+    res = (
+        self._GetClient()
+        .compatibility()
+        .devices()
+        .products()
+        .builds()
+        .nreports()
+        .list(parent=build_name, n=1, includeReportTypes=['BTS_V2'])
+        .execute(http=self._GetHttp(), num_retries=constant.NUM_RETRIES)
+    )
+    response = protojson.decode_message(ListNReportsResponse, res)  # pytype: disable=module-attr
+    if response.reports:
+      return response.reports[0]
+    return None
+
   def GetLatestApfeReport(self, report_name):
     """Gets the latest report from APFE."""
 
@@ -141,6 +179,24 @@ class ApfeClient(object):
     )
     required_report_info = protojson.decode_message(RequiredReportInfo, res)  # pytype: disable=module-attr
     return required_report_info
+
+
+class ApfeBuild(messages.Message):
+  """an APFE build."""
+
+  name = messages.StringField(1)
+
+
+def ConvertApfeBuild(msg, build_key):
+  if not isinstance(msg, ApfeBuild):
+    return None
+  # Syncs data to existing APFE build if any, otherwise creates a new one.
+  saved_apfe_build = ndb_models.ApfeBuild.query(ancestor=build_key).get()
+  key_id = saved_apfe_build.key.id() if saved_apfe_build else None
+  return ndb_models.ApfeBuild(
+      key=ndb.Key(ndb_models.ApfeBuild, key_id, parent=build_key),
+      name=msg.name,
+  )
 
 
 class ProcessState(messages.Enum):
@@ -179,6 +235,12 @@ def ConvertApfeReport(msg, test_run_key):
       model_name=msg.modelName,
       build_fingerprint=msg.buildFingerprint,
   )
+
+
+class ListNReportsResponse(messages.Message):
+  """A response from list n reports query."""
+
+  reports = messages.MessageField(ApfeReport, 1, repeated=True)  
 
 
 class RequiredReport(messages.Message):
