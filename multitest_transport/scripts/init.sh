@@ -110,6 +110,7 @@ then
         --enable_grpc_lab_server=true \
         --olc_server_port="${OLC_SERVER_PORT}" \
         --public_dir="${MTT_LOG_DIR}" \
+        --tmp_dir_root="${MTT_TEST_WORK_DIR}" \
         ${OLC_SERVER_OPTS} &> /dev/null &
     fi
   fi
