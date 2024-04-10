@@ -228,6 +228,7 @@ else
   java "-Xmx${MAX_HEAP_MB}m" -XX:+HeapDumpOnOutOfMemoryError \
     -jar /deviceinfra/lab_server_oss_deploy.jar \
     --adb_max_no_device_detection_rounds=1200 \
+    --android_device_daemon=false \
     --check_device_interval=1h \
     --enable_android_device_ready_check=false \
     --enable_api_config=false \
