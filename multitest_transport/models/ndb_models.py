@@ -1194,3 +1194,11 @@ class RequiredReport(ndb.Model):
   test_plans = ndb.StringProperty(repeated=True)
   available = ndb.BooleanProperty()
   test_run_key = ndb.KeyProperty(TestRun)
+
+
+class RequestInfo(ndb.Model):
+  request_json_str = ndb.TextProperty(required=True)
+
+  @classmethod
+  def get_by_id(cls, id_, **kwargs):
+    return RequestInfo._get_by_id(id_, **kwargs)

@@ -17,7 +17,9 @@
 import logging
 from typing import List, Optional
 
+from multitest_transport.models import ndb_models
 from multitest_transport.util import olcs_session_client
+from protorpc import protojson
 from tradefed_cluster import api_messages
 from tradefed_cluster import common
 
@@ -133,8 +135,8 @@ class OlcsSessionStub:
     test_context = api_messages.TestContext()
     return test_context
 
-  def GetRequest(self, request_id: str) -> api_messages.RequestMessage:
-    """Get request from OLCS.
+  def _FetchRequest(self, request_id: str) -> api_messages.RequestMessage:
+    """Fetch request from OLCS and convert to TFC request message.
 
     Args:
       request_id: The request id of the request.
@@ -194,6 +196,35 @@ class OlcsSessionStub:
         )
     )
     return request_message
+
+  def GetRequest(self, request_id):
+    """Get request from OLCS or from Database.
+
+    Args:
+      request_id: The request id of the request.
+
+    Returns:
+      The request message defined by TFC.
+    """
+    test_request = ndb_models.RequestInfo.get_by_id(request_id)
+    if test_request:
+      request_json = test_request.request_json_str
+      # pytype: disable=module-attr
+      return protojson.decode_message(api_messages.RequestMessage, request_json)
+      # pytype: enable=module-attr
+    test_request = self._FetchRequest(request_id)
+    if test_request:
+      if (
+          test_request.state == common.RequestState.COMPLETED
+          or test_request.state == common.RequestState.ERROR
+      ):
+        request_info = ndb_models.RequestInfo(
+            id=request_id,
+            request_json_str=protojson.encode_message(test_request),  # pytype: disable=module-attr
+        )
+        request_info.put()
+      return test_request
+    return None
 
   def GetAttempt(
       self, request_id: str, attempt_id: str

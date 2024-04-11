@@ -18,10 +18,12 @@ from unittest import mock
 
 from absl.testing import absltest
 from google.protobuf import text_format
+from multitest_transport.models import ndb_models
 from multitest_transport.util import olcs_session_client
 from multitest_transport.util import olcs_session_stub
 from protorpc import protojson
 from tradefed_cluster import api_messages
+from tradefed_cluster import testbed_dependent_test
 
 from com_google_deviceinfra.src.devtools.mobileharness.infra.ats.server.proto import service_pb2
 from com_google_deviceinfra.src.devtools.mobileharness.infra.client.longrunningservice.proto import session_service_pb2
@@ -29,7 +31,7 @@ from com_google_deviceinfra.src.devtools.mobileharness.infra.client.longrunnings
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), 'test_data')
 
 
-class OlcsSessionStubTest(absltest.TestCase):
+class OlcsSessionStubTest(testbed_dependent_test.TestbedDependentTest):
 
   def setUp(self):
     super().setUp()
@@ -75,6 +77,16 @@ class OlcsSessionStubTest(absltest.TestCase):
     )
     # Assert service response.
     self.assertEqual(stub_response, client_response.session_id.id)
+
+  def testGetRequestWithDatabase(self):
+    expected_request_message = api_messages.RequestMessage(id='test_request_id')
+    self.mock_request_info = ndb_models.RequestInfo(
+        id='test_request_id',
+        request_json_str=protojson.encode_message(expected_request_message),  # pytype: disable=module-attr
+    )
+    self.mock_request_info.put()
+    request_message = self.session_stub.GetRequest('test_request_id')
+    self.assertEqual(request_message, expected_request_message)
 
   def testGetRequest(self):
     with open(

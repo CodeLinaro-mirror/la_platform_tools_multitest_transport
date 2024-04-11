@@ -168,7 +168,8 @@ pytype_strict_library(
         "ndb_models.py",
     ],
     deps = [
-        "//multitest_transport/util",
+        "//multitest_transport/util:env_lib",
+        "//multitest_transport/util:oauth2_util_lib",
         "@tradefed_cluster//tradefed_cluster:common_lib",
         "@tradefed_cluster//tradefed_cluster/util:ndb_shim_lib",
         third_party("protorpc"),
