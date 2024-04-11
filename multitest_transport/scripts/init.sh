@@ -110,6 +110,7 @@ then
         --enable_grpc_lab_server=true \
         --olc_server_port="${OLC_SERVER_PORT}" \
         --public_dir="${MTT_LOG_DIR}" \
+        --resource_dir_name="olc_server_res_files" \
         --tmp_dir_root="${MTT_TEST_WORK_DIR}" \
         ${OLC_SERVER_OPTS} &> /dev/null &
     fi
@@ -237,6 +238,7 @@ else
     --enable_external_master_server=true \
     --master_grpc_target="${OLC_SERVER_GRPC_TARGET}" \
     --public_dir="${MTT_LOG_DIR}" \
+    --resource_dir_name="lab_server_res_files" \
     --serv_via_cloud_rpc=false \
     --skip_lab_job_gen_file_cleanup=true \
     --tmp_dir_root="${MTT_TEST_WORK_DIR}" \
