@@ -187,17 +187,25 @@ class TestRunApi(remote.Service):
     # TODO: This is a workaround to fetch test result.
     # Will remove after active message push from OLCS to MTT server is ready.
     if os.environ.get('IS_OMNILAB_BASED') == 'true' and test_run.request_id:
-      test_request = self._olcs_session_stub.GetRequest(test_run.request_id)
-      if test_request and test_request.state:
-        request_event = api_messages.RequestEventMessage(
-            type=common.ObjectEventType.REQUEST_STATE_CHANGED,
-            request_id=test_run.request_id,
-            new_state=test_request.state,
-            request=test_request,
-            event_time=datetime.datetime.now(),
+      try:
+        test_request = self._olcs_session_stub.GetRequest(test_run.request_id)
+        if test_request and test_request.state:
+          request_event = api_messages.RequestEventMessage(
+              type=common.ObjectEventType.REQUEST_STATE_CHANGED,
+              request_id=test_run.request_id,
+              new_state=test_request.state,
+              request=test_request,
+              event_time=datetime.datetime.now(),
+          )
+          tfc_event_handler.ProcessRequestEvent(request_event)
+          test_run = ndb_models.TestRun.get_by_id(request.test_run_id)
+      except Exception as e:  
+        logging.warning(
+            'Failed to get request %s from OLCS, Skip updating request'
+            ' state. Reason:\n%s',
+            test_run.request_id,
+            e,
         )
-        tfc_event_handler.ProcessRequestEvent(request_event)
-        test_run = ndb_models.TestRun.get_by_id(request.test_run_id)
     return mtt_messages.Convert(test_run, mtt_messages.TestRun)
 
   @base.ApiMethod(
