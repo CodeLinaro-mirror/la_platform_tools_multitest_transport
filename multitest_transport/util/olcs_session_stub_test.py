@@ -306,6 +306,24 @@ class OlcsSessionStubTest(absltest.TestCase):
           request_proto.test_environment.use_parallel_setup,
           new_request_msg.test_environment.use_parallel_setup,
       )
+      self.assertEqual(
+          request_proto.test_environment.device_action_config_objects,
+          [
+              service_pb2.DeviceActionConfigObject(
+                  type=service_pb2.DeviceActionConfigObject.DeviceActionConfigObjectType.TARGET_PREPARER,
+                  class_name='com.android.tradefed.targetprep.DeviceCleaner',
+                  option_values=[
+                      service_pb2.DeviceActionConfigObject.Option(
+                          name='post-cleanup', value=['SCREEN_OFF']
+                      )
+                  ],
+              ),
+              service_pb2.DeviceActionConfigObject(
+                  type=service_pb2.DeviceActionConfigObject.DeviceActionConfigObjectType.RESULT_REPORTER,
+                  class_name='com.google.android.tradefed.result.teststorage.ResultReporter',
+              ),
+          ],
+      )
 
 
 if __name__ == '__main__':

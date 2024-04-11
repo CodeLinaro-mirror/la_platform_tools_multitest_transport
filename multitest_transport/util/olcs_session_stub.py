@@ -84,6 +84,18 @@ _ERROR_REASON_MAP = {
     ),
 }
 
+_DEVICE_ACTION_TYPE_MAP = {
+    api_messages.TradefedConfigObjectType.UNKNOWN: (
+        service_pb2.DeviceActionConfigObject.DeviceActionConfigObjectType.UNKNOWN_DEVICE_ACTION_CONFIG_OBJECT_TYPE
+    ),
+    api_messages.TradefedConfigObjectType.TARGET_PREPARER: (
+        service_pb2.DeviceActionConfigObject.DeviceActionConfigObjectType.TARGET_PREPARER
+    ),
+    api_messages.TradefedConfigObjectType.RESULT_REPORTER: (
+        service_pb2.DeviceActionConfigObject.DeviceActionConfigObjectType.RESULT_REPORTER
+    ),
+}
+
 
 class OlcsSessionStub:
   """The OLCS session service stub to send ats server specific request to OLCS."""
@@ -418,6 +430,11 @@ class OlcsSessionStub:
         request_proto.test_environment.use_parallel_setup = (
             request.test_environment.use_parallel_setup
         )
+      if request.test_environment.tradefed_config_objects:
+        request_proto.test_environment.device_action_config_objects.extend([
+            OlcsSessionStub._ConvertToDeviceActionConfigObject(obj)
+            for obj in request.test_environment.tradefed_config_objects
+        ])
 
     end_request = session_service_pb2.CreateSessionRequest()
     session_plugin_config = (
@@ -434,6 +451,24 @@ class OlcsSessionStub:
     )
     session_plugin_config.explicit_label.label = SESSION_PLUGIN_LABEL
     return end_request
+
+  @staticmethod
+  def _ConvertToDeviceActionConfigObject(
+      obj: api_messages.TradefedConfigObject,
+  ) -> service_pb2.DeviceActionConfigObject:
+    return service_pb2.DeviceActionConfigObject(
+        type=_DEVICE_ACTION_TYPE_MAP.get(
+            obj.type,
+            service_pb2.DeviceActionConfigObject.UNKNOWN_DEVICE_ACTION_CONFIG_OBJECT_TYPE,
+        ),
+        class_name=obj.class_name,
+        option_values=[
+            service_pb2.DeviceActionConfigObject.Option(
+                name=kv.key, value=kv.values
+            )
+            for kv in obj.option_values
+        ],
+    )
 
 
 def _MillisecToDuration(millis: int) -> duration_pb2.Duration:

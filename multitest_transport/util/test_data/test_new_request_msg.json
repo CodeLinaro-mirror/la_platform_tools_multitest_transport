@@ -78,6 +78,10 @@
         "type": "TARGET_PREPARER",
         "class_name": "com.android.tradefed.targetprep.DeviceCleaner",
         "option_values": [{ "key": "post-cleanup", "values": ["SCREEN_OFF"] }]
+      },
+      {
+        "type": "RESULT_REPORTER",
+        "class_name": "com.google.android.tradefed.result.teststorage.ResultReporter"
       }
     ],
     "use_parallel_setup": true
