@@ -98,6 +98,8 @@ then
   then
     OLC_SERVER_PORT="${OLC_SERVER_PORT:-7030}"
     OLC_SERVER_GRPC_TARGET="$(echo ${MTT_CONTROL_SERVER_URL} | sed 's,^\([^:/]\+://\)\?\([^:/]\+\)\(:\([0-9]\{1\,5\}\)\)\?\+.*$,\2,g'):${OLC_SERVER_PORT}"
+    ATS_FILE_SERVER_PORT="$((${MTT_CONTROL_SERVER_PORT}+6))"
+    ATS_FILE_SERVER="localhost:${ATS_FILE_SERVER_PORT}"
 
     if [[ "${FILE_SERVICE_ONLY}" == "false" ]]
     then
@@ -113,6 +115,10 @@ then
         --resource_dir_name="olc_server_res_files" \
         --tmp_dir_root="${MTT_TEST_WORK_DIR}" \
         ${OLC_SERVER_OPTS} &> /dev/null &
+    else
+      REMOTES_CONTROL_SERVER_PORT="$(echo ${MTT_CONTROL_SERVER_URL} | sed 's,^\([^:/]\+://\)\?\([^:/]\+:\)\(\([0-9]\{1\,5\}\)\)\?\+.*$,\3,g')"
+      ATS_FILE_SERVER_PORT="$((${REMOTES_CONTROL_SERVER_PORT}+6))"
+      ATS_FILE_SERVER="$(echo ${MTT_CONTROL_SERVER_URL} | sed 's,^\(\([^:/]\+://\)\?\([^:/]\+\)\)\(:\([0-9]\{1\,5\}\)\)\?\+.*$,\1,g'):${ATS_FILE_SERVER_PORT}"
     fi
   fi
 
@@ -235,6 +241,7 @@ else
     --enable_android_device_ready_check=false \
     --enable_api_config=false \
     --enable_ats_file_server_uploader=true \
+    --ats_file_server="${ATS_FILE_SERVER}" \
     --enable_external_master_server=true \
     --master_grpc_target="${OLC_SERVER_GRPC_TARGET}" \
     --public_dir="${MTT_LOG_DIR}" \

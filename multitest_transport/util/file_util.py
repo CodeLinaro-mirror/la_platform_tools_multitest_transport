@@ -637,6 +637,8 @@ def GetWorkerAccessibleUrl(url: str) -> str:
   """
   if env.OPERATION_MODE != env.OperationMode.ON_PREMISE:
     return url
+  if env.IS_OMNILAB_BASED:
+    return url
   u = urllib.parse.urlparse(url)
   # If the URL is under file server root directory, translate it to http.
   # Otherwise, it refers to a local file on worker.
