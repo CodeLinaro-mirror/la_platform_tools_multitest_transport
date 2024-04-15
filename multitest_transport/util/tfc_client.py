@@ -107,7 +107,7 @@ def _ProcessSubscribedSessionResponse(response):
         event_time=datetime.datetime.now(),
     )
     if request_event_message_handler:
-      ndb.with_ndb_context(request_event_message_handler)(request_event)
+      request_event_message_handler(request_event)
   except Exception as e:  
     logging.exception(
         'Exception %s when processing subscribed session response', e
@@ -143,7 +143,7 @@ def NewRequest(
   if os.environ.get('IS_OMNILAB_BASED') == 'true':
     request_id = _GetOlcsSessionStub().CreateNewRequest(new_request_msg)
     _GetOlcsSessionStub().StartSubscribeSession(
-        request_id, _ProcessSubscribedSessionResponse
+        request_id, ndb.with_ndb_context(_ProcessSubscribedSessionResponse)
     )
     return _GetOlcsSessionStub().GetRequest(request_id)
   else:
