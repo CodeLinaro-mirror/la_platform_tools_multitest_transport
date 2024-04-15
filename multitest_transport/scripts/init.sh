@@ -108,6 +108,8 @@ then
       # Start OLC server on the controller
       java -XX:+HeapDumpOnOutOfMemoryError \
         -jar /deviceinfra/ats_olc_server_deploy.jar \
+        --connect_to_lab_server_using_ip=true \
+        --connect_to_lab_server_using_master_detected_ip=true \
         --enable_ats_mode=true \
         --enable_client_experiment_manager=false \
         --enable_client_file_transfer=false \
