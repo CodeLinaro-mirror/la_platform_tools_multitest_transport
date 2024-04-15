@@ -252,7 +252,7 @@ class HostApi(remote.Service):
             available=0,
             allocated=0,
             offline=0,
-            timestamp=datetime.datetime.fromtimestamp(timestamp.seconds),
+            timestamp=datetime.datetime.utcfromtimestamp(timestamp.seconds),
         )
         device_count_summaries[device_info.run_target] = device_count_summary
       total_devices += 1
@@ -350,12 +350,12 @@ class HostApi(remote.Service):
         test_runner='OMNILAB',
         test_runner_version=test_runner_version,
         device_infos=[],
-        timestamp=datetime.datetime.fromtimestamp(timestamp.seconds),
+        timestamp=datetime.datetime.utcfromtimestamp(timestamp.seconds),
         total_devices=0,
         offline_devices=0,
         available_devices=0,
         allocated_devices=0,
-        device_count_timestamp=datetime.datetime.fromtimestamp(
+        device_count_timestamp=datetime.datetime.utcfromtimestamp(
             timestamp.seconds
         ),
         hidden=False,
@@ -371,10 +371,10 @@ class HostApi(remote.Service):
         test_harness='OMNILAB',
         test_harness_version=test_runner_version,
         flated_extra_info=[],
-        last_recovery_time=datetime.datetime.fromtimestamp(0),
+        last_recovery_time=datetime.datetime.utcfromtimestamp(0),
         recovery_state='',
         update_state='',
         update_state_display_message='',
         bad_reason='',
-        update_timestamp=datetime.datetime.fromtimestamp(timestamp.seconds),
+        update_timestamp=datetime.datetime.utcfromtimestamp(timestamp.seconds),
     )
