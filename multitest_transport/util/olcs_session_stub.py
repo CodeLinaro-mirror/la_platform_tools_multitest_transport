@@ -371,6 +371,12 @@ class OlcsSessionStub:
     command_message.total_test_count = command_detail.total_test_count
     command_message.passed_test_count = command_detail.passed_test_count
     command_message.failed_test_count = command_detail.failed_test_count
+
+    command_message.start_time = command_detail.start_time.ToDatetime()
+    if command_detail.end_time:
+      command_message.end_time = command_detail.end_time.ToDatetime()
+    command_message.create_time = command_detail.create_time.ToDatetime()
+    command_message.update_time = command_detail.update_time.ToDatetime()
     return command_message
 
   def _ConvertCommandAttemptDetail(

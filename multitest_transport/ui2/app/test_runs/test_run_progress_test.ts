@@ -159,7 +159,7 @@ describe('TestRunProgress', () => {
     component.expandStatNode(CommandState.COMPLETED);
     fixture.detectChanges();
     const commandRow = getEl(element, '.command-row');
-    expect(commandRow.textContent).toContain('Job command_id: name');
+    expect(commandRow.textContent).toContain('Command command_id: name');
   });
 
   it('can display the attempts', () => {

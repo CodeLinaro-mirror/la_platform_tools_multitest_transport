@@ -508,26 +508,30 @@ class FileUtilTest(parameterized.TestCase):
 
   @mock.patch.dict(os.environ, {'IS_OMNILAB_BASED': 'true'}, clear=True)
   def testGetOutputFileUrlWithOmnilabEnabled(self):
-    attempt = mock.MagicMock(command_id='command', attempt_id='attempt')
+    attempt = mock.MagicMock(
+        command_id='command', attempt_id='attempt', request_id='request'
+    )
     test_run = mock.MagicMock(output_path='/base/')
 
     self.assertEqual(
-        'file:///root/base/tradefed_logs/XtsTradefedTest_test_attempt/',
+        'file:///root/base/request/command/tradefed_logs/XtsTradefedTest_test_attempt/',
         file_util.GetOutputFileUrl(test_run, attempt),
     )
     self.assertEqual(
-        'file:///root/base/tradefed_logs/XtsTradefedTest_test_attempt/file',
+        'file:///root/base/request/command/tradefed_logs/XtsTradefedTest_test_attempt/file',
         file_util.GetOutputFileUrl(test_run, attempt, 'file'),
     )
 
   @mock.patch.dict(os.environ, {'IS_OMNILAB_BASED': 'true'}, clear=True)
   def testResultUrlWithOmnilabEnabled(self):
     test = mock.MagicMock(result_file='test_result.xml')
-    attempt = mock.MagicMock(command_id='command', attempt_id='attempt')
+    attempt = mock.MagicMock(
+        command_id='command', attempt_id='attempt', request_id='request'
+    )
     test_run = mock.MagicMock(output_path='/base/', test=test)
 
     self.assertEqual(
-        'file:///root/base/tradefed_results/XtsTradefedTest_test_attempt/test_result.xml',
+        'file:///root/base/request/command/tradefed_results/XtsTradefedTest_test_attempt/test_result.xml',
         file_util.GetResultUrl(test_run, attempt),
     )
 
