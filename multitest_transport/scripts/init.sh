@@ -101,6 +101,8 @@ then
     ATS_FILE_SERVER_PORT="$((${MTT_CONTROL_SERVER_PORT}+6))"
     ATS_FILE_SERVER="localhost:${ATS_FILE_SERVER_PORT}"
 
+    rm -rf "${MTT_MH_WORK_DIR}"
+    mkdir -p "${MTT_MH_WORK_DIR}"
     if [[ "${FILE_SERVICE_ONLY}" == "false" ]]
     then
       # Start OLC server on the controller
@@ -113,7 +115,7 @@ then
         --olc_server_port="${OLC_SERVER_PORT}" \
         --public_dir="${MTT_LOG_DIR}" \
         --resource_dir_name="olc_server_res_files" \
-        --tmp_dir_root="${MTT_TEST_WORK_DIR}" \
+        --tmp_dir_root="${MTT_MH_WORK_DIR}" \
         ${OLC_SERVER_OPTS} &> /dev/null &
     else
       REMOTES_CONTROL_SERVER_PORT="$(echo ${MTT_CONTROL_SERVER_URL} | sed 's,^\([^:/]\+://\)\?\([^:/]\+:\)\(\([0-9]\{1\,5\}\)\)\?\+.*$,\3,g')"
@@ -248,7 +250,7 @@ else
     --resource_dir_name="lab_server_res_files" \
     --serv_via_cloud_rpc=false \
     --skip_lab_job_gen_file_cleanup=true \
-    --tmp_dir_root="${MTT_TEST_WORK_DIR}" \
+    --tmp_dir_root="${MTT_MH_WORK_DIR}" \
     ${LAB_SERVER_OPTS}
 fi
 
