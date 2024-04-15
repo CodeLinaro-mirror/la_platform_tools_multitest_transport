@@ -12,20 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Tests for multitest_transport.util.olcs_session_stub."""
-
+from concurrent import futures
 import os
+import time
 from unittest import mock
 
 from absl.testing import absltest
 from google.protobuf import text_format
+import grpc
+import grpc_testing
 from multitest_transport.models import ndb_models
 from multitest_transport.util import olcs_session_client
 from multitest_transport.util import olcs_session_stub
 from protorpc import protojson
 from tradefed_cluster import api_messages
 from tradefed_cluster import testbed_dependent_test
+from tradefed_cluster.util import ndb_test_lib
 
 from com_google_deviceinfra.src.devtools.mobileharness.infra.ats.server.proto import service_pb2
+from com_google_deviceinfra.src.devtools.mobileharness.infra.client.longrunningservice.proto import session_pb2
 from com_google_deviceinfra.src.devtools.mobileharness.infra.client.longrunningservice.proto import session_service_pb2
 
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), 'test_data')
@@ -35,14 +40,27 @@ class OlcsSessionStubTest(testbed_dependent_test.TestbedDependentTest):
 
   def setUp(self):
     super().setUp()
-    mock_stub = mock.create_autospec(session_service_pb2.SessionServiceStub)
-    self.stubby_client = olcs_session_client.OlcsSessionClient(mock_stub)
-    self.session_stub = olcs_session_stub.OlcsSessionStub(self.stubby_client)
+    self._executor = futures.ThreadPoolExecutor(max_workers=10)
+    self._time = grpc_testing.strict_real_time()
+    self._descriptor = session_service_pb2.DESCRIPTOR.services_by_name[
+        'SessionService'
+    ]
+    self._channel = grpc_testing.channel(
+        self._descriptor,
+        grpc_testing.strict_real_time(),
+    )
+    self._stubby_client = olcs_session_client.OlcsSessionClient(self._channel)
+    self._trailing_metadata = ()
+    self._detailed_message = ''
+    self.session_stub = olcs_session_stub.OlcsSessionStub(self._stubby_client)
+
+  def tearDown(self):
+    self._executor.shutdown(wait=True)
+    super().tearDown()
 
   def testCreateNewRequest(self):
     client_response = session_service_pb2.CreateSessionResponse()
     client_response.session_id.id = 'test_session_id'
-    self.stubby_client._stub.CreateSession.return_value = client_response
 
     # Create input to the session service stub.
     request_message = api_messages.NewMultiCommandRequestMessage(
@@ -69,12 +87,22 @@ class OlcsSessionStubTest(testbed_dependent_test.TestbedDependentTest):
     ].loading_config.plugin_module_class_name = (
         olcs_session_stub.SESSION_MODULE_CLASS_NAME
     )
-    stub_response = self.session_stub.CreateNewRequest(request_message)
 
-    # Assert session service received the expected request proto.
-    self.stubby_client._stub.CreateSession.assert_called_once_with(
-        request_proto
+    application_future = self._executor.submit(
+        self.session_stub.CreateNewRequest, request_message
     )
+    _, _, rpc = self._channel.take_unary_unary(
+        self._descriptor.methods_by_name['CreateSession']
+    )
+    rpc.send_initial_metadata(())
+    rpc.terminate(
+        client_response,
+        self._trailing_metadata,
+        grpc.StatusCode.OK,
+        self._detailed_message,
+    )
+
+    stub_response = application_future.result()
     # Assert service response.
     self.assertEqual(stub_response, client_response.session_id.id)
 
@@ -88,6 +116,14 @@ class OlcsSessionStubTest(testbed_dependent_test.TestbedDependentTest):
     request_message = self.session_stub.GetRequest('test_request_id')
     self.assertEqual(request_message, expected_request_message)
 
+  def GetRequestWrapper(self, request_id):
+    """Wrapper for GetRequest, which creates NDB context before the test so the ndb operation can suceed."""
+    manager = ndb_test_lib.NdbContextManager()
+    manager.__enter__()
+    result = self.session_stub.GetRequest(request_id)
+    manager.__exit__(None, None, None)
+    return result
+
   def testGetRequest(self):
     with open(
         os.path.join(TEST_DATA_DIR, 'request_detail.textproto')
@@ -99,10 +135,22 @@ class OlcsSessionStubTest(testbed_dependent_test.TestbedDependentTest):
     client_response.session_detail.session_output.session_plugin_output[
         olcs_session_stub.SESSION_PLUGIN_LABEL
     ].output.Pack(request_detail)
-    self.stubby_client._stub.GetSession.return_value = client_response
 
-    # Trigger the request.
-    request_message = self.session_stub.GetRequest(request_detail.id)
+    application_future = self._executor.submit(
+        self.GetRequestWrapper, request_detail.id
+    )
+    _, _, rpc = self._channel.take_unary_unary(
+        self._descriptor.methods_by_name['GetSession']
+    )
+    rpc.send_initial_metadata(())
+    rpc.terminate(
+        client_response,
+        self._trailing_metadata,
+        grpc.StatusCode.OK,
+        self._detailed_message,
+    )
+
+    request_message = application_future.result()
 
     self.assertEqual(request_message.id, request_detail.id)
     self.assertEqual(request_message.state, api_messages.RequestState.COMPLETED)
@@ -336,6 +384,56 @@ class OlcsSessionStubTest(testbed_dependent_test.TestbedDependentTest):
               ),
           ],
       )
+
+  def testSubscribeSession(self):
+    subscribe_session_request = session_service_pb2.SubscribeSessionRequest()
+    subscribe_session_request.get_session_request.session_id.id = (
+        'test_session_id'
+    )
+    subscribe_session_response_1 = (
+        session_service_pb2.SubscribeSessionResponse()
+    )
+    subscribe_session_response_1.get_session_response.session_detail.session_id.id = (
+        'test_session_id'
+    )
+    subscribe_session_response_1.get_session_response.session_detail.session_status = (
+        session_pb2.SessionStatus.SESSION_RUNNING
+    )
+    subscribe_session_response_2 = (
+        session_service_pb2.SubscribeSessionResponse()
+    )
+    subscribe_session_response_2.get_session_response.session_detail.session_id.id = (
+        'test_session_id'
+    )
+    subscribe_session_response_2.get_session_response.session_detail.session_status = (
+        session_pb2.SessionStatus.SESSION_FINISHED
+    )
+
+    mock_method = mock.Mock()
+
+    future = self._executor.submit(
+        self.session_stub.StartSubscribeSession,
+        'test_session_id',
+        mock_method,
+    )
+    subscribe_id = future.result()
+    _, rpc = self._channel.take_stream_stream(
+        self._descriptor.methods_by_name['SubscribeSession']
+    )
+    rpc.send_initial_metadata(())
+    rpc.take_request()
+    rpc.send_response(subscribe_session_response_1)
+    rpc.send_response(subscribe_session_response_2)
+    time.sleep(5)
+    self.session_stub.StopSubscribeSession(subscribe_id)
+    rpc.requests_closed()
+    rpc.terminate(
+        self._trailing_metadata,
+        grpc.StatusCode.OK,
+        self._detailed_message,
+    )
+    mock_method.assert_any_call(subscribe_session_response_1)
+    mock_method.assert_any_call(subscribe_session_response_2)
 
 
 if __name__ == '__main__':

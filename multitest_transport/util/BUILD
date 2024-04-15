@@ -180,6 +180,7 @@ pytype_strict_library(
         "@tradefed_cluster//tradefed_cluster:api_messages_lib",
         "@tradefed_cluster//tradefed_cluster:common_lib",
         "@tradefed_cluster//tradefed_cluster/services:app_manager_lib",
+        "@tradefed_cluster//tradefed_cluster/util:ndb_shim_lib",
         third_party("apiclient"),
         third_party("httplib2"),
         third_party("protorpc"),
@@ -275,15 +276,19 @@ py_test(
         ":olcs_session_client_lib",
         third_party("absl/testing:absltest"),
         ":olcs_session_stub",
+        "//net/grpc/python:grpc",
         "@com_google_deviceinfra//src/devtools/mobileharness/infra/ats/server/proto:service_py_proto",
         "@com_google_deviceinfra//src/devtools/mobileharness/infra/client/longrunningservice/proto:session_py_proto",
         "@com_google_deviceinfra//src/devtools/mobileharness/infra/client/longrunningservice/proto:session_service_py_grpc",
         "@com_google_deviceinfra//src/devtools/mobileharness/infra/client/longrunningservice/proto:session_service_py_proto",
         third_party("protorpc"),
         "//third_party/py/google/protobuf",
+        "//third_party/py/grpc_testing",
         "//multitest_transport/models:ndb_models_lib",
         "@tradefed_cluster//tradefed_cluster:api_messages_lib",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
+        "@tradefed_cluster//tradefed_cluster/util:ndb_shim_lib",
+        "@tradefed_cluster//tradefed_cluster/util:ndb_test_lib",
     ],
 )
 
@@ -320,9 +325,12 @@ py_test(
     ],
     deps = [
         ":olcs_session_client_lib",
+        "//net/grpc/python:grpc",
+        "@com_google_deviceinfra//src/devtools/mobileharness/infra/client/longrunningservice/proto:session_py_proto",
         "@com_google_deviceinfra//src/devtools/mobileharness/infra/client/longrunningservice/proto:session_service_py_grpc",
         "@com_google_deviceinfra//src/devtools/mobileharness/infra/client/longrunningservice/proto:session_service_py_proto",
         third_party("absl/testing:absltest"),
+        "//third_party/py/grpc_testing",
     ],
 )
 

@@ -13,9 +13,11 @@
 # limitations under the License.
 
 """A OLCS session service stub that is providing similar functionality as tfc_client."""
-
+from concurrent import futures
 import logging
-from typing import List, Optional
+import queue
+from typing import Callable, Iterator, List, Optional
+import uuid
 
 from multitest_transport.models import ndb_models
 from multitest_transport.util import olcs_session_client
@@ -107,6 +109,8 @@ class OlcsSessionStub:
       self._client = olcs_session_client.OlcsSessionClient.create()
     else:
       self._client = client
+    self._subscribe_session_queues = {}
+    self._executor = futures.ThreadPoolExecutor(max_workers=10)
 
   def CreateNewRequest(
       self, request: api_messages.NewMultiCommandRequestMessage
@@ -256,6 +260,72 @@ class OlcsSessionStub:
     """
     del request_id  # TODO: To be completed.
     return api_messages.InvocationStatus()
+
+  def StartSubscribeSession(
+      self,
+      request_id: str,
+      session_response_subscriber: Callable[
+          [session_service_pb2.SubscribeSessionResponse], None
+      ],
+  ):
+    """Start to subscribe session to OLCS.
+
+    Args:
+      request_id: The request id of the request.
+      session_response_subscriber: The callback method to be called when there's
+        subscribed response.
+
+    Returns:
+      The subscribe id.
+    """
+    subscribe_id = str(uuid.uuid4())
+    subscribe_session_request = session_service_pb2.SubscribeSessionRequest()
+    subscribe_session_request.get_session_request.session_id.id = request_id
+    subscribe_session_queue = queue.SimpleQueue()
+    self._subscribe_session_queues[subscribe_id] = subscribe_session_queue
+    subscribe_session_queue.put(subscribe_session_request)
+    subscribe_session_responses = self._client.subscribe_session(
+        iter(subscribe_session_queue.get, None)
+    )
+    self._executor.submit(
+        self._ProcessSubscribeSessionResponses,
+        subscribe_id,
+        session_response_subscriber,
+        subscribe_session_responses,
+    )
+    return subscribe_id
+
+  def _ProcessSubscribeSessionResponses(
+      self,
+      subscribe_id: str,
+      session_response_subscriber: Callable[
+          [session_service_pb2.SubscribeSessionResponse], None
+      ],
+      subscribe_session_responses: Iterator[
+          session_service_pb2.SubscribeSessionResponse
+      ],
+  ):
+    """Process subscribe session responses.
+
+    Args:
+      subscribe_id: The id of the subscribe.
+      session_response_subscriber: The callback method to be called when there's
+        subscribed response.
+      subscribe_session_responses: The subscribe session responses.
+    """
+    for subscribe_session_response in subscribe_session_responses:
+      session_response_subscriber(subscribe_session_response)
+    self._subscribe_session_queues.pop(subscribe_id)
+
+  def StopSubscribeSession(self, subscribe_id: str):
+    """Stop subscribing session to OLCS.
+
+    Args:
+      subscribe_id: The request id of the subscribe.
+    """
+    subscribe_session_queue = self._subscribe_session_queues.get(subscribe_id)
+    if subscribe_session_queue:
+      subscribe_session_queue.put(None)
 
   def _ConvertProtoToCommandInfo(
       self, proto: service_pb2.CommandInfo

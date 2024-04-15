@@ -15,7 +15,6 @@
 """A module to provide test run APIs."""
 # Non-standard docstrings are used to generate the API documentation.
 
-import datetime
 import logging
 import os
 from typing import Optional
@@ -26,10 +25,9 @@ from protorpc import message_types
 from protorpc import messages
 from protorpc import protojson
 from protorpc import remote
-from tradefed_cluster import api_messages
-from tradefed_cluster import common
 from tradefed_cluster import datastore_util
 from tradefed_cluster.common import IsFinalCommandState
+from tradefed_cluster.util import ndb_shim as ndb
 
 
 from multitest_transport.api import base
@@ -37,14 +35,12 @@ from multitest_transport.models import messages as mtt_messages
 from multitest_transport.models import ndb_models
 from multitest_transport.models import sql_models
 from multitest_transport.test_scheduler import test_kicker
-from multitest_transport.test_scheduler import tfc_event_handler
 from multitest_transport.test_scheduler import test_run_manager
 from multitest_transport.util import analytics
 from multitest_transport.util import env
 from multitest_transport.util import file_util
 from multitest_transport.util import tfc_client
 from multitest_transport.util import olcs_session_stub
-from tradefed_cluster.util import ndb_shim as ndb
 
 
 @base.MTT_API.api_class(resource_name='test_run', path='test_runs')
@@ -64,7 +60,8 @@ class TestRunApi(remote.Service):
       endpoints.ResourceContainer(
           message_types.VoidMessage,
           max_results=messages.IntegerField(
-              1, default=base.DEFAULT_MAX_RESULTS),
+              1, default=base.DEFAULT_MAX_RESULTS
+          ),
           page_token=messages.StringField(2),
           backwards=messages.BooleanField(3),
           labels=messages.StringField(4, repeated=True),
@@ -74,11 +71,13 @@ class TestRunApi(remote.Service):
           device_build_id=messages.StringField(8),
           test_package_info=messages.StringField(9),
           prev_test_run_id=messages.StringField(10),
-          filter_query=messages.StringField(11, repeated=True)),
+          filter_query=messages.StringField(11, repeated=True),
+      ),
       mtt_messages.TestRunSummaryList,
       path='/test_runs',
       http_method='GET',
-      name='list')
+      name='list',
+  )
   def ListSummaries(self, request):
     """Fetches a page of test run summaries.
 
@@ -98,17 +97,24 @@ class TestRunApi(remote.Service):
         product)
     """
     query = ndb_models.TestRunSummary.query().order(
-        -ndb_models.TestRunSummary.create_time, ndb_models.TestRunSummary.key)
+        -ndb_models.TestRunSummary.create_time, ndb_models.TestRunSummary.key
+    )
     query = self._ApplyQueryFilters(query, request)
     result_filter = self._BuildTestRunFilterFunction(request)
     test_runs, prev_cursor, next_cursor = datastore_util.FetchPage(
-        query, request.max_results, page_cursor=request.page_token,
-        backwards=request.backwards, result_filter=result_filter)
+        query,
+        request.max_results,
+        page_cursor=request.page_token,
+        backwards=request.backwards,
+        result_filter=result_filter,
+    )
     return mtt_messages.TestRunSummaryList(
         test_runs=mtt_messages.ConvertList(
-            test_runs, mtt_messages.TestRunSummary),
+            test_runs, mtt_messages.TestRunSummary
+        ),
         prev_page_token=prev_cursor,
-        next_page_token=next_cursor)
+        next_page_token=next_cursor,
+    )
 
   def _ApplyQueryFilters(self, query, request):
     """Applies simple predicates (equality, AND) to a test run query."""
@@ -121,19 +127,24 @@ class TestRunApi(remote.Service):
 
     if request.device_specs:
       query = query.filter(
-          ndb_models.TestRunSummary.device_specs == request.device_specs)
+          ndb_models.TestRunSummary.device_specs == request.device_specs
+      )
 
     if request.test_package_info:
       filter_data = request.test_package_info.split()
       query = query.filter(
-          ndb_models.TestRunSummary.test_package_info.name == filter_data[0] and
-          ndb_models.TestRunSummary.test_package_info.version == filter_data[1])
+          ndb_models.TestRunSummary.test_package_info.name == filter_data[0]
+          and ndb_models.TestRunSummary.test_package_info.version
+          == filter_data[1]
+      )
 
     if request.prev_test_run_id:
       prev_key = mtt_messages.ConvertToKey(
-          ndb_models.TestRun, request.prev_test_run_id)
+          ndb_models.TestRun, request.prev_test_run_id
+      )
       query = query.filter(
-          ndb_models.TestRunSummary.prev_test_run_key == prev_key)
+          ndb_models.TestRunSummary.prev_test_run_key == prev_key
+      )
 
     return query
 
@@ -150,30 +161,43 @@ class TestRunApi(remote.Service):
       if request.state and test_run.state not in request.state:
         return False
 
-      if build_ids and not next((d for d in devices
-                                 if d.build_id in build_ids), None):
+      if build_ids and not next(
+          (d for d in devices if d.build_id in build_ids), None
+      ):
         return False
 
       for value in request.filter_query:
         if not value:
           continue
-        if not (value == test_run.test_name or
-                value in test_run.device_specs or
-                value in test_run.labels or
-                (package and
-                 (package.name == value or package.version == value)) or
-                next((d for d in devices
-                      if d.build_id == value or d.product == value), None)):
+        if not (
+            value == test_run.test_name
+            or value in test_run.device_specs
+            or value in test_run.labels
+            or (package and (package.name == value or package.version == value))
+            or next(
+                (
+                    d
+                    for d in devices
+                    if d.build_id == value or d.product == value
+                ),
+                None,
+            )
+        ):
           return False
       return True
+
     return _Filter
 
   @base.ApiMethod(
       endpoints.ResourceContainer(
           message_types.VoidMessage,
-          test_run_id=messages.StringField(1, required=True)),
-      mtt_messages.TestRun, path='{test_run_id}', http_method='GET',
-      name='get')
+          test_run_id=messages.StringField(1, required=True),
+      ),
+      mtt_messages.TestRun,
+      path='{test_run_id}',
+      http_method='GET',
+      name='get',
+  )
   def Get(self, request):
     """Fetches a test run.
 
@@ -183,35 +207,17 @@ class TestRunApi(remote.Service):
     test_run = ndb_models.TestRun.get_by_id(request.test_run_id)
     if not test_run:
       raise endpoints.NotFoundException(
-          'no test run found for ID %s' % request.test_run_id)
-    # TODO: This is a workaround to fetch test result.
-    # Will remove after active message push from OLCS to MTT server is ready.
-    if os.environ.get('IS_OMNILAB_BASED') == 'true' and test_run.request_id:
-      try:
-        test_request = self._olcs_session_stub.GetRequest(test_run.request_id)
-        if test_request and test_request.state:
-          request_event = api_messages.RequestEventMessage(
-              type=common.ObjectEventType.REQUEST_STATE_CHANGED,
-              request_id=test_run.request_id,
-              new_state=test_request.state,
-              request=test_request,
-              event_time=datetime.datetime.now(),
-          )
-          tfc_event_handler.ProcessRequestEvent(request_event)
-          test_run = ndb_models.TestRun.get_by_id(request.test_run_id)
-      except Exception as e:  
-        logging.warning(
-            'Failed to get request %s from OLCS, Skip updating request'
-            ' state. Reason:\n%s',
-            test_run.request_id,
-            e,
-        )
+          'no test run found for ID %s' % request.test_run_id
+      )
     return mtt_messages.Convert(test_run, mtt_messages.TestRun)
 
   @base.ApiMethod(
       endpoints.ResourceContainer(mtt_messages.NewTestRunRequest),
-      mtt_messages.TestRun, path='/test_runs', http_method='POST',
-      name='new')
+      mtt_messages.TestRun,
+      path='/test_runs',
+      http_method='POST',
+      name='new',
+  )
   def New(self, request):
     """Creates a new test run.
 
@@ -220,15 +226,18 @@ class TestRunApi(remote.Service):
     """
     labels = request.labels
     test_run_config = mtt_messages.Convert(
-        request.test_run_config, ndb_models.TestRunConfig)
+        request.test_run_config, ndb_models.TestRunConfig
+    )
     if not test_run_config.device_specs:
       if not test_run_config.run_target:
         raise endpoints.BadRequestException(
-            'test_run_config.(device_specs or run_target) must be set')
+            'test_run_config.(device_specs or run_target) must be set'
+        )
       # For old run targets are one or more device serials. Convert them to
       # device specs for backward compatibility
       test_run_config.device_specs = mtt_messages.ConvertToDeviceSpecs(
-          test_run_config.run_target)
+          test_run_config.run_target
+      )
       test_run_config.run_target = None
     # start test run
     test_run = test_kicker.CreateTestRun(
@@ -236,7 +245,9 @@ class TestRunApi(remote.Service):
         test_run_config=test_run_config,
         rerun_context=request.rerun_context,
         rerun_configs=mtt_messages.ConvertList(
-            request.rerun_configs, ndb_models.TestRunConfig))
+            request.rerun_configs, ndb_models.TestRunConfig
+        ),
+    )
 
     if request.required_report_id:
 
@@ -262,11 +273,13 @@ class TestRunApi(remote.Service):
   @base.ApiMethod(
       endpoints.ResourceContainer(
           message_types.VoidMessage,
-          test_run_id=messages.StringField(1, required=True)),
+          test_run_id=messages.StringField(1, required=True),
+      ),
       message_types.VoidMessage,
       path='{test_run_id}/cancel',
       http_method='POST',
-      name='cancel')
+      name='cancel',
+  )
   def Cancel(self, request):
     """Cancels a test run.
 
@@ -276,25 +289,26 @@ class TestRunApi(remote.Service):
     try:
       test_run_manager.SetTestRunState(
           test_run_id=request.test_run_id,
-          state=ndb_models.TestRunState.CANCELED)
+          state=ndb_models.TestRunState.CANCELED,
+      )
     except test_run_manager.TestRunNotFoundError:
       raise endpoints.NotFoundException(
-          'No test run found for ID %s' % request.test_run_id)
+          'No test run found for ID %s' % request.test_run_id
+      )
     return message_types.VoidMessage()
 
   def _Delete(self, test_run_id):
     """Deletes a test run and all related files if it is in a final state."""
-    test_run_key = mtt_messages.ConvertToKey(ndb_models.TestRun,
-                                             test_run_id)
+    test_run_key = mtt_messages.ConvertToKey(ndb_models.TestRun, test_run_id)
     test_run = test_run_key.get()
 
     if not test_run:
-      raise endpoints.NotFoundException(
-          'Test run %s not found' % test_run_id)
+      raise endpoints.NotFoundException('Test run %s not found' % test_run_id)
 
     if not test_run.IsFinal():
       raise endpoints.BadRequestException(
-          'Cannot delete non-final test run %s' % test_run_id)
+          'Cannot delete non-final test run %s' % test_run_id
+      )
 
     # Remove output files (i.e. test_runs/<ID>/ and test_runs/<ID>.zip).
     if test_run.output_path:
@@ -307,18 +321,21 @@ class TestRunApi(remote.Service):
     # Delete test results database
     with sql_models.db.Session() as session:
       session.query(sql_models.TestModuleResult).filter_by(
-          test_run_id=test_run_id).delete()
+          test_run_id=test_run_id
+      ).delete()
 
     test_run_key.delete()
 
   @base.ApiMethod(
       endpoints.ResourceContainer(
           message_types.VoidMessage,
-          test_run_ids=messages.StringField(1, repeated=True)),
+          test_run_ids=messages.StringField(1, repeated=True),
+      ),
       message_types.VoidMessage,
       path='/test_runs',
       http_method='DELETE',
-      name='delete')
+      name='delete',
+  )
   def DeleteMulti(self, request):
     """Deletes multiple test runs.
 
@@ -333,7 +350,8 @@ class TestRunApi(remote.Service):
         failed_ids.append(test_run_id)
     if failed_ids:
       raise endpoints.BadRequestException(
-          'Failed to delete test runs: %s' % failed_ids)
+          'Failed to delete test runs: %s' % failed_ids
+      )
     return message_types.VoidMessage()
 
   @base.ApiMethod(
@@ -343,11 +361,13 @@ class TestRunApi(remote.Service):
           attempt_id=messages.StringField(2, required=True),
           path=messages.StringField(3, required=True),
           offset=messages.IntegerField(4),
-          length=messages.IntegerField(5, default=25 * 1024)),
+          length=messages.IntegerField(5, default=25 * 1024),
+      ),
       mtt_messages.FileSegment,
       path='{test_run_id}/output',
       http_method='GET',
-      name='output')
+      name='output',
+  )
   def TailOutputFile(self, request):
     """Reads from the end of a test run output file.
 
@@ -362,13 +382,15 @@ class TestRunApi(remote.Service):
     test_run = ndb_models.TestRun.get_by_id(request.test_run_id)
     if not test_run:
       raise endpoints.NotFoundException(
-          'Test run %s not found' % request.test_run_id)
+          'Test run %s not found' % request.test_run_id
+      )
 
     # get attempt and check whether it is active
     attempt = tfc_client.GetAttempt(test_run.request_id, request.attempt_id)
     if attempt is None:
       raise endpoints.NotFoundException(
-          'Command attempt %s not found' % request.attempt_id)
+          'Command attempt %s not found' % request.attempt_id
+      )
 
     # determine file URL
     if IsFinalCommandState(attempt.state):
@@ -382,9 +404,9 @@ class TestRunApi(remote.Service):
       file_segment = file_util.TailFile(file_url, length=request.length)
     else:
       # offset provided, fetch bytes from offset up to length limit
-      file_segment = file_util.ReadFile(file_url,
-                                        offset=request.offset,
-                                        length=request.length)
+      file_segment = file_util.ReadFile(
+          file_url, offset=request.offset, length=request.length
+      )
     if file_segment is None:
       raise endpoints.NotFoundException('File %s not found' % request.path)
     return mtt_messages.Convert(file_segment, mtt_messages.FileSegment)
@@ -392,9 +414,13 @@ class TestRunApi(remote.Service):
   @base.ApiMethod(
       endpoints.ResourceContainer(
           message_types.VoidMessage,
-          test_run_id=messages.StringField(1, required=True)),
+          test_run_id=messages.StringField(1, required=True),
+      ),
       mtt_messages.TestRunMetadataList,
-      path='{test_run_id}/metadata', http_method='GET', name='metadata')
+      path='{test_run_id}/metadata',
+      http_method='GET',
+      name='metadata',
+  )
   def GetMetadata(self, request):
     """Returns a test run's metadata.
 
@@ -404,10 +430,11 @@ class TestRunApi(remote.Service):
     test_run = ndb_models.TestRun.get_by_id(request.test_run_id)
     if not test_run:
       raise endpoints.NotFoundException(
-          'No test run found for ID %s' % request.test_run_id)
+          'No test run found for ID %s' % request.test_run_id
+      )
     return mtt_messages.TestRunMetadataList(
-        test_runs=self._GetMetadataList(test_run),
-        server_version=env.VERSION)
+        test_runs=self._GetMetadataList(test_run), server_version=env.VERSION
+    )
 
   def _GetMetadataList(self, test_run):
     """Return a list containing a test run and all of its ancestors."""
@@ -431,12 +458,14 @@ class TestRunApi(remote.Service):
     if test_run.request_id:
       request = tfc_client.GetRequest(test_run.request_id)
       attempts = request.command_attempts or []
-      completed_attempts = [attempt for attempt in attempts
-                            if IsFinalCommandState(attempt.state)]
+      completed_attempts = [
+          attempt for attempt in attempts if IsFinalCommandState(attempt.state)
+      ]
 
     return mtt_messages.TestRunMetadata(
         test_run=mtt_messages.Convert(test_run, mtt_messages.TestRun),
-        command_attempts=completed_attempts)
+        command_attempts=completed_attempts,
+    )
 
   def _LoadMetadataFromContextFile(self, context_file_url):
     """Parse metadata from a context file."""
@@ -448,7 +477,8 @@ class TestRunApi(remote.Service):
           logging.warning('Metadata file not found')
           return []  # ignore file not found
         metadata_list = protojson.decode_message(  # pytype: disable=module-attr
-            mtt_messages.TestRunMetadataList, zf.read(metadata_file))
+            mtt_messages.TestRunMetadataList, zf.read(metadata_file)
+        )
         # TODO: last command attempt is missing
         return metadata_list.test_runs
     except Exception:  

@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """A OLCS(OmniLab Long-running Client Service) session service client module."""
+from typing import Iterator
 import grpc
 from com_google_deviceinfra.src.devtools.common.metrics.stability.util import grpc_error_util
 # from google3.net.rpc.python import pywraprpc
@@ -29,9 +30,9 @@ class OlcsSessionRpcError(Exception):
 class OlcsSessionClient:
   """The client for OCLS session service."""
 
-  def __init__(self, stub):
+  def __init__(self, channel: grpc.Channel):
     """Initializer."""
-    self._stub = stub
+    self._stub = session_service_pb2_grpc.SessionServiceStub(channel)
 
   @classmethod
   def create(
@@ -39,9 +40,7 @@ class OlcsSessionClient:
   ) -> 'OlcsSessionClient':
     """Create OLCS session service client."""
     channel = grpc.insecure_channel(server_address)
-    return OlcsSessionClient(
-        session_service_pb2_grpc.SessionServiceStub(channel)
-    )
+    return OlcsSessionClient(channel)
 
   def create_session(
       self, request: session_service_pb2.CreateSessionRequest
@@ -91,6 +90,19 @@ class OlcsSessionClient:
       exception_detail = grpc_error_util.to_exception_detail(e)
       raise OlcsSessionRpcError(
           'Failed to get all sessions %s' % exception_detail.summary
+          if exception_detail
+          else ''
+      ) from e
+
+  def subscribe_session(
+      self, request: Iterator[session_service_pb2.SubscribeSessionRequest]
+  ) -> Iterator[session_service_pb2.SubscribeSessionResponse]:
+    try:
+      return self._stub.SubscribeSession(request)
+    except grpc.RpcError as e:
+      exception_detail = grpc_error_util.to_exception_detail(e)
+      raise OlcsSessionRpcError(
+          'Failed to subscribe session %s' % exception_detail.summary
           if exception_detail
           else ''
       ) from e

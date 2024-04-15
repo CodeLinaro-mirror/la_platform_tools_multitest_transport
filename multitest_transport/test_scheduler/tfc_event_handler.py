@@ -152,10 +152,6 @@ def _ProcessRequestEvent(test_run_id, message):
   if not test_run.IsFinal():
     test_run.state = TEST_RUN_STATE_MAP.get(
         message.new_state, ndb_models.TestRunState.UNKNOWN)
-    # TODO: This is a workaround to fetch test result when
-    # requested from UI.
-    # Check if the state has just changed from non-final state to final state.
-    # Only update test results at this moment to avoid redundent update.
     if os.environ.get('IS_OMNILAB_BASED') == 'true' and test_run.IsFinal():
       _ProcessCommandAttemptResult(test_run_id, test_run, message.request)
   if not test_run.test.result_file:
@@ -435,6 +431,10 @@ _EVENT_HANDLERS = {
     common.ObjectEventType.REQUEST_STATE_CHANGED: (
         api_messages.RequestEventMessage, ProcessRequestEvent)
 }
+
+
+# Sets the callback method for the request event.
+tfc_client.SetRequestEventMessageHandler(ProcessRequestEvent)
 
 
 @APP.route('/', methods=['POST'])
