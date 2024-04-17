@@ -49,6 +49,30 @@ device_actions:
       values:
       - ${TF_WORK_DIR}/android-cts-media-1.5
 
+- id: dynamic_download_mcts
+  name: Dynamic Download MCTS
+  description: >
+    Dynamic Download MCTS based on the device preloaded Mainline Modules.
+  test_resource_defs:
+  - name: dynamic_download.zip
+    default_download_url: https://dl.google.com/android/xts/mcts/tool/dynamic_download.zip
+    decompress: true
+    test_resource_type: UNKNOWN
+  tradefed_target_preparers:
+  - class_name: com.android.tradefed.targetprep.RunHostCommandTargetPreparer
+    option_values:
+    - name: host-cmd-timeout
+      values:
+      - 90m
+    - name: host-setup-command
+      values:
+      - chmod u+x ./MctsDynamicDownloadPlugin_deploy.jar
+      - chmod u+x ./dynamic_download.sh
+      - ./dynamic_download.sh $SERIAL ${TF_WORK_DIR}
+    - name: work-dir
+        values:
+        - ${TF_WORK_DIR}
+
 - id: cts_device_setup
   name: CTS Device Setup
   description: >
