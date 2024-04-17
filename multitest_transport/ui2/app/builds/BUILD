@@ -54,7 +54,7 @@ sass_binary(
     name = "xts_requirement_detect",
     src = "xts_requirement_detect.scss",
     output_name = "xts_requirement_detect.css",
-    visibility = ["//multitest_transport"],
+    visibility = ["//visibility:private"],
 )
 
 ng_module(
