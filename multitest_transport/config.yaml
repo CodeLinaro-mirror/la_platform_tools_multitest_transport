@@ -70,8 +70,8 @@ device_actions:
       - chmod u+x ./dynamic_download.sh
       - ./dynamic_download.sh $SERIAL ${TF_WORK_DIR}
     - name: work-dir
-        values:
-        - ${TF_WORK_DIR}
+      values:
+      - ${TF_WORK_DIR}
 
 - id: cts_device_setup
   name: CTS Device Setup
