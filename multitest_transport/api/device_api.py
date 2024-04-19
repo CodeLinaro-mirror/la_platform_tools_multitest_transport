@@ -108,6 +108,13 @@ class DeviceApi(remote.Service):
     get_lab_info_request.page.offset = offset
     get_lab_info_request.page.limit = page_size
     get_lab_info_request.lab_query.device_view_request.device_limit = 0
+    if request.hostname:
+      lab_match_condition = (
+          get_lab_info_request.lab_query.filter.lab_filter.lab_match_condition.add()
+      )
+      lab_match_condition.lab_host_name_match_condition.condition.include.expected.append(
+          request.hostname
+      )
 
     response = self._olcs_lab_info_client.get_lab_info(get_lab_info_request)
     returned_device_count = len(
