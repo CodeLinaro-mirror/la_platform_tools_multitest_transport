@@ -97,7 +97,7 @@ def _ValidateBuild(build_id):
     bts_report = client.GetLatestBtsReport(apfe_build.name)
     if (
         bts_report is None
-        or bts_report.processState == apfe_client.ProcessState.IN_PROGRESS
+        or bts_report.processState == ndb_models.ReportProcessState.IN_PROGRESS
     ):
       SetDetectionStatus(
           build_id,
@@ -207,6 +207,37 @@ def _HandleSignalsCollectingStatus(build_id, attempt_count):
     )
 
 
+def _SyncRequiredReports(build_id, build_fingerprint):
+  """Retrieves and stores the required reports for a build.
+
+  Args:
+    build_id: a build ID.
+    build_fingerprint: a build fingerprint.
+
+  Returns:
+    a latest ndb_models.Build object.
+  """
+  client = _GetApfeClient()
+  required_report_info = client.GetRequiredReports(build_fingerprint)
+
+  # Updates detection status to COMPLETED and store required reports.
+  def _Txn():
+    build = mtt_messages.ConvertToKey(ndb_models.Build, build_id).get()
+    if not build:
+      return
+    required_reports = [
+        apfe_client.ConvertRequiredReport(required_report, build.key)
+        for required_report in required_report_info.requiredReports
+    ]
+    ndb.put_multi(required_reports)
+    build.detection_status = ndb_models.XtsRequirementsDetectionStatus.COMPLETED
+    build.detection_error_reason = None
+    build.put()
+    return build
+
+  return ndb.transaction(_Txn)
+
+
 def _HandleAnalysisRunningStatus(build_id, attempt_count):
   """Handles a detection event for a build with ANALYSIS_RUNNING status.
 
@@ -225,24 +256,8 @@ def _HandleAnalysisRunningStatus(build_id, attempt_count):
   client = _GetApfeClient()
   latest_apfe_report = client.GetLatestApfeReport(apfe_report.name)
 
-  if latest_apfe_report.processState == apfe_client.ProcessState.COMPLETE:
-    required_report_info = client.GetRequiredReports(build.fingerprint)
-    # Updates detection status to COMPLETED and store required reports.
-    def _Txn():
-      build = mtt_messages.ConvertToKey(ndb_models.Build, build_id).get()
-      if not build:
-        return
-      required_reports = [
-          apfe_client.ConvertRequiredReport(required_report, build.key)
-          for required_report in required_report_info.requiredReports
-      ]
-      ndb.put_multi(required_reports)
-      build.detection_status = (
-          ndb_models.XtsRequirementsDetectionStatus.COMPLETED
-      )
-      build.put()
-
-    ndb.transaction(_Txn)
+  if latest_apfe_report.processState == ndb_models.ReportProcessState.COMPLETE:
+    _SyncRequiredReports(build_id, build.fingerprint)
   elif attempt_count < MAX_ATTEMPT_COUNT:
     # Schedules a next process task.
     _ScheduleNextProcessTask(build_id, attempt_count=attempt_count + 1)
@@ -291,12 +306,17 @@ def KickDetection(device_spec, test_resource_objs, build_id):
       analytics.DETECT_ACTION,
   )
   valid = _ValidateBuild(build_id)
+  build = mtt_messages.ConvertToKey(ndb_models.Build, build_id).get()
   if not valid:
-    build = mtt_messages.ConvertToKey(ndb_models.Build, build_id).get()
     return build
+  # Skip build analysis and retrieve required reports for approved builds.
+  apfe_build = ndb_models.ApfeBuild.query(ancestor=build.key).get()
+  if apfe_build.approval_status == ndb_models.BuildApprovalStatus.APPROVED:
+    updated_build = _SyncRequiredReports(build_id, build.fingerprint)
+    return updated_build
+
   test_key, test = _GetXtsRequirementsDetectionTest()
   report_upload_action_key, _ = _GetReportUploadAction()
-
   test_run_config = ndb_models.TestRunConfig(
       test_key=test_key,
       command=test.command,

@@ -859,6 +859,14 @@ class ReportType(messages.Enum):
   WPTS = 27  # Wear Performance Test Suite.
 
 
+class ReportProcessState(messages.Enum):
+  """Process state of a report."""
+
+  PROCESS_STATE_UNSPECIFIED = 0  # Unspecified process state.
+  IN_PROGRESS = 1  # Submitted and in queue to be processed.
+  COMPLETE = 2  # Processing complete.
+
+
 class ApfeReport(ndb.Model):
   """An APFE report.
 
@@ -871,6 +879,7 @@ class ApfeReport(ndb.Model):
     product_name: the name of the product which this build belongs to.
     model_name: model name, for example, Nexus 6.
     build_fingerprint: build fingerprint.
+    process_state: report processing state.
   """
 
   name = ndb.StringProperty()
@@ -881,6 +890,7 @@ class ApfeReport(ndb.Model):
   product_name = ndb.StringProperty()
   model_name = ndb.StringProperty()
   build_fingerprint = ndb.StringProperty()
+  process_state = ndb.EnumProperty(ReportProcessState)
 
 
 class NodeConfig(ndb.Model):
@@ -1102,14 +1112,28 @@ def GetFileCleanerSettings():
   return obj or DEFAULT_FILE_CLEANER_SETTINGS
 
 
+class BuildApprovalStatus(messages.Enum):
+  APPROVAL_STATUS_UNSPECIFIED = 0  # Unknown or unspecified state.
+  NEW = 1  # New build.
+  APPROVED = 2  # Approved build.
+  PENDING = 3  # Pending build.
+  REJECTED = 4  # Rejected build.
+  HISTORICAL = 5  # Historical build.
+  OBSOLETE = 6  # Obsolete build.
+  REVIEWED = 7  # Reviewed build.
+  BETA_BUILD = 9  # Beta build.
+
+
 class ApfeBuild(ndb.Model):
   """An APFE build.
 
   Attributes:
     name: the unique resource name.
+    approval_status: the approval status of the build.
   """
 
   name = ndb.StringProperty()
+  approval_status = ndb.EnumProperty(BuildApprovalStatus)
 
 
 class XtsRequirementsDetectionStatus(messages.Enum):

@@ -185,6 +185,7 @@ class ApfeBuild(messages.Message):
   """an APFE build."""
 
   name = messages.StringField(1)
+  approvalStatus = messages.EnumField(ndb_models.BuildApprovalStatus, 2)  
 
 
 def ConvertApfeBuild(msg, build_key):
@@ -196,15 +197,8 @@ def ConvertApfeBuild(msg, build_key):
   return ndb_models.ApfeBuild(
       key=ndb.Key(ndb_models.ApfeBuild, key_id, parent=build_key),
       name=msg.name,
+      approval_status=msg.approvalStatus,
   )
-
-
-class ProcessState(messages.Enum):
-  """Process state of a report."""
-
-  PROCESS_STATE_UNSPECIFIED = 0
-  IN_PROGRESS = 1
-  COMPLETE = 2
 
 
 class ApfeReport(messages.Message):
@@ -218,14 +212,17 @@ class ApfeReport(messages.Message):
   productName = messages.StringField(6)  
   modelName = messages.StringField(7)  
   buildFingerprint = messages.StringField(8)  
-  processState = messages.EnumField(ProcessState, 9)  
+  processState = messages.EnumField(ndb_models.ReportProcessState, 9)  
 
 
 def ConvertApfeReport(msg, test_run_key):
   if not isinstance(msg, ApfeReport):
     return None
+  # Syncs data to existing APFE report if any, otherwise creates a new one.
+  saved_apfe_report = ndb_models.ApfeReport.query(ancestor=test_run_key).get()
+  key_id = saved_apfe_report.key.id() if saved_apfe_report else None
   return ndb_models.ApfeReport(
-      parent=test_run_key,
+      key=ndb.Key(ndb_models.ApfeReport, key_id, parent=test_run_key),
       name=msg.name,
       type=msg.type,
       company_id=msg.companyId,
@@ -234,6 +231,7 @@ def ConvertApfeReport(msg, test_run_key):
       product_name=msg.productName,
       model_name=msg.modelName,
       build_fingerprint=msg.buildFingerprint,
+      process_state=msg.processState,
   )
 
 

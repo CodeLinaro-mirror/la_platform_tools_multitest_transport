@@ -119,7 +119,7 @@ class XtsRequirementsDetectorTest(testbed_dependent_test.TestbedDependentTest):
         name='apfe build',
     )
     mock_client.GetLatestBtsReport.return_value = apfe_client.ApfeReport(
-        processState=apfe_client.ProcessState.COMPLETE,
+        processState=ndb_models.ReportProcessState.COMPLETE,
     )
     xts_requirements_detector.KickDetection(
         self.device_spec, self.test_resource_objs, str(self.mock_build.key.id())
@@ -179,6 +179,70 @@ class XtsRequirementsDetectorTest(testbed_dependent_test.TestbedDependentTest):
     )
     self.assertIsNone(self.mock_build.detection_start_time)
     self.assertIsNone(self.mock_build.detection_test_run_key)
+
+  @mock.patch.object(apfe_client, 'ApfeClient')
+  def testKickDetection_buildApproved(self, mock_client_factory):
+    self.mock_build.detection_status = (
+        ndb_models.XtsRequirementsDetectionStatus.NOT_STARTED
+    )
+    self.mock_build.detection_test_run_key = None
+    self.mock_build.put()
+    mock_client = mock.MagicMock()
+    mock_client_factory.return_value = mock_client
+    mock_client.GetLatestApfeBuild.return_value = apfe_client.ApfeBuild(
+        name='apfe build',
+        approvalStatus=ndb_models.BuildApprovalStatus.APPROVED,
+    )
+    mock_client.GetLatestBtsReport.return_value = apfe_client.ApfeReport(
+        processState=ndb_models.ReportProcessState.COMPLETE,
+    )
+    mock_client.GetRequiredReports.return_value = (
+        apfe_client.RequiredReportInfo(
+            requiredReports=[
+                apfe_client.RequiredReport(
+                    type=ndb_models.ReportType.CTS,
+                ),
+                apfe_client.RequiredReport(
+                    type=ndb_models.ReportType.GTS,
+                    testPlans=['gts-interactive'],
+                ),
+            ]
+        )
+    )
+
+    xts_requirements_detector.KickDetection(
+        self.device_spec, self.test_resource_objs, str(self.mock_build.key.id())
+    )
+    self.mock_build = self.mock_build.key.get()
+
+    self.assertEqual(
+        self.mock_build.detection_status,
+        ndb_models.XtsRequirementsDetectionStatus.COMPLETED,
+    )
+    self.assertIsNone(self.mock_build.detection_start_time)
+    self.assertIsNone(self.mock_build.detection_test_run_key)
+    required_reports = list(
+        ndb_models.RequiredReport.query(
+            ndb_models.RequiredReport.build_key == self.mock_build.key
+        ).order(ndb_models.RequiredReport.type)
+    )
+    # Reset key to verify other fields.
+    for required_report in required_reports:
+      required_report.key = None
+    self.assertEqual(
+        required_reports,
+        [
+            ndb_models.RequiredReport(
+                build_key=self.mock_build.key,
+                type=ndb_models.ReportType.CTS,
+            ),
+            ndb_models.RequiredReport(
+                build_key=self.mock_build.key,
+                type=ndb_models.ReportType.GTS,
+                test_plans=['gts-interactive'],
+            ),
+        ],
+    )
 
   @mock.patch.object(task_scheduler, 'AddTask')
   @mock.patch.object(apfe_client, 'ApfeClient')
@@ -341,7 +405,7 @@ class XtsRequirementsDetectorTest(testbed_dependent_test.TestbedDependentTest):
     mock_client = mock.MagicMock()
     mock_client_factory.return_value = mock_client
     mock_client.GetLatestApfeReport.return_value = apfe_client.ApfeReport(
-        processState=apfe_client.ProcessState.COMPLETE,
+        processState=ndb_models.ReportProcessState.COMPLETE,
     )
     mock_client.GetRequiredReports.return_value = (
         apfe_client.RequiredReportInfo(
@@ -410,7 +474,7 @@ class XtsRequirementsDetectorTest(testbed_dependent_test.TestbedDependentTest):
     mock_client = mock.MagicMock()
     mock_client_factory.return_value = mock_client
     mock_client.GetLatestApfeReport.return_value = apfe_client.ApfeReport(
-        processState=apfe_client.ProcessState.IN_PROGRESS,
+        processState=ndb_models.ReportProcessState.IN_PROGRESS,
     )
 
     xts_requirements_detector.ProcessDetectionEvent(
@@ -451,7 +515,7 @@ class XtsRequirementsDetectorTest(testbed_dependent_test.TestbedDependentTest):
     mock_client = mock.MagicMock()
     mock_client_factory.return_value = mock_client
     mock_client.GetLatestApfeReport.return_value = apfe_client.ApfeReport(
-        processState=apfe_client.ProcessState.IN_PROGRESS,
+        processState=ndb_models.ReportProcessState.IN_PROGRESS,
     )
 
     xts_requirements_detector.ProcessDetectionEvent(

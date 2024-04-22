@@ -135,7 +135,7 @@ class BuildApiTest(api_test_util.TestCase):
         name='apfe build',
     )
     mock_client.GetLatestBtsReport.return_value = apfe_client.ApfeReport(
-        processState=apfe_client.ProcessState.COMPLETE,
+        processState=ndb_models.ReportProcessState.COMPLETE,
     )
 
   def testList(self):

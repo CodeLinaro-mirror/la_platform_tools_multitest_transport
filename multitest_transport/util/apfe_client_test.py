@@ -90,7 +90,7 @@ class ApfeClientTest(absltest.TestCase):
             productName=self.mock_product_name,
             modelName=self.mock_model_name,
             buildFingerprint=self.mock_build_fingerprint,
-            processState=apfe_client.ProcessState.IN_PROGRESS,
+            processState=ndb_models.ReportProcessState.IN_PROGRESS,
         ),
     )
     request = (
@@ -110,6 +110,7 @@ class ApfeClientTest(absltest.TestCase):
     """Tests latest APFE build can be retrieved."""
     self.client.compatibility().device_names().product_names().build_fingerprints().get().execute.return_value = json.dumps({
         'name': self.mock_build_name,
+        'approvalStatus': 'APPROVED',
     })
     build_fingerprint = (
         'google/sunfish/sunfish:13/TQ1A.221205.006/9206830:user/release-keys'
@@ -120,6 +121,7 @@ class ApfeClientTest(absltest.TestCase):
         apfe_build,
         apfe_client.ApfeBuild(
             name=self.mock_build_name,
+            approvalStatus=ndb_models.BuildApprovalStatus.APPROVED,
         ),
     )
     request = (
@@ -168,7 +170,7 @@ class ApfeClientTest(absltest.TestCase):
             productName=self.mock_product_name,
             modelName=self.mock_model_name,
             buildFingerprint=self.mock_build_fingerprint,
-            processState=apfe_client.ProcessState.COMPLETE,
+            processState=ndb_models.ReportProcessState.COMPLETE,
         ),
     )
     request = (
@@ -216,7 +218,7 @@ class ApfeClientTest(absltest.TestCase):
             productName=self.mock_product_name,
             modelName=self.mock_model_name,
             buildFingerprint=self.mock_build_fingerprint,
-            processState=apfe_client.ProcessState.COMPLETE,
+            processState=ndb_models.ReportProcessState.COMPLETE,
         ),
     )
     request = (
