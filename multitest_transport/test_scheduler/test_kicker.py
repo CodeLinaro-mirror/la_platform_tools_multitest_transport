@@ -56,8 +56,38 @@ DEFAULT_TF_CONFIG_OBJECTS = [
         class_name='com.android.tradefed.targetprep.DeviceCleaner',
         option_values=[
             api_messages.KeyMultiValuePair(
-                key='post-cleanup', values=['SCREEN_OFF'])
-        ])
+                key='post-cleanup', values=['SCREEN_OFF']
+            )
+        ],
+    )
+]
+DYNAMIC_DOWNLOAD_MCTS_TF_CONFIG = [
+    # Dynamic Download MCTS based on the device preloaded Mainline Modules.
+    api_messages.TradefedConfigObject(
+        type=api_messages.TradefedConfigObjectType.TARGET_PREPARER,
+        class_name=(
+            'com.android.tradefed.targetprep.RunHostCommandTargetPreparer'
+        ),
+        option_values=[
+            api_messages.KeyMultiValuePair(
+                key='host-cmd-timeout', values=['90m']
+            ),
+            api_messages.KeyMultiValuePair(
+                key='host-setup-command',
+                values=[
+                    'chmod u+x ./MctsDynamicDownloadPlugin_deploy.jar',
+                    'chmod u+x ./dynamic_download.sh',
+                    (
+                        './dynamic_download.sh $SERIAL ${TF_WORK_DIR}'
+                        ' ${MTT_STORAGE_PATH}'
+                    ),
+                ],
+            ),
+            api_messages.KeyMultiValuePair(
+                key='work-dir', values=['${TF_WORK_DIR}']
+            ),
+        ],
+    )
 ]
 TF_DEVICE_COUNT_ENV_VAR = '${TF_DEVICE_COUNT}'
 # This is the list of the tradefed options that are allowed to be specified in
@@ -637,6 +667,9 @@ def _GetTradefedConfigObjects(test_run):
   objs = []
   # Adding default TF config objects.
   objs.extend(DEFAULT_TF_CONFIG_OBJECTS)
+  if test_run.test.use_dynamic_download_mcts:
+    test_run.test_run_config.use_parallel_setup = False
+    objs.extend(DYNAMIC_DOWNLOAD_MCTS_TF_CONFIG)
   for action in test_run.before_device_actions:
     for target_preparer in action.tradefed_target_preparers:
       obj = api_messages.TradefedConfigObject(

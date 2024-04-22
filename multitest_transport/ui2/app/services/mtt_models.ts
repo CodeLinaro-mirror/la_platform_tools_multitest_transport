@@ -485,6 +485,7 @@ export declare interface Test {
    * which need to be uploaded to GCS.
    */
   upload_file_patterns?: string[];
+  use_dynamic_download_mcts?: boolean;
 }
 
 /** Initialize a test */

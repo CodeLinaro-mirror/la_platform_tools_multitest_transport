@@ -265,6 +265,7 @@ class Test(ndb.Model):
     visibility_type: the visibility of a test.
     upload_file_patterns: a list of regex patterns for the filenames of the test
       artifacts which need to be uploaded to GCS.
+    use_dynamic_download_mcts: enable dynamic downloading MCTS.
   """
   name = ndb.StringProperty(required=True)
   description = ndb.StringProperty()
@@ -287,6 +288,7 @@ class Test(ndb.Model):
       VisibilityType, default=VisibilityType.PUBLIC
   )
   upload_file_patterns = ndb.StringProperty(repeated=True)
+  use_dynamic_download_mcts = ndb.BooleanProperty(default=False)
 
 
 class ShardingMode(messages.Enum):
