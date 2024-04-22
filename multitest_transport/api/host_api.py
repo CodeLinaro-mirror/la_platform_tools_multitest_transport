@@ -223,7 +223,7 @@ class HostApi(remote.Service):
     )
 
   @staticmethod
-  def ConvertHostInfo(host_info, timestamp):
+  def ConvertHostInfo(host_info, timestamp) -> api_messages.HostInfo:
     """Converts an OmniLab host info to an ATS host info.
 
     Args:
@@ -327,6 +327,7 @@ class HostApi(remote.Service):
     lab_name = ''
     test_runner_version = ''
     host_group = 'default'
+    pools = []
     for (
         host_property
     ) in lab_info.lab_server_feature.host_properties.host_property:
@@ -336,6 +337,7 @@ class HostApi(remote.Service):
         test_runner_version = host_property.value
       elif host_property.key == 'host_group':
         host_group = host_property.value
+        pools.append(host_group)
     host_state = 'UNKNOWN'
     if lab_info.lab_status == lab_pb2.LabStatus.LAB_RUNNING:
       host_state = 'RUNNING'
@@ -362,7 +364,7 @@ class HostApi(remote.Service):
         notes=[],
         extra_info=[],
         next_cluster_ids=[],
-        pools=[],
+        pools=pools if pools else ['default'],
         host_state=host_state,
         state_history=[],
         assignee='',
@@ -373,7 +375,7 @@ class HostApi(remote.Service):
         flated_extra_info=[],
         last_recovery_time=datetime.datetime.utcfromtimestamp(0),
         recovery_state='',
-        update_state='',
+        update_state='SUCCEEDED',
         update_state_display_message='',
         bad_reason='',
         update_timestamp=datetime.datetime.utcfromtimestamp(timestamp.seconds),

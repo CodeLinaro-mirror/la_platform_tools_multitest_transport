@@ -621,7 +621,7 @@ export class TfcClient {
       Observable<tfcModels.FilterHintList> {
     const params = new HttpParams().set('type', type);
     return this.http.get<tfcModels.FilterHintList>(
-        `${this.tfcApiUrl}/filterHints`, {params});
+        `${this.apiUrl}/filterHints`, {params});
   }
 
   checkUserPermission(): Observable<tfcModels.UserPermission> {

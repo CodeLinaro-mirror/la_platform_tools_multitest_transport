@@ -27,6 +27,7 @@ from multitest_transport.api import device_action_api
 from multitest_transport.api import device_api
 from multitest_transport.api import request_api
 from multitest_transport.api import file_cleaner_api
+from multitest_transport.api import ats_filter_hint_api
 from multitest_transport.api import host_api
 from multitest_transport.api import node_config_api
 from multitest_transport.api import netdata_api
@@ -49,6 +50,7 @@ API_HANDLERS = [
     request_api.TestRequestApi,
     device_action_api.DeviceActionApi,
     file_cleaner_api.FileCleanerApi,
+    ats_filter_hint_api.AtsFilterHintApi,
     host_api.HostApi,
     netdata_api.NetdataApi,
     node_config_api.NodeConfigApi,

@@ -222,6 +222,40 @@ py_test(
 )
 
 pytype_strict_library(
+    name = "ats_filter_hint_api_lib",
+    srcs = [
+        "ats_filter_hint_api.py",
+    ],
+    deps = [
+        ":base_lib",
+        ":device_api_lib",
+        ":host_api_lib",
+        "@com_google_deviceinfra//src/devtools/mobileharness/shared/labinfo/proto:lab_info_service_py_proto",
+        "//third_party/py/endpoints:endpoints_library",
+        "//multitest_transport/util:olcs_lab_info_client_lib",
+        "//multitest_transport/util:olcs_lab_record_client_lib",
+        "//third_party/py/protorpc:protorpc_all",
+        "@tradefed_cluster//tradefed_cluster:api_messages_lib",
+        "@tradefed_cluster//tradefed_cluster:common_lib",
+    ],
+)
+
+py_test(
+    name = "ats_filter_hint_api_test",
+    srcs = ["ats_filter_hint_api_test.py"],
+    deps = [
+        ":api_test_util_lib",
+        ":ats_filter_hint_api_lib",
+        "@com_google_deviceinfra//src/devtools/mobileharness/api/model/proto:device_py_pb2",
+        "@com_google_deviceinfra//src/devtools/mobileharness/shared/labinfo/proto:lab_info_service_py_proto",
+        "//third_party/py/absl/testing:absltest",
+        "//multitest_transport/util:olcs_lab_info_client_lib",
+        "//third_party/py/protorpc:protorpc_all",
+        "@tradefed_cluster//tradefed_cluster:api_messages_lib",
+    ],
+)
+
+pytype_strict_library(
     name = "host_api_lib",
     srcs = [
         "host_api.py",
@@ -337,6 +371,7 @@ pytype_strict_library(
         "docs.html",
     ],
     deps = [
+        ":ats_filter_hint_api_lib",
         ":base_lib",
         ":build_api_lib",
         ":build_channel_api_lib",

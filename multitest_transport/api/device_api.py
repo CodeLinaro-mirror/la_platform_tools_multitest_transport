@@ -242,7 +242,7 @@ class DeviceApi(remote.Service):
     )
 
   @staticmethod
-  def ConvertDeviceInfo(device_info, timestamp):
+  def ConvertDeviceInfo(device_info, timestamp) -> api_messages.DeviceInfo:
     """Converts an OmniLab device info to an ATS device info.
 
     Args:
@@ -323,9 +323,9 @@ class DeviceApi(remote.Service):
         notes=[],
         history=[],
         utilization=0.0,
-        cluster=pools[0] if pools else '',
-        host_group=pools[0] if pools else '',
-        pools=pools,
+        cluster=pools[0] if pools else 'default',
+        host_group=pools[0] if pools else 'default',
+        pools=pools if pools else ['default'],
         device_type=device_type,
         mac_address=mac_address,
         group_name='',
