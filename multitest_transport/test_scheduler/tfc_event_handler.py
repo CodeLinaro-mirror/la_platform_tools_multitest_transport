@@ -17,6 +17,7 @@ import datetime
 import json
 import logging
 import os
+import threading
 from typing import Union
 import zlib
 
@@ -37,6 +38,7 @@ from multitest_transport.test_scheduler import test_scheduler
 from multitest_transport.util import analytics
 from multitest_transport.util import file_util
 from multitest_transport.util import tfc_client
+from multitest_transport.util import olcs_session_stub
 
 TEST_RUN_STATE_MAP = {
     api_messages.RequestState.UNKNOWN: ndb_models.TestRunState.UNKNOWN,
@@ -50,6 +52,34 @@ TEST_RUN_STATE_MAP = {
 FAILED_TEST_COUNT_THRESHOLDS = [1, 10, 50, 100, 200, 500, 1000]
 LOCAL_ID_TAG = 'custom'
 APP = flask.Flask(__name__)
+
+_tls = threading.local()
+
+
+def _GetOlcsSessionStub() -> olcs_session_stub.OlcsSessionStub:
+  """Returns a OlcsSessionStub for TFC."""
+  if not hasattr(_tls, 'olcs_session_stub'):
+    _tls.olcs_session_stub = olcs_session_stub.OlcsSessionStub(None)
+  return _tls.olcs_session_stub
+
+
+def _ProcessSubscribedSessionResponse(response):
+  """Session response subscriber."""
+  try:
+    request_id = response.get_session_response.session_detail.session_id.id
+    test_request = _GetOlcsSessionStub().GetRequest(request_id)
+    request_event = api_messages.RequestEventMessage(
+        type=common.ObjectEventType.REQUEST_STATE_CHANGED,
+        request_id=request_id,
+        new_state=test_request.state,
+        request=test_request,
+        event_time=datetime.datetime.now(),
+    )
+    ProcessRequestEvent(request_event)
+  except Exception as e:  
+    logging.exception(
+        'Exception %s when processing subscribed session response', e
+    )
 
 
 @ndb.transactional()
@@ -149,6 +179,19 @@ def _ProcessRequestEvent(test_run_id, message):
   # Update test run information
   test_run.request_event_time = message.event_time
   test_run.update_time = message.event_time
+  if (
+      os.environ.get('IS_OMNILAB_BASED') == 'true'
+      and message.request.next_attempt_session_id
+  ):
+    test_run.request_id = message.request.next_attempt_session_id
+    test_run.put()
+    # Listen to retry request's status update.
+    _GetOlcsSessionStub().StartSubscribeSession(
+        test_run.request_id,
+        ndb.with_ndb_context(_ProcessSubscribedSessionResponse),
+    )
+    return
+
   if not test_run.IsFinal():
     test_run.state = TEST_RUN_STATE_MAP.get(
         message.new_state, ndb_models.TestRunState.UNKNOWN)

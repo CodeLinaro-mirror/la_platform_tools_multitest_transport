@@ -184,47 +184,44 @@ class OlcsSessionStubTest(testbed_dependent_test.TestbedDependentTest):
 
     # Verify the command attempt message.
     command_attempt_message = request_message.command_attempts[0]
-    command_attempt_detail = request_detail.command_attempt_details[0]
     self.assertEqual(
-        command_attempt_message.request_id, command_attempt_detail.request_id
+        command_attempt_message.request_id, command_detail.request_id
     )
-    self.assertEqual(
-        command_attempt_message.command_id, command_attempt_detail.command_id
-    )
+    self.assertEqual(command_attempt_message.command_id, command_detail.id)
     self.assertEqual(
         command_attempt_message.state, api_messages.CommandState.COMPLETED
     )
     self.assertEqual(
         command_attempt_message.passed_test_count,
-        command_attempt_detail.passed_test_count,
+        command_detail.passed_test_count,
     )
     self.assertEqual(
         command_attempt_message.failed_test_count,
-        command_attempt_detail.failed_test_count,
+        command_detail.failed_test_count,
     )
     self.assertEqual(
         command_attempt_message.total_test_count,
-        command_attempt_detail.total_test_count,
+        command_detail.total_test_count,
     )
-    self.assertEqual(
+    self.assertCountEqual(
         command_attempt_message.device_serials,
-        command_attempt_detail.device_serials,
+        request_detail.command_attempt_details[0].device_serials,
     )
     self.assertEqual(
         command_attempt_message.start_time,
-        command_attempt_detail.start_time.ToDatetime(),
+        command_detail.start_time.ToDatetime(),
     )
     self.assertEqual(
         command_attempt_message.end_time,
-        command_attempt_detail.end_time.ToDatetime(),
+        command_detail.end_time.ToDatetime(),
     )
     self.assertEqual(
         command_attempt_message.create_time,
-        command_attempt_detail.create_time.ToDatetime(),
+        command_detail.create_time.ToDatetime(),
     )
     self.assertEqual(
         command_attempt_message.update_time,
-        command_attempt_detail.update_time.ToDatetime(),
+        command_detail.update_time.ToDatetime(),
     )
 
   def test_generate_request_proto(self):

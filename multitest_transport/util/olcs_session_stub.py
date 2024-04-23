@@ -193,15 +193,35 @@ class OlcsSessionStub:
             request_detail.command_details.values(),
         )
     )
-    request_message.command_attempts = list(
-        map(
-            self._ConvertCommandAttemptDetail,
-            request_detail.command_attempt_details,
-        )
+
+    for command_detail in request_detail.command_details.values():
+      command_attempt_message = self._GenerateCommandAttemptFromCommand(
+          command_detail
+      )
+      device_serials = set()
+      for command_attempt_detail in request_detail.command_attempt_details:
+        if command_attempt_detail.command_id == command_detail.id:
+          command_attempt_message.attempt_id = command_attempt_detail.id
+          device_serials.update(command_attempt_detail.device_serials)
+      command_attempt_message.device_serials = list(device_serials)
+      request_message.command_attempts.append(command_attempt_message)
+
+    request_message.next_attempt_session_id = (
+        request_detail.next_attempt_session_id
     )
+
+    # add all previous attempts' session IDs.
+    if request_detail.original_request.retry_previous_session_id:
+      previous_request = self.GetRequest(
+          request_detail.original_request.retry_previous_session_id
+      )
+      request_message.previous_attempt_session_ids = (
+          previous_request.previous_attempt_session_ids
+      )
+      request_message.previous_attempt_session_ids.append(previous_request.id)
     return request_message
 
-  def GetRequest(self, request_id):
+  def GetRequest(self, request_id: str) -> api_messages.RequestMessage:
     """Get request from OLCS or from Database.
 
     Args:
@@ -379,49 +399,44 @@ class OlcsSessionStub:
     command_message.update_time = command_detail.update_time.ToDatetime()
     return command_message
 
-  def _ConvertCommandAttemptDetail(
-      self, command_attempt_detail: service_pb2.CommandAttemptDetail
+  def _GenerateCommandAttemptFromCommand(
+      self, command_detail: service_pb2.CommandDetail
   ) -> api_messages.CommandAttemptMessage:
-    """Convert Command Attempt Detail from Request Detail proto to TFC CommandAttemptMessage.
+    """Generate command attempt from command detail.
+
+    A command attempt is defined as one attempt to run a command line under
+    one session. Therefore command_attempt_detail can be generate from command
+    detail directly. Note that the RequestDetail proto's command attempt
+    represent a job or test in OLCS, which is not useful to end users.
 
     Args:
-      command_attempt_detail: Command Attempt Detail from Request Detail proto.
+      command_detail: Command Detail from Request Detail proto.
 
     Returns:
       The CommandAttemptMessage defined by TFC.
     """
+    # need to add device serial info.
     command_attempt_message = api_messages.CommandAttemptMessage()
-    command_attempt_message.request_id = command_attempt_detail.request_id
-    command_attempt_message.attempt_id = command_attempt_detail.id
-    command_attempt_message.command_id = command_attempt_detail.command_id
+    command_attempt_message.request_id = command_detail.request_id
+    command_attempt_message.command_id = command_detail.id
+    command_attempt_message.attempt_id = (
+        command_detail.request_id + "_" + command_detail.id
+    )
     command_attempt_message.task_id = "0"  # TODO: what is this
     command_attempt_message.state = _COMMAND_STATE_MAP.get(
-        command_attempt_detail.state, common.CommandState.UNKNOWN
+        command_detail.state, common.CommandState.UNKNOWN
     )
-    command_attempt_message.device_serials = list(
-        command_attempt_detail.device_serials
-    )
-    command_attempt_message.start_time = (
-        command_attempt_detail.start_time.ToDatetime()
-    )
-    command_attempt_message.end_time = (
-        command_attempt_detail.end_time.ToDatetime()
-    )
+    command_attempt_message.start_time = command_detail.start_time.ToDatetime()
+    command_attempt_message.end_time = command_detail.end_time.ToDatetime()
     command_attempt_message.create_time = (
-        command_attempt_detail.create_time.ToDatetime()
+        command_detail.create_time.ToDatetime()
     )
     command_attempt_message.update_time = (
-        command_attempt_detail.update_time.ToDatetime()
+        command_detail.update_time.ToDatetime()
     )
-    command_attempt_message.passed_test_count = (
-        command_attempt_detail.passed_test_count
-    )
-    command_attempt_message.failed_test_count = (
-        command_attempt_detail.failed_test_count
-    )
-    command_attempt_message.total_test_count = (
-        command_attempt_detail.total_test_count
-    )
+    command_attempt_message.passed_test_count = command_detail.passed_test_count
+    command_attempt_message.failed_test_count = command_detail.failed_test_count
+    command_attempt_message.total_test_count = command_detail.total_test_count
     return command_attempt_message
 
   @staticmethod

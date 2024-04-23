@@ -514,11 +514,11 @@ class FileUtilTest(parameterized.TestCase):
     test_run = mock.MagicMock(output_path='/base/')
 
     self.assertEqual(
-        'file:///root/base/request/command/tradefed_logs/XtsTradefedTest_test_attempt/',
+        'file:///root/base/request/command/',
         file_util.GetOutputFileUrl(test_run, attempt),
     )
     self.assertEqual(
-        'file:///root/base/request/command/tradefed_logs/XtsTradefedTest_test_attempt/file',
+        'file:///root/base/request/command/file',
         file_util.GetOutputFileUrl(test_run, attempt, 'file'),
     )
 
@@ -531,7 +531,7 @@ class FileUtilTest(parameterized.TestCase):
     test_run = mock.MagicMock(output_path='/base/', test=test)
 
     self.assertEqual(
-        'file:///root/base/request/command/tradefed_results/XtsTradefedTest_test_attempt/test_result.xml',
+        'file:///root/base/request/command/test_result.xml',
         file_util.GetResultUrl(test_run, attempt),
     )
 

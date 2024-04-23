@@ -576,8 +576,6 @@ def GetOutputFileUrl(test_run, attempt, file_path: str = '') -> str:
         test_run.output_path,
         attempt.request_id,
         attempt.command_id,
-        'tradefed_logs',
-        'XtsTradefedTest_test_' + attempt.attempt_id,
         file_path,
     ])
   return GetAppStorageUrl(
@@ -623,8 +621,6 @@ def GetResultUrl(test_run, attempt) -> Optional[str]:
         test_run.output_path,
         attempt.request_id,
         attempt.command_id,
-        'tradefed_results',
-        'XtsTradefedTest_test_' + attempt.attempt_id,
         test_run.test.result_file,
     ])
   return GetOutputFileUrl(test_run, attempt, result_file)

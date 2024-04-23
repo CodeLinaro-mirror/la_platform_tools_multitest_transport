@@ -599,13 +599,7 @@ pytype_strict_library(
     deps = [
         ":base_lib",
         "//third_party/py/endpoints:endpoints_library",
-        "//multitest_transport/models:messages_lib",
-        "//multitest_transport/models:ndb_models_lib",
-        "//multitest_transport/models:sql_models_lib",
-        "//multitest_transport/test_scheduler:tfc_event_handler_lib",
         "//multitest_transport/util:olcs_session_stub",
-        "//multitest_transport/util:tfc_client_lib",
-        "//multitest_transport/util:xts_result_lib",
         "//third_party/py/protorpc:protorpc_all",
         "@tradefed_cluster//tradefed_cluster:api_messages_lib",
         "@tradefed_cluster//tradefed_cluster:common_lib",

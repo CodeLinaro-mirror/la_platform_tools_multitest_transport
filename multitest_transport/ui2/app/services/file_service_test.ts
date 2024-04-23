@@ -77,8 +77,7 @@ describe('FileService', () => {
       hostname: 'hostname',
     };
     const path = 'path/to/file';
-    const expected =
-        'output_url/request_id/command_id/tradefed_logs/XtsTradefedTest_test_attempt_id/path/to/file';
+    const expected = 'output_url/request_id/command_id/path/to/file';
     expect(fs.getTestRunFileUrl(testRun, attempt, path)).toEqual(expected);
   });
 

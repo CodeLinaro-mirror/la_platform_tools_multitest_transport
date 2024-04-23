@@ -127,7 +127,8 @@ export class TestRunConsole implements OnInit, OnChanges, OnDestroy {
     }
     const isActive = !isFinalCommandState(this.selectedAttempt.state);
     if (this.appData.isOmniLabBased) {
-      return this.selectedType;
+      return 'tradefed_logs/XtsTradefedTest_test_' +
+          `${this.selectedAttempt.attempt_id}/${this.selectedType}`;
     }
     return (isActive ? ACTIVE_LOG_DIR : FINAL_LOG_DIR) + this.selectedType;
   }

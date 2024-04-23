@@ -80,8 +80,7 @@ export class FileService {
       const outputUrl = testRun.output_url || '';
       if (this.appData.isOmniLabBased) {
         return joinPath(
-            outputUrl, attempt.request_id, attempt.command_id, 'tradefed_logs',
-            'XtsTradefedTest_test_' + attempt.attempt_id, path);
+            outputUrl, attempt.request_id, attempt.command_id, path);
       }
       return joinPath(outputUrl, attempt.command_id, attempt.attempt_id, path);
     }
