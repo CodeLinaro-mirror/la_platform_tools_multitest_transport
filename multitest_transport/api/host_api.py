@@ -24,6 +24,7 @@ from protorpc import message_types
 from protorpc import messages
 from protorpc import remote
 from tradefed_cluster import api_messages
+from tradefed_cluster import common
 
 from com_google_deviceinfra.src.devtools.mobileharness.api.model.proto import device_pb2
 from com_google_deviceinfra.src.devtools.mobileharness.api.model.proto import lab_pb2
@@ -173,12 +174,18 @@ class HostApi(remote.Service):
     get_lab_info_request.page.limit = 50
     response = self._olcs_lab_info_client.get_lab_info(get_lab_info_request)
 
-    for host_info in response.lab_query_result.lab_view.lab_data:
-      # TODO: Do the filter in OLC server.
-      if host_info.lab_info.lab_locator.host_name == host_name:
-        return HostApi.ConvertHostInfo(
-            host_info, response.lab_query_result.timestamp
-        )
+    lab_match_condition = (
+        get_lab_info_request.lab_query.filter.lab_filter.lab_match_condition.add()
+    )
+    lab_match_condition.lab_host_name_match_condition.condition.include.expected.append(
+        host_name
+    )
+
+    host_info_list = response.lab_query_result.lab_view.lab_data
+    if host_info_list:
+      return HostApi.ConvertHostInfo(
+          host_info_list[0], response.lab_query_result.timestamp
+      )
     raise endpoints.NotFoundException(
         "Host {0} doesn't exist.".format(host_name)
     )
@@ -338,11 +345,11 @@ class HostApi(remote.Service):
       elif host_property.key == 'host_group':
         host_group = host_property.value
         pools.append(host_group)
-    host_state = 'UNKNOWN'
+    host_state = 'Unknown'
     if lab_info.lab_status == lab_pb2.LabStatus.LAB_RUNNING:
-      host_state = 'RUNNING'
+      host_state = 'Running'
     elif lab_info.lab_status == lab_pb2.LabStatus.LAB_MISSING:
-      host_state = 'GONE'
+      host_state = 'Gone'
 
     return api_messages.HostInfo(
         hostname=lab_info.lab_locator.host_name,
@@ -375,7 +382,7 @@ class HostApi(remote.Service):
         flated_extra_info=[],
         last_recovery_time=datetime.datetime.utcfromtimestamp(0),
         recovery_state='',
-        update_state='SUCCEEDED',
+        update_state=str(common.HostUpdateState.SUCCEEDED),
         update_state_display_message='',
         bad_reason='',
         update_timestamp=datetime.datetime.utcfromtimestamp(timestamp.seconds),

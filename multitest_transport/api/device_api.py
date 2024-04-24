@@ -24,6 +24,7 @@ from protorpc import message_types
 from protorpc import messages
 from protorpc import remote
 from tradefed_cluster import api_messages
+from tradefed_cluster import common
 
 from com_google_deviceinfra.src.devtools.mobileharness.api.model.proto import device_pb2
 from com_google_deviceinfra.src.devtools.mobileharness.infra.master.rpc.proto import lab_record_service_pb2
@@ -105,8 +106,8 @@ class DeviceApi(remote.Service):
     page_size = request.count
     get_lab_info_request = lab_info_service_pb2.GetLabInfoRequest()
 
-    get_lab_info_request.page.offset = offset
-    get_lab_info_request.page.limit = page_size
+    get_lab_info_request.page.offset = 0
+    get_lab_info_request.page.limit = 1000
     get_lab_info_request.lab_query.device_view_request.device_limit = 0
     if request.hostname:
       lab_match_condition = (
@@ -116,27 +117,32 @@ class DeviceApi(remote.Service):
           request.hostname
       )
 
+    if request.device_serial:
+      device_match_condition = (
+          get_lab_info_request.lab_query.filter.device_filter.device_match_condition.add()
+      )
+      device_match_condition.device_uuid_match_condition.condition.include.expected.append(
+          request.device_serial
+      )
+
     response = self._olcs_lab_info_client.get_lab_info(get_lab_info_request)
-    returned_device_count = len(
-        response.lab_query_result.device_view.grouped_devices.device_list.device_info
-    )
-    total_device_count = (
-        response.lab_query_result.device_view.grouped_devices.device_list.device_total_count
-    )
-    device_infos = []
+    ats_device_infos = []
     for (
         device_info
     ) in (
         response.lab_query_result.device_view.grouped_devices.device_list.device_info
     ):
-      device_infos.append(
-          DeviceApi.ConvertDeviceInfo(
-              device_info, response.lab_query_result.timestamp
-          )
+      ats_device_info = DeviceApi.ConvertDeviceInfo(
+          device_info, response.lab_query_result.timestamp
       )
+      if DeviceApi.DeviceInfoMatchFilter(ats_device_info, request):
+        ats_device_infos.append(ats_device_info)
 
+    total_device_count = len(ats_device_infos)
+    returned_ats_device_infos = ats_device_infos[offset : offset + page_size]
+    returned_device_count = len(returned_ats_device_infos)
     return api_messages.DeviceInfoCollection(
-        device_infos=device_infos,
+        device_infos=returned_ats_device_infos,
         next_cursor=str(offset + returned_device_count)
         if offset + returned_device_count < total_device_count
         else '',
@@ -144,6 +150,37 @@ class DeviceApi(remote.Service):
         more=True
         if offset + returned_device_count < total_device_count
         else False,
+    )
+
+  @staticmethod
+  def DeviceInfoMatchFilter(
+      device_info: api_messages.DeviceInfo, request
+  ) -> bool:
+    return (
+        (
+            not request.host_groups
+            or device_info.host_group in request.host_groups
+        )
+        and (
+            not request.device_states
+            or device_info.state in request.device_states
+        )
+        and (
+            not request.device_types
+            or device_info.device_type in request.device_types
+        )
+        and (
+            not request.test_harnesses
+            or device_info.test_harness in request.test_harnesses
+        )
+        and (
+            not request.run_targets
+            or device_info.run_target in request.run_targets
+        )
+        and (
+            not request.pools
+            or set(request.pools).intersection(device_info.pools) != set()
+        )
     )
 
   DEVICE_GET_RESOURCE = endpoints.ResourceContainer(
@@ -179,18 +216,23 @@ class DeviceApi(remote.Service):
     get_lab_info_request.page.offset = 0
     get_lab_info_request.page.limit = 50
     get_lab_info_request.lab_query.device_view_request.device_limit = 0
+
+    device_match_condition = (
+        get_lab_info_request.lab_query.filter.device_filter.device_match_condition.add()
+    )
+    device_match_condition.device_uuid_match_condition.condition.include.expected.append(
+        device_serial
+    )
+
     response = self._olcs_lab_info_client.get_lab_info(get_lab_info_request)
 
-    for (
-        device_info
-    ) in (
+    device_info_list = (
         response.lab_query_result.device_view.grouped_devices.device_list.device_info
-    ):
-      # TODO: Do the filter in OLC server.
-      if device_info.device_locator.id == device_serial:
-        return DeviceApi.ConvertDeviceInfo(
-            device_info, response.lab_query_result.timestamp
-        )
+    )
+    if device_info_list:
+      return DeviceApi.ConvertDeviceInfo(
+          device_info_list[0], response.lab_query_result.timestamp
+      )
     raise endpoints.NotFoundException(
         "Device {0} doesn't exist.".format(device_serial)
     )
@@ -257,23 +299,23 @@ class DeviceApi(remote.Service):
       device_type = api_messages.DeviceTypeMessage.PHYSICAL
     elif 'NoOpDevice' in device_info.device_feature.type:
       device_type = api_messages.DeviceTypeMessage.NULL
-    state = 'UNKNOWN'
+    state = common.DeviceState.UNKNOWN
     if device_info.device_status == device_pb2.DeviceStatus.IDLE:
-      state = 'AVAILABLE'
+      state = common.DeviceState.AVAILABLE
     elif device_info.device_status == device_pb2.DeviceStatus.INIT:
-      state = 'INIT'
+      state = common.DeviceState.INIT
     elif device_info.device_status == device_pb2.DeviceStatus.BUSY:
-      state = 'ALLOCATED'
+      state = common.DeviceState.ALLOCATED
     elif device_info.device_status == device_pb2.DeviceStatus.DYING:
-      state = 'DYING'
+      state = common.DeviceState.DYING
     elif device_info.device_status == device_pb2.DeviceStatus.DIRTY:
-      state = 'DIRTY'
+      state = common.DeviceState.DIRTY
     elif device_info.device_status == device_pb2.DeviceStatus.PREPPING:
-      state = 'PREPPING'
+      state = common.DeviceState.PREPPING
     elif device_info.device_status == device_pb2.DeviceStatus.LAMEDUCK:
-      state = 'DIRTY'
+      state = common.DeviceState.LAMEDUCK
     elif device_info.device_status == device_pb2.DeviceStatus.MISSING:
-      state = 'MISSING'
+      state = common.DeviceState.GONE
 
     build_id = ''
     product = ''
