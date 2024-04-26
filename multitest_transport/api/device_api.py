@@ -109,6 +109,7 @@ class DeviceApi(remote.Service):
     get_lab_info_request.page.offset = 0
     get_lab_info_request.page.limit = 1000
     get_lab_info_request.lab_query.device_view_request.device_limit = 0
+
     if request.hostname:
       lab_match_condition = (
           get_lab_info_request.lab_query.filter.lab_filter.lab_match_condition.add()
@@ -116,14 +117,22 @@ class DeviceApi(remote.Service):
       lab_match_condition.lab_host_name_match_condition.condition.include.expected.append(
           request.hostname
       )
-
+    if request.hostnames:
+      lab_match_condition = (
+          get_lab_info_request.lab_query.filter.lab_filter.lab_match_condition.add()
+      )
+      for hostname in request.hostnames:
+        lab_match_condition.lab_host_name_match_condition.condition.include.expected.append(
+            hostname
+        )
     if request.device_serial:
       device_match_condition = (
           get_lab_info_request.lab_query.filter.device_filter.device_match_condition.add()
       )
-      device_match_condition.device_uuid_match_condition.condition.include.expected.append(
-          request.device_serial
-      )
+      for device_serial in request.device_serial:
+        device_match_condition.device_uuid_match_condition.condition.include.expected.append(
+            device_serial
+        )
 
     response = self._olcs_lab_info_client.get_lab_info(get_lab_info_request)
     ats_device_infos = []
