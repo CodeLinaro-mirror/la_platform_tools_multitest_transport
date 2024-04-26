@@ -189,8 +189,20 @@ class HostApiTest(api_test_util.TestCase):
     res_msg = protojson.decode_message(
         api_messages.HostInfoCollection, res.body
     )
-    self.assertLen(res_msg.host_infos, 1)
-    self.assertEqual(res_msg.host_infos[0], EXPECTED_HOST_INFO)
+    self.assertEqual([EXPECTED_HOST_INFO], res_msg.host_infos)
+    self.assertEqual('', res_msg.next_cursor)
+    self.assertEqual('', res_msg.prev_cursor)
+    self.assertEqual(False, res_msg.more)
+
+  def testListHosts_NotMatchFilter(self):
+    res = self.app.get('/_ah/api/mtt/v1/hosts?host_groups=xxx')
+    res_msg = protojson.decode_message(
+        api_messages.HostInfoCollection, res.body
+    )
+    self.assertEqual([], res_msg.host_infos)
+    self.assertEqual('', res_msg.next_cursor)
+    self.assertEqual('', res_msg.prev_cursor)
+    self.assertEqual(False, res_msg.more)
 
   def testGetHost(self):
     res = self.app.get('/_ah/api/mtt/v1/hosts/%s' % 'localhost')

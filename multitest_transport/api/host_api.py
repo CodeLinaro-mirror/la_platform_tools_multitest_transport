@@ -118,26 +118,62 @@ class HostApi(remote.Service):
     page_size = request.count
     get_lab_info_request = lab_info_service_pb2.GetLabInfoRequest()
 
-    get_lab_info_request.page.offset = offset
-    get_lab_info_request.page.limit = page_size
+    get_lab_info_request.page.offset = 0
+    get_lab_info_request.page.limit = 100
+    if request.hostnames:
+      lab_match_condition = (
+          get_lab_info_request.lab_query.filter.lab_filter.lab_match_condition.add()
+      )
+      for hostname in request.hostnames:
+        lab_match_condition.lab_host_name_match_condition.condition.include.expected.append(
+            hostname
+        )
 
     response = self._olcs_lab_info_client.get_lab_info(get_lab_info_request)
-    returned_host_count = len(response.lab_query_result.lab_view.lab_data)
-    total_host_count = response.lab_query_result.lab_view.lab_total_count
-    host_infos = []
+    ats_host_infos = []
     for host_info in response.lab_query_result.lab_view.lab_data:
-      host_infos.append(
-          HostApi.ConvertHostInfo(
-              host_info, response.lab_query_result.timestamp
-          )
+      ats_host_info = HostApi.ConvertHostInfo(
+          host_info, response.lab_query_result.timestamp
       )
+      if HostApi.HostInfoMatchFilter(ats_host_info, request):
+        ats_host_infos.append(ats_host_info)
+
+    total_host_count = len(ats_host_infos)
+    returned_ats_host_infos = ats_host_infos[offset : offset + page_size]
+    returned_host_count = len(returned_ats_host_infos)
     return api_messages.HostInfoCollection(
-        host_infos=host_infos,
+        host_infos=ats_host_infos,
         next_cursor=str(offset + returned_host_count)
         if offset + returned_host_count < total_host_count
         else '',
         prev_cursor=str(offset) if offset > 0 else '',
         more=True if offset + returned_host_count < total_host_count else False,
+    )
+
+  @staticmethod
+  def HostInfoMatchFilter(host_info: api_messages.HostInfo, request) -> bool:
+    return (
+        (not request.host_groups or host_info.host_group in request.host_groups)
+        and (
+            not request.host_states
+            or host_info.host_state in request.host_states
+        )
+        and (
+            not request.host_update_states
+            or host_info.update_state in request.host_update_states
+        )
+        and (
+            not request.test_harnesses
+            or host_info.test_harness in request.test_harnesses
+        )
+        and (
+            not request.test_harness_versions
+            or host_info.test_harness_version in request.test_harness_versions
+        )
+        and (
+            not request.pools
+            or set(request.pools).intersection(host_info.pools) != set()
+        )
     )
 
   HOST_GET_RESOURCE = endpoints.ResourceContainer(
