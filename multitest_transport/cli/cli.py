@@ -98,6 +98,8 @@ _ALLOW_TO_UPDATE_KEY = 'allowToUpdate'
 # string in startConsole() method after console.start();
 # in tools/tradefederation/core/src/com/android/tradefed/command/Console.java
 _TF_CONSOLE_SUCCESS_INDICATOR = 'help all'
+# Success indicator once omni lab server started.
+_OMNI_LAB_SERVER_SUCCESS_INDICATOR = 'Lab server successfully started'
 # command for check log: "docker logs mtt"
 _DOCKER_LOGS_MTT_COMMAND = ['logs', 'mtt']
 # interval in second for checking out the logs
@@ -367,34 +369,42 @@ def _CheckDockerImageVersion(docker_helper, container_name):
         '(%s < %s)' % (cli_version, image_version))
 
 
-def _IsTfConsoleSuccessfullyStarted(host):
-  """Check is TF console started successfully.
+def _IsConsoleSuccessfullyStarted(host, is_omnilab_based):
+  """Check is the success indicator detected from docker logs.
 
   Args:
     host: an instance of host_util.Host.
+    is_omnilab_based: is omnilab based console or not.
+
   Returns:
-    True if find the TF console success indicator in docker logs.
+    True if find the success indicator in docker logs.
   Raises:
     RuntimeError: if exceptions detected in docker logs.
   """
+  indicator = (
+      _OMNI_LAB_SERVER_SUCCESS_INDICATOR
+      if is_omnilab_based
+      else _TF_CONSOLE_SUCCESS_INDICATOR
+  )
   docker_context = command_util.DockerContext(host.context, login=False)
   end_time = time.time() + _MTT_SERVER_WAIT_TIME_SECONDS
   while time.time() <= end_time:
     remaining_time = int(end_time - time.time())
     docker_context.RequestTfConsolePrintOut()
-    command_result = docker_context.Run(_DOCKER_LOGS_MTT_COMMAND,
-                                        timeout=remaining_time)
+    command_result = docker_context.Run(
+        _DOCKER_LOGS_MTT_COMMAND, timeout=remaining_time
+    )
     docker_log = command_result.stderr + '\n' + command_result.stdout
 
-    if _TF_CONSOLE_SUCCESS_INDICATOR in command_result.stdout:
+    if indicator in command_result.stdout:
       return True
     elif 'exception' in docker_log.lower():
-      raise RuntimeError(
-          f'Tradefed failed to start with exception:\n{docker_log}')
+      raise RuntimeError(f'ATS failed to start with exception:\n{docker_log}')
     time.sleep(_LOG_INQUIRE_INTERVAL_SEC)
   # when timeout
   raise RuntimeError(
-      'ATS replica failed to start in %ss' % _MTT_SERVER_WAIT_TIME_SECONDS)
+      'ATS replica failed to start in %ss' % _MTT_SERVER_WAIT_TIME_SECONDS
+  )
 
 
 def Start(args, host=None):
@@ -675,7 +685,7 @@ def _StartMttNode(args, host):
     # localhost URL.
     hostname = 'localhost'
   if control_server_url:
-    if _IsTfConsoleSuccessfullyStarted(host):
+    if _IsConsoleSuccessfullyStarted(host, args.is_omnilab_based):
       logger.info('ATS replica is running.')
   else:
     url = 'http://%s:%s' % (hostname, args.port)
