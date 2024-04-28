@@ -26,7 +26,7 @@ sass_binary(
     name = "build_editor",
     src = "build_editor.scss",
     output_name = "build_editor.css",
-    visibility = ["//multitest_transport"],
+    visibility = ["//visibility:private"],
 )
 
 sass_binary(
@@ -47,7 +47,7 @@ sass_binary(
     name = "test_requirements",
     src = "test_requirements.scss",
     output_name = "test_requirements.css",
-    visibility = ["//multitest_transport"],
+    visibility = ["//visibility:private"],
 )
 
 sass_binary(
