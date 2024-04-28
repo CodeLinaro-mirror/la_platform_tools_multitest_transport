@@ -24,7 +24,6 @@ from protorpc import message_types
 from protorpc import messages
 from protorpc import remote
 from tradefed_cluster import api_messages
-from tradefed_cluster import common
 
 from com_google_deviceinfra.src.devtools.mobileharness.api.model.proto import device_pb2
 from com_google_deviceinfra.src.devtools.mobileharness.api.model.proto import lab_pb2
@@ -156,11 +155,13 @@ class HostApi(remote.Service):
         (not request.host_groups or host_info.host_group in request.host_groups)
         and (
             not request.host_states
-            or host_info.host_state in request.host_states
+            or api_messages.HostState(host_info.host_state)
+            in request.host_states
         )
         and (
             not request.host_update_states
-            or host_info.update_state in request.host_update_states
+            or api_messages.HostUpdateState(host_info.update_state)
+            in request.host_update_states
         )
         and (
             not request.test_harnesses
@@ -381,11 +382,11 @@ class HostApi(remote.Service):
       elif host_property.key == 'host_group':
         host_group = host_property.value
         pools.append(host_group)
-    host_state = 'Unknown'
+    host_state = str(api_messages.HostState.UNKNOWN)
     if lab_info.lab_status == lab_pb2.LabStatus.LAB_RUNNING:
-      host_state = 'Running'
+      host_state = str(api_messages.HostState.RUNNING)
     elif lab_info.lab_status == lab_pb2.LabStatus.LAB_MISSING:
-      host_state = 'Gone'
+      host_state = str(api_messages.HostState.GONE)
 
     return api_messages.HostInfo(
         hostname=lab_info.lab_locator.host_name,
@@ -418,7 +419,7 @@ class HostApi(remote.Service):
         flated_extra_info=[],
         last_recovery_time=datetime.datetime.utcfromtimestamp(0),
         recovery_state='',
-        update_state=str(common.HostUpdateState.SUCCEEDED),
+        update_state=str(api_messages.HostUpdateState.SUCCEEDED),
         update_state_display_message='',
         bad_reason='',
         update_timestamp=datetime.datetime.utcfromtimestamp(timestamp.seconds),

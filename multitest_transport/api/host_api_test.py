@@ -90,7 +90,7 @@ EXPECTED_HOST_INFO = api_messages.HostInfo(
     extra_info=[],
     next_cluster_ids=[],
     pools=['presubmit'],
-    host_state='Running',
+    host_state='RUNNING',
     state_history=[],
     assignee='',
     device_count_summaries=[
@@ -235,7 +235,7 @@ class HostApiTest(api_test_util.TestCase):
             extra_info=[],
             next_cluster_ids=[],
             pools=['presubmit'],
-            host_state='Running',
+            host_state='RUNNING',
             state_history=[],
             assignee='',
             device_count_summaries=[],

@@ -184,7 +184,7 @@ class AtsFilterHintApiTest(api_test_util.TestCase):
         api_messages.FilterHintCollection, res.body
     )
     self.assertEqual(
-        [api_messages.FilterHintMessage(value='Running')],
+        [api_messages.FilterHintMessage(value='RUNNING')],
         res_msg.filter_hints
     )
 
