@@ -252,6 +252,15 @@ class HostApiTest(api_test_util.TestCase):
         ),
     )
 
+  def testGetHostResource(self):
+    res = self.app.get('/_ah/api/mtt/v1/hosts/%s/resource' % 'localhost')
+    res_msg = protojson.decode_message(api_messages.HostResource, res.body)
+    self.assertStartsWith(
+        res_msg.resource,
+        '{"identifier": {"hostname": "localhost"}, "attribute": [{"name": "os",'
+        ' "value":',
+    )
+
 
 if __name__ == '__main__':
   absltest.main()

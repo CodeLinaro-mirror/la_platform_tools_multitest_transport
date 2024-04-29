@@ -13,6 +13,9 @@
 # limitations under the License.
 """A module to provide host APIs."""
 import datetime
+import json
+import platform
+import shutil
 from typing import Optional
 
 import endpoints
@@ -264,6 +267,55 @@ class HostApi(remote.Service):
       )
     return api_messages.HostInfoHistoryCollection(
         histories=histories, next_cursor='', prev_cursor=''
+    )
+
+  HOSTNAME_RESOURCE = endpoints.ResourceContainer(
+      hostname=messages.StringField(1, required=True),
+  )
+
+  @base.ApiMethod(
+      HOSTNAME_RESOURCE,
+      api_messages.HostResource,
+      path='{hostname}/resource',
+      http_method='GET',
+      name='getHostResource',
+  )
+  def GetHostResource(self, request):
+    """Get a host resource.
+
+    Args:
+      request: an API request with hostname
+
+    Returns:
+      an api_messages.HostResource object.
+    """
+    timestamp = datetime.datetime.now(datetime.timezone.utc)
+    root_disk_usage = shutil.disk_usage('/')
+    resource = {}
+    resource['identifier'] = {'hostname': request.hostname}
+    resource['attribute'] = [
+        {'name': 'os', 'value': platform.system()},
+        {'name': 'os_version', 'value': platform.release()},
+    ]
+    resource['resource'] = [
+        {
+            'resource_name': 'disk_space',
+            'resource_instance': '/',
+            'metric': [
+                {
+                    'tag': 'avail',
+                    'value': root_disk_usage.free / 1024**3,
+                },
+                {'tag': 'used', 'value': root_disk_usage.used / 1024**3},
+            ],
+            'timestamp': timestamp.isoformat(),
+        },
+    ]
+    return api_messages.HostResource(
+        hostname=request.hostname,
+        resource=json.dumps(resource),
+        update_timestamp=timestamp,
+        event_timestamp=timestamp,
     )
 
   @staticmethod

@@ -376,10 +376,8 @@ export class TfcClient {
    */
   getHostResource(id: string): Observable<mttLabModels.LabHostResource|null> {
     return this.http
-        .get<tfcModels.HostResource>(
-            `${this.tfcApiUrl}/hosts/${id}/resource`)
-        .pipe(map(
-            result => mttLabModels.convertToLabHostResource(result)));
+        .get<tfcModels.HostResource>(`${this.apiUrl}/hosts/${id}/resource`)
+        .pipe(map(result => mttLabModels.convertToLabHostResource(result)));
   }
 
   /**
@@ -477,7 +475,8 @@ export class TfcClient {
     if (noteInfo.noteType === mttLabModels.NoteType.HOST) {
       const context = AnalyticsContext.create('host_note', action);
       return this.http.post<string>(
-          `${this.tfcApiUrl}/hosts/${noteInfo.hostname}/notes`, body, {context});
+          `${this.tfcApiUrl}/hosts/${noteInfo.hostname}/notes`, body,
+          {context});
     } else {
       const context = AnalyticsContext.create('device_note', action);
       body.device_serial = noteInfo.deviceSerial || '';
