@@ -627,6 +627,12 @@ mat-spinner.loading-spinner {
   color: rgba(0, 0, 0, 0.6);
 }
 
+.mat-mdc-option span {
+  display: block;
+  width: 100%;
+  line-height: 48px !important;
+}
+
 mat-horizontal-stepper .mat-horizontal-content-container {
   padding: 5px 24px 24px;
 }
