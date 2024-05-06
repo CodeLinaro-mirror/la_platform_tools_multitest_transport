@@ -1125,6 +1125,12 @@ class BuildApprovalStatus(messages.Enum):
   REVIEWED = 7  # Reviewed build.
   BETA_BUILD = 9  # Beta build.
 
+INACTIVE_BUILD_APPROVAL_STATUSES = {
+    BuildApprovalStatus.APPROVED,
+    BuildApprovalStatus.REJECTED,
+    BuildApprovalStatus.OBSOLETE,
+}
+
 
 class ApfeBuild(ndb.Model):
   """An APFE build.
@@ -1136,6 +1142,14 @@ class ApfeBuild(ndb.Model):
 
   name = ndb.StringProperty()
   approval_status = ndb.EnumProperty(BuildApprovalStatus)
+
+  def IsInactive(self):
+    """Returns whether an APFE build is in an inactive status.
+
+    Returns:
+      True if an APFE build is in an inactive status. Otherwise false.
+    """
+    return self.approval_status in INACTIVE_BUILD_APPROVAL_STATUSES
 
 
 class XtsRequirementsDetectionStatus(messages.Enum):

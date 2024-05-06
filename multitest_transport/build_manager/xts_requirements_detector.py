@@ -311,7 +311,7 @@ def KickDetection(device_spec, test_resource_objs, build_id):
     return build
   # Skip build analysis and retrieve required reports for approved builds.
   apfe_build = ndb_models.ApfeBuild.query(ancestor=build.key).get()
-  if apfe_build.approval_status == ndb_models.BuildApprovalStatus.APPROVED:
+  if apfe_build.IsInactive():
     updated_build = _SyncRequiredReports(build_id, build.fingerprint)
     return updated_build
 
