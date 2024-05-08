@@ -242,7 +242,7 @@ device_actions:
   description: >
     Setup a remote virtual device. The device type is Cuttlefish:
     https://source.android.com/setup/create/cuttlefish
-  device_spec: '\b(device_serial:\S+:gce-device-\S+|device_type:GCE)\b'
+  device_spec: '\b(device_serial:\S+:gce-device-\S+|device_type:REMOTE_VIRTUAL)\b'
   tradefed_options:
   - name: gce-driver-path
     values:
@@ -263,6 +263,8 @@ device_actions:
     - --no-autoconnect
     - --yes
     - --skip-pre-run-check
+    - --remote-image-dir
+    - mtt_rvd/${TF_ATTEMPT_ID}
   - name: gce-driver-file-param
     values:
     - local-image=${TF_WORK_DIR}/device
@@ -279,6 +281,11 @@ device_actions:
     - CUTTLEFISH
   - name: disable-usb-reset
     values: 'true'
+  - name: parallel-pre-invocation-setup
+    values: 'true'
+  - name: parallel-pre-invocation-setup-timeout
+    values:
+    - 15m
   test_resource_defs:
   - name: cvd-host_package.tar.gz
     test_resource_type: UNKNOWN
