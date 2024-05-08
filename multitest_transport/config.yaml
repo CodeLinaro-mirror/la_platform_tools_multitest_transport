@@ -324,7 +324,7 @@ tests:
   setup_scripts:
   output_file_patterns:
   - android-cts/logs/.*
-  - android-cts/results/[^/]+/[^/]+\.html
+  - android-cts/results/.+\.html
   - android-cts/results/[^/]+/compatibility_result\..*
   - android-cts/results/[^/]+/logo.png
   - android-cts/results/[^/]+/test_result.xml
@@ -360,7 +360,7 @@ tests:
   setup_scripts:
   output_file_patterns:
   - android-cts/logs/.*
-  - android-cts/results/[^/]+/[^/]+\.html
+  - android-cts/results/.+\.html
   - android-cts/results/[^/]+/compatibility_result\..*
   - android-cts/results/[^/]+/logo.png
   - android-cts/results/[^/]+/test_result.xml
@@ -396,7 +396,7 @@ tests:
   setup_scripts:
   output_file_patterns:
   - android-cts/logs/.*
-  - android-cts/results/[^/]+/[^/]+\.html
+  - android-cts/results/.+\.html
   - android-cts/results/[^/]+/compatibility_result\..*
   - android-cts/results/[^/]+/logo.png
   - android-cts/results/[^/]+/test_result.xml
@@ -432,7 +432,7 @@ tests:
   setup_scripts:
   output_file_patterns:
   - android-cts_instant/logs/.*
-  - android-cts_instant/results/[^/]+/[^/]+\.html
+  - android-cts/results/.+\.html
   - android-cts_instant/results/[^/]+/compatibility_result\..*
   - android-cts_instant/results/[^/]+/logo.png
   - android-cts_instant/results/[^/]+/test_result.xml
@@ -466,7 +466,7 @@ tests:
   setup_scripts:
   output_file_patterns:
   - android-cts/logs/.*
-  - android-cts/results/[^/]+/[^/]+\.html
+  - android-cts/results/.+\.html
   - android-cts/results/[^/]+/compatibility_result\..*
   - android-cts/results/[^/]+/logo.png
   - android-cts/results/[^/]+/test_result.xml
@@ -502,7 +502,7 @@ tests:
   setup_scripts:
   output_file_patterns:
   - android-cts/logs/.*
-  - android-cts/results/[^/]+/[^/]+\.html
+  - android-cts/results/.+\.html
   - android-cts/results/[^/]+/compatibility_result\..*
   - android-cts/results/[^/]+/logo.png
   - android-cts/results/[^/]+/test_result.xml
@@ -542,7 +542,7 @@ tests:
   setup_scripts:
   output_file_patterns:
   - android-cts/logs/.*
-  - android-cts/results/[^/]+/[^/]+\.html
+  - android-cts/results/.+\.html
   - android-cts/results/[^/]+/compatibility_result\..*
   - android-cts/results/[^/]+/logo.png
   - android-cts/results/[^/]+/test_result.xml
@@ -582,7 +582,7 @@ tests:
   setup_scripts:
   output_file_patterns:
   - android-cts/logs/.*
-  - android-cts/results/[^/]+/[^/]+\.html
+  - android-cts/results/.+\.html
   - android-cts/results/[^/]+/compatibility_result\..*
   - android-cts/results/[^/]+/logo.png
   - android-cts/results/[^/]+/test_result.xml
@@ -622,7 +622,7 @@ tests:
   setup_scripts:
   output_file_patterns:
   - android-cts/logs/.*
-  - android-cts/results/[^/]+/[^/]+\.html
+  - android-cts/results/.+\.html
   - android-cts/results/[^/]+/compatibility_result\..*
   - android-cts/results/[^/]+/logo.png
   - android-cts/results/[^/]+/test_result.xml
@@ -662,7 +662,7 @@ tests:
   setup_scripts:
   output_file_patterns:
   - android-cts/logs/.*
-  - android-cts/results/[^/]+/[^/]+\.html
+  - android-cts/results/.+\.html
   - android-cts/results/[^/]+/compatibility_result\..*
   - android-cts/results/[^/]+/logo.png
   - android-cts/results/[^/]+/test_result.xml
