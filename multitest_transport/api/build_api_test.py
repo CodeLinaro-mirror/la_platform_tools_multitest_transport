@@ -194,19 +194,6 @@ class BuildApiTest(api_test_util.TestCase):
         str(res.body),
     )
 
-  def testCreate_unsetFileUrl(self):
-    """Tests builds.create API with unset file url."""
-    data = self._CreateBuildToRequest()
-    data.pop('file_url')
-
-    res = self.app.post_json('/_ah/api/mtt/v1/builds', data, expect_errors=True)
-
-    self.assertEqual('400 Bad Request', res.status)
-    self.assertIn(
-        'File url in the request is unset.',
-        str(res.body),
-    )
-
   def testCreate_remoteFileUrl(self):
     """Tests builds.create API with remote file url."""
     data = self._CreateBuildToRequest()
@@ -278,7 +265,8 @@ class BuildApiTest(api_test_util.TestCase):
     build_msg = messages.Convert(build, messages.Build)
     build_msg.name = 'Bar'
     build_msg.fingerprint = 'new_fingerprint'
-    build_msg.file_url = 'file:///root/file/new_path'
+    build_msg.file_url = 'file:///root/file/new_path.zip'
+    build_msg.detection_status = ndb_models.XtsRequirementsDetectionStatus.ERROR
     data = protojson.encode_message(build_msg)
 
     res = self.app.put('/_ah/api/mtt/v1/builds/%s' % build.key.id(), data)
@@ -288,8 +276,15 @@ class BuildApiTest(api_test_util.TestCase):
     self.assertEqual(updated_build_msg.name, 'Bar')
     # Verify that the fingerprint is updated.
     self.assertEqual(updated_build_msg.fingerprint, 'new_fingerprint')
-    # Verify that the file_url field remains the same as before.
-    self.assertEqual(updated_build_msg.file_url, FILE_URL)
+    # Verify that the file_url is updated.
+    self.assertEqual(
+        updated_build_msg.file_url, 'file:///root/file/new_path.zip'
+    )
+    # Verify that the detection_status field remains the same as before.
+    self.assertEqual(
+        updated_build_msg.detection_status,
+        ndb_models.XtsRequirementsDetectionStatus.NOT_STARTED,
+    )
     mock_add_task.assert_has_calls([
         mock.call(
             xts_requirements_detector.SyncApfeBuild,

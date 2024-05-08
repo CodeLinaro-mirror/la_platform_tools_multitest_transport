@@ -58,9 +58,11 @@
   </mat-form-field>
 
   <!-- Source Field -->
-  <mat-form-field appearance="outline" class="source-field" floatLabel="always" fxLayout="column">
+  <mat-form-field appearance="outline" class="source-field" floatLabel="always" fxLayout="column"
+                  (click)="openBuildFileSelector(data.build)"
+                  (keydown.enter)="openBuildFileSelector(data.build)">
     <mat-label> Source </mat-label>
-    <input matInput type="text" [(ngModel)]="data.build.file_url" disabled readonly required>
+    <input matInput type="text" [(ngModel)]="data.build.file_url" readonly>
     <mat-hint>
       {{data.build.size | fileSize}}
     </mat-hint>

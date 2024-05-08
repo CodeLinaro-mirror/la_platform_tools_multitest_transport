@@ -1153,7 +1153,7 @@ export declare interface Build {
   /** A build fingerprint */
   fingerprint: string;
   /** A file URL for this build */
-  file_url: string;
+  file_url?: string;
   /** Size of this build (bytes) */
   size: number;
   /** List of strings to filter builds */

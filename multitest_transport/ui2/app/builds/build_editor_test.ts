@@ -16,8 +16,9 @@
 
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {MatChipInput} from '@angular/material/chips';
-import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
+import {MAT_DIALOG_DATA, MatDialog, MatDialogRef} from '@angular/material/dialog';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
+import {of as observableOf} from 'rxjs';
 
 import {newMockBuild} from '../testing/mtt_mocks';
 
@@ -87,5 +88,16 @@ describe('BuildEditor', () => {
     expect(buildEditor.data.build.labels).toEqual([]);
     buildEditor.removeLabel('label1');
     expect(buildEditor.data.build.labels).toEqual([]);
+  });
+
+  it('should open build file seletor dialog correctly', () => {
+    let dialogSpy: jasmine.Spy;
+    const dialogRefSpy =
+        jasmine.createSpyObj({afterClosed: observableOf(''), close: null});
+    dialogSpy =
+        spyOn(TestBed.inject(MatDialog), 'open').and.returnValue(dialogRefSpy);
+    buildEditor.openBuildFileSelector(build);
+    expect(dialogSpy).toHaveBeenCalled();
+    expect(dialogRefSpy.afterClosed).toHaveBeenCalled();
   });
 });

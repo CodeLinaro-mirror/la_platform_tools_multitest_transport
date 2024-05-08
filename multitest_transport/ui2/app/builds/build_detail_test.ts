@@ -91,7 +91,7 @@ describe('BuildDetail', () => {
     expect(textContent).toContain(build.id!);
     expect(textContent).toContain('Metadata');
     expect(textContent).toContain(build.name);
-    expect(textContent).toContain(build.file_url);
+    expect(textContent).toContain(build.file_url!);
     expect(textContent).toContain(build.labels.join(','));
     expect(textContent).toContain('xTS Testing Requirements');
     expect(textContent).toContain('Detection Started');
@@ -125,7 +125,7 @@ describe('BuildDetail', () => {
 
        const dialogParams = {
          width: '1000px',
-         height: '440px',
+         height: '460px',
          panelClass: 'build-editor',
          data: {
            build: {

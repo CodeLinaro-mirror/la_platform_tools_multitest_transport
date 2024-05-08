@@ -130,7 +130,7 @@ export class BuildDetail implements OnInit, AfterViewInit {
 
     const dialogRef = this.matDialog.open(BuildEditor, {
       width: '1000px',
-      height: '440px',
+      height: '460px',
       panelClass: 'build-editor',
       data: buildEditorData,
     });

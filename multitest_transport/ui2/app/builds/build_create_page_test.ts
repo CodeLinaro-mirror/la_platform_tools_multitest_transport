@@ -156,7 +156,6 @@ describe('BuildCreatePage', () => {
        buildCreatePageFixture.detectChanges();
        const textContent = getTextContent(el);
        expect(textContent).toContain('Name is required');
-       expect(textContent).toContain('Source is required');
        expect(textContent).toContain('Your changes could not be saved');
        expect(buildClient.create).not.toHaveBeenCalled();
        expect(router.navigate).not.toHaveBeenCalled();
