@@ -239,6 +239,7 @@ else
   # Start OSS lab server
   java "-Xmx${MAX_HEAP_MB}m" -XX:+HeapDumpOnOutOfMemoryError \
     -jar /deviceinfra/lab_server_oss_deploy.jar \
+    --adb_dont_kill_server=true \
     --adb_max_no_device_detection_rounds=1200 \
     --android_device_daemon=false \
     --check_device_interval=1h \
