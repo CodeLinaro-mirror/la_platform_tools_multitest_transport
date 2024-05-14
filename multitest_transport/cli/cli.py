@@ -300,7 +300,12 @@ def _CheckMttNodePrerequisites(args, host):
                                      '-o UserKnownHostsFile=/dev/null'),
                            ssh_key=args.remote_ssh_key,
                            use_native_ssh=True))
-    result = ssh_context.run(f'echo connected to {user}@{host}')
+    # Delete existing virtual devices, runtime files, and shared images.
+    # pkill returns 0 if it finds any process; 1 if it finds no process.
+    # The device action rvd_setup in config.yaml creates mtt_rvd.
+    result = ssh_context.run(f'pkill --uid {user} --exact run_cvd ; '
+                             'test $? -le 1 && '
+                             'rm -rf acloud_* mtt_rvd')
     if result.return_code != 0:
       logger.warning('The specified --remote_virtual_devices and '
                      '--remote_ssh_key are invalid. Please test the arguments '
@@ -651,6 +656,7 @@ def _StartMttNode(args, host):
 
   if args.remote_virtual_devices and args.remote_ssh_key:
     docker_helper.AddEnv('REMOTE_VIRTUAL_DEVICES', args.remote_virtual_devices)
+    # The device action rvd_setup in config.yaml loads /tmp/rvd_id_rsa.
     docker_helper.AddFile(args.remote_ssh_key, '/tmp/rvd_id_rsa')
 
   if args.extra_ca_cert:
