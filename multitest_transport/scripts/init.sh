@@ -246,6 +246,7 @@ else
     --check_device_interval=1h \
     --enable_android_device_ready_check=false \
     --enable_ats_file_server_uploader=true \
+    --enable_device_state_change_recover=false \
     --enable_external_master_server=true \
     --master_grpc_target="${OLC_SERVER_GRPC_TARGET}" \
     --public_dir="${MTT_LOG_DIR}" \
