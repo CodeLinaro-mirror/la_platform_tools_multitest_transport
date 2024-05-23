@@ -244,14 +244,19 @@ else
     --android_device_daemon=false \
     --ats_file_server="${ATS_FILE_SERVER}" \
     --check_device_interval=1h \
+    --clear_android_device_multi_users=false \
+    --disable_calling=false \
+    --disable_device_reboot=true \
     --enable_android_device_ready_check=false \
     --enable_ats_file_server_uploader=true \
     --enable_device_state_change_recover=false \
     --enable_external_master_server=true \
     --master_grpc_target="${OLC_SERVER_GRPC_TARGET}" \
+    --mute_android=false \
     --public_dir="${MTT_LOG_DIR}" \
     --resource_dir_name="lab_server_res_files" \
     --serv_via_cloud_rpc=false \
+    --set_test_harness_property=false \
     --skip_lab_job_gen_file_cleanup=true \
     --tmp_dir_root="${MTT_MH_WORK_DIR}" \
     ${LAB_SERVER_OPTS}
