@@ -88,10 +88,15 @@ def _GetApfeClient():
 
 
 def _ValidateBuild(build_id):
-  """Validates that the build is ready to conduct xTS requirements detection."""
+  """Validates that the build is ready to retrieve xTS requirements."""
   try:
     apfe_build = SyncApfeBuild(build_id)
     if apfe_build is None:
+      SetDetectionStatus(
+          build_id,
+          ndb_models.XtsRequirementsDetectionStatus.ERROR,
+          'Unable to retrieve the build from APFE.',
+      )
       return False
     client = _GetApfeClient()
     bts_report = client.GetLatestBtsReport(apfe_build.name)
@@ -257,7 +262,9 @@ def _HandleAnalysisRunningStatus(build_id, attempt_count):
   latest_apfe_report = client.GetLatestApfeReport(apfe_report.name)
 
   if latest_apfe_report.processState == ndb_models.ReportProcessState.COMPLETE:
-    _SyncRequiredReports(build_id, build.fingerprint)
+    valid = _ValidateBuild(build_id)
+    if valid:
+      _SyncRequiredReports(build_id, build.fingerprint)
   elif attempt_count < MAX_ATTEMPT_COUNT:
     # Schedules a next process task.
     _ScheduleNextProcessTask(build_id, attempt_count=attempt_count + 1)
@@ -305,13 +312,14 @@ def KickDetection(device_spec, test_resource_objs, build_id):
       analytics.BUILD_CATEGORY,
       analytics.DETECT_ACTION,
   )
-  valid = _ValidateBuild(build_id)
   build = mtt_messages.ConvertToKey(ndb_models.Build, build_id).get()
-  if not valid:
-    return build
-  # Skip build analysis and retrieve required reports for approved builds.
-  apfe_build = ndb_models.ApfeBuild.query(ancestor=build.key).get()
-  if apfe_build.IsInactive():
+  apfe_build = None
+  try:
+    apfe_build = SyncApfeBuild(build_id)
+  except Exception:  
+    logging.exception('Failed to sync APFE build.')
+  # Skip build analysis and retrieve required reports for inactive builds.
+  if apfe_build and apfe_build.IsInactive():
     updated_build = _SyncRequiredReports(build_id, build.fingerprint)
     return updated_build
 
