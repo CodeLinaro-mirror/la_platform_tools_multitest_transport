@@ -473,6 +473,53 @@ class XtsRequirementsDetectorTest(testbed_dependent_test.TestbedDependentTest):
 
   @mock.patch.object(task_scheduler, 'AddTask')
   @mock.patch.object(apfe_client, 'ApfeClient')
+  def testProcessDetectionEvent_analysisRunning_btsReportInProgress(
+      self, mock_client_factory, mock_add_task
+  ):
+    self.mock_build.detection_status = (
+        ndb_models.XtsRequirementsDetectionStatus.ANALYSIS_RUNNING
+    )
+    self.mock_build.put()
+    mock_client = mock.MagicMock()
+    mock_client_factory.return_value = mock_client
+    mock_client.GetLatestApfeReport.return_value = apfe_client.ApfeReport(
+        processState=ndb_models.ReportProcessState.COMPLETE,
+    )
+    mock_client.GetLatestApfeBuild.return_value = apfe_client.ApfeBuild(
+        name='apfe build',
+    )
+    mock_client.GetLatestBtsReport.return_value = apfe_client.ApfeReport(
+        processState=ndb_models.ReportProcessState.IN_PROGRESS,
+    )
+
+    xts_requirements_detector.ProcessDetectionEvent(
+        str(self.mock_build.key.id()), self.attempt_count
+    )
+    self.mock_build = self.mock_build.key.get()
+
+    self.assertEqual(
+        self.mock_build.detection_status,
+        ndb_models.XtsRequirementsDetectionStatus.ANALYSIS_RUNNING,
+    )
+    _, task_args = mock_add_task.call_args
+    self.assertEqual(
+        task_args['queue_name'],
+        xts_requirements_detector.XTS_REQUIREMENTS_DETECTION_EVENT_QUEUE,
+    )
+    self.assertEqual(
+        json.loads(task_args['payload']),
+        {
+            'build_id': str(self.mock_build.key.id()),
+            'attempt_count': self.attempt_count + 1,
+        },
+    )
+    self.assertEqual(
+        task_args['target'],
+        'default',
+    )
+
+  @mock.patch.object(task_scheduler, 'AddTask')
+  @mock.patch.object(apfe_client, 'ApfeClient')
   def testProcessDetectionEvent_analysisRunning_apfeReportInProgress(
       self, mock_client_factory, mock_add_task
   ):

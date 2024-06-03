@@ -87,8 +87,8 @@ def _GetApfeClient():
   return client
 
 
-def _ValidateBuild(build_id):
-  """Validates that the build is ready to retrieve xTS requirements."""
+def _GetLatestBtsReport(build_id):
+  """Attempts to get the BTS report for a build."""
   try:
     apfe_build = SyncApfeBuild(build_id)
     if apfe_build is None:
@@ -97,28 +97,24 @@ def _ValidateBuild(build_id):
           ndb_models.XtsRequirementsDetectionStatus.ERROR,
           'Unable to retrieve the build from APFE.',
       )
-      return False
+      return None
     client = _GetApfeClient()
     bts_report = client.GetLatestBtsReport(apfe_build.name)
-    if (
-        bts_report is None
-        or bts_report.processState == ndb_models.ReportProcessState.IN_PROGRESS
-    ):
+    if bts_report is None:
       SetDetectionStatus(
           build_id,
           ndb_models.XtsRequirementsDetectionStatus.ERROR,
           'BTS report not ready. Please upload the software build to Android'
           ' Firmware Analysis portal in advance.',
       )
-      return False
+    return bts_report
   except Exception as e:  
     SetDetectionStatus(
         build_id,
         ndb_models.XtsRequirementsDetectionStatus.ERROR,
         detection_error_reason=str(e),
     )
-    return False
-  return True
+    return None
 
 
 def _GetXtsRequirementsDetectionTest():
@@ -262,10 +258,13 @@ def _HandleAnalysisRunningStatus(build_id, attempt_count):
   latest_apfe_report = client.GetLatestApfeReport(apfe_report.name)
 
   if latest_apfe_report.processState == ndb_models.ReportProcessState.COMPLETE:
-    valid = _ValidateBuild(build_id)
-    if valid:
+    bts_report = _GetLatestBtsReport(build_id)
+    if bts_report is None:
+      return
+    elif bts_report.processState == ndb_models.ReportProcessState.COMPLETE:
       _SyncRequiredReports(build_id, build.fingerprint)
-  elif attempt_count < MAX_ATTEMPT_COUNT:
+      return
+  if attempt_count < MAX_ATTEMPT_COUNT:
     # Schedules a next process task.
     _ScheduleNextProcessTask(build_id, attempt_count=attempt_count + 1)
   else:
