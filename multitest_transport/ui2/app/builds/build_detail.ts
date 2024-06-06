@@ -53,6 +53,8 @@ export class BuildDetail implements OnInit, AfterViewInit {
     mttModels.XtsRequirementsDetectionStatus.ERROR,
     mttModels.XtsRequirementsDetectionStatus.NOT_STARTED,
   ];
+  private readonly ANDROID_PARTNER_APPROVALS_URL_PREFIX =
+      'https://partner.android.com/approvals';
 
   get testRequirementsAvailable(): boolean {
     return this.build?.detection_status ===
@@ -115,6 +117,13 @@ export class BuildDetail implements OnInit, AfterViewInit {
                   buildApiErrorMessage(error));
             },
         );
+  }
+
+  getApfeBuildUrl(apfeBuildName: string): string {
+    const apfeBuildUrlName = apfeBuildName.replace(new RegExp('/', 'g'), '-');
+    const url = `${this.ANDROID_PARTNER_APPROVALS_URL_PREFIX}/builds/${
+        apfeBuildUrlName}/overview/build-meta?a=1`;
+    return url;
   }
 
   update() {

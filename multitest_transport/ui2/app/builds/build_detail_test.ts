@@ -93,6 +93,7 @@ describe('BuildDetail', () => {
     expect(textContent).toContain(build.name);
     expect(textContent).toContain(build.file_url!);
     expect(textContent).toContain(build.labels.join(','));
+    expect(textContent).toContain(build.apfe_build_name!);
     expect(textContent).toContain('xTS Testing Requirements');
     expect(textContent).toContain('Detection Started');
     expect(textContent).toContain(build.detection_error_reason!);

@@ -75,6 +75,22 @@
                 <td class="value-field">{{build.create_time | utc | fromNow}}</td>
               </tr>
               <tr>
+                <td class="title-field">
+                  <mat-label>APFE Link</mat-label>
+                </td>
+                <td class="value-field">
+                  <ng-container *ngIf="build.apfe_build_name">
+                    <a [href]="getApfeBuildUrl(build.apfe_build_name)"
+                       target="_blank">
+                      {{build.apfe_build_name!}}
+                    </a>
+                  </ng-container>
+                  <ng-container *ngIf="!build.apfe_build_name">
+                    N/A
+                  </ng-container>
+                </td>
+              </tr>
+              <tr>
                 <button mat-flat-button
                     class="update-button"
                     color="accent"

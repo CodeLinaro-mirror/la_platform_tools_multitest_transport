@@ -20,6 +20,7 @@ import * as mttModels from '../services/mtt_models';
 import * as tfcModels from '../services/tfc_models';
 
 // CONSTANTS;
+const APFE_BUILD_NAME = 'apfe_build_name';
 const ATTEMPT_ID = 'attemptid789';
 const BUILD_ID = 'build_id';
 const BUILD_NAME = 'build_name';
@@ -623,6 +624,7 @@ export function toTitleCase(str: string) {
 export function newMockBuild(
     id = BUILD_ID, name = BUILD_NAME, fingerprint = FINGERPRINT,
     fileUrl = BUILD_URL, labels = [LABEL1, LABEL2],
+    apfe_build_name = APFE_BUILD_NAME,
     detectionStatus = mttModels.XtsRequirementsDetectionStatus.NOT_STARTED,
     detectionErrorReason = DETECTION_ERROR_REASON) {
   return {
@@ -632,6 +634,7 @@ export function newMockBuild(
     file_url: fileUrl,
     size: 123123123,
     labels,
+    apfe_build_name,
     detection_status: detectionStatus,
     detection_start_time: DATE,
     detection_error_reason: detectionErrorReason,

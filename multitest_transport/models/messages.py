@@ -1526,13 +1526,14 @@ class Build(messages.Message):
   labels = messages.StringField(6, repeated=True)
   create_time = message_types.DateTimeField(7)
   update_time = message_types.DateTimeField(8)
+  apfe_build_name = messages.StringField(9)
   detection_status = messages.EnumField(
-      ndb_models.XtsRequirementsDetectionStatus, 9
+      ndb_models.XtsRequirementsDetectionStatus, 10
   )
-  detection_start_time = message_types.DateTimeField(10)
-  detection_error_reason = messages.StringField(11)
-  detection_test_run_id = messages.StringField(12)
-  required_reports = messages.MessageField(RequiredReport, 13, repeated=True)
+  detection_start_time = message_types.DateTimeField(11)
+  detection_error_reason = messages.StringField(12)
+  detection_test_run_id = messages.StringField(13)
+  required_reports = messages.MessageField(RequiredReport, 14, repeated=True)
 
 
 @Converter(ndb_models.Build, Build)
@@ -1542,6 +1543,9 @@ def _BuildConverter(obj):
           ndb_models.RequiredReport.build_key == obj.key
       )
   )
+  apfe_build = None
+  if obj.key.id():
+    apfe_build = ndb_models.ApfeBuild.query(ancestor=obj.key).get()
   return Build(
       id=str(obj.key.id()) if obj.key else None,
       name=obj.name,
@@ -1551,6 +1555,7 @@ def _BuildConverter(obj):
       labels=obj.labels,
       create_time=_AddTimezone(obj.create_time),
       update_time=_AddTimezone(obj.update_time),
+      apfe_build_name=apfe_build.name if apfe_build else None,
       detection_status=obj.detection_status,
       detection_start_time=_AddTimezone(obj.detection_start_time),
       detection_error_reason=obj.detection_error_reason,

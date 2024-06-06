@@ -1160,6 +1160,8 @@ export declare interface Build {
   labels: string[];
   /** Created time of this build */
   create_time?: string;
+  /** Unique resource name of the corresponding APFE build */
+  apfe_build_name?: string;
   /** Status of xTS requirements detection */
   detection_status?: XtsRequirementsDetectionStatus;
   /** Start time of xTS requirements detection */

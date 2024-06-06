@@ -81,6 +81,14 @@ class BuildApiTest(api_test_util.TestCase):
     build.put()
     return build
 
+  def _CreateMockApfeBuild(self, build_key):
+    apfe_build = ndb_models.ApfeBuild(
+        parent=build_key,
+        name='apfe build',
+    )
+    apfe_build.put()
+    return apfe_build
+
   def _createMockTest(self, name='test', command='command'):
     """Create a mock ndb_models.Test object."""
     test = ndb_models.Test(
@@ -226,6 +234,15 @@ class BuildApiTest(api_test_util.TestCase):
     test = self._createMockTest()
     test_run = self._createMockTestRun(test)
     self._createMockRequiredReport(build.key, test_run.key)
+
+    res = self.app.get('/_ah/api/mtt/v1/builds/%s' % build.key.id())
+    msg = protojson.decode_message(messages.Build, res.body)
+    self.assertEqual(messages.Convert(build, messages.Build), msg)
+
+  def testGet_withApfeBuild(self):
+    """Tests builds.get API with APFE build."""
+    build = self._CreateMockBuild()
+    self._CreateMockApfeBuild(build.key)
 
     res = self.app.get('/_ah/api/mtt/v1/builds/%s' % build.key.id())
     msg = protojson.decode_message(messages.Build, res.body)
