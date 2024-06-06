@@ -36,6 +36,7 @@ filegroup(
         ],
         exclude = [
             "prebuilts/tools/README.md",
+            "prebuilts/deviceinfra/**",
         ],
     ),
 )
