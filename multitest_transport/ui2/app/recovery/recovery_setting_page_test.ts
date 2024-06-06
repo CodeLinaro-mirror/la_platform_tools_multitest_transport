@@ -15,7 +15,7 @@
  */
 
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {RouterTestingModule} from '@angular/router/testing';
+import {provideRouter} from '@angular/router';
 
 import {RecoveryModule} from './recovery_module';
 import {RecoverySettingPage} from './recovery_setting_page';
@@ -27,10 +27,12 @@ describe('SettingPage', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [
-        RouterTestingModule,
         RecoveryModule,
       ],
-      });
+      providers: [
+        provideRouter([]),
+      ],
+    });
     recoverySettingPageFixture = TestBed.createComponent(RecoverySettingPage);
     recoverySettingPage = recoverySettingPageFixture.componentInstance;
     recoverySettingPageFixture.detectChanges();

@@ -17,8 +17,7 @@
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {ActivatedRoute} from '@angular/router';
-import {RouterTestingModule} from '@angular/router/testing';
+import {ActivatedRoute, RouterModule} from '@angular/router';
 import {of as observableOf} from 'rxjs';
 
 import {MttClient} from '../services/mtt_client';
@@ -49,7 +48,7 @@ describe('BuildChannelEditPage', () => {
         observableOf({build_channel_providers: [...BUILD_CHANNEL_PROVIDERS]}));
 
     TestBed.configureTestingModule({
-      imports: [BuildChannelsModule, NoopAnimationsModule, RouterTestingModule],
+      imports: [BuildChannelsModule, NoopAnimationsModule, RouterModule],
       providers: [
         {provide: MttClient, useValue: mttClient},
         {

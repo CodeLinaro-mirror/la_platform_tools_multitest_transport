@@ -17,13 +17,13 @@
 import {DebugElement, SimpleChange} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {RouterTestingModule} from '@angular/router/testing';
+import {RouterModule} from '@angular/router';
 
 import {getTextContent} from '../testing/jasmine_util';
+import {newMockLabHostExtraInfo} from '../testing/mtt_lab_mocks';
 
 import {HostDetailsExtraInfos} from './host_details_extra_infos';
 import {HostsModule} from './hosts_module';
-import {newMockLabHostExtraInfo} from '../testing/mtt_lab_mocks';
 
 
 describe('HostDetailsExtraInfos', () => {
@@ -36,9 +36,8 @@ describe('HostDetailsExtraInfos', () => {
       imports: [
         HostsModule,
         NoopAnimationsModule,
-        RouterTestingModule,
+        RouterModule,
       ],
-      providers: [],
     });
 
     hostDetailsExtraInfosFixture =

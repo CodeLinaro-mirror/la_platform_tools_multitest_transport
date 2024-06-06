@@ -18,8 +18,7 @@ import {DebugElement, SimpleChange} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {MatDialog} from '@angular/material/dialog';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {ActivatedRoute} from '@angular/router';
-import {RouterTestingModule} from '@angular/router/testing';
+import {ActivatedRoute, RouterModule} from '@angular/router';
 import {of as observableOf} from 'rxjs';
 
 import {ALL_OPTIONS_VALUE} from '../hosts/offline_host_filter';
@@ -68,9 +67,9 @@ describe('RecoveryHostList', () => {
 
     TestBed.configureTestingModule({
       imports: [
-        RecoveryModule,
         NoopAnimationsModule,
-        RouterTestingModule,
+        RecoveryModule,
+        RouterModule,
       ],
       providers: [
         {provide: ActivatedRoute, useValue: activatedRouteSpy},

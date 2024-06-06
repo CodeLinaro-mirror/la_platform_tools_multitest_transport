@@ -79,7 +79,7 @@ describe('TestRunProgress', () => {
         observableOf({command_attempts: [attempt]}));
 
     TestBed.configureTestingModule({
-      imports: [TestRunsModule, NoopAnimationsModule],
+      imports: [NoopAnimationsModule, TestRunsModule],
       providers: [
         {provide: FileService, useValue: fs},
         {provide: TfcClient, useValue: tfcClient},

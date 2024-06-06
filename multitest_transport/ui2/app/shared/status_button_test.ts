@@ -37,10 +37,10 @@ describe('DeviceState', () => {
 
     TestBed.configureTestingModule({
       imports: [
-        SharedModule,
         NoopAnimationsModule,
+        SharedModule,
       ],
-      });
+    });
 
     statusButtonixture = TestBed.createComponent(StatusButton);
     el = statusButtonixture.debugElement;

@@ -17,7 +17,7 @@
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, fakeAsync, TestBed, tick} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {RouterTestingModule} from '@angular/router/testing';
+import {RouterModule} from '@angular/router';
 import {of as observableOf} from 'rxjs';
 
 import {MttClient} from '../services/mtt_client';
@@ -53,7 +53,7 @@ describe('LoginButton', () => {
     spyOn(util, 'reloadPage');
 
     TestBed.configureTestingModule({
-      imports: [AuthModule, NoopAnimationsModule, RouterTestingModule],
+      imports: [AuthModule, NoopAnimationsModule, RouterModule],
       providers: [
         {provide: MttClient, useValue: mttApiClient},
         {provide: Notifier, useValue: notifier},

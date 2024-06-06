@@ -70,7 +70,7 @@ describe('TestModuleResultList', () => {
         observableOf({results: testCases, next_page_token: 'page:token'}));
 
     TestBed.configureTestingModule({
-      imports: [TestRunsModule, NoopAnimationsModule],
+      imports: [NoopAnimationsModule, TestRunsModule],
       providers: [
         {provide: MttClient, useValue: {testResults: client}},
         {provide: Notifier, useValue: notifier},

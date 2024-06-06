@@ -20,7 +20,7 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 import {By} from '@angular/platform-browser';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {RouterTestingModule} from '@angular/router/testing';
+import {provideRouter} from '@angular/router';
 import {of as observableOf} from 'rxjs';
 
 import {DeviceList} from '../devices/device_list';
@@ -76,11 +76,9 @@ describe('TestRunConfigEditor', () => {
     });
 
     TestBed.configureTestingModule({
-      imports: [
-        HttpClientTestingModule, NoopAnimationsModule, RouterTestingModule,
-        TestRunsModule
-      ],
+      imports: [HttpClientTestingModule, NoopAnimationsModule, TestRunsModule],
       providers: [
+        provideRouter([]),
         {provide: APP_DATA, useValue: {isAtsLabInstance: false}},
         {provide: MttClient, useValue: mttClient},
         {

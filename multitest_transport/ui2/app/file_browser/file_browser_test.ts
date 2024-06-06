@@ -17,8 +17,7 @@
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {ActivatedRoute, convertToParamMap, ParamMap, UrlSegment} from '@angular/router';
-import {RouterTestingModule} from '@angular/router/testing';
+import {ActivatedRoute, convertToParamMap, ParamMap, RouterModule, UrlSegment} from '@angular/router';
 import {of as observableOf, ReplaySubject} from 'rxjs';
 
 import {FileNode, FileService, FileType} from '../services/file_service';
@@ -46,7 +45,7 @@ describe('FileBrowser', () => {
     queryParamMap = new ReplaySubject<ParamMap>();
 
     TestBed.configureTestingModule({
-      imports: [NoopAnimationsModule, FileBrowserModule, RouterTestingModule],
+      imports: [FileBrowserModule, NoopAnimationsModule, RouterModule],
       providers: [
         {provide: FileService, useValue: fs},
         {provide: Notifier, useValue: notifier},

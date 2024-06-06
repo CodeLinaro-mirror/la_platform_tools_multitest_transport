@@ -17,17 +17,16 @@
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {RouterTestingModule} from '@angular/router/testing';
+import {RouterModule} from '@angular/router';
 import {of as observableOf} from 'rxjs';
 
+import {convertToLabHostResource} from '../services/mtt_lab_models';
 import {TfcClient} from '../services/tfc_client';
-
 import {getTextContent} from '../testing/jasmine_util';
 import {newMockHostResource} from '../testing/mtt_lab_mocks';
 
 import {HostDetailsHostResource} from './host_details_host_resource';
 import {HostsModule} from './hosts_module';
-import {convertToLabHostResource} from '../services/mtt_lab_models';
 
 
 describe('HostDetailsHostResource', () => {
@@ -48,7 +47,7 @@ describe('HostDetailsHostResource', () => {
       imports: [
         HostsModule,
         NoopAnimationsModule,
-        RouterTestingModule,
+        RouterModule,
       ],
       providers: [
         {provide: TfcClient, useValue: tfcClient},

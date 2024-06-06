@@ -17,8 +17,7 @@
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {ActivatedRoute} from '@angular/router';
-import {RouterTestingModule} from '@angular/router/testing';
+import {ActivatedRoute, RouterModule} from '@angular/router';
 import {of as observableOf, throwError} from 'rxjs';
 
 import {MttClient} from '../services/mtt_client';
@@ -44,7 +43,7 @@ describe('FileCleanerPolicyEditPage', () => {
         observableOf({policies: [newMockFileCleanerPolicy()]}));
 
     TestBed.configureTestingModule({
-      imports: [FileCleanerModule, NoopAnimationsModule, RouterTestingModule],
+      imports: [FileCleanerModule, NoopAnimationsModule, RouterModule],
       providers: [
         {
           provide: ActivatedRoute,

@@ -17,7 +17,7 @@
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {RouterTestingModule} from '@angular/router/testing';
+import {provideRouter} from '@angular/router';
 import {of as observableOf} from 'rxjs';
 
 import {ConfigSetClient, MttClient} from '../services/mtt_client';
@@ -58,8 +58,9 @@ describe('ConfigSetList', () => {
         observableOf({config_set_infos: []}));
 
     TestBed.configureTestingModule({
-      imports: [ConfigSetsModule, NoopAnimationsModule, RouterTestingModule],
+      imports: [ConfigSetsModule, NoopAnimationsModule],
       providers: [
+        provideRouter([]),
         {provide: MttClient, useValue: mttClient},
       ],
     });

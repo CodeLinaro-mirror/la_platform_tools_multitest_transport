@@ -18,8 +18,7 @@ import {DebugElement, SimpleChange} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {MatDialog} from '@angular/material/dialog';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {ActivatedRoute} from '@angular/router';
-import {RouterTestingModule} from '@angular/router/testing';
+import {ActivatedRoute, RouterModule} from '@angular/router';
 import {getTextContent} from 'google3/third_party/py/multitest_transport/ui2/app/testing/jasmine_util';
 import {of as observableOf} from 'rxjs';
 
@@ -67,9 +66,9 @@ describe('RecoveryDeviceList', () => {
 
     TestBed.configureTestingModule({
       imports: [
-        RecoveryModule,
         NoopAnimationsModule,
-        RouterTestingModule,
+        RecoveryModule,
+        RouterModule,
       ],
       providers: [
         {provide: ActivatedRoute, useValue: activatedRouteSpy},

@@ -32,10 +32,10 @@ describe('TestRunFailures', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [
-        TestRunsModule,
         NoopAnimationsModule,
+        TestRunsModule,
       ],
-      });
+    });
     testRunFailuresFixture = TestBed.createComponent(TestRunFailures);
     el = testRunFailuresFixture.debugElement;
     testRunFailures = testRunFailuresFixture.componentInstance;

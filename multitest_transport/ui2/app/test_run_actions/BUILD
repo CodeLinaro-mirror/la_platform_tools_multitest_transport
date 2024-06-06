@@ -64,7 +64,6 @@ ng_module(
         third_party_js("angular2:core_testing"),
         third_party_js("angular2:platform_browser_animations"),
         third_party_js("angular2:router"),
-        third_party_js("angular2:router_testing"),
         third_party_js("rxjs"),
         "//multitest_transport/ui2/app/services",
         "//multitest_transport/ui2/app/testing:jasmine_util",

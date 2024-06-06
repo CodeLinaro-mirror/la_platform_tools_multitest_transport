@@ -18,8 +18,7 @@ import {DebugElement} from '@angular/core';
 import {ComponentFixture, inject, TestBed} from '@angular/core/testing';
 import {MatDialog} from '@angular/material/dialog';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {ActivatedRoute, Router} from '@angular/router';
-import {RouterTestingModule} from '@angular/router/testing';
+import {ActivatedRoute, Router, RouterModule} from '@angular/router';
 import {DEFAULT_PAGE_SIZE} from 'google3/third_party/py/multitest_transport/ui2/app/shared/paginator';
 import {getEl} from 'google3/third_party/py/multitest_transport/ui2/app/testing/jasmine_util';
 import {of as observableOf} from 'rxjs';
@@ -81,9 +80,9 @@ describe('Device noteList', () => {
 
     TestBed.configureTestingModule({
       imports: [
-        NotesModule,
         NoopAnimationsModule,
-        RouterTestingModule,
+        NotesModule,
+        RouterModule,
       ],
       providers: [
         {provide: TfcClient, useValue: tfcClient},
@@ -232,9 +231,9 @@ describe('Host noteList', () => {
 
     TestBed.configureTestingModule({
       imports: [
-        NotesModule,
         NoopAnimationsModule,
-        RouterTestingModule,
+        NotesModule,
+        RouterModule,
       ],
       providers: [
         {provide: ActivatedRoute, useValue: activatedRouteSpy},

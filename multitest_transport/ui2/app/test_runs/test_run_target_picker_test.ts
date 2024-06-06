@@ -16,7 +16,7 @@
 
 import {ComponentFixture, fakeAsync, TestBed, tick} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {RouterTestingModule} from '@angular/router/testing';
+import {provideRouter} from '@angular/router';
 import {of as observableOf, throwError} from 'rxjs';
 
 import {APP_DATA} from '../services';
@@ -50,8 +50,9 @@ describe('TestRunTargetPicker', () => {
     });
 
     TestBed.configureTestingModule({
-      imports: [NoopAnimationsModule, RouterTestingModule, TestRunsModule],
+      imports: [NoopAnimationsModule, TestRunsModule],
       providers: [
+        provideRouter([]),
         {provide: APP_DATA, useValue: appData},
         {provide: TfcClient, useValue: tfcClient},
       ],

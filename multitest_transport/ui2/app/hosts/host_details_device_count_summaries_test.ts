@@ -17,7 +17,7 @@
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {RouterTestingModule} from '@angular/router/testing';
+import {RouterModule} from '@angular/router';
 import {of as observableOf} from 'rxjs';
 
 import {TfcClient} from '../services/tfc_client';
@@ -45,7 +45,7 @@ describe('HostDetailsDeviceCountSummaries', () => {
       imports: [
         HostsModule,
         NoopAnimationsModule,
-        RouterTestingModule,
+        RouterModule,
       ],
       providers: [
         {provide: TfcClient, useValue: tfcClient},

@@ -17,7 +17,7 @@
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {RouterTestingModule} from '@angular/router/testing';
+import {RouterModule} from '@angular/router';
 import {of as observableOf} from 'rxjs';
 
 import {MttClient} from '../services/mtt_client';
@@ -62,7 +62,7 @@ describe('BuildChannelSetup', () => {
         observableOf({build_channels: BUILD_CHANNELS}));
 
     TestBed.configureTestingModule({
-      imports: [SetupWizardModule, NoopAnimationsModule, RouterTestingModule],
+      imports: [NoopAnimationsModule, RouterModule, SetupWizardModule],
       providers: [
         {provide: MttClient, useValue: mttClient},
       ],

@@ -38,8 +38,8 @@ describe('TestRunTreeTable', () => {
     testRun = newMockTestRun(test);
 
     TestBed.configureTestingModule({
-      imports: [TestRunsModule, NoopAnimationsModule],
-      });
+      imports: [NoopAnimationsModule, TestRunsModule],
+    });
 
     testRunTreeTableFixture = TestBed.createComponent(TestRunTreeTable);
     testRunTreeTable = testRunTreeTableFixture.componentInstance;

@@ -15,10 +15,9 @@
  */
 
 import {HttpClient} from '@angular/common/http';
-import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {RouterTestingModule} from '@angular/router/testing';
+import {RouterModule} from '@angular/router';
 
 import {APP_DATA} from '../services';
 import {FeedbackService} from '../services/feedback_service';
@@ -30,7 +29,6 @@ import {UnassignedOfflineHostList} from './unassigned_offline_host_list';
 
 describe('UnassignedOfflineHostList', () => {
   let feedbackService: jasmine.SpyObj<FeedbackService>;
-  let el: DebugElement;
   let unassignedOfflineHostList: UnassignedOfflineHostList;
   let unassignedOfflineHostListFixture:
       ComponentFixture<UnassignedOfflineHostList>;
@@ -41,7 +39,7 @@ describe('UnassignedOfflineHostList', () => {
       imports: [
         HostsModule,
         NoopAnimationsModule,
-        RouterTestingModule,
+        RouterModule,
       ],
       providers: [
         {provide: APP_DATA, useValue: newMockAppData()},
@@ -52,7 +50,6 @@ describe('UnassignedOfflineHostList', () => {
 
     unassignedOfflineHostListFixture =
         TestBed.createComponent(UnassignedOfflineHostList);
-    el = unassignedOfflineHostListFixture.debugElement;
     unassignedOfflineHostList =
         unassignedOfflineHostListFixture.componentInstance;
     unassignedOfflineHostListFixture.detectChanges();

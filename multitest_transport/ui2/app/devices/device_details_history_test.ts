@@ -19,7 +19,6 @@ import {ComponentFixture, inject, TestBed} from '@angular/core/testing';
 import {MatDialog} from '@angular/material/dialog';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {ActivatedRoute, Router} from '@angular/router';
-import {RouterTestingModule} from '@angular/router/testing';
 import {APP_DATA} from 'google3/third_party/py/multitest_transport/ui2/app/services';
 import {DEFAULT_PAGE_SIZE} from 'google3/third_party/py/multitest_transport/ui2/app/shared/paginator';
 import {getTextContent} from 'google3/third_party/py/multitest_transport/ui2/app/testing/jasmine_util';

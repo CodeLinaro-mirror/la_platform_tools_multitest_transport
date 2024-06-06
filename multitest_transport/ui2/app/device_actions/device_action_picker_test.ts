@@ -30,8 +30,8 @@ describe('DeviceActionPicker', () => {
   let el: DebugElement;
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [NoopAnimationsModule, DeviceActionsModule],
-      });
+      imports: [DeviceActionsModule, NoopAnimationsModule],
+    });
     deviceActionPickerFixture = TestBed.createComponent(DeviceActionPicker);
     el = deviceActionPickerFixture.debugElement;
     deviceActionPicker = deviceActionPickerFixture.componentInstance;

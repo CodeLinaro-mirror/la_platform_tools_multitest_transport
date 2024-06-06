@@ -19,8 +19,7 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {MAT_DIALOG_DATA} from '@angular/material/dialog';
 import {Title} from '@angular/platform-browser';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {ActivatedRoute, convertToParamMap} from '@angular/router';
-import {RouterTestingModule} from '@angular/router/testing';
+import {ActivatedRoute, convertToParamMap, RouterModule} from '@angular/router';
 import {APP_DATA} from 'google3/third_party/py/multitest_transport/ui2/app/services';
 import {of as observableOf} from 'rxjs';
 
@@ -76,7 +75,7 @@ describe('DeviceDetailsPage', () => {
       imports: [
         DevicesModule,
         NoopAnimationsModule,
-        RouterTestingModule,
+        RouterModule,
       ],
       providers: [
         Title,

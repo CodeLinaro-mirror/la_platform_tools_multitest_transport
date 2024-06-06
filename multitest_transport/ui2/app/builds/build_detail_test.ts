@@ -19,7 +19,7 @@ import {DebugElement} from '@angular/core';
 import {ComponentFixture, discardPeriodicTasks, fakeAsync, inject, TestBed, tick} from '@angular/core/testing';
 import {MatDialog} from '@angular/material/dialog';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {RouterTestingModule} from '@angular/router/testing';
+import {RouterModule} from '@angular/router';
 import {of as observableOf} from 'rxjs';
 
 import {APP_DATA} from '../services';
@@ -61,7 +61,7 @@ describe('BuildDetail', () => {
         observableOf(mttObjectMap));
 
     TestBed.configureTestingModule({
-      imports: [BuildsModule, NoopAnimationsModule, RouterTestingModule],
+      imports: [BuildsModule, NoopAnimationsModule, RouterModule],
       providers: [
         {provide: APP_DATA, useValue: appData},
         {provide: LiveAnnouncer, useValue: liveAnnouncer},

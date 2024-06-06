@@ -17,7 +17,7 @@
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {RouterTestingModule} from '@angular/router/testing';
+import {provideRouter} from '@angular/router';
 import {getTextContent} from 'google3/third_party/py/multitest_transport/ui2/app/testing/jasmine_util';
 import {of as observableOf, throwError} from 'rxjs';
 
@@ -57,9 +57,9 @@ describe('DeviceDetailsSummary', () => {
       imports: [
         DevicesModule,
         NoopAnimationsModule,
-        RouterTestingModule,
       ],
       providers: [
+        provideRouter([]),
         {provide: APP_DATA, useValue: newMockAppData()},
         {provide: Notifier, useValue: notifierSpy},
         {provide: TfcClient, useValue: tfcClient},

@@ -18,7 +18,7 @@ import {HttpClient} from '@angular/common/http';
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {RouterTestingModule} from '@angular/router/testing';
+import {RouterModule} from '@angular/router';
 
 import {APP_DATA, AppData} from '../services';
 import {newMockAppData} from '../testing/mtt_lab_mocks';
@@ -39,7 +39,7 @@ describe('AssignedOthersOfflineHostList', () => {
       imports: [
         HostsModule,
         NoopAnimationsModule,
-        RouterTestingModule,
+        RouterModule,
       ],
       providers: [
         {provide: APP_DATA, useValue: mockAppData},

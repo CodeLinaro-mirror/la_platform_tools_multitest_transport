@@ -19,7 +19,7 @@ import {DebugElement} from '@angular/core';
 import {ComponentFixture, inject, TestBed} from '@angular/core/testing';
 import {MatDialog} from '@angular/material/dialog';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {RouterTestingModule} from '@angular/router/testing';
+import {provideRouter} from '@angular/router';
 import {of as observableOf} from 'rxjs';
 
 import {AnalyticsService} from '../services/analytics_service';
@@ -105,8 +105,9 @@ describe('TestRunDetail', () => {
     tfcClient.getRequest.and.returnValue(observableOf(request));
     const appData: AppData = {};
     TestBed.configureTestingModule({
-      imports: [TestRunsModule, NoopAnimationsModule, RouterTestingModule],
+      imports: [NoopAnimationsModule, TestRunsModule],
       providers: [
+        provideRouter([]),
         {provide: FileService, useValue: fs},
         {provide: MttClient, useValue: mttClient},
         {provide: TfcClient, useValue: tfcClient},

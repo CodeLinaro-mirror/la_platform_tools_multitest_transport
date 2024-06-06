@@ -17,7 +17,7 @@
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, fakeAsync, TestBed, tick} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {RouterTestingModule} from '@angular/router/testing';
+import {provideRouter} from '@angular/router';
 import {of as observableOf, throwError} from 'rxjs';
 
 import {MttClient} from '../services/mtt_client';
@@ -45,8 +45,9 @@ describe('BuildChannelItem', () => {
     ]);
 
     TestBed.configureTestingModule({
-      imports: [BuildChannelsModule, NoopAnimationsModule, RouterTestingModule],
+      imports: [BuildChannelsModule, NoopAnimationsModule],
       providers: [
+        provideRouter([]),
         {provide: MttClient, useValue: mtt},
         {provide: Notifier, useValue: notifier},
       ],

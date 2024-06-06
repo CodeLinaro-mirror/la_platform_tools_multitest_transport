@@ -17,8 +17,7 @@
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {ActivatedRoute} from '@angular/router';
-import {RouterTestingModule} from '@angular/router/testing';
+import {ActivatedRoute, RouterModule} from '@angular/router';
 import {of as observableOf} from 'rxjs';
 
 import {TfcClient} from '../services/tfc_client';
@@ -47,7 +46,7 @@ describe('HostDetailsSummary', () => {
       imports: [
         HostsModule,
         NoopAnimationsModule,
-        RouterTestingModule,
+        RouterModule,
       ],
       providers: [
         {provide: TfcClient, useValue: tfcClient},

@@ -16,7 +16,7 @@
 
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {RouterTestingModule} from '@angular/router/testing';
+import {provideRouter} from '@angular/router';
 import {of as observableOf} from 'rxjs';
 
 import {MttClient} from '../services/mtt_client';
@@ -39,8 +39,9 @@ describe('SettingPage', () => {
     mttClient.getDeviceActionList.and.returnValue(
         observableOf({device_actions: []}));
     TestBed.configureTestingModule({
-      imports: [NoopAnimationsModule, SettingsModule, RouterTestingModule],
+      imports: [NoopAnimationsModule, SettingsModule],
       providers: [
+        provideRouter([]),
         {provide: MttClient, useValue: mttClient},
       ],
     });

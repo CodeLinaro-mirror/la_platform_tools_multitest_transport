@@ -17,8 +17,7 @@
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {ActivatedRoute} from '@angular/router';
-import {RouterTestingModule} from '@angular/router/testing';
+import {ActivatedRoute, RouterModule} from '@angular/router';
 import {of as observableOf} from 'rxjs';
 
 import {MttClient, TestRunActionClient} from '../services/mtt_client';
@@ -63,8 +62,7 @@ describe('TestRunActionEditPage', () => {
     }));
 
     TestBed.configureTestingModule({
-      imports:
-          [NoopAnimationsModule, RouterTestingModule, TestRunActionsModule],
+      imports: [NoopAnimationsModule, RouterModule, TestRunActionsModule],
       providers: [
         {
           provide: MttClient,

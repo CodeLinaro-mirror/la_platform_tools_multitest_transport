@@ -34,8 +34,8 @@ describe('TestRunResults', () => {
   beforeEach(() => {
     invocationStatus = newMockInvocationStatus();
     TestBed.configureTestingModule({
-      imports: [TestRunsModule, NoopAnimationsModule],
-      });
+      imports: [NoopAnimationsModule, TestRunsModule],
+    });
     testRunResultsFixture = TestBed.createComponent(TestRunResults);
     testRunResults = testRunResultsFixture.componentInstance;
     el = testRunResultsFixture.debugElement;

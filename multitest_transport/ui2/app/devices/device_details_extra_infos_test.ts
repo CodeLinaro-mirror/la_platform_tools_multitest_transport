@@ -1,7 +1,7 @@
 import {DebugElement, SimpleChange} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {RouterTestingModule} from '@angular/router/testing';
+import {RouterModule} from '@angular/router';
 import {getTextContent} from 'google3/third_party/py/multitest_transport/ui2/app/testing/jasmine_util';
 import {DeviceDetailsExtraInfos} from './device_details_extra_infos';
 import {DevicesModule} from './devices_module';
@@ -16,9 +16,8 @@ describe('DeviceDetailsExtraInfos', () => {
       imports: [
         DevicesModule,
         NoopAnimationsModule,
-        RouterTestingModule,
+        RouterModule,
       ],
-      providers: [],
     });
     deviceDetailsExtraInfosFixture =
         TestBed.createComponent(DeviceDetailsExtraInfos);

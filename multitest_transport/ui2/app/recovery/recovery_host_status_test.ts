@@ -33,10 +33,10 @@ describe('RecoveryHostStatus', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [
-        RecoveryModule,
         NoopAnimationsModule,
+        RecoveryModule,
       ],
-      });
+    });
     recoveryHostStatusFixture = TestBed.createComponent(RecoveryHostStatus);
     el = recoveryHostStatusFixture.debugElement;
     recoveryHostStatus = recoveryHostStatusFixture.componentInstance;

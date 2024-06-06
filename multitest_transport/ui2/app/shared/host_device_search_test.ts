@@ -18,8 +18,7 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {MatDialog} from '@angular/material/dialog';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {Router} from '@angular/router';
-import {RouterTestingModule} from '@angular/router/testing';
+import {Router, RouterModule} from '@angular/router';
 import {of as observableOf, throwError} from 'rxjs';
 
 import {FeedbackService} from '../services/feedback_service';
@@ -55,8 +54,8 @@ describe('HostDeviceSearch', () => {
     TestBed.configureTestingModule({
       imports: [
         NoopAnimationsModule,
+        RouterModule,
         SharedModule,
-        RouterTestingModule,
       ],
       providers: [
         {provide: FeedbackService, useValue: feedbackService},

@@ -18,7 +18,7 @@ import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {RouterTestingModule} from '@angular/router/testing';
+import {provideRouter} from '@angular/router';
 import {of as observableOf} from 'rxjs';
 
 import {ConfigSetClient, MttClient} from '../services/mtt_client';
@@ -78,9 +78,9 @@ describe('TestList', () => {
       imports: [
         NoopAnimationsModule,
         TestModule,
-        RouterTestingModule,
       ],
       providers: [
+        provideRouter([]),
         {provide: MttClient, useValue: mttClient},
         {provide: MttObjectMapService, useValue: mttObjectMapService},
         {provide: Notifier, useValue: notifier},

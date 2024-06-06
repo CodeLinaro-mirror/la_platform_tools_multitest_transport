@@ -17,7 +17,7 @@
 import {SimpleChange} from '@angular/core';
 import {ComponentFixture, fakeAsync, TestBed, tick} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {RouterTestingModule} from '@angular/router/testing';
+import {RouterModule} from '@angular/router';
 import {of, throwError} from 'rxjs';
 
 import {APP_DATA, AppData} from '../services/app_data';
@@ -56,7 +56,7 @@ describe('TestRunConsole', () => {
     mtt.getTestRunOutput.and.returnValue(of(output));
 
     TestBed.configureTestingModule({
-      imports: [TestRunsModule, NoopAnimationsModule, RouterTestingModule],
+      imports: [NoopAnimationsModule, RouterModule, TestRunsModule],
       providers: [
         {provide: MttClient, useValue: mtt},
         {provide: FileService, useValue: {}},

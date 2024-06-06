@@ -13,10 +13,10 @@ describe('ViewColumnsButton', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [
-        SharedModule,
         NoopAnimationsModule,
+        SharedModule,
       ],
-      });
+    });
 
     viewColumnsButtonFixture = TestBed.createComponent(ViewColumnsButton);
     el = viewColumnsButtonFixture.debugElement;

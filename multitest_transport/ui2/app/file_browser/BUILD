@@ -51,7 +51,6 @@ ng_module(
         third_party_js("angular2:platform_browser"),
         third_party_js("angular2:platform_browser_animations"),
         third_party_js("angular2:router"),
-        third_party_js("angular2:router_testing"),
         third_party_js("angular_components:material_legacy_dialog"),
         third_party_js("angular_components:material_snack_bar"),
         third_party_js("moment:typings"),

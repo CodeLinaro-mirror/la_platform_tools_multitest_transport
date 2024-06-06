@@ -19,8 +19,7 @@ import {ComponentFixture, inject, TestBed} from '@angular/core/testing';
 import {MatChipInput} from '@angular/material/chips';
 import {MatDialog} from '@angular/material/dialog';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {Router} from '@angular/router';
-import {RouterTestingModule} from '@angular/router/testing';
+import {Router, RouterModule} from '@angular/router';
 import {of as observableOf} from 'rxjs';
 
 import {BuildClient, MttClient} from '../services/mtt_client';
@@ -42,7 +41,7 @@ describe('BuildCreatePage', () => {
     buildClient.create.and.returnValue(observableOf(newMockBuild()));
 
     TestBed.configureTestingModule({
-      imports: [BuildsModule, NoopAnimationsModule, RouterTestingModule],
+      imports: [BuildsModule, NoopAnimationsModule, RouterModule],
       providers: [
         {provide: MttClient, useValue: {builds: buildClient}},
       ],

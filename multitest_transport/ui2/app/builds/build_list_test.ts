@@ -17,8 +17,7 @@
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, inject, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {Router} from '@angular/router';
-import {RouterTestingModule} from '@angular/router/testing';
+import {provideRouter, Router} from '@angular/router';
 import {EMPTY, of as observableOf} from 'rxjs';
 
 import {BuildClient, MttClient} from '../services/mtt_client';
@@ -57,12 +56,9 @@ describe('BuildList', () => {
     notifier = jasmine.createSpyObj(['confirm', 'showError']);
 
     TestBed.configureTestingModule({
-      imports: [
-        BuildsModule, NoopAnimationsModule, RouterTestingModule.withRoutes([
-          {path: 'builds/:id', component: FakeComponent},
-        ])
-      ],
+      imports: [BuildsModule, NoopAnimationsModule],
       providers: [
+        provideRouter([{path: 'builds/:id', component: FakeComponent}]),
         {provide: MttClient, useValue: {builds: buildClient}},
         {provide: Notifier, useValue: notifier},
       ],

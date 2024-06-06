@@ -64,12 +64,12 @@ describe('TestRunConfigSummary', () => {
     mttObjectMapService = jasmine.createSpyObj(['getMttObjectMap']);
     mttObjectMapService.getMttObjectMap.and.returnValue(observableOf(mttData));
     TestBed.configureTestingModule({
-      imports: [NoopAnimationsModule, TestRunsModule, HttpClientTestingModule],
+      imports: [HttpClientTestingModule, NoopAnimationsModule, TestRunsModule],
       providers: [
         {provide: APP_DATA, useValue: {}},
         {provide: MttObjectMapService, useValue: mttObjectMapService},
       ],
-      });
+    });
 
     testRunConfigSummaryFixture = TestBed.createComponent(TestRunConfigSummary);
     el = testRunConfigSummaryFixture.debugElement;

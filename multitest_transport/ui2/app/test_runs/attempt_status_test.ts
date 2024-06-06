@@ -43,7 +43,7 @@ describe('AttemptStatus', () => {
     testRun = newMockTestRun(test);
     attempt = newMockCommandAttempt();
     TestBed.configureTestingModule({
-      imports: [TestRunsModule, NoopAnimationsModule],
+      imports: [NoopAnimationsModule, TestRunsModule],
       providers: [
         {provide: APP_DATA, useValue: appData},
       ]

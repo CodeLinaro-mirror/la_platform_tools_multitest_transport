@@ -17,13 +17,11 @@
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {ActivatedRoute} from '@angular/router';
-import {RouterTestingModule} from '@angular/router/testing';
+import {ActivatedRoute, RouterModule} from '@angular/router';
 import {of as observableOf} from 'rxjs';
 
 import {MttClient} from '../services/mtt_client';
-import {getEl} from '../testing/jasmine_util';
-import {getTextContent} from '../testing/jasmine_util';
+import {getEl, getTextContent} from '../testing/jasmine_util';
 import {newMockTest} from '../testing/mtt_mocks';
 
 import {TestEditPage} from './test_edit_page';
@@ -47,8 +45,8 @@ describe('TestEditPage', () => {
     TestBed.configureTestingModule({
       imports: [
         NoopAnimationsModule,
+        RouterModule,
         TestModule,
-        RouterTestingModule,
       ],
       providers: [
         {provide: MttClient, useValue: mttClient},

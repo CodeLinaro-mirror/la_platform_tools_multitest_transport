@@ -19,7 +19,7 @@ import {Component, DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {MatChipInput} from '@angular/material/chips';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {RouterTestingModule} from '@angular/router/testing';
+import {provideRouter} from '@angular/router';
 import {of as observableOf} from 'rxjs';
 
 import {APP_DATA} from '../services/app_data';
@@ -77,8 +77,9 @@ describe('NewTestRunPage', () => {
 
     TestBed.configureTestingModule({
       declarations: [DeviceListStubComponent],
-      imports: [TestRunsModule, NoopAnimationsModule, RouterTestingModule],
+      imports: [NoopAnimationsModule, TestRunsModule],
       providers: [
+        provideRouter([]),
         {provide: APP_DATA, useValue: {hostname: 'hostname'}},
         {provide: LiveAnnouncer, useValue: liveAnnouncer},
         {provide: FileService, useValue: {}},

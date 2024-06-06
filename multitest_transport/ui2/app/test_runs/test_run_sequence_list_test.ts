@@ -19,7 +19,7 @@ import {DebugElement} from '@angular/core';
 import {ComponentFixture, inject, TestBed} from '@angular/core/testing';
 import {MatDialog} from '@angular/material/dialog';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {RouterTestingModule} from '@angular/router/testing';
+import {provideRouter} from '@angular/router';
 import {of as observableOf} from 'rxjs';
 
 import {APP_DATA} from '../services/app_data';
@@ -60,11 +60,9 @@ describe('TestRunSequenceList', () => {
     mttObjectMapService.getMttObjectMap.and.returnValue(observableOf(mttData));
 
     TestBed.configureTestingModule({
-      imports: [
-        HttpClientTestingModule, NoopAnimationsModule, RouterTestingModule,
-        TestRunsModule
-      ],
+      imports: [HttpClientTestingModule, NoopAnimationsModule, TestRunsModule],
       providers: [
+        provideRouter([]),
         {provide: APP_DATA, useValue: {}},
         {provide: MttObjectMapService, useValue: mttObjectMapService},
       ],

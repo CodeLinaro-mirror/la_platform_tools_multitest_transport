@@ -18,7 +18,7 @@ import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {RouterTestingModule} from '@angular/router/testing';
+import {provideRouter} from '@angular/router';
 import {of as observableOf} from 'rxjs';
 
 import {APP_DATA} from '../services';
@@ -61,8 +61,9 @@ describe('XtsRequirementDetect', () => {
     dialogRef.backdropClick.and.returnValue(observableOf());
 
     TestBed.configureTestingModule({
-      imports: [BuildsModule, NoopAnimationsModule, RouterTestingModule],
+      imports: [BuildsModule, NoopAnimationsModule],
       providers: [
+        provideRouter([]),
         {provide: APP_DATA, useValue: appData},
         {provide: MAT_DIALOG_DATA, useFactory: () => dialogData},
         {provide: MatDialogRef, useValue: dialogRef},

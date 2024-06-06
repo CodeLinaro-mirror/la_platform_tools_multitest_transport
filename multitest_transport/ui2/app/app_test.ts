@@ -16,7 +16,7 @@
 
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {RouterTestingModule} from '@angular/router/testing';
+import {RouterModule} from '@angular/router';
 import {of as observableOf} from 'rxjs';
 
 import {Mtt, MttModule} from './app';
@@ -40,7 +40,7 @@ describe('Mtt', () => {
     });
 
     TestBed.configureTestingModule({
-      imports: [MttModule, RouterTestingModule],
+      imports: [MttModule, RouterModule],
       providers: [
         {provide: APP_DATA, useValue: {netdataUrl: 'localhost:8008'}},
         {provide: AnalyticsService, useValue: analyticsServiceSpy},

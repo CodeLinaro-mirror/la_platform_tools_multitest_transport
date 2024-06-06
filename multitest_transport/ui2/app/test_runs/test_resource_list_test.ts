@@ -45,7 +45,7 @@ describe('TestResourceList', () => {
     fs.getFileOpenUrl.and.returnValue('open_url');
 
     TestBed.configureTestingModule({
-      imports: [TestRunsModule, NoopAnimationsModule],
+      imports: [NoopAnimationsModule, TestRunsModule],
       providers: [
         {provide: FileService, useValue: fs},
       ],

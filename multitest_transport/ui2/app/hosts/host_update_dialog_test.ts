@@ -82,9 +82,9 @@ describe('HostUpdateDialog', () => {
 
     TestBed.configureTestingModule({
       imports: [
-        NoopAnimationsModule,
         HostsModule,
         HttpClientTestingModule,
+        NoopAnimationsModule,
       ],
       providers: [
         {provide: MAT_DIALOG_DATA, useValue: dialogData},

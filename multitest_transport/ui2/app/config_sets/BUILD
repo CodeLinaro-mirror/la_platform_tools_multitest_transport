@@ -51,7 +51,7 @@ ng_module(
         third_party_js("angular2:core_testing"),
         third_party_js("angular2:platform_browser"),
         third_party_js("angular2:platform_browser_animations"),
-        third_party_js("angular2:router_testing"),
+        third_party_js("angular2:router"),
         third_party_js("angular_components:cdk_a11y"),
         third_party_js("rxjs"),
         third_party_js("typings/jasmine"),

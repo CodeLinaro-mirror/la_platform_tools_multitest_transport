@@ -19,8 +19,7 @@ import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {MatChipInput} from '@angular/material/chips';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {ActivatedRoute, Params} from '@angular/router';
-import {RouterTestingModule} from '@angular/router/testing';
+import {ActivatedRoute, Params, RouterModule} from '@angular/router';
 import {of as observableOf, Subject} from 'rxjs';
 
 import {APP_DATA} from '../services/app_data';
@@ -68,7 +67,7 @@ describe('TestPlanEditPage', () => {
     TestBed.configureTestingModule({
       imports: [
         NoopAnimationsModule,
-        RouterTestingModule,
+        RouterModule,
         TestPlansModule,
       ],
       providers: [
