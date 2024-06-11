@@ -572,9 +572,9 @@ export function convertToDeviceExtraInfo(source: KeyValuePair[]):
     LabDeviceExtraInfo {
   const extraInfo: LabDeviceExtraInfo = {
     device_note_id: -1,
-    build_id: "UNKNOWN",
-    sdk_version: "UNKNOWN",
-    battery_level: -1,
+    build_id: 'UNKNOWN',
+    sdk_version: 'UNKNOWN',
+    battery_level: 0,
   };
 
   for (const entity of source) {
@@ -583,7 +583,7 @@ export function convertToDeviceExtraInfo(source: KeyValuePair[]):
           !Number.isNaN(Number(entity.value)) ? Number(entity.value) : -1;
     } else if (entity.key === 'battery_level') {
       extraInfo[entity.key] =
-          !Number.isNaN(Number(entity.value)) ? Number(entity.value) / 100 : -1;
+          !Number.isNaN(Number(entity.value)) ? Number(entity.value) / 100 : 0;
     } else {
       extraInfo[entity.key] = entity.value;
     }
