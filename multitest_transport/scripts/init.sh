@@ -118,6 +118,7 @@ then
         --public_dir="${MTT_LOG_DIR}" \
         --resource_dir_name="olc_server_res_files" \
         --tmp_dir_root="${MTT_MH_WORK_DIR}" \
+        --use_tf_retry=false \
         ${OLC_SERVER_OPTS} &> /dev/null &
     else
       REMOTES_CONTROL_SERVER_PORT="$(echo ${MTT_CONTROL_SERVER_URL} | sed 's,^\([^:/]\+://\)\?\([^:/]\+:\)\(\([0-9]\{1\,5\}\)\)\?\+.*$,\3,g')"
@@ -258,7 +259,6 @@ else
     --resource_dir_name="lab_server_res_files" \
     --serv_via_cloud_rpc=false \
     --set_test_harness_property=false \
-    --skip_lab_job_gen_file_cleanup=true \
     --tmp_dir_root="${MTT_MH_WORK_DIR}" \
     ${LAB_SERVER_OPTS}
 fi
