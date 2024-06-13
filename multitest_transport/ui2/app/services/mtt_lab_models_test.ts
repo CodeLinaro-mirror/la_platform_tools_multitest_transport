@@ -105,5 +105,11 @@ describe('MttLabModels', () => {
       preconfigured_ip: '1.1.1.1',
       preconfigured_device_num_offset: 2,
     })).toEqual('remote-virtual-1.1.1.1-2');
+
+    expect(getDeviceSerialForDisplay({
+      ...newMockLabDeviceInfo('device-1'),
+      device_type: DeviceType.LOCAL_VIRTUAL,
+      preconfigured_device_num_offset: 0,
+    })).toEqual('local-virtual-0');
   });
 });

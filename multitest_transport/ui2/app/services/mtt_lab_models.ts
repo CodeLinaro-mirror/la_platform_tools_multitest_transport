@@ -841,5 +841,9 @@ export function getDeviceSerialForDisplay(device: LabDeviceInfo) {
     return `remote-virtual-${device.preconfigured_ip || 'unknown'}-${
         device.preconfigured_device_num_offset || 'unknown'}`;
   }
+  if (device.device_type === tfcModels.DeviceType.LOCAL_VIRTUAL &&
+      device.preconfigured_device_num_offset !== undefined) {
+    return `local-virtual-${device.preconfigured_device_num_offset}`;
+  }
   return device.device_serial;
 }
