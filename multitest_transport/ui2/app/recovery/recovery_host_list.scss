@@ -67,8 +67,9 @@ mat-table {
 .host-group,
 .host-name {
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  word-break: break-all;
+  max-height: 100%;
 }
 
 .hosts-count {

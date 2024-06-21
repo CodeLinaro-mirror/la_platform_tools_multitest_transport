@@ -59,7 +59,13 @@ mat-table {
 
 .device-serial,
 .host-group,
-.host-name,
+.host-name {
+  overflow: hidden;
+  white-space: normal;
+  word-break: break-all;
+  max-height: 100%;
+}
+
 .notes-info {
   overflow: hidden;
   text-overflow: ellipsis;

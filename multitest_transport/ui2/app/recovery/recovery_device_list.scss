@@ -47,7 +47,13 @@ mat-table {
   }
 }
 
-.device-serial,
+.device-serial {
+  overflow: hidden;
+  white-space: normal;
+  word-break: break-all;
+  max-height: 100%;
+}
+
 .latest-message,
 .latest-offline-reason {
   overflow: hidden;

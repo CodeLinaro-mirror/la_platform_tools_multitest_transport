@@ -62,8 +62,9 @@ mat-table {
 .host-name,
 .lab-name {
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  word-break: break-all;
+  max-height: 100%;
 }
 
 .no-match {
