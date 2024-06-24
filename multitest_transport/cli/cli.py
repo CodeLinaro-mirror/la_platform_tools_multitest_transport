@@ -675,6 +675,8 @@ def _StartMttNode(args, host):
       else:
         # Public OLC server port of the controller
         docker_helper.AddPort('0.0.0.0:%d' % 7030, 7030)
+        # Public worker grpc port of the controller
+        docker_helper.AddPort('0.0.0.0:%d' % 7031, 7031)
 
   docker_helper.Run(args.name)
 

@@ -97,7 +97,8 @@ then
   if [[ ! -z "${IS_OMNILAB_BASED}" ]]
   then
     OLC_SERVER_PORT="${OLC_SERVER_PORT:-7030}"
-    OLC_SERVER_GRPC_TARGET="$(echo ${MTT_CONTROL_SERVER_URL} | sed 's,^\([^:/]\+://\)\?\([^:/]\+\)\(:\([0-9]\{1\,5\}\)\)\?\+.*$,\2,g'):${OLC_SERVER_PORT}"
+    ATS_WORKER_GRPC_PORT="${ATS_WORKER_GRPC_PORT:-7031}"
+    OLC_SERVER_GRPC_TARGET="$(echo ${MTT_CONTROL_SERVER_URL} | sed 's,^\([^:/]\+://\)\?\([^:/]\+\)\(:\([0-9]\{1\,5\}\)\)\?\+.*$,\2,g'):${ATS_WORKER_GRPC_PORT}"
     ATS_FILE_SERVER_PORT="$((${MTT_CONTROL_SERVER_PORT}+6))"
     ATS_FILE_SERVER="localhost:${ATS_FILE_SERVER_PORT}"
 
@@ -115,6 +116,7 @@ then
         --enable_client_file_transfer=false \
         --enable_grpc_lab_server=true \
         --olc_server_port="${OLC_SERVER_PORT}" \
+        --ats_worker_grpc_port="${ATS_WORKER_GRPC_PORT}" \
         --public_dir="${MTT_LOG_DIR}" \
         --resource_dir_name="olc_server_res_files" \
         --tmp_dir_root="${MTT_MH_WORK_DIR}" \
