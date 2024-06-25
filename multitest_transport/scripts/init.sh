@@ -115,6 +115,7 @@ then
         --enable_client_experiment_manager=false \
         --enable_client_file_transfer=false \
         --enable_grpc_lab_server=true \
+        --enable_simple_scheduler_shuffle=true \
         --olc_server_port="${OLC_SERVER_PORT}" \
         --ats_worker_grpc_port="${ATS_WORKER_GRPC_PORT}" \
         --public_dir="${MTT_LOG_DIR}" \
