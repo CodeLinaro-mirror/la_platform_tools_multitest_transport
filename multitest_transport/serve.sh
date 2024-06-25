@@ -42,6 +42,8 @@ SQL_DATABASE_URI="mysql+pymysql://root@/ats_db"
 MTT_CONTROL_SERVER_URL="http://localhost:8000"
 REPORT_GENERATOR_JAR=""
 IS_OMNILAB_BASED="false"
+OLCS_SERVER_ADDRESS="localhost:7030"
+OLCS_CREDENTIAL_TYPE="no_credential"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --bind_address) MTT_HOST="$2";;
@@ -53,6 +55,8 @@ while [[ $# -gt 0 ]]; do
     --log_level) LOG_LEVEL="$2";;
     --dev_mode) DEV_MODE="$2";;
     --is_omnilab_based) IS_OMNILAB_BASED="$2";;
+    --olcs_server_address) OLCS_SERVER_ADDRESS="$2";;
+    --olcs_credential_type) OLCS_CREDENTIAL_TYPE="$2";;
     --sql_database_uri) SQL_DATABASE_URI="$2";;
     --control_server_url) MTT_CONTROL_SERVER_URL="$2";;
     --report_generator_jar) REPORT_GENERATOR_JAR="$2";;
@@ -188,6 +192,8 @@ function start_main_server {
   ADB_VERSION="$ADB_VERSION" \
   DEV_MODE="$DEV_MODE" \
   IS_OMNILAB_BASED="$IS_OMNILAB_BASED" \
+  OLCS_SERVER_ADDRESS="$OLCS_SERVER_ADDRESS" \
+  OLCS_CREDENTIAL_TYPE="$OLCS_CREDENTIAL_TYPE" \
   MTT_FILE_SERVER_ROOT="$STORAGE_PATH" \
   MTT_FILE_SERVER_URL="http://localhost:$FILE_SERVER_PORT/" \
   MTT_FILE_SERVER_PORT="$FILE_SERVER_PORT" \

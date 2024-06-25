@@ -14,11 +14,10 @@
 
 """A OLCS(OmniLab Long-running Client Service) lab info service client module."""
 import grpc
+from multitest_transport.util import channel_util
 from com_google_deviceinfra.src.devtools.common.metrics.stability.util import grpc_error_util
 from com_google_deviceinfra.src.devtools.mobileharness.shared.labinfo.proto import lab_info_service_pb2
 from com_google_deviceinfra.src.devtools.mobileharness.shared.labinfo.proto import lab_info_service_pb2_grpc
-
-OLCS_SERVER_ADDRESS = 'localhost:7030'
 
 
 class OlcsLabInfoRpcError(Exception):
@@ -33,11 +32,9 @@ class OlcsLabInfoClient:
     self._stub = stub
 
   @classmethod
-  def create(
-      cls, server_address: str = OLCS_SERVER_ADDRESS
-  ) -> 'OlcsLabInfoClient':
+  def create(cls) -> 'OlcsLabInfoClient':
     """Create OLCS lab info service client."""
-    channel = grpc.insecure_channel(server_address)
+    channel = channel_util.OlcsChannel().get_channel()
     return OlcsLabInfoClient(
         lab_info_service_pb2_grpc.LabInfoServiceStub(channel)
     )

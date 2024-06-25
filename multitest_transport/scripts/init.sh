@@ -133,6 +133,13 @@ then
   # URLs correctly.
   BIND_ADDRESS="0.0.0.0"
 
+  # Set the credential type for the OLC server.
+  if [[ "${OLC_SERVER_OPTS}" == *"--use_alts=true"* ]]; then
+    OLCS_CREDENTIAL_TYPE="alts"
+  else
+    OLCS_CREDENTIAL_TYPE="no_credential"
+  fi
+
   # Start the ATS server and pass empty sql_database_uri to launch DB server.
   /mtt/serve.sh \
       --storage_path "${MTT_STORAGE_PATH}" \
@@ -142,6 +149,8 @@ then
       --file_service_only "${FILE_SERVICE_ONLY}" \
       --sql_database_uri "" \
       --control_server_url "${MTT_CONTROL_SERVER_URL}" \
+      --olcs_server_address "localhost:${OLC_SERVER_PORT}" \
+      --olcs_credential_type "${OLCS_CREDENTIAL_TYPE}" \
       --report_generator_jar "${MTT_REPORT_GENERATOR_JAR}" \
       --is_omnilab_based "${IS_OMNILAB_BASED}" \
       2>&1 | multilog s10485760 n10 "${MTT_CONTROL_SERVER_LOG_DIR}" &

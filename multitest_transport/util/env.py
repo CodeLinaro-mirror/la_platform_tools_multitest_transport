@@ -25,6 +25,14 @@ class OperationMode(enum.Enum):
   STANDALONE = 'standalone'
   UNKNOWN = 'unknown'
 
+
+@enum.unique
+class CredentialType(enum.Enum):
+  NO_CREDENTIAL = 'no_credential'
+  ALTS = 'alts'
+  SSL = 'ssl'
+
+
 # Constants and default values
 UNKNOWN = 'UNKNOWN'
 DEFAULT_QUEUE_TIMEOUT_SECONDS = 86400  # one day
@@ -58,6 +66,12 @@ FILE_SERVER_PORT = os.environ.get('MTT_FILE_SERVER_PORT')
 
 # Monitor parameters
 NETDATA_URL = os.environ.get('MTT_NETDATA_URL')
+
+# OLCS parameters
+OLCS_SERVER_ADDRESS = os.environ.get('OLCS_SERVER_ADDRESS', 'localhost:7030')
+OLCS_CREDENTIAL_TYPE = CredentialType(
+    os.environ.get('OLCS_CREDENTIAL_TYPE', CredentialType.NO_CREDENTIAL)
+)
 
 # Google OAuth2 parameters
 GOOGLE_OAUTH2_CLIENT_ID = os.environ.get('MTT_GOOGLE_OAUTH2_CLIENT_ID', UNKNOWN)

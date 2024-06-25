@@ -8,6 +8,26 @@ package(
 licenses(["notice"])
 
 pytype_strict_library(
+    name = "util_lib",
+    srcs = [
+        "util.py",
+    ],
+    deps = [],
+)
+
+py_test(
+    name = "util_test",
+    srcs = [
+        "util_test.py",
+    ],
+    deps = [
+        ":util_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
+        third_party("absl/testing:absltest"),
+    ],
+)
+
+pytype_strict_library(
     name = "analytics_lib",
     srcs = [
         "analytics.py",
@@ -293,6 +313,16 @@ py_test(
 )
 
 pytype_strict_library(
+    name = "channel_util_lib",
+    srcs = ["channel_util.py"],
+    deps = [
+        ":env_lib",
+        ":util_lib",
+        third_party("grpc"),
+    ],
+)
+
+pytype_strict_library(
     name = "olcs_session_stub",
     srcs = ["olcs_session_stub.py"],
     deps = [
@@ -311,6 +341,7 @@ pytype_strict_library(
     name = "olcs_session_client_lib",
     srcs = ["olcs_session_client.py"],
     deps = [
+        ":channel_util_lib",
         "@com_google_deviceinfra//src/devtools/common/metrics/stability/util:grpc_error_util_lib",
         "@com_google_deviceinfra//src/devtools/mobileharness/infra/client/longrunningservice/proto:session_service_py_grpc",
         "@com_google_deviceinfra//src/devtools/mobileharness/infra/client/longrunningservice/proto:session_service_py_proto",
@@ -338,6 +369,7 @@ pytype_strict_library(
     name = "olcs_lab_info_client_lib",
     srcs = ["olcs_lab_info_client.py"],
     deps = [
+        ":channel_util_lib",
         "@com_google_deviceinfra//src/devtools/common/metrics/stability/util:grpc_error_util_lib",
         "@com_google_deviceinfra//src/devtools/mobileharness/shared/labinfo/proto:lab_info_service_py_grpc",
         "@com_google_deviceinfra//src/devtools/mobileharness/shared/labinfo/proto:lab_info_service_py_proto",
@@ -362,6 +394,7 @@ pytype_strict_library(
     name = "olcs_lab_record_client_lib",
     srcs = ["olcs_lab_record_client.py"],
     deps = [
+        ":channel_util_lib",
         "@com_google_deviceinfra//src/devtools/common/metrics/stability/util:grpc_error_util_lib",
         "@com_google_deviceinfra//src/devtools/mobileharness/infra/master/rpc/proto:lab_record_service_py_grpc",
         "@com_google_deviceinfra//src/devtools/mobileharness/infra/master/rpc/proto:lab_record_service_py_proto",

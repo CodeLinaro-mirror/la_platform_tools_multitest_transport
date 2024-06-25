@@ -15,12 +15,11 @@
 """A OLCS(OmniLab Long-running Client Service) session service client module."""
 from typing import Iterator
 import grpc
+from multitest_transport.util import channel_util
 from com_google_deviceinfra.src.devtools.common.metrics.stability.util import grpc_error_util
 # from google3.net.rpc.python import pywraprpc
 from com_google_deviceinfra.src.devtools.mobileharness.infra.client.longrunningservice.proto import session_service_pb2
 from com_google_deviceinfra.src.devtools.mobileharness.infra.client.longrunningservice.proto import session_service_pb2_grpc
-
-OLCS_SERVER_ADDRESS = 'localhost:7030'
 
 
 class OlcsSessionRpcError(Exception):
@@ -35,11 +34,9 @@ class OlcsSessionClient:
     self._stub = session_service_pb2_grpc.SessionServiceStub(channel)
 
   @classmethod
-  def create(
-      cls, server_address: str = OLCS_SERVER_ADDRESS
-  ) -> 'OlcsSessionClient':
+  def create(cls) -> 'OlcsSessionClient':
     """Create OLCS session service client."""
-    channel = grpc.insecure_channel(server_address)
+    channel = channel_util.OlcsChannel().get_channel()
     return OlcsSessionClient(channel)
 
   def create_session(
