@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {HttpClientTestingModule} from '@angular/common/http/testing';
+import {provideHttpClientTesting} from '@angular/common/http/testing';
 import {DebugElement, LOCALE_ID, SimpleChange} from '@angular/core';
 import {ComponentFixture, inject, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
@@ -80,11 +80,11 @@ describe('DeviceList', () => {
 
     TestBed.configureTestingModule({
       imports: [
-        HttpClientTestingModule,
         DevicesModule,
         NoopAnimationsModule,
       ],
       providers: [
+        provideHttpClientTesting(),
         {provide: ActivatedRoute, useValue: activatedRouteSpy},
         {provide: APP_DATA, useValue: appData},
         {provide: FeedbackService, useValue: feedbackService},
@@ -93,7 +93,7 @@ describe('DeviceList', () => {
         {provide: Router, useValue: routerSpy},
         {provide: TfcClient, useValue: tfcClient},
       ],
-      });
+    });
     deviceListFixture = TestBed.createComponent(DeviceList);
     deviceListFixture.detectChanges();
     el = deviceListFixture.debugElement;
@@ -804,11 +804,11 @@ describe('DeviceList in ATS instance', () => {
 
     TestBed.configureTestingModule({
       imports: [
-        HttpClientTestingModule,
         DevicesModule,
         NoopAnimationsModule,
       ],
       providers: [
+        provideHttpClientTesting(),
         {
           provide: APP_DATA,
           useValue: {isAtsLabInstance: false},
@@ -822,7 +822,7 @@ describe('DeviceList in ATS instance', () => {
           useValue: activatedRouteSpy,
         },
       ],
-      });
+    });
     deviceListFixture = TestBed.createComponent(DeviceList);
     deviceListFixture.detectChanges();
     deviceList = deviceListFixture.componentInstance;

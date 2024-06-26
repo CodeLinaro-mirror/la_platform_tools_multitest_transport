@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {HttpClientTestingModule} from '@angular/common/http/testing';
+import {provideHttpClientTesting} from '@angular/common/http/testing';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
@@ -59,9 +59,9 @@ describe('NotesDialog', () => {
       imports: [
         NoopAnimationsModule,
         NotesModule,
-        HttpClientTestingModule,
       ],
       providers: [
+        provideHttpClientTesting(),
         {provide: MAT_DIALOG_DATA, useValue: noteDialogParams},
         {provide: APP_DATA, useValue: newMockAppData()},
         {provide: MatDialogRef, useValue: dialogRefSpy},

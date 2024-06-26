@@ -15,7 +15,7 @@
  */
 
 import {Location} from '@angular/common';
-import {HttpClientTestingModule} from '@angular/common/http/testing';
+import {provideHttpClientTesting} from '@angular/common/http/testing';
 import {DebugElement, LOCALE_ID} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {MAT_DIALOG_DATA} from '@angular/material/dialog';
@@ -78,11 +78,11 @@ describe('HostDetails', () => {
 
     TestBed.configureTestingModule({
       imports: [
-        HttpClientTestingModule,
         HostsModule,
         NoopAnimationsModule,
       ],
       providers: [
+        provideHttpClientTesting(),
         {
           provide: ActivatedRoute,
           useValue: {

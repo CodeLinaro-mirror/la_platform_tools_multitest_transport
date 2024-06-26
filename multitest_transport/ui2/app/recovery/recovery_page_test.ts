@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {HttpClientTestingModule} from '@angular/common/http/testing';
+import {provideHttpClientTesting} from '@angular/common/http/testing';
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
@@ -47,9 +47,9 @@ describe('RecoveryPage', () => {
       imports: [
         NoopAnimationsModule,
         RecoveryModule,
-        HttpClientTestingModule,
       ],
       providers: [
+        provideHttpClientTesting(),
         {provide: APP_DATA, useValue: newMockAppData()},
         {provide: Router, useValue: routerSpy},
         {
@@ -57,7 +57,7 @@ describe('RecoveryPage', () => {
           useValue: activatedRouteSpy,
         },
       ],
-      });
+    });
     recoveryPageFixture = TestBed.createComponent(RecoveryPage);
     recoveryPageFixture.detectChanges();
     el = recoveryPageFixture.debugElement;

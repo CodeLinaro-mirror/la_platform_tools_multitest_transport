@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {HttpClientTestingModule} from '@angular/common/http/testing';
+import {provideHttpClientTesting} from '@angular/common/http/testing';
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {MAT_DIALOG_DATA} from '@angular/material/dialog';
@@ -56,10 +56,10 @@ describe('DeviceDetails', () => {
     TestBed.configureTestingModule({
       imports: [
         DevicesModule,
-        HttpClientTestingModule,
         NoopAnimationsModule,
       ],
       providers: [
+        provideHttpClientTesting(),
         {
           provide: APP_DATA,
           useValue: newMockAppData(),

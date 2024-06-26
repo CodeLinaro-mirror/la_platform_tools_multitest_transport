@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {HttpClientTestingModule} from '@angular/common/http/testing';
+import {provideHttpClientTesting} from '@angular/common/http/testing';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {MatDialog} from '@angular/material/dialog';
 import {SortDirection} from '@angular/material/sort';
@@ -59,11 +59,11 @@ describe('Predefined Message List', () => {
 
     TestBed.configureTestingModule({
       imports: [
-        HttpClientTestingModule,
         NoopAnimationsModule,
         NotesModule,
       ],
       providers: [
+        provideHttpClientTesting(),
         {provide: Notifier, useValue: notifierSpy},
         {provide: TfcClient, useValue: tfcClientSpy},
       ],

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {HttpClientTestingModule} from '@angular/common/http/testing';
+import {provideHttpClientTesting} from '@angular/common/http/testing';
 import {DebugElement, LOCALE_ID} from '@angular/core';
 import {ComponentFixture, inject, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
@@ -86,11 +86,11 @@ describe('HostList', () => {
 
     TestBed.configureTestingModule({
       imports: [
-        HttpClientTestingModule,
         HostsModule,
         NoopAnimationsModule,
       ],
       providers: [
+        provideHttpClientTesting(),
         {provide: APP_DATA, useValue: newMockAppData()},
         {provide: FeedbackService, useValue: feedbackService},
         {provide: LOCALE_ID, useValue: 'en-US'},
@@ -99,7 +99,7 @@ describe('HostList', () => {
         {provide: TfcClient, useValue: tfcClient},
         {provide: ActivatedRoute, useValue: activatedRouteSpy},
       ],
-      });
+    });
     hostListFixture = TestBed.createComponent(HostList);
     hostListFixture.detectChanges();
     el = hostListFixture.debugElement;

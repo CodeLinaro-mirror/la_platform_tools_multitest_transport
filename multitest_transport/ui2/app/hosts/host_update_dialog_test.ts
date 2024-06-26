@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 import {HttpErrorResponse} from '@angular/common/http';
-import {HttpClientTestingModule} from '@angular/common/http/testing';
+import {provideHttpClientTesting} from '@angular/common/http/testing';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 import {MatRadioButton, MatRadioChange} from '@angular/material/radio';
@@ -83,10 +84,10 @@ describe('HostUpdateDialog', () => {
     TestBed.configureTestingModule({
       imports: [
         HostsModule,
-        HttpClientTestingModule,
         NoopAnimationsModule,
       ],
       providers: [
+        provideHttpClientTesting(),
         {provide: MAT_DIALOG_DATA, useValue: dialogData},
         {provide: APP_DATA, useValue: newMockAppData()},
         {provide: MatDialogRef, useValue: dialogRefSpy},

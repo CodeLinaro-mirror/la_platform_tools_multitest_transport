@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-import {HTTP_INTERCEPTORS, HttpClient, HttpParams} from '@angular/common/http';
-import {HttpClientTestingModule, HttpTestingController} from '@angular/common/http/testing';
-import {Type} from '@angular/core';
+import {HTTP_INTERCEPTORS, HttpClient, HttpParams, provideHttpClient, withInterceptorsFromDi} from '@angular/common/http';
+import {HttpTestingController, provideHttpClientTesting} from '@angular/common/http/testing';
 import {TestBed} from '@angular/core/testing';
 
 import {StrictParamsInterceptor} from './strict_params';
@@ -31,9 +30,10 @@ describe('StrictParameterInterceptor', () => {
     interceptor = new StrictParamsInterceptor();
 
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
-      providers:
-          [{provide: HTTP_INTERCEPTORS, useValue: interceptor, multi: true}]
+      providers: [
+        provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting(),
+        {provide: HTTP_INTERCEPTORS, useValue: interceptor, multi: true}
+      ]
     });
     // Keeping it compatible with Angular 8,
     // tslint:disable-next-line:deprecation

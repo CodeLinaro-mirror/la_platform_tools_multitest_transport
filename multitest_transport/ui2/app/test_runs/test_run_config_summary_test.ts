@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {HttpClientTestingModule} from '@angular/common/http/testing';
+import {provideHttpClientTesting} from '@angular/common/http/testing';
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
@@ -64,8 +64,9 @@ describe('TestRunConfigSummary', () => {
     mttObjectMapService = jasmine.createSpyObj(['getMttObjectMap']);
     mttObjectMapService.getMttObjectMap.and.returnValue(observableOf(mttData));
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule, NoopAnimationsModule, TestRunsModule],
+      imports: [NoopAnimationsModule, TestRunsModule],
       providers: [
+        provideHttpClientTesting(),
         {provide: APP_DATA, useValue: {}},
         {provide: MttObjectMapService, useValue: mttObjectMapService},
       ],
