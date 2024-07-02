@@ -58,6 +58,25 @@ class OlcsSessionStubTest(testbed_dependent_test.TestbedDependentTest):
     self._executor.shutdown(wait=True)
     super().tearDown()
 
+  def testCancelRequest(self):
+    client_response = session_service_pb2.NotifySessionResponse(successful=True)
+    request_id = 'test_request_id'
+    application_future = self._executor.submit(
+        self.session_stub.CancelRequest, request_id
+    )
+    _, _, rpc = self._channel.take_unary_unary(
+        self._descriptor.methods_by_name['NotifySession']
+    )
+    rpc.send_initial_metadata(())
+    rpc.terminate(
+        client_response,
+        self._trailing_metadata,
+        grpc.StatusCode.OK,
+        self._detailed_message,
+    )
+    actual_response = application_future.result()
+    self.assertEqual(True, actual_response)
+
   def testCreateNewRequest(self):
     client_response = session_service_pb2.CreateSessionResponse()
     client_response.session_id.id = 'test_session_id'

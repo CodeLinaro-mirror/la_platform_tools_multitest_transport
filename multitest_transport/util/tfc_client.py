@@ -177,13 +177,17 @@ def GetRequest(request_id: str) -> api_messages.RequestMessage:
     # pytype: enable=module-attr
 
 
-def CancelRequest(request_id: int):
+def CancelRequest(request_id: str):
   """Cancels a request.
 
   Args:
     request_id: a request ID.
   """
-  _GetAPIClient().requests().cancel(request_id=request_id).execute()
+  if os.environ.get('IS_OMNILAB_BASED') == 'true':
+    _GetOlcsSessionStub().CancelRequest(request_id)
+  else:
+    request_id = int(request_id)
+    _GetAPIClient().requests().cancel(request_id=request_id).execute()
 
 
 def GetTestContext(

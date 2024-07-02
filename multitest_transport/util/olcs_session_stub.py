@@ -27,8 +27,8 @@ from tradefed_cluster import common
 
 from google3.google.protobuf import duration_pb2
 from com_google_deviceinfra.src.devtools.mobileharness.infra.ats.server.proto import service_pb2
+from com_google_deviceinfra.src.devtools.mobileharness.infra.client.longrunningservice.proto import session_pb2
 from com_google_deviceinfra.src.devtools.mobileharness.infra.client.longrunningservice.proto import session_service_pb2
-
 
 SESSION_PLUGIN_CLASS_NAME = "com.google.devtools.mobileharness.infra.ats.server.sessionplugin.AtsServerSessionPlugin"
 SESSION_MODULE_CLASS_NAME = "com.google.devtools.mobileharness.infra.ats.server.sessionplugin.AtsServerSessionPluginModule"
@@ -112,6 +112,32 @@ class OlcsSessionStub:
     self._subscribe_session_queues = {}
     self._executor = futures.ThreadPoolExecutor(max_workers=10)
 
+  def CancelRequest(self, request_id: str):
+    """Cancel a request.
+
+    Args:
+      request_id: The request id of the request.
+
+    Returns:
+      True if the request is cancelled successfully.
+    """
+    session_notification = session_pb2.SessionNotification(
+        plugin_label=session_pb2.SessionPluginLabel(label=SESSION_PLUGIN_LABEL)
+    )
+    session_notification.notification.Pack(
+        service_pb2.AtsServerSessionNotification(
+            cancel_session=service_pb2.CancelSession()
+        )
+    )
+    response = self._client.notify_session(
+        session_service_pb2.NotifySessionRequest(
+            session_id=session_pb2.SessionId(id=request_id),
+            session_notification=session_notification,
+        )
+    )
+    logging.info("Cancel request response:%s", response)
+    return response and response.successful
+
   def CreateNewRequest(
       self, request: api_messages.NewMultiCommandRequestMessage
   ) -> str:
@@ -139,14 +165,19 @@ class OlcsSessionStub:
     test_context = api_messages.TestContext()
     return test_context
 
-  def _FetchRequest(self, request_id: str) -> api_messages.RequestMessage:
+  def _FetchRequest(
+      self, request_id: str
+  ) -> tuple[bool, api_messages.RequestMessage]:
     """Fetch request from OLCS and convert to TFC request message.
 
     Args:
       request_id: The request id of the request.
 
     Returns:
-      The request message defined by TFC.
+      A tuple of (request_finished, request_message).
+      request_finished is a boolean value indicating whether the request is
+      finished or not.
+      request_message is the request message defined by TFC.
     """
     request = session_service_pb2.GetSessionRequest()
     request.session_id.id = request_id
@@ -156,7 +187,9 @@ class OlcsSessionStub:
         SESSION_PLUGIN_LABEL
     ].output.Unpack(request_detail)
     logging.info(
-        "Fetched request detail proto from OLCS: %s", request_detail.__str__()
+        "Fetched %s status request detail proto from OLCS: %s",
+        response.session_detail.session_status,
+        request_detail.__str__(),
     )
 
     request_message = api_messages.RequestMessage()
@@ -219,7 +252,10 @@ class OlcsSessionStub:
           previous_request.previous_attempt_session_ids
       )
       request_message.previous_attempt_session_ids.append(previous_request.id)
-    return request_message
+    return (
+        response.session_detail.session_status == session_pb2.SESSION_FINISHED,
+        request_message,
+    )
 
   def GetRequest(self, request_id: str) -> api_messages.RequestMessage:
     """Get request from OLCS or from Database.
@@ -236,12 +272,9 @@ class OlcsSessionStub:
       # pytype: disable=module-attr
       return protojson.decode_message(api_messages.RequestMessage, request_json)
       # pytype: enable=module-attr
-    test_request = self._FetchRequest(request_id)
+    request_finished, test_request = self._FetchRequest(request_id)
     if test_request:
-      if (
-          test_request.state == common.RequestState.COMPLETED
-          or test_request.state == common.RequestState.ERROR
-      ):
+      if request_finished:
         request_info = ndb_models.RequestInfo(
             id=request_id,
             request_json_str=protojson.encode_message(test_request),  # pytype: disable=module-attr
