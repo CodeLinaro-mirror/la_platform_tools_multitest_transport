@@ -255,11 +255,12 @@ else
     --adb_dont_kill_server=true \
     --adb_max_no_device_detection_rounds=1200 \
     --android_device_daemon=false \
+    --api_config=/deviceinfra/lab_server_api_config.textproto \
     --ats_file_server="${ATS_FILE_SERVER}" \
     --check_device_interval=1h \
     --clear_android_device_multi_users=false \
     --disable_calling=false \
-    --disable_device_reboot=true \
+    --disable_device_reboot_for_ro_properties=true \
     --disable_wifi_util_func=true \
     --enable_android_device_ready_check=false \
     --enable_ats_file_server_uploader=true \
