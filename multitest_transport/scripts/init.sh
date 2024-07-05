@@ -260,6 +260,7 @@ else
     --clear_android_device_multi_users=false \
     --disable_calling=false \
     --disable_device_reboot=true \
+    --disable_wifi_util_func=true \
     --enable_android_device_ready_check=false \
     --enable_ats_file_server_uploader=true \
     --enable_device_state_change_recover=false \
