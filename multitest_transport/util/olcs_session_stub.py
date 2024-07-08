@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """A OLCS session service stub that is providing similar functionality as tfc_client."""
+import base64
 from concurrent import futures
 import logging
 import queue
@@ -21,7 +22,6 @@ import uuid
 
 from multitest_transport.models import ndb_models
 from multitest_transport.util import olcs_session_client
-from protorpc import protojson
 from tradefed_cluster import api_messages
 from tradefed_cluster import common
 
@@ -157,27 +157,53 @@ class OlcsSessionStub:
       attempt_map[attempt.command_id] = attempt
     return list(attempt_map.values())
 
-  # TODO: To be implemented
   def GetTestContext(
       self, request_id: str, command_id: str
   ) -> api_messages.TestContext:
-    del request_id, command_id  # TODO: To be completed.
-    test_context = api_messages.TestContext()
-    return test_context
+    """Get test context from OLCS.
 
-  def _FetchRequest(
+    Args:
+      request_id: The request id of the request.
+      command_id: The command id of the command.
+
+    Returns:
+      The test context of the command.
+    """
+    test_request = ndb_models.RequestInfo.get_by_id(request_id)
+    if test_request and test_request.request_detail_proto_str:
+      request_detail = service_pb2.RequestDetail()
+      decoded_bytes = base64.b64decode(test_request.request_detail_proto_str)
+      request_detail.ParseFromString(decoded_bytes)
+      test_context_proto = request_detail.test_context[command_id]
+      if test_context_proto:
+        test_context = api_messages.TestContext()
+        test_context.command_line = test_context_proto.command_line
+        for key, value in test_context_proto.env_var.items():
+          test_context.env_vars.append(
+              api_messages.KeyValuePair(key=key, value=value)
+          )
+        for test_resource in test_context_proto.test_resource:
+          test_context.test_resources.append(
+              api_messages.TestResource(
+                  url=test_resource.url, name=test_resource.name
+              )
+          )
+        return test_context
+    return api_messages.TestContext()
+
+  def _FetchRequestDetail(
       self, request_id: str
-  ) -> tuple[bool, api_messages.RequestMessage]:
+  ) -> tuple[bool, service_pb2.RequestDetail]:
     """Fetch request from OLCS and convert to TFC request message.
 
     Args:
       request_id: The request id of the request.
 
     Returns:
-      A tuple of (request_finished, request_message).
+      A tuple of (request_finished, request_detail).
       request_finished is a boolean value indicating whether the request is
       finished or not.
-      request_message is the request message defined by TFC.
+      request_detail is the request message defined by TFC.
     """
     request = session_service_pb2.GetSessionRequest()
     request.session_id.id = request_id
@@ -191,6 +217,23 @@ class OlcsSessionStub:
         response.session_detail.session_status,
         request_detail.__str__(),
     )
+    return (
+        response.session_detail.session_status == session_pb2.SESSION_FINISHED,
+        request_detail,
+    )
+
+  def _GenerateRequestMessage(
+      self, request_detail: service_pb2.RequestDetail
+  ) -> api_messages.RequestMessage:
+    """Generate request message from request detail proto.
+
+    Args:
+      request_detail: Request detail proto.
+
+    Returns:
+      The request message defined by TFC.
+    """
+    request_id = request_detail.id
 
     request_message = api_messages.RequestMessage()
     request_message.id = request_id
@@ -252,10 +295,7 @@ class OlcsSessionStub:
           previous_request.previous_attempt_session_ids
       )
       request_message.previous_attempt_session_ids.append(previous_request.id)
-    return (
-        response.session_detail.session_status == session_pb2.SESSION_FINISHED,
-        request_message,
-    )
+    return request_message
 
   def GetRequest(self, request_id: str) -> api_messages.RequestMessage:
     """Get request from OLCS or from Database.
@@ -268,19 +308,21 @@ class OlcsSessionStub:
     """
     test_request = ndb_models.RequestInfo.get_by_id(request_id)
     if test_request:
-      request_json = test_request.request_json_str
-      # pytype: disable=module-attr
-      return protojson.decode_message(api_messages.RequestMessage, request_json)
-      # pytype: enable=module-attr
-    request_finished, test_request = self._FetchRequest(request_id)
-    if test_request:
+      request_detail = service_pb2.RequestDetail()
+      decoded_bytes = base64.b64decode(test_request.request_detail_proto_str)
+      request_detail.ParseFromString(decoded_bytes)
+      return self._GenerateRequestMessage(request_detail)
+    request_finished, request_detail = self._FetchRequestDetail(request_id)
+    if request_detail:
       if request_finished:
+        request_detail_str = request_detail.SerializeToString()
+        base64_string = base64.b64encode(request_detail_str).decode("utf-8")
         request_info = ndb_models.RequestInfo(
             id=request_id,
-            request_json_str=protojson.encode_message(test_request),  # pytype: disable=module-attr
+            request_detail_proto_str=base64_string,
         )
         request_info.put()
-      return test_request
+      return self._GenerateRequestMessage(request_detail)
     return None
 
   def GetAttempt(

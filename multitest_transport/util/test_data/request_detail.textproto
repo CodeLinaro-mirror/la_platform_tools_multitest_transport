@@ -1,113 +1,105 @@
-id: "7f399e1c-e4f5-4cb5-8342-8e5f1ee3d30c"
+id: "abf34558-6dcc-41bc-955e-295c9ad01c98"
 command_infos {
-  command_line: "cts --enable-token-sharding --max-testcase-run-count 2 --retry-strategy RETRY_ANY_FAILURE -m CtsAccessibilityTestCases --shard-count 2 --invocation-data mtt=1"
+  command_line: "cts --enable-token-sharding --max-testcase-run-count 2 --retry-strategy RETRY_ANY_FAILURE -m CtsAccelerationTestCases --invocation-data mtt=1"
   run_count: 1
   shard_count: 1
   device_dimensions {
     name: "device_serial"
     value: "29081FDH200D3U"
   }
-  device_dimensions {
-    name: "device_serial"
-    value: "11191FDD4002M4"
-  }
 }
+max_retry_on_test_failures: 1
 state: COMPLETED
 start_time {
-  seconds: 1710827216
-  nanos: 515000000
+  seconds: 1719198663
+  nanos: 5000000
 }
 create_time {
-  seconds: 1710827216
-  nanos: 515000000
+  seconds: 1719198663
+  nanos: 5000000
 }
 update_time {
-  seconds: 1710827409
-  nanos: 261844000
+  seconds: 1719198913
+  nanos: 943536000
 }
 command_details {
-  key: "2ae3bd54-dac2-4e11-b354-8d1cede1d8b1"
+  key: "277b9aa5-46c4-32a1-be60-d46cb80f3b64"
   value {
-    id: "2ae3bd54-dac2-4e11-b354-8d1cede1d8b1"
-    command_line: "cts --enable-token-sharding --max-testcase-run-count 2 --retry-strategy RETRY_ANY_FAILURE -m CtsAccessibilityTestCases --shard-count 2 --invocation-data mtt=1"
+    id: "277b9aa5-46c4-32a1-be60-d46cb80f3b64"
+    request_id: "abf34558-6dcc-41bc-955e-295c9ad01c98"
+    command_line: "cts --enable-token-sharding --max-testcase-run-count 2 --retry-strategy RETRY_ANY_FAILURE -m CtsAccelerationTestCases --invocation-data mtt=1"
     state: COMPLETED
     original_command_info {
-      command_line: "cts --enable-token-sharding --max-testcase-run-count 2 --retry-strategy RETRY_ANY_FAILURE -m CtsAccessibilityTestCases --shard-count 2 --invocation-data mtt=1"
+      command_line: "cts --enable-token-sharding --max-testcase-run-count 2 --retry-strategy RETRY_ANY_FAILURE -m CtsAccelerationTestCases --invocation-data mtt=1"
       run_count: 1
       shard_count: 1
       device_dimensions {
         name: "device_serial"
         value: "29081FDH200D3U"
       }
-      device_dimensions {
-        name: "device_serial"
-        value: "11191FDD4002M4"
-      }
     }
-    passed_test_count: 167
+    passed_test_count: 12
     failed_test_count: 0
-    total_test_count: 167
+    total_test_count: 12
     start_time {
-      seconds: 1710827219
-      nanos: 783993000
+      seconds: 1719198663
+      nanos: 7000000
     }
     end_time {
-      seconds: 1710827409
-      nanos: 178742000
+      seconds: 1719198915
+      nanos: 504000000
     }
     create_time {
-      seconds: 1710827219
-      nanos: 655969000
+      seconds: 1719198663
+      nanos: 7000000
     }
     update_time {
-      seconds: 1710827409
-      nanos: 258991000
+      seconds: 1719198915
+      nanos: 504000000
     }
   }
 }
 command_attempt_details {
-  id: "54c2de67-6323-46a3-8f3f-0ee937905013"
-  request_id: "7f399e1c-e4f5-4cb5-8342-8e5f1ee3d30c"
-  command_id: "2ae3bd54-dac2-4e11-b354-8d1cede1d8b1"
+  id: "5c61296b-56b4-4711-9c27-2e669d4f0fa8"
+  request_id: "abf34558-6dcc-41bc-955e-295c9ad01c98"
+  command_id: "277b9aa5-46c4-32a1-be60-d46cb80f3b64"
+  device_serials: "29081FDH200D3U"
   start_time {
-    seconds: 1710827220
-    nanos: 333891000
+    seconds: 1719198670
+    nanos: 504193000
   }
   end_time {
-    seconds: 1710827409
-    nanos: 23384000
+    seconds: 1719198913
+    nanos: 165103000
   }
   create_time {
-    seconds: 1710827219
-    nanos: 703288000
+    seconds: 1719198668
+    nanos: 328196000
   }
   update_time {
-    seconds: 1710827409
-    nanos: 258979000
+    seconds: 1719198913
+    nanos: 171794000
   }
   state: COMPLETED
-  passed_test_count: 167
+  passed_test_count: 12
   failed_test_count: 0
-  total_test_count: 167
-  device_serials: "29081FDH200D3U"
-  device_serials: "11191FDD4002M4"
+  total_test_count: 12
 }
 original_request {
   user_id: "test_kicker"
   commands {
-    command_line: "cts --enable-token-sharding --max-testcase-run-count 2 --retry-strategy RETRY_ANY_FAILURE -m CtsAccessibilityTestCases --shard-count 2 --invocation-data mtt=1"
+    command_line: "cts --enable-token-sharding --max-testcase-run-count 2 --retry-strategy RETRY_ANY_FAILURE -m CtsAccelerationTestCases --invocation-data mtt=1"
     run_count: 1
     shard_count: 1
     device_dimensions {
       name: "device_serial"
       value: "29081FDH200D3U"
     }
-    device_dimensions {
-      name: "device_serial"
-      value: "11191FDD4002M4"
-    }
   }
-  max_retry_on_test_failures: 3
+  queue_timeout {
+    seconds: 86400
+  }
+  max_retry_on_test_failures: 1
   test_environment {
     env_vars {
       key: "JAVA_HOME"
@@ -128,33 +120,70 @@ original_request {
       key: "WIFI_SSID"
     }
     output_file_patterns: "android-cts/logs/.*"
-    output_file_patterns: "android-cts/results/[^/]+/[^/]+\\.html"
+    output_file_patterns: "android-cts/results/.+\\.html"
     output_file_patterns: "android-cts/results/[^/]+/compatibility_result\\..*"
     output_file_patterns: "android-cts/results/[^/]+/logo.png"
     output_file_patterns: "android-cts/results/[^/]+/test_result.xml"
     output_file_patterns: "android-cts/results/[^/]+/proto/test-record\\.pb.*"
-    output_file_upload_url: "file:///usr/local/google/home/jiuchangz/ats/app_default_bucket/test_runs/03e7b7c0-7a0b-42fa-9b14-14269dae4cb4/output"
+    output_file_upload_url: "file:///usr/local/google/home/jiuchangz/ats/app_default_bucket/test_runs/ce83b697-1953-4dea-8cfe-9c54d9a1f308/output"
     use_subprocess_reporting: true
     output_idle_timeout {
       seconds: 3600
     }
-    jvm_options: "-Xmx6g"
+    jvm_options: "-Xmx16g"
     java_properties {
       key: "CTS_ROOT"
       value: "${TF_WORK_DIR}"
     }
     context_file_pattern: "android-cts/results/[\\d_\\.]+\\.zip"
     extra_context_files: "mtt.json"
-    retry_command_line: "retry --retry 0 --shard-count 2 --invocation-data mtt=1"
+    retry_command_line: "retry --retry 0 --invocation-data mtt=1"
+    use_parallel_setup: true
+    device_action_config_objects {
+      type: TARGET_PREPARER
+      class_name: "com.android.tradefed.targetprep.DeviceCleaner"
+      option_values {
+        name: "post-cleanup"
+        value: "SCREEN_OFF"
+      }
+    }
   }
   test_resources {
-    url: "file:///usr/local/google/home/jiuchangz/ats/local_file_store/android-cts-13_r6-linux_x86-arm.zip"
+    url: "file:///usr/local/google/home/jiuchangz/ats/local_file_store/android-cts-v2mobly.zip"
     name: "android-cts.zip"
     decompress: true
     mount_zip: true
   }
   test_resources {
-    url: "http://jiuchangz1.bej.corp.google.com:8000/_ah/api/mtt/v1/test_runs/03e7b7c0-7a0b-42fa-9b14-14269dae4cb4/metadata"
+    url: "http://jiuchangz1.bej.corp.google.com:8000/_ah/api/mtt/v1/test_runs/ce83b697-1953-4dea-8cfe-9c54d9a1f308/metadata"
     name: "mtt.json"
+  }
+}
+test_context {
+  key: "277b9aa5-46c4-32a1-be60-d46cb80f3b64"
+  value {
+    command_line: "cts --enable-token-sharding --max-testcase-run-count 2 --retry-strategy RETRY_ANY_FAILURE -m CtsAccelerationTestCases --invocation-data mtt=1"
+    env_var {
+      key: "JAVA_HOME"
+      value: "${TF_WORK_DIR}/android-cts/jdk"
+    }
+    env_var {
+      key: "LD_LIBRARY_PATH"
+      value: "${TF_WORK_DIR}/android-cts/lib:${TF_WORK_DIR}/android-cts/lib64"
+    }
+    env_var {
+      key: "TF_PATH"
+      value: "${TF_WORK_DIR}/android-cts/tools:${TF_WORK_DIR}/android-cts/testcases"
+    }
+    env_var {
+      key: "WIFI_PSK"
+    }
+    env_var {
+      key: "WIFI_SSID"
+    }
+    test_resource {
+      url: "file:///usr/local/google/home/jiuchangz/ats/app_default_bucket/test_runs/ce83b697-1953-4dea-8cfe-9c54d9a1f308/output/abf34558-6dcc-41bc-955e-295c9ad01c98/277b9aa5-46c4-32a1-be60-d46cb80f3b64/2024.06.24_11.15.14.437_4268.zip"
+      name: "2024.06.24_11.15.14.437_4268.zip"
+    }
   }
 }

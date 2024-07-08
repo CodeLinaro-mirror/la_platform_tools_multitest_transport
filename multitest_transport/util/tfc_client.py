@@ -145,7 +145,7 @@ def NewRequest(
     _GetOlcsSessionStub().StartSubscribeSession(
         request_id, ndb.with_ndb_context(_ProcessSubscribedSessionResponse)
     )
-    return _GetOlcsSessionStub().GetRequest(request_id)
+    return api_messages.RequestMessage(id=request_id)
   else:
     body = json.loads(protojson.encode_message(new_request_msg))  # pytype: disable=module-attr
     res = _GetAPIClient().requests().newMultiCommandRequest(body=body).execute()

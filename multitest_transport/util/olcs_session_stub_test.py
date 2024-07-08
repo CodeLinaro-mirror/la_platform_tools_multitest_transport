@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Tests for multitest_transport.util.olcs_session_stub."""
+import base64
 from concurrent import futures
 import os
 import time
@@ -125,15 +126,52 @@ class OlcsSessionStubTest(testbed_dependent_test.TestbedDependentTest):
     # Assert service response.
     self.assertEqual(stub_response, client_response.session_id.id)
 
+  def testGetTestContext(self):
+    with open(
+        os.path.join(TEST_DATA_DIR, 'request_detail.textproto')
+    ) as text_format_file:
+      request_detail = text_format.Parse(
+          text_format_file.read(), service_pb2.RequestDetail()
+      )
+    request_id = request_detail.id
+    command_id = list(request_detail.command_details.keys())[0]
+    request_detail_str = request_detail.SerializeToString()
+    base64_string = base64.b64encode(request_detail_str).decode('utf-8')
+    self.mock_request_info = ndb_models.RequestInfo(
+        id=request_id,
+        request_detail_proto_str=base64_string,
+    )
+    self.mock_request_info.put()
+    actual_test_context = self.session_stub.GetTestContext(
+        request_id, command_id
+    )
+
+    self.assertEqual(
+        actual_test_context.command_line,
+        request_detail.test_context.get(command_id).command_line,
+    )
+    self.assertEqual(
+        actual_test_context.env_vars.__len__(),
+        5,
+    )
+    actual_test_resource = actual_test_context.test_resources[0]
+    expected_test_resource = request_detail.test_context.get(
+        command_id
+    ).test_resource[0]
+    self.assertEqual(actual_test_resource.url, expected_test_resource.url)
+    self.assertEqual(actual_test_resource.name, expected_test_resource.name)
+
   def testGetRequestWithDatabase(self):
-    expected_request_message = api_messages.RequestMessage(id='test_request_id')
+    expected_request_detail = service_pb2.RequestDetail(id='test_request_id')
+    request_detail_str = expected_request_detail.SerializeToString()
+    base64_string = base64.b64encode(request_detail_str).decode('utf-8')
     self.mock_request_info = ndb_models.RequestInfo(
         id='test_request_id',
-        request_json_str=protojson.encode_message(expected_request_message),  # pytype: disable=module-attr
+        request_detail_proto_str=base64_string,
     )
     self.mock_request_info.put()
     request_message = self.session_stub.GetRequest('test_request_id')
-    self.assertEqual(request_message, expected_request_message)
+    self.assertEqual(request_message.id, expected_request_detail.id)
 
   def GetRequestWrapper(self, request_id):
     """Wrapper for GetRequest, which creates NDB context before the test so the ndb operation can suceed."""

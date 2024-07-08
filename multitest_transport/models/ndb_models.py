@@ -1237,7 +1237,7 @@ class RequiredReport(ndb.Model):
 
 
 class RequestInfo(ndb.Model):
-  request_json_str = ndb.TextProperty(required=True)
+  request_detail_proto_str = ndb.TextProperty(required=True)
 
   @classmethod
   def get_by_id(cls, id_, **kwargs):
