@@ -86,6 +86,7 @@ export class TestEditPage extends FormChangeTracker implements OnInit,
           this.data.test_resource_defs = result.test_resource_defs || [];
           this.data.jvm_options = result.jvm_options || [];
           this.data.java_properties = result.java_properties || [];
+          this.data.build_attributes = result.build_attributes || [];
           this.defaultTestRunParameters =
               result.default_test_run_parameters || {};
           if (!this.editMode) {
@@ -132,6 +133,10 @@ export class TestEditPage extends FormChangeTracker implements OnInit,
     this.data.java_properties!.push({name: ''});
   }
 
+  onAddBuildAttribute() {
+    this.data.build_attributes!.push({name: ''});
+  }
+
   onAddScript() {
     this.setupScripts.push(undefined);
   }
@@ -161,6 +166,10 @@ export class TestEditPage extends FormChangeTracker implements OnInit,
 
   onRemoveJavaProperty(i: number) {
     this.data.java_properties!.splice(i, 1);
+  }
+
+  onRemoveBuildAttribute(i: number) {
+    this.data.build_attributes!.splice(i, 1);
   }
 
   onRemoveScript(i: number) {

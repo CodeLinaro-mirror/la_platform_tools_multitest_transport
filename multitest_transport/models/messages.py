@@ -329,6 +329,7 @@ class Test(messages.Message):
   )
   upload_file_patterns = messages.StringField(20, repeated=True)
   use_dynamic_download_mcts = messages.BooleanField(21)
+  build_attributes = messages.MessageField(NameValuePair, 22, repeated=True)
 
 
 @Converter(ndb_models.Test, Test)
@@ -357,6 +358,8 @@ def _TestConverter(obj):
       visibility_type=obj.visibility_type,
       upload_file_patterns=obj.upload_file_patterns,
       use_dynamic_download_mcts=obj.use_dynamic_download_mcts,
+      build_attributes=ConvertNameValuePairs(
+          obj.build_attributes, NameValuePair),
   )
 
 
@@ -390,6 +393,8 @@ def _TestMessageConverter(msg):
       visibility_type=msg.visibility_type,
       upload_file_patterns=msg.upload_file_patterns,
       use_dynamic_download_mcts=msg.use_dynamic_download_mcts,
+      build_attributes=ConvertNameValuePairs(
+          msg.build_attributes, ndb_models.NameValuePair),
   )
 
 

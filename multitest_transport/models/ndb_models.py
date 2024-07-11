@@ -266,6 +266,8 @@ class Test(ndb.Model):
     upload_file_patterns: a list of regex patterns for the filenames of the test
       artifacts which need to be uploaded to GCS.
     use_dynamic_download_mcts: enable dynamic downloading MCTS.
+    build_attributes: A dict of build attributes referenced by TF result
+      reporters.
   """
   name = ndb.StringProperty(required=True)
   description = ndb.StringProperty()
@@ -289,6 +291,7 @@ class Test(ndb.Model):
   )
   upload_file_patterns = ndb.StringProperty(repeated=True)
   use_dynamic_download_mcts = ndb.BooleanProperty(default=False)
+  build_attributes = ndb.StructuredProperty(NameValuePair, repeated=True)
 
 
 class ShardingMode(messages.Enum):

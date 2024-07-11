@@ -605,7 +605,12 @@ def _CreateTFCRequest(test_run_id):
           retry_command_line=retry_command_line,
           log_level=common.LogLevel.INFO,
           tradefed_config_objects=tradefed_config_objects,
-          use_parallel_setup=test_run.test_run_config.use_parallel_setup),
+          use_parallel_setup=test_run.test_run_config.use_parallel_setup,
+          build_attributes=[
+              api_messages.KeyValuePair(key=p.name, value=p.value)
+              for p in test_run.test.build_attributes
+          ],
+      ),
       test_resources=test_resources,
       prev_test_context=prev_test_context,
       max_concurrent_tasks=max_concurrent_tasks,

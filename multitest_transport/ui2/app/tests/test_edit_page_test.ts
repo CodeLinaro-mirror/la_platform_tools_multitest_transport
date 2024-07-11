@@ -80,6 +80,7 @@ describe('TestEditPage', () => {
     expect(textContent).toContain('Context File Pattern');
     expect(textContent).toContain('Test Resource Defs');
     expect(textContent).toContain('Setup Scripts');
+    expect(textContent).toContain('Build Attributes');
   });
 
   describe('back button', () => {

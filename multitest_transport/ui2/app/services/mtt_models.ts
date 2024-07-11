@@ -486,6 +486,8 @@ export declare interface Test {
    */
   upload_file_patterns?: string[];
   use_dynamic_download_mcts?: boolean;
+  /** Build attributes referenced by TF result reporters */
+  build_attributes?: NameValuePair[];
 }
 
 /** Initialize a test */

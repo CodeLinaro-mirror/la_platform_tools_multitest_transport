@@ -108,6 +108,8 @@ class MessagesTest(testbed_dependent_test.TestbedDependentTest):
       self.assertIsNotNone(obj.default_test_run_parameters)
       self.assertSameTestRunParameter(
           obj.default_test_run_parameters, msg.default_test_run_parameters)
+    for o, m in zip(obj.build_attributes, msg.build_attributes):
+      self.assertSameNameValuePair(o, m)
 
   def testConvert_Test(self):
     obj = ndb_models.Test(
@@ -120,7 +122,10 @@ class MessagesTest(testbed_dependent_test.TestbedDependentTest):
             ndb_models.NameValuePair(name='name', value='value'),
         ],
         output_file_patterns=['pattern_1', 'pattern_2'],
-        setup_scripts=['script_1', 'script_2', 'script_3'])
+        setup_scripts=['script_1', 'script_2', 'script_3'],
+        build_attributes=[
+            ndb_models.NameValuePair(name='attr', value='value')
+        ])
     msg = messages.Convert(obj, messages.Test)
     self.assertIsInstance(msg, messages.Test)
     self.assertSameTest(obj, msg)
