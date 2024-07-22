@@ -78,7 +78,10 @@ describe('UnsavedChangeGuard', () => {
   template: `
       <div>
         <input matInput type="text" [(ngModel)]="value" name="value">
-      </div>`
+      </div>`,
+// TODO: Make this AOT compatible. See b/352713444
+jit: true,
+
 })
 class TestComponentChild extends FormChangeTracker {
   value = '123';
@@ -89,7 +92,10 @@ class TestComponentChild extends FormChangeTracker {
       <div>
         <input matInput type="text" [(ngModel)]="value" name="value">
         <test-component-child></test-component-child>
-      </div>`
+      </div>`,
+// TODO: Make this AOT compatible. See b/352713444
+jit: true,
+
 })
 class TestComponent extends FormChangeTracker {
   value = '123';

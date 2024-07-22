@@ -74,6 +74,9 @@ describe('ForbiddenValuesValidator', () => {
                     Value is forbidden
                  </mat-error>
              </mat-form-field>`,
+// TODO: Make this AOT compatible. See b/352713444
+jit: true,
+
 })
 class TestComponent {
   values = new Set<string>(['forbidden']);
