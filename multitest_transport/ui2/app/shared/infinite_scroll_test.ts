@@ -131,7 +131,10 @@ describe('InfiniteScroll', () => {
                   [style.height.px]="scrollHeightPx"
                   (scrollLoad)="logLoad($event)">
                <div [style.height.px]="contentHeightPx"></div>
-             </div>`
+             </div>`,
+// TODO: Make this AOT compatible. See b/352713444
+jit: true,
+
 })
 class TestComponent {
   complete: (hasMore: boolean) => void = () => {};
