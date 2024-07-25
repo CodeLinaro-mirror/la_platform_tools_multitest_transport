@@ -439,6 +439,22 @@ class OlcsSessionStubTest(testbed_dependent_test.TestbedDependentTest):
           ],
       )
 
+      # Verify previous test context
+      self.assertEqual(
+          request_proto.prev_test_context.test_resource.__len__(),
+          new_request_msg.prev_test_context.test_resources.__len__(),
+      )
+      self.assertEqual(
+          request_proto.prev_test_context.test_resource.__len__(),
+          1,
+      )
+      for test_resource_proto, test_resource_msg in zip(
+          request_proto.prev_test_context.test_resource,
+          new_request_msg.prev_test_context.test_resources,
+      ):
+        self.assertEqual(test_resource_proto.url, test_resource_msg.url)
+        self.assertEqual(test_resource_proto.name, test_resource_msg.name)
+
   def testSubscribeSession(self):
     subscribe_session_request = session_service_pb2.SubscribeSessionRequest()
     subscribe_session_request.get_session_request.session_id.id = (
