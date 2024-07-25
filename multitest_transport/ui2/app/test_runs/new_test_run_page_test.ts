@@ -34,7 +34,11 @@ import {newMockDeviceAction, newMockNetdataAlarmList, newMockNodeConfig, newMock
 import {NewTestRunPage} from './new_test_run_page';
 import {TestRunsModule} from './test_runs_module';
 
-@Component({selector: 'device-list', template: ''})
+@Component({
+  selector: 'device-list',
+  template: '',
+  jit: true,
+})
 class DeviceListStubComponent {
 }
 
