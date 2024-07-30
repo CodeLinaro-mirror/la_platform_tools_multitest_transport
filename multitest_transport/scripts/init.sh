@@ -15,6 +15,9 @@
 
 set -e
 
+# The custom script that is executed after basic environment is set up and before any services are started .
+readonly PRERUN_SCRIPT_PATH="/mtt/scripts/init_pre_run.sh"
+
 function start_ndppd {
   # This function generates a configuration file and starts ndppd. The arguments
   # are the networks to which the neighbor solocitations are forwarded.
@@ -73,6 +76,10 @@ find "${MTT_STORAGE_PATH}/local_file_store" -xtype l -delete
   -exec ln -sf {} "${MTT_STORAGE_PATH}/local_file_store" \;
 
 cd /mtt
+
+if [[ -f "${PRERUN_SCRIPT_PATH}" ]]; then
+  source ${PRERUN_SCRIPT_PATH}
+fi
 
 if [[ -z "${MTT_CONTROL_SERVER_URL}" ]] || [[ "${OPERATION_MODE}"=="on_premise" ]]
 then
@@ -276,5 +283,3 @@ else
     --tmp_dir_root="${MTT_MH_WORK_DIR}" \
     ${LAB_SERVER_OPTS}
 fi
-
-
