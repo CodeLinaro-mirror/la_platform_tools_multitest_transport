@@ -15,7 +15,7 @@
  */
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
-import {AfterViewInit, Component, Input, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, Inject, Input, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {MatButton} from '@angular/material/button';
 import {MatDialog} from '@angular/material/dialog';
 import {MatTabChangeEvent, MatTabGroup} from '@angular/material/tabs';
@@ -24,7 +24,8 @@ import {EMPTY, interval, Observable, ReplaySubject, zip} from 'rxjs';
 import {finalize, first, switchMap, takeUntil} from 'rxjs/operators';
 
 import {AnalyticsService} from '../services/analytics_service';
-import {FileService} from '../services/file_service';
+import {APP_DATA, AppData} from '../services/app_data';
+import {FileService, joinPath} from '../services/file_service';
 import {MttClient} from '../services/mtt_client';
 import {isFinalTestRunState, isTestRunShardingModeModule, TestRun, TestRunAction, TestRunActionRef, TestRunPhase, TestRunSummary, TestRunSummaryList} from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
@@ -78,6 +79,7 @@ export class TestRunDetail implements OnInit, AfterViewInit, OnDestroy {
       ['test_results', 'progress', 'logs', 'test_resources', 'config'];
 
   constructor(
+      @Inject(APP_DATA) private readonly appData: AppData,
       private readonly notifier: Notifier,
       private readonly router: Router,
       private readonly route: ActivatedRoute,
@@ -172,6 +174,10 @@ export class TestRunDetail implements OnInit, AfterViewInit, OnDestroy {
   updateOutputFilesUrl() {
     if (!this.testRun || !this.request || !this.request.command_attempts ||
         !this.request.command_attempts.length) {
+      if (this.appData.isOmniLabBased && this.testRun && this.request) {
+        this.outputFilesUrl = this.fs.getFileBrowseUrl(
+            joinPath(this.testRun.output_url || '', this.request.id));
+      }
       return;
     }
 

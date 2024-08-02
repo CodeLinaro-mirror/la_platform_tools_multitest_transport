@@ -262,6 +262,7 @@ export declare interface CommandAttempt {
   readonly failed_test_run_count?: number;
   /** hostname */
   readonly hostname: string;
+  readonly log_dir_path?: string;
 }
 
 /** A list of command attempts */

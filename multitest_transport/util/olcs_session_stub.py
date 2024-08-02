@@ -16,11 +16,14 @@
 import base64
 from concurrent import futures
 import logging
+import os
 import queue
+import re
 from typing import Callable, Iterator, List, Optional
 import uuid
 
 from multitest_transport.models import ndb_models
+from multitest_transport.util import file_util
 from multitest_transport.util import olcs_session_client
 from tradefed_cluster import api_messages
 from tradefed_cluster import common
@@ -217,6 +220,10 @@ class OlcsSessionStub:
         response.session_detail.session_status,
         request_detail.__str__(),
     )
+    # In case the test request hasn't started and proto is empty, fill in the
+    # request id manually.
+    if not request_detail.id:
+      request_detail.id = request_id
     return (
         response.session_detail.session_status == session_pb2.SESSION_FINISHED,
         request_detail,
@@ -272,7 +279,7 @@ class OlcsSessionStub:
 
     for command_detail in request_detail.command_details.values():
       command_attempt_message = self._GenerateCommandAttemptFromCommand(
-          command_detail
+          command_detail, request_detail
       )
       device_serials = set()
       for command_attempt_detail in request_detail.command_attempt_details:
@@ -475,7 +482,9 @@ class OlcsSessionStub:
     return command_message
 
   def _GenerateCommandAttemptFromCommand(
-      self, command_detail: service_pb2.CommandDetail
+      self,
+      command_detail: service_pb2.CommandDetail,
+      request_detail: service_pb2.RequestDetail,
   ) -> api_messages.CommandAttemptMessage:
     """Generate command attempt from command detail.
 
@@ -486,6 +495,7 @@ class OlcsSessionStub:
 
     Args:
       command_detail: Command Detail from Request Detail proto.
+      request_detail: Request Detail proto.
 
     Returns:
       The CommandAttemptMessage defined by TFC.
@@ -512,6 +522,22 @@ class OlcsSessionStub:
     command_attempt_message.passed_test_count = command_detail.passed_test_count
     command_attempt_message.failed_test_count = command_detail.failed_test_count
     command_attempt_message.total_test_count = command_detail.total_test_count
+
+    log_dir_path = os.path.join(
+        file_util.GetLocalFilePath(
+            request_detail.original_request.test_environment.output_file_upload_url
+        ),
+        command_attempt_message.request_id,
+        command_attempt_message.command_id,
+        "logs",
+    )
+    # TODO: add log path for mobly test.
+    if os.path.exists(log_dir_path):
+      for dir_name in os.listdir(log_dir_path):
+        logging.info("dir_name: %s", dir_name)
+        if re.match(r"inv_\d+", dir_name):
+          command_attempt_message.log_dir_path = "logs/" + dir_name
+          break
     return command_attempt_message
 
   @staticmethod

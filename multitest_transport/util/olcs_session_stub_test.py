@@ -181,13 +181,17 @@ class OlcsSessionStubTest(testbed_dependent_test.TestbedDependentTest):
     manager.__exit__(None, None, None)
     return result
 
-  def testGetRequest(self):
+  @mock.patch('os.path.exists')
+  @mock.patch('os.listdir')
+  def testGetRequest(self, mock_listdir, mock_exists):
     with open(
         os.path.join(TEST_DATA_DIR, 'request_detail.textproto')
     ) as text_format_file:
       request_detail = text_format.Parse(
           text_format_file.read(), service_pb2.RequestDetail()
       )
+    mock_exists.return_value = True
+    mock_listdir.return_value = ['inv_1234567890']
     client_response = session_service_pb2.GetSessionResponse()
     client_response.session_detail.session_output.session_plugin_output[
         olcs_session_stub.SESSION_PLUGIN_LABEL
@@ -279,6 +283,10 @@ class OlcsSessionStubTest(testbed_dependent_test.TestbedDependentTest):
     self.assertEqual(
         command_attempt_message.update_time,
         command_detail.update_time.ToDatetime(),
+    )
+    self.assertEqual(
+        command_attempt_message.log_dir_path,
+        'logs/inv_1234567890',
     )
 
   def test_generate_request_proto(self):

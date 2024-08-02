@@ -362,7 +362,8 @@ export class TestRunProgress implements OnInit, OnChanges {
   /** Calculate an attempt's duration. */
   getDuration(attempt: CommandAttempt): string {
     const start = moment.utc(attempt.start_time);
-    const end = moment.utc(attempt.end_time);
+    const end =
+        this.isFinished(attempt) ? moment.utc(attempt.end_time) : moment.utc();
     return millisToDuration(end.diff(start));
   }
 }

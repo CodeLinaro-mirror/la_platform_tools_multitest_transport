@@ -326,6 +326,7 @@ pytype_strict_library(
     name = "olcs_session_stub",
     srcs = ["olcs_session_stub.py"],
     deps = [
+        ":file_util_lib",
         ":olcs_session_client_lib",
         "//google/protobuf:duration_py_pb2",
         "@com_google_deviceinfra//src/devtools/mobileharness/infra/ats/server/proto:service_py_proto",
