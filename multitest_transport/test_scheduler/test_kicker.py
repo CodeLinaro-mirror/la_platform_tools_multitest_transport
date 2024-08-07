@@ -209,7 +209,8 @@ def CreateTestRun(labels,
   if not test:
     raise ValueError('cannot find test %s' % test_run_config.test_key)
 
-  if test_run_config.sharding_mode == ndb_models.ShardingMode.MODULE:
+  if (not env.IS_OMNILAB_BASED
+      and test_run_config.sharding_mode == ndb_models.ShardingMode.MODULE):
     if (not test.module_config_pattern or not test.module_execution_args):
       raise ValueError(
           'test "%s" does not support module sharding: '
@@ -487,7 +488,7 @@ def _CreateTFCRequest(test_run_id):
   # Buid command infos
   command_infos = []
   max_concurrent_tasks = None
-  sharding_mode = (
+  sharding_mode = ndb_models.ShardingMode(
       test_run.test_run_config.sharding_mode or ndb_models.ShardingMode.RUNNER)
   if sharding_mode == ndb_models.ShardingMode.RUNNER:
     test_bench = _DeviceSpecsToTFCTestBench(
@@ -515,7 +516,18 @@ def _CreateTFCRequest(test_run_id):
             run_count=test_run.test_run_config.run_count,
             shard_count=1,
             allow_partial_device_match=(
-                test_run.test_run_config.allow_partial_device_match)))
+                test_run.test_run_config.allow_partial_device_match),
+            sharding_mode=sharding_mode.name))
+  elif env.IS_OMNILAB_BASED and sharding_mode == ndb_models.ShardingMode.MODULE:
+    test_bench = _DeviceSpecsToTFCTestBench(
+        test_run.test_run_config.cluster, test_run.test_run_config.device_specs)
+    command_infos.append(
+        api_messages.CommandInfo(
+            command_line=command_line,
+            test_bench=test_bench,
+            run_count=test_run.test_run_config.run_count,
+            allow_partial_device_match=True,
+            sharding_mode=sharding_mode.name))
   elif sharding_mode == ndb_models.ShardingMode.MODULE:
     # Each command in MODULE sharding mode should target one device.
     # Combine if there are multiple device specs e.g.

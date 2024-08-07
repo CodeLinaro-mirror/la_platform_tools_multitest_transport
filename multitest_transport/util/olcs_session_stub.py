@@ -29,6 +29,7 @@ from tradefed_cluster import api_messages
 from tradefed_cluster import common
 
 from google3.google.protobuf import duration_pb2
+from com_google_deviceinfra.src.devtools.mobileharness.infra.ats.common.proto import xts_common_pb2
 from com_google_deviceinfra.src.devtools.mobileharness.infra.ats.server.proto import service_pb2
 from com_google_deviceinfra.src.devtools.mobileharness.infra.client.longrunningservice.proto import session_pb2
 from com_google_deviceinfra.src.devtools.mobileharness.infra.client.longrunningservice.proto import session_service_pb2
@@ -569,6 +570,10 @@ class OlcsSessionStub:
         )
         command_info_proto.device_dimensions.append(
             device_attribute_requirement
+        )
+        command_info_proto.sharding_mode = (
+            xts_common_pb2.ShardingMode.Value(
+                command_info.sharding_mode)
         )
       # TODO: add device dimension
     if request.max_retry_on_test_failures:

@@ -23,7 +23,8 @@
             }
           ]
         }
-      }
+      },
+      "sharding_mode": "RUNNER"
     }
   ],
   "queue_timeout_seconds": 86400,
