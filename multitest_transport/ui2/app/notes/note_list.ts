@@ -76,8 +76,7 @@ export class NoteList implements OnChanges, OnInit, OnDestroy {
   isLoading = false;
 
   /** An observable that gets the query parameters from the URL. */
-  protected readonly urlQueryParamObservable: Observable<ParamMap> =
-      this.route.queryParamMap.pipe(take(1));
+  protected readonly urlQueryParamObservable: Observable<ParamMap>;
 
   constructor(
       private readonly route: ActivatedRoute,
@@ -88,7 +87,9 @@ export class NoteList implements OnChanges, OnInit, OnDestroy {
       private readonly router: Router,
       private readonly tfcClient: TfcClient,
       readonly userService: UserService,
-  ) {}
+  ) {
+    this.urlQueryParamObservable = this.route.queryParamMap.pipe(take(1));
+  }
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['id'] && !changes['id'].firstChange) this.loadNoteList();

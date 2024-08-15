@@ -173,8 +173,7 @@ export class HostList implements OnDestroy, OnInit {
   readonly searchCriteriaStorageKey = 'HostListSearchCriteria';
   sessionStorageKey = '';
 
-  private readonly urlQueryParamObservable: Observable<ParamMap> =
-      this.route.queryParamMap.pipe(take(1));
+  private readonly urlQueryParamObservable: Observable<ParamMap>;
 
   get inputValue(): string {
     return this.valueControl.value || '';
@@ -220,7 +219,9 @@ export class HostList implements OnDestroy, OnInit {
       private readonly tfcClient: TfcClient,
       private readonly matDialog: MatDialog,
       readonly userService: UserService,
-  ) {}
+  ) {
+    this.urlQueryParamObservable = this.route.queryParamMap.pipe(take(1));
+  }
 
   ngOnInit() {
     assertRequiredInput(this.paginator, 'paginator', 'host-list');

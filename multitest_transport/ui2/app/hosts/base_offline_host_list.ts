@@ -100,32 +100,17 @@ export class BaseOfflineHostList {
   urlParams: OfflineHostFilterParams = this.defaultFilterParams;
 
   /** An observable that gets the query parameters from the URL. */
-  protected readonly urlQueryParamObservable: Observable<ParamMap> =
-      this.route.queryParamMap.pipe(take(1));
+  protected readonly urlQueryParamObservable: Observable<ParamMap>;
 
   /** An observable that gets all async initial data for Offline Hosts page. */
-  protected readonly initialDataObservable: Observable<LabHostInfo[]> =
-      this.urlQueryParamObservable.pipe(
-          this.initParamsAndLab(),
-          switchMap(() => this.offlineHostsObservable()),
-          takeUntil(this.destroy),
-          finalize(() => {
-            this.isLoading = false;
-          }),
-      );
+  protected readonly initialDataObservable: Observable<LabHostInfo[]>;
 
   /**
    * An observable that gets my labs from backend and selects a lab by
    * default. Users need to set owners in lab configs in advance. For admins,
    * return all labs instead.
    */
-  protected readonly labsObservable: Observable<string> =
-      this.tfcClient.getMyLabInfos(this.userService.isAdmin)
-          .pipe(map(result => {
-            this.labs = result.labInfos;
-            return this.getDefaultValue(
-                this.LAB_FIELD, this.labs.map(x => x.labName));
-          }));
+  protected readonly labsObservable: Observable<string>;
 
   readonly FILTER_CRITERIA_STORAGE_KEY = 'OFFLINE_HOST_LIST_FILTER_CRITERIA';
   readonly LAB_FIELD = 'lab';
@@ -144,7 +129,24 @@ export class BaseOfflineHostList {
       protected readonly location: Location,
       protected readonly serializer: UrlSerializer,
       readonly userService: UserService,
-  ) {}
+  ) {
+    this.urlQueryParamObservable = this.route.queryParamMap.pipe(take(1));
+    this.initialDataObservable = this.urlQueryParamObservable.pipe(
+        this.initParamsAndLab(),
+        switchMap(() => this.offlineHostsObservable()),
+        takeUntil(this.destroy),
+        finalize(() => {
+          this.isLoading = false;
+        }),
+    );
+    this.labsObservable =
+        this.tfcClient.getMyLabInfos(this.userService.isAdmin)
+            .pipe(map(result => {
+              this.labs = result.labInfos;
+              return this.getDefaultValue(
+                  this.LAB_FIELD, this.labs.map(x => x.labName));
+            }));
+  }
 
   assignHostsTo(hostAssignInfo: HostAssignInfo, next: () => void) {
     if (hostAssignInfo && hostAssignInfo.hostnames.length === 0) {
