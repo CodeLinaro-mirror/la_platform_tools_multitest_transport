@@ -31,7 +31,8 @@
   <!-- TODO: Progress bar styling and add percentage info    -->
   <!-- progress bar -->
   <div class="progress" *ngIf="isUploading">
-    <mat-progress-bar mode="determinate" [value]="uploadProgress"></mat-progress-bar>
+    <!-- TODO: Replace the aria-label with a better description, e.g. "Fetching user data" -->
+    <mat-progress-bar mode="determinate" [value]="uploadProgress" aria-label="Loading"></mat-progress-bar>
     <button mat-icon-button (click)="cancel.next()"
             matTooltip="Cancel upload">
       <mat-icon>cancel</mat-icon>

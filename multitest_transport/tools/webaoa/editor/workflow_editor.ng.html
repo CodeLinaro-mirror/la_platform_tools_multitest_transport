@@ -158,8 +158,10 @@
         <mat-icon>delete</mat-icon>
       </button>
       <div class="placeholder" *cdkDragPlaceholder></div>
+      <!-- TODO: Replace the aria-label with a better description, e.g. "Fetching user data" -->
       <mat-progress-bar mode="indeterminate" color="accent"
-                        *ngIf="action === executing"></mat-progress-bar>
+                        *ngIf="action === executing"
+                        aria-label="Loading"></mat-progress-bar>
     </mat-list-item>
 
     <div class="empty" *ngIf="!actions.length"
