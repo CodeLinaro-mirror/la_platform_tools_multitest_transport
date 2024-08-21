@@ -179,7 +179,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
 
 # Install TVTS prerequisites
 # The perfetto package is only supported by python 3.9
-RUN pip install perfetto
+RUN pip install perfetto==0.7.0
 RUN pip install matplotlib
 
 # Install cuttlefish-common and add MTT user (root) to the groups
