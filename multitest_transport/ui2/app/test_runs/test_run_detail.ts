@@ -183,7 +183,8 @@ export class TestRunDetail implements OnInit, AfterViewInit, OnDestroy {
 
     const attempts = this.request.command_attempts;
     const lastAttempt = attempts[attempts.length - 1];
-    const fileUrl = isTestRunShardingModeModule(this.testRun.test_run_config) ?
+    const fileUrl = !this.appData.isOmniLabBased &&
+            isTestRunShardingModeModule(this.testRun.test_run_config) ?
         this.fs.getTestRunMergedReportDirUrl(this.testRun) :
         this.fs.getTestRunFileUrl(this.testRun, lastAttempt);
     this.outputFilesUrl = this.fs.getFileBrowseUrl(fileUrl);
@@ -194,7 +195,8 @@ export class TestRunDetail implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    if (isTestRunShardingModeModule(this.testRun.test_run_config)) {
+    if (!this.appData.isOmniLabBased &&
+        isTestRunShardingModeModule(this.testRun.test_run_config)) {
       this.updateExportUrlForModuleMode();
       return;
     }
