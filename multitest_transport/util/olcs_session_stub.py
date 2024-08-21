@@ -15,6 +15,7 @@
 """A OLCS session service stub that is providing similar functionality as tfc_client."""
 import base64
 from concurrent import futures
+import itertools
 import logging
 import os
 import queue
@@ -275,6 +276,7 @@ class OlcsSessionStub:
         map(
             self._ConvertCommandDetail,
             request_detail.command_details.values(),
+            itertools.repeat(request_detail)
         )
     )
 
@@ -442,12 +444,15 @@ class OlcsSessionStub:
     return command_info_message
 
   def _ConvertCommandDetail(
-      self, command_detail: service_pb2.CommandDetail
+      self,
+      command_detail: service_pb2.CommandDetail,
+      request_detail: service_pb2.RequestDetail,
   ) -> api_messages.CommandMessage:
     """Convert Command Detail from Request Detail proto to TFC CommandMessage.
 
     Args:
       command_detail: Command Detail from Request Detail proto.
+      request_detail: Request Detail proto.
 
     Returns:
       The CommandMessage defined by TFC.
@@ -456,6 +461,13 @@ class OlcsSessionStub:
     command_message.id = command_detail.id
     command_message.request_id = command_detail.request_id
     command_message.command_line = command_detail.command_line
+    if (
+        request_detail.original_request.prev_test_context
+        and request_detail.original_request.prev_test_context.command_line
+    ):
+      command_message.command_line = (
+          request_detail.original_request.prev_test_context.command_line
+      )
 
     # TODO: fill run target and cluster
     command_message.state = _COMMAND_STATE_MAP.get(
