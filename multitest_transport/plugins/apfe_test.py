@@ -288,7 +288,10 @@ class APFEReportUploadHookTest(testbed_dependent_test.TestbedDependentTest):
   def testGetPublicOptionDefs(self):
     self.assertEqual(
         list(apfe.APFEReportUploadHook.GetPublicOptionDefs()),
-        [plugins.OptionDef('company_id', str, [], '')],
+        [
+            plugins.OptionDef('company_id', str, [], ''),
+            plugins.OptionDef('api_key', str, [], ''),
+        ],
     )
 
 
