@@ -35,10 +35,22 @@ class ConfigTest(testbed_dependent_test.TestbedDependentTest):
         options=ndb_models.NameValuePair.FromDict(options or {}))
 
   def CreateTestRunAction(
-      self, key=None, name=None, hook_class_name=None, options=None):
+      self,
+      key=None,
+      name=None,
+      description=None,
+      phases=None,
+      hook_class_name=None,
+      options=None,
+  ):
     return ndb_models.TestRunAction(
-        id=key, name=name, hook_class_name=hook_class_name,
-        options=ndb_models.NameValuePair.FromDict(options or {}))
+        id=key,
+        name=name,
+        description=description,
+        phases=phases or [],
+        hook_class_name=hook_class_name,
+        options=ndb_models.NameValuePair.FromDict(options or {}),
+    )
 
   def testEncode_nodeConfig(self):
     """Tests serializing a node config (single object)."""
@@ -144,11 +156,23 @@ test_run_actions:
   def testLoad(self):
     # add an existing build channel
     self.CreateBuildChannel(key='foo', name='Foo').put()
+    # add an existing test run action
+    self.CreateTestRunAction(
+        key='foo',
+        name='Foo',
+        description='description',
+        phases=[ndb_models.TestRunPhase.BEFORE_RUN],
+        hook_class_name='hook',
+    ).put()
 
     # load configuration
-    build_channel = self.CreateBuildChannel(key='foo',
-                                            options={'option': 'value'})
-    config_set = config_encoder.ConfigSet(build_channels=[build_channel])
+    build_channel = self.CreateBuildChannel(
+        key='foo', options={'option': 'value'}
+    )
+    test_run_action = self.CreateTestRunAction(key='foo', description='')
+    config_set = config_encoder.ConfigSet(
+        build_channels=[build_channel], test_run_actions=[test_run_action]
+    )
     config_encoder.Load(config_set)
 
     # updated existing build channel
@@ -157,6 +181,17 @@ test_run_actions:
     self.assertEqual('Foo', stored_build_channel.name)  # preserved
     self.assertEqual('option', stored_build_channel.options[0].name)
     self.assertEqual('value', stored_build_channel.options[0].value)
+    # updated existing test run action
+    stored_test_run_action = ndb.Key(ndb_models.TestRunAction, 'foo').get()
+    self.assertIsNotNone(stored_test_run_action)
+    self.assertEqual('Foo', stored_test_run_action.name)  # preserved
+    self.assertEqual('', stored_test_run_action.description)  # overridden
+    self.assertEqual(
+        [ndb_models.TestRunPhase.BEFORE_RUN], stored_test_run_action.phases
+    )  # preserved repeated field
+    self.assertEqual(
+        'hook', stored_test_run_action.hook_class_name
+    )  # preserved
 
   def testLoad_nodeConfig(self):
     """Tests updating a node config."""
@@ -170,7 +205,7 @@ test_run_actions:
     # updated existing node config
     stored_node_config = ndb.Key(ndb_models.NodeConfig, 1).get()
     self.assertIsNotNone(stored_node_config)
-    self.assertLen(stored_node_config.env_vars, 1)  # preserved
+    self.assertLen(stored_node_config.env_vars, 1)  # preserved repeated fields
 
 
 if __name__ == '__main__':

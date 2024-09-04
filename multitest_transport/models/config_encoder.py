@@ -90,14 +90,24 @@ def _JsonToYaml(string):
   return yaml.safe_dump(obj, default_flow_style=False)
 
 
+def _IsEmptyList(v):
+  return isinstance(v, list) and not v
+
+
 def _Load(obj):
   """Upsert a model instance."""
   existing = obj.key.get(use_cache=False)
   if existing:
     # existing data found, update with new values
     properties = dir(obj.__class__)
+
+    # if the value is not provided or empty list, keep the existing value
     values = dict(
-        (k, v) for k, v in obj.to_dict().items() if v and k in properties)
+        (k, v)
+        for k, v in obj.to_dict().items()
+        if v is not None and not _IsEmptyList(v) and k in properties
+    )
+
     existing.populate(**values)
     existing.put()
   else:
