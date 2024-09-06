@@ -263,6 +263,7 @@ else
     --adb_max_no_device_detection_rounds=1200 \
     --android_device_daemon=false \
     --api_config=/deviceinfra/lab_server_api_config.textproto \
+    --ats_database_jdbc_url='jdbc:mysql:///ats_db?socketFactory=org.newsclub.net.mysql.AFUNIXDatabaseSocketFactory&junixsocket.file=/data/ats_db/mysqld.sock' \
     --ats_file_server="${ATS_FILE_SERVER}" \
     --check_device_interval=1h \
     --clear_android_device_multi_users=false \
