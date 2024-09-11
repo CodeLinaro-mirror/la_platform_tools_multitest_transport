@@ -116,6 +116,8 @@ then
       # Start OLC server on the controller
       java -XX:+HeapDumpOnOutOfMemoryError \
         -jar /deviceinfra/ats_olc_server_deploy.jar \
+        --ats_database_jdbc_url='jdbc:mysql:///ats_db?socketFactory=org.newsclub.net.mysql.AFUNIXDatabaseSocketFactory&junixsocket.file=/data/ats_db/mysqld.sock' \
+        --ats_worker_grpc_port="${ATS_WORKER_GRPC_PORT}" \
         --connect_to_lab_server_using_ip=true \
         --connect_to_lab_server_using_master_detected_ip=true \
         --enable_ats_mode=true \
@@ -124,7 +126,6 @@ then
         --enable_grpc_lab_server=true \
         --enable_simple_scheduler_shuffle=true \
         --olc_server_port="${OLC_SERVER_PORT}" \
-        --ats_worker_grpc_port="${ATS_WORKER_GRPC_PORT}" \
         --public_dir="${MTT_LOG_DIR}" \
         --resource_dir_name="olc_server_res_files" \
         --tmp_dir_root="${MTT_MH_WORK_DIR}" \
@@ -263,7 +264,6 @@ else
     --adb_max_no_device_detection_rounds=1200 \
     --android_device_daemon=false \
     --api_config=/deviceinfra/lab_server_api_config.textproto \
-    --ats_database_jdbc_url='jdbc:mysql:///ats_db?socketFactory=org.newsclub.net.mysql.AFUNIXDatabaseSocketFactory&junixsocket.file=/data/ats_db/mysqld.sock' \
     --ats_file_server="${ATS_FILE_SERVER}" \
     --check_device_interval=1h \
     --clear_android_device_multi_users=false \
