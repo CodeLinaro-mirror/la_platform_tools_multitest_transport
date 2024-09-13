@@ -196,7 +196,15 @@ def _ProcessRequestEvent(test_run_id, message):
     test_run.state = TEST_RUN_STATE_MAP.get(
         message.new_state, ndb_models.TestRunState.UNKNOWN)
     if os.environ.get('IS_OMNILAB_BASED') == 'true' and test_run.IsFinal():
-      _ProcessCommandAttemptResult(test_run_id, test_run, message.request)
+      try:
+        _ProcessCommandAttemptResult(test_run_id, test_run, message.request)
+      except Exception as e:  
+        logging.exception(
+            'Exception %s when processing command attempt result for test'
+            ' run: %s',
+            test_run_id,
+            e,
+        )
   if not test_run.test.result_file:
     # No test results file to parse, use partial test counts
     test_run.total_test_count = (message.failed_test_count +
