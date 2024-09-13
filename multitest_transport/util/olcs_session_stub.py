@@ -74,14 +74,14 @@ _TEST_RUN_CANCEL_REASON_MAP = {
     service_pb2.CancelReason.REQUEST_ALREADY_CANCELED: (
         common.CancelReason.REQUEST_ALREADY_CANCELED
     ),
-    service_pb2.CancelReason.COMMAND_NOT_EXECUTABLE: (
+    service_pb2.ErrorReason.COMMAND_NOT_EXECUTABLE: (
         common.CancelReason.COMMAND_NOT_EXECUTABLE
     ),
-    service_pb2.CancelReason.INVALID_REQUEST: (
+    service_pb2.ErrorReason.INVALID_REQUEST: (
         common.CancelReason.INVALID_REQUEST
     ),
     # No corresponding id for invalid resource error, need to add.
-    service_pb2.CancelReason.INVALID_RESOURCE: (
+    service_pb2.ErrorReason.INVALID_RESOURCE: (
         common.CancelReason.INVALID_REQUEST
     ),
 }
