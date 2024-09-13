@@ -40,9 +40,9 @@ class APFEReportUploadHook(base.TestRunHook):
   def __init__(
       self,
       _api_name=constant.ANDROID_PARTNER_API_NAME,
+      _api_key=None,
       _credentials=None,
       company_id=None,
-      api_key=None,
       **_,
   ):  
     if not company_id:
@@ -50,7 +50,7 @@ class APFEReportUploadHook(base.TestRunHook):
 
     self._apfe_client = apfe_client.ApfeClient(
         _api_name,
-        api_key=api_key,
+        api_key=_api_key,
         credentials=_credentials,
     )
     self.company_id = company_id
