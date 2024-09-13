@@ -78,6 +78,11 @@ class DeviceApiTest(api_test_util.TestCase):
       dimension = (
           device_info.device_feature.composite_dimension.supported_dimension.add()
       )
+      dimension.name = 'device'
+      dimension.value = 'panther_variant'
+      dimension = (
+          device_info.device_feature.composite_dimension.supported_dimension.add()
+      )
       dimension.name = 'build'
       dimension.value = 'aosp_arm64-userdebug'
       dimension = (
@@ -133,7 +138,7 @@ class DeviceApiTest(api_test_util.TestCase):
                 run_target='panther',
                 build_id='aosp_arm64-userdebug',
                 product='panther',
-                product_variant='panther',
+                product_variant='panther_variant',
                 sdk_version='34',
                 state='Available',
                 timestamp=datetime.datetime.utcfromtimestamp(60),
@@ -158,7 +163,7 @@ class DeviceApiTest(api_test_util.TestCase):
                     ),
                     api_messages.KeyValuePair(key='product', value='panther'),
                     api_messages.KeyValuePair(
-                        key='product_variant', value='panther'
+                        key='product_variant', value='panther_variant'
                     ),
                 ],
                 flated_extra_info=[],
@@ -202,7 +207,7 @@ class DeviceApiTest(api_test_util.TestCase):
             run_target='panther',
             build_id='aosp_arm64-userdebug',
             product='panther',
-            product_variant='panther',
+            product_variant='panther_variant',
             sdk_version='34',
             state='Available',
             timestamp=datetime.datetime.utcfromtimestamp(60),
@@ -227,7 +232,7 @@ class DeviceApiTest(api_test_util.TestCase):
                 ),
                 api_messages.KeyValuePair(key='product', value='panther'),
                 api_messages.KeyValuePair(
-                    key='product_variant', value='panther'
+                    key='product_variant', value='panther_variant'
                 ),
             ],
             flated_extra_info=[],
@@ -255,7 +260,7 @@ class DeviceApiTest(api_test_util.TestCase):
             run_target='panther',
             build_id='aosp_arm64-userdebug',
             product='panther',
-            product_variant='panther',
+            product_variant='panther_variant',
             sdk_version='34',
             state='Available',
             timestamp=datetime.datetime.utcfromtimestamp(60),
@@ -280,7 +285,7 @@ class DeviceApiTest(api_test_util.TestCase):
                 ),
                 api_messages.KeyValuePair(key='product', value='panther'),
                 api_messages.KeyValuePair(
-                    key='product_variant', value='panther'
+                    key='product_variant', value='panther_variant'
                 ),
             ],
             flated_extra_info=[],

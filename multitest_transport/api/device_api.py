@@ -328,6 +328,7 @@ class DeviceApi(remote.Service):
 
     build_id = ''
     product = ''
+    product_variant = ''
     sdk_version = ''
     pools = []
     mac_address = ''
@@ -343,6 +344,8 @@ class DeviceApi(remote.Service):
         build_id = dimension.value
       elif dimension.name == 'product_board':
         product = dimension.value
+      elif dimension.name == 'device':
+        product_variant = dimension.value
       elif dimension.name == 'sdk_version':
         sdk_version = dimension.value
       elif dimension.name == 'cluster':
@@ -365,7 +368,7 @@ class DeviceApi(remote.Service):
         run_target=product,
         build_id=build_id,
         product=product,
-        product_variant=product,
+        product_variant=product_variant,
         sdk_version=sdk_version,
         state=state,
         timestamp=datetime.datetime.utcfromtimestamp(timestamp.seconds),
@@ -387,7 +390,9 @@ class DeviceApi(remote.Service):
             api_messages.KeyValuePair(key='sdk_version', value=sdk_version),
             api_messages.KeyValuePair(key='build_id', value=build_id),
             api_messages.KeyValuePair(key='product', value=product),
-            api_messages.KeyValuePair(key='product_variant', value=product),
+            api_messages.KeyValuePair(
+                key='product_variant', value=product_variant
+            ),
         ],
         flated_extra_info=[],
         test_harness='OMNILAB',

@@ -160,6 +160,11 @@ class HostApiTest(api_test_util.TestCase):
       dimension = (
           device_info.device_feature.composite_dimension.supported_dimension.add()
       )
+      dimension.name = 'device'
+      dimension.value = 'panther'
+      dimension = (
+          device_info.device_feature.composite_dimension.supported_dimension.add()
+      )
       dimension.name = 'control_id'
       dimension.value = 'device1'
 
