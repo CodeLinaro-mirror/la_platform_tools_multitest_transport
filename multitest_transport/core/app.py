@@ -80,5 +80,5 @@ def AppStartHandler():
   tfc_client.BackfillCommandAttempts()
 
   # Requeue or Cancel the pending test runs.
-  test_scheduler.CheckPendingTestRuns()
+  test_scheduler.CheckUnfinishedTestRuns()
   return common.HTTP_OK

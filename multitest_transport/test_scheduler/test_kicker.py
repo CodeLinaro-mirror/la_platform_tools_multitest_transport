@@ -366,9 +366,19 @@ def KickTestRun(test_run_id):
   Args:
     test_run_id: a test run ID.
   """
-  _PrepareTestResources(test_run_id)
-  test_run_hook.ExecuteHooks(test_run_id, ndb_models.TestRunPhase.BEFORE_RUN)
-  _CreateTFCRequest(test_run_id)
+  test_run = ndb_models.TestRun.get_by_id(test_run_id)
+  if test_run.state == ndb_models.TestRunState.PENDING:
+    _PrepareTestResources(test_run_id)
+    test_run_hook.ExecuteHooks(test_run_id, ndb_models.TestRunPhase.BEFORE_RUN)
+    _CreateTFCRequest(test_run_id)
+  elif test_run.state in [
+      ndb_models.TestRunState.QUEUED,
+      ndb_models.TestRunState.RUNNING,
+  ]:
+    logging.info('Resume test run %s at state %s.', test_run_id, test_run.state)
+    tfc_client.ResumeRequest(test_run.request_id)
+  elif test_run.state == ndb_models.TestRunState.CANCELED:
+    logging.info('Test run %s is CANCELED. Do nothing.', test_run_id)
 
 
 def _PrepareTestResources(test_run_id):
@@ -378,16 +388,13 @@ def _PrepareTestResources(test_run_id):
     test_run_id: a test run ID.
   """
   test_run = ndb_models.TestRun.get_by_id(test_run_id)
-  if test_run.state == ndb_models.TestRunState.CANCELED:
-    logging.info(
-        'Test run %s is CANCELED; aborting _PrepareTestResources()',
-        test_run_id)
-    return
   assert test_run.state == ndb_models.TestRunState.PENDING
 
   logging.info(
       'Preparing test resources for test run %s: test_resources=%s',
-      test_run_id, test_run.test_resources)
+      test_run_id,
+      test_run.test_resources,
+  )
   resource_urls = [r.url for r in test_run.test_resources]
   # Download all resources in parallel. If the resource is already downloaded
   # and still up-to-date, this will simply return its cache URL.
@@ -412,7 +419,8 @@ def _GetTestPackageInfo(cache_url):
         target_architecture=test_suite_info.target_architecture,
         name=test_suite_info.name,
         fullname=test_suite_info.fullname,
-        version=test_suite_info.version)
+        version=test_suite_info.version,
+    )
 
 
 @ndb.transactional()
@@ -447,12 +455,6 @@ def _CreateTFCRequest(test_run_id):
     test_run_id: a test run ID.
   """
   test_run = ndb_models.TestRun.get_by_id(test_run_id, use_cache=False)
-  if test_run.state == ndb_models.TestRunState.CANCELED:
-    logging.info(
-        'Test run %s is CANCELED; aborting _CreateTFCRequest()',
-        test_run_id)
-    return
-  assert test_run.state == ndb_models.TestRunState.PENDING
 
   logging.info(
       'Creating a TFC request: test=%s, test_run_config=%s',

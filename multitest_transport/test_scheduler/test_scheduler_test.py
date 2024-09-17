@@ -95,7 +95,7 @@ class TestSchedulerTest(testbed_dependent_test.TestbedDependentTest):
         config=self._CreateMockTestRunConfig(test),
         state=ndb_models.TestRunState.PENDING,
         create_time=datetime.datetime.utcnow())
-    test_scheduler.CheckPendingTestRuns()
+    test_scheduler.CheckUnfinishedTestRuns()
     mock_enqueue_test_run.assert_called_with(test_run.key.id())
 
   def testCheckPendingTestRuns_more_than_24hr(self):
@@ -106,7 +106,29 @@ class TestSchedulerTest(testbed_dependent_test.TestbedDependentTest):
         config=self._CreateMockTestRunConfig(test),
         state=ndb_models.TestRunState.PENDING,
         create_time=create_time).key.id()
-    test_scheduler.CheckPendingTestRuns()
+    test_scheduler.CheckUnfinishedTestRuns()
+    test_run = ndb_models.TestRun.get_by_id(test_run_id)
+    self.assertEqual(ndb_models.TestRunState.CANCELED, test_run.state)
+
+  @mock.patch.object(test_kicker, 'EnqueueTestRun')
+  def testCheckRunningTestRuns_less_than_7days(self, mock_enqueue_test_run):
+    test = self._CreateMockTest()
+    test_run = self._CreateMockTestRun(
+        config=self._CreateMockTestRunConfig(test),
+        state=ndb_models.TestRunState.RUNNING,
+        create_time=datetime.datetime.utcnow())
+    test_scheduler.CheckUnfinishedTestRuns()
+    mock_enqueue_test_run.assert_called_with(test_run.key.id())
+
+  def testCheckRunningTestRuns_more_than_7days(self):
+    test = self._CreateMockTest()
+    create_time = datetime.datetime.utcnow() - datetime.timedelta(
+        seconds=(test_scheduler._RUNNING_TEST_RUN_TTL + 1))
+    test_run_id = self._CreateMockTestRun(
+        config=self._CreateMockTestRunConfig(test),
+        state=ndb_models.TestRunState.RUNNING,
+        create_time=create_time).key.id()
+    test_scheduler.CheckUnfinishedTestRuns()
     test_run = ndb_models.TestRun.get_by_id(test_run_id)
     self.assertEqual(ndb_models.TestRunState.CANCELED, test_run.state)
 

@@ -18,7 +18,6 @@ import datetime
 import logging
 
 import flask
-
 from multitest_transport.models import messages as mtt_messages
 from multitest_transport.models import ndb_models
 from multitest_transport.test_scheduler import test_kicker
@@ -27,24 +26,40 @@ from multitest_transport.test_scheduler import test_run_manager
 from tradefed_cluster import common
 from tradefed_cluster.util import ndb_shim as ndb
 
-_PENDING_TEST_RUN_TTL = 86400
+_PENDING_TEST_RUN_TTL = 60 * 60 * 24
+_QUEUED_TEST_RUN_TTL = 60 * 60 * 24 * 7
+_RUNNING_TEST_RUN_TTL = 60 * 60 * 24 * 7
 
 APP = flask.Flask(__name__)
 
 
-def CheckPendingTestRuns():
+def CheckUnfinishedTestRuns():
   """Check test runs to decide if requeue/cancel according timeout parameter."""
-  pending_test_runs = (
-      ndb_models.TestRun.query().order(
-          -ndb_models.TestRun.create_time, ndb_models.TestRun.key)
-      .filter(ndb_models.TestRun.state == ndb_models.TestRunState.PENDING))
-  for test_run in pending_test_runs:
-    pending_start_time = datetime.datetime.utcnow() - datetime.timedelta(
-        seconds=_PENDING_TEST_RUN_TTL)
-    if  pending_start_time > test_run.create_time:
+  unfinished_test_runs = (
+      ndb_models.TestRun.query()
+      .order(-ndb_models.TestRun.create_time, ndb_models.TestRun.key)
+      .filter(
+          ndb_models.TestRun.state.IN([
+              ndb_models.TestRunState.PENDING,
+              ndb_models.TestRunState.QUEUED,
+              ndb_models.TestRunState.RUNNING,
+          ])
+      )
+  )
+  for test_run in unfinished_test_runs:
+    if test_run.state == ndb_models.TestRunState.QUEUED:
+      test_run_ttl = _QUEUED_TEST_RUN_TTL
+    elif test_run.state == ndb_models.TestRunState.RUNNING:
+      test_run_ttl = _RUNNING_TEST_RUN_TTL
+    else:
+      test_run_ttl = _PENDING_TEST_RUN_TTL
+    test_expire_time = test_run.create_time + datetime.timedelta(
+        seconds=test_run_ttl
+    )
+    if datetime.datetime.utcnow() > test_expire_time:
       test_run_manager.SetTestRunState(
-          test_run_id=test_run.key.id(),
-          state=ndb_models.TestRunState.CANCELED)
+          test_run_id=test_run.key.id(), state=ndb_models.TestRunState.CANCELED
+      )
       continue
     logging.info('requeue the test run %s', test_run.key.id())
     test_kicker.EnqueueTestRun(test_run.key.id())

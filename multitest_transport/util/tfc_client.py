@@ -156,6 +156,20 @@ def NewRequest(
     # pytype: enable=module-attr
 
 
+def ResumeRequest(request_id: str):
+  """Resumes a test.
+
+     It's only supported in OmniLab ATS.
+
+  Args:
+    request_id: The request ID to be resumed.
+  """
+  if os.environ.get('IS_OMNILAB_BASED') == 'true':
+    _GetOlcsSessionStub().StartSubscribeSession(
+        request_id, ndb.with_ndb_context(_ProcessSubscribedSessionResponse)
+    )
+
+
 def GetRequest(request_id: str) -> api_messages.RequestMessage:
   """Gets a TFC request.
 

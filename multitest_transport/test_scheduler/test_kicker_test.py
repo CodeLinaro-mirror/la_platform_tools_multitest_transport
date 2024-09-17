@@ -1039,6 +1039,18 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
             name='bar', url='${MTT_CONTROL_FILE_SERVER_URL}/file/root/path')
     ], msg.prev_test_context.test_resources)
 
+  @mock.patch.object(tfc_client, 'ResumeRequest', autospec=True)
+  def testKickTestRun_resumeRequest(self, mock_resume_request):
+    test_run = self._CreateMockTestRun()
+    test_run.state = ndb_models.TestRunState.RUNNING
+    test_run.put()
+    test_run_id = test_run.key.id()
+    test_run = ndb_models.TestRun.get_by_id(test_run_id)
+
+    test_kicker.KickTestRun(test_run_id)
+
+    mock_resume_request.assert_called_once_with(test_run.request_id)
+
   @mock.patch.object(test_kicker, 'KickTestRun')
   def testEnqueueTestRun(self, mock_kick_test_run):
     test_run_id = 1000
