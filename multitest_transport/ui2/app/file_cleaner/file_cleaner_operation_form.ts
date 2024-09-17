@@ -35,7 +35,7 @@ export class FileCleanerOperationForm extends FormChangeTracker implements
 
   @Input() operation!: FileCleanerOperation;
   @ViewChildren(FormChangeTracker)
-  override trackers!: QueryList<FormChangeTracker>;
+  declare trackers: QueryList<FormChangeTracker>;
 
   ngOnInit() {
     assertRequiredInput(

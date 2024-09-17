@@ -37,7 +37,7 @@ export class FileCleanerCriterionForm extends FormChangeTracker implements
   @Output() readonly deleteCriterion = new EventEmitter<number>();
 
   @ViewChildren(FormChangeTracker)
-  override trackers!: QueryList<FormChangeTracker>;
+  declare trackers: QueryList<FormChangeTracker>;
 
   ngOnInit() {
     assertRequiredInput(

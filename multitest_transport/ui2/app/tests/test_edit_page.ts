@@ -38,7 +38,7 @@ export class TestEditPage extends FormChangeTracker implements OnInit,
                                                                AfterViewInit {
   @ViewChild('backButton', {static: false}) backButton?: MatButton;
   @ViewChildren(FormChangeTracker)
-  override trackers!: QueryList<FormChangeTracker>;
+  declare trackers: QueryList<FormChangeTracker>;
 
   data: Partial<Test> = initTest();
   outputFilePatterns: Partial<string[]> = [];

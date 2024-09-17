@@ -42,7 +42,7 @@ export class FileCleanerPolicyEditPage extends FormChangeTracker implements
   settings: FileCleanerSettings = {};
   @ViewChild('backButton', {static: false}) backButton?: MatButton;
   @ViewChildren(FormChangeTracker)
-  override trackers!: QueryList<FormChangeTracker>;
+  declare trackers: QueryList<FormChangeTracker>;
   existingPolicyNames = new Set<string>();
 
   constructor(

@@ -38,7 +38,7 @@ export class FileCleanerConfigEditPage extends FormChangeTracker implements
   policyNames = new Set<string>();
   @ViewChild('backButton', {static: false}) backButton?: MatButton;
   @ViewChildren(FormChangeTracker)
-  override trackers!: QueryList<FormChangeTracker>;
+  declare trackers: QueryList<FormChangeTracker>;
 
   constructor(
       private readonly mtt: MttClient, private readonly notifier: Notifier,

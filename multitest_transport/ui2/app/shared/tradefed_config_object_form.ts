@@ -40,7 +40,7 @@ export class TradefedConfigObjectForm extends FormChangeTracker implements
   @Output() readonly addConfigObject = new EventEmitter();
   @Output() readonly deleteConfigObject = new EventEmitter<number>();
   @ViewChildren(FormChangeTracker)
-  override trackers!: QueryList<FormChangeTracker>;
+  declare trackers: QueryList<FormChangeTracker>;
 
   ngOnInit() {
     assertRequiredInput(

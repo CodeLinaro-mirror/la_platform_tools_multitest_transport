@@ -46,7 +46,7 @@ export class TestRunActionEditPage extends FormChangeTracker implements
 
   @ViewChild('backButton', {static: false}) backButton?: MatButton;
   @ViewChildren(FormChangeTracker)
-  override trackers!: QueryList<FormChangeTracker>;
+  declare trackers: QueryList<FormChangeTracker>;
 
   constructor(
       private readonly mttClient: MttClient,
