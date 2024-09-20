@@ -15,8 +15,20 @@
 
 set -e
 
-# The custom script that is executed after basic environment is set up and before any services are started .
+# TODO Better differentiate different running mode
+IS_CONTROLLER="false"
+if [[ -z "${MTT_CONTROL_SERVER_URL}" ]]; then
+  IS_CONTROLLER="true"
+fi
+
+# The custom script that is executed after basic environment is set up and
+# before any services are started.
 readonly PRERUN_SCRIPT_PATH="/mtt/scripts/init_pre_run.sh"
+
+# The custom script that is executed only before the lab server or TF are
+# started, and after all other services are started.
+# TODO Move the post-run script to run after lab server startup.
+readonly POSTRUN_SCRIPT_PATH="/mtt/scripts/init_post_run.sh"
 
 function start_ndppd {
   # This function generates a configuration file and starts ndppd. The arguments
@@ -240,6 +252,11 @@ then
     num_cvd_accounts="${MAX_LOCAL_VIRTUAL_DEVICES}" \
       /etc/init.d/cuttlefish-common start
   fi
+fi
+
+# TODO Move the post-run script to run after lab server startup.
+if [[ -f "${POSTRUN_SCRIPT_PATH}" ]]; then
+  source ${POSTRUN_SCRIPT_PATH}
 fi
 
 rm -rf "${MTT_TEST_WORK_DIR}"
