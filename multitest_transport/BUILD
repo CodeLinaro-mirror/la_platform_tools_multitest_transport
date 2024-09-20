@@ -1,5 +1,7 @@
 load("@tradefed_cluster//tradefed_cluster:adapter.bzl", "py_appengine_binary", "pytype_strict_library", "third_party")
 load("//tools/build_defs/license:license.bzl", "license")
+load("//tools/build_defs/packaging:genzip.bzl", "genzip")
+load("//tools/build_defs/packaging:pkg_library.bzl", "pkg_library")
 
 # Android testing lab software for Android device partners
 load("//tools/build_defs/testing:bzl_library.bzl", "bzl_library")
