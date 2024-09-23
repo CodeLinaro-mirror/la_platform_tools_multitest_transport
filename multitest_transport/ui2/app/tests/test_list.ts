@@ -27,6 +27,7 @@ import {buildApiErrorMessage} from '../shared/util';
 
 /** A component for displaying a list of test runs. */
 @Component({
+  standalone: false,
   selector: 'test-list',
   styleUrls: ['test_list.css'],
   templateUrl: './test_list.ng.html',

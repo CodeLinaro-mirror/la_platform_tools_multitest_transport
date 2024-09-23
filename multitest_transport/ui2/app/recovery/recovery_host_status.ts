@@ -21,6 +21,7 @@ import {HostState} from '../services/tfc_models';
 
 /** Component for display host status in chip in recovery host list. */
 @Component({
+  standalone: false,
   selector: 'recovery-host-status',
   styleUrls: ['recovery_host_status.css'],
   templateUrl: './recovery_host_status.ng.html',

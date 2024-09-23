@@ -23,6 +23,7 @@ import {assertRequiredInput, buildApiErrorMessage, delay} from '../shared/util';
 
 /** A component for displaying a list of build channels. */
 @Component({
+  standalone: false,
   selector: 'build-channel-item',
   styleUrls: ['build_channel_item.css'],
   templateUrl: './build_channel_item.ng.html',

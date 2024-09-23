@@ -26,6 +26,7 @@ import {buildApiErrorMessage} from '../shared/util';
 
 /** Displays a list of test run actions. */
 @Component({
+  standalone: false,
   selector: 'test-run-action-list',
   styleUrls: ['test_run_action_list.css'],
   templateUrl: './test_run_action_list.ng.html',

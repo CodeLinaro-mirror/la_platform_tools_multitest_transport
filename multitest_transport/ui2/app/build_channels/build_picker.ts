@@ -71,6 +71,7 @@ export interface BuildPickerTabState {
  * This component is used to select resource urls from build channels
  */
 @Component({
+  standalone: false,
   selector: 'build-picker',
   styleUrls: ['build_picker.css'],
   templateUrl: './build_picker.ng.html',

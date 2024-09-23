@@ -32,6 +32,7 @@ import {buildApiErrorMessage} from '../shared/util';
  * Build Channel Edit Page
  */
 @Component({
+  standalone: false,
   selector: 'build-channel-edit-page',
   styleUrls: ['build_channel_edit_page.css'],
   templateUrl: './build_channel_edit_page.ng.html',

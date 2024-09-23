@@ -26,6 +26,7 @@ import {buildApiErrorMessage, deepCopy} from '../shared/util';
 
 /** A component for displaying file cleaner settings. */
 @Component({
+  standalone: false,
   selector: 'file-cleaner-setting-list',
   styleUrls: ['file_cleaner_setting_list.css'],
   templateUrl: './file_cleaner_setting_list.ng.html',

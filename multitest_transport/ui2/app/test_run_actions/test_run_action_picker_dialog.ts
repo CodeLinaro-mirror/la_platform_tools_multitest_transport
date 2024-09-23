@@ -34,6 +34,7 @@ export interface TestRunActionPickerDialogData {
  * The dialog component to select test run actions .
  */
 @Component({
+  standalone: false,
   selector: 'test-run-action-picker-dialog',
   styleUrls: ['test_run_action_picker_dialog.css'],
   templateUrl: './test_run_action_picker_dialog.ng.html',

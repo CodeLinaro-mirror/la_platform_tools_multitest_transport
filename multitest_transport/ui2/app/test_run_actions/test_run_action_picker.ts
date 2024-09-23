@@ -27,6 +27,7 @@ import {assertRequiredInput, deepCopy} from '../shared/util';
  * rearrange them.
  */
 @Component({
+  standalone: false,
   selector: 'test-run-action-picker',
   styleUrls: ['test_run_action_picker.css'],
   templateUrl: './test_run_action_picker.ng.html',

@@ -30,6 +30,7 @@ import {buildApiErrorMessage} from '../shared/util';
  * Form for creating a test run action
  */
 @Component({
+  standalone: false,
   selector: 'test-run-action-edit-page',
   styleUrls: ['test_run_action_edit_page.css'],
   templateUrl: './test_run_action_edit_page.ng.html',

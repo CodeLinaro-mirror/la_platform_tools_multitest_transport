@@ -22,6 +22,7 @@ import {assertRequiredInput} from '../shared/util';
 
 /** Form for file cleaner criterion. */
 @Component({
+  standalone: false,
   selector: 'file-cleaner-criterion-form',
   styleUrls: ['file_cleaner_criterion_form.css'],
   templateUrl: './file_cleaner_criterion_form.ng.html',

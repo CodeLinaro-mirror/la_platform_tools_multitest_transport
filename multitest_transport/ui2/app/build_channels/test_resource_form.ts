@@ -36,6 +36,7 @@ export enum TestResourceClassType {
  * Form for Test Resource Definition
  */
 @Component({
+  standalone: false,
   selector: 'test-resource-form',
   styleUrls: ['test_resource_form.css'],
   templateUrl: './test_resource_form.ng.html',

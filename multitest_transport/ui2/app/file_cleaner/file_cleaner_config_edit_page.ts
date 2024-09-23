@@ -26,6 +26,7 @@ import {buildApiErrorMessage} from '../shared/util';
 
 /** Edit page for file cleaner config. */
 @Component({
+  standalone: false,
   selector: 'file-cleaner-config-edit-page',
   styleUrls: ['file_cleaner_config_edit_page.css'],
   templateUrl: './file_cleaner_config_edit_page.ng.html',

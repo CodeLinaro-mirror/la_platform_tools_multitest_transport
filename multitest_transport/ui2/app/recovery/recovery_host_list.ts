@@ -34,6 +34,7 @@ import {buildApiErrorMessage} from '../shared/util';
 
 /** Display a list of host that are recovering by the current user. */
 @Component({
+  standalone: false,
   selector: 'recovery-host-list',
   styleUrls: ['recovery_host_list.css'],
   templateUrl: './recovery_host_list.ng.html',

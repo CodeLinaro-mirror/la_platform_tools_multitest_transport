@@ -21,6 +21,7 @@ import {LAB_APPLICATION_NAME} from '../shared/shared_module';
 
 /** A component for display settings */
 @Component({
+  standalone: false,
   selector: 'recovery-setting-page',
   styleUrls: ['recovery_setting_page.css'],
   templateUrl: './recovery_setting_page.ng.html',

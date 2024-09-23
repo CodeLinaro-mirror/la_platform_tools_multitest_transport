@@ -30,6 +30,7 @@ import {buildApiErrorMessage} from '../shared/util';
  * Form for creating a new test
  */
 @Component({
+  standalone: false,
   selector: 'test-edit-page',
   styleUrls: ['test_edit_page.css'],
   templateUrl: './test_edit_page.ng.html',

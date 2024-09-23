@@ -36,6 +36,7 @@ import {UserService} from '../services/user_service';
  * login user.
  */
 @Component({
+  standalone: false,
   selector: 'recovery-device-list',
   styleUrls: ['recovery_device_list.css'],
   templateUrl: './recovery_device_list.ng.html',

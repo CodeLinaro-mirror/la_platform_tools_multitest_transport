@@ -26,6 +26,7 @@ import {buildApiErrorMessage} from '../shared/util';
 
 /** A component for displaying a list of build channels. */
 @Component({
+  standalone: false,
   selector: 'build-channel-list',
   styleUrls: ['build_channel_list.css'],
   templateUrl: './build_channel_list.ng.html',

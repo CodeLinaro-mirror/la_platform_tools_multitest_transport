@@ -20,6 +20,7 @@ import {APPLICATION_NAME} from '../shared/shared_module';
 
 /** A component for a test list page. */
 @Component({
+  standalone: false,
   selector: 'test-list-page',
   templateUrl: './test_list_page.ng.html',
 })

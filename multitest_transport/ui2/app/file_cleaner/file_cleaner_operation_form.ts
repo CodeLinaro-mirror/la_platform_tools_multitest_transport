@@ -22,6 +22,7 @@ import {assertRequiredInput} from '../shared/util';
 
 /** Form for file cleaner operation. */
 @Component({
+  standalone: false,
   selector: 'file-cleaner-operation-form',
   styleUrls: ['file_cleaner_operation_form.css'],
   templateUrl: './file_cleaner_operation_form.ng.html',

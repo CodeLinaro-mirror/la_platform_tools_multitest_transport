@@ -23,6 +23,7 @@ import {OfflineHostFilterParams} from '../services/mtt_lab_models';
 
 /** Page for recovery bad host and bad device. */
 @Component({
+  standalone: false,
   selector: 'recovery-page',
   styleUrls: ['recovery_page.css'],
   templateUrl: './recovery_page.ng.html',
