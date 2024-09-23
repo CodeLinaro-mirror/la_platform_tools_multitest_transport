@@ -17,7 +17,8 @@
 import {Pipe, PipeTransform} from '@angular/core';
 
 /** Lists all the values in a dictionary. */
-@Pipe({name: 'values'})
+@Pipe({standalone: false,
+       name: 'values'})
 export class ValuesPipe implements PipeTransform {
   transform(dict: {[key: string]: unknown}): unknown[] {
     return Object.values(dict);

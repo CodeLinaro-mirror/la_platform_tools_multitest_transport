@@ -27,6 +27,7 @@ export const DEFAULT_PAGE_SIZE = 10;
  * disable buttons and explicitly listen for previous or next page events.
  */
 @Component({
+  standalone: false,
   selector: 'paginator',
   styles: [`
     :host {

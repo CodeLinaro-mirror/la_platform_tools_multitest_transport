@@ -33,6 +33,7 @@ export interface OptionValueChangeEvent {
  * Form for NameMultiValuePair list
  */
 @Component({
+  standalone: false,
   selector: 'name-multi-value-pair-list-form',
   styleUrls: ['name_multi_value_pair_list_form.css'],
   templateUrl: './name_multi_value_pair_list_form.ng.html',

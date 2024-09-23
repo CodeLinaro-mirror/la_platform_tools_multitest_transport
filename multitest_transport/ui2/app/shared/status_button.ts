@@ -21,6 +21,7 @@ import {assertRequiredInput} from '../shared/util';
  * A component for displaying status.
  */
 @Component({
+  standalone: false,
   selector: 'status-button',
   styleUrls: ['status_button.css'],
   templateUrl: './status_button.ng.html',

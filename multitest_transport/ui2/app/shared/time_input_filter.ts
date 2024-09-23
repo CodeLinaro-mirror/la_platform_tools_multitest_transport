@@ -67,6 +67,7 @@ export interface TimeFilterEvent {
  * filter.
  */
 @Component({
+  standalone: false,
   selector: 'time-input-filter',
   styleUrls: ['time_input_filter.css'],
   templateUrl: './time_input_filter.ng.html',

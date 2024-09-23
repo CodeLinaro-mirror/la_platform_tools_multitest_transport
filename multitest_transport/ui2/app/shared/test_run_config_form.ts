@@ -33,6 +33,7 @@ import {assertRequiredInput, buildApiErrorMessage, noAwait} from './util';
  * going to render.
  */
 @Component({
+  standalone: false,
   selector: 'test-run-config-form',
   styleUrls: ['test_run_config_form.css'],
   templateUrl: './test_run_config_form.ng.html',

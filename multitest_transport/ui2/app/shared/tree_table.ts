@@ -36,6 +36,7 @@ export interface TreeTableColumn {
 
 /** A component for displaying a tree structure as a table. */
 @Component({
+  standalone: false,
   selector: 'tree-table',
   styleUrls: ['tree_table.css'],
   templateUrl: './tree_table.ng.html',

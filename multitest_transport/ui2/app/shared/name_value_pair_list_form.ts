@@ -24,6 +24,7 @@ import {assertRequiredInput} from './util';
  * object
  */
 @Component({
+  standalone: false,
   selector: 'name-value-pair-list-form',
   styleUrls: ['name_value_pair_list_form.css'],
   templateUrl: './name_value_pair_list_form.ng.html',

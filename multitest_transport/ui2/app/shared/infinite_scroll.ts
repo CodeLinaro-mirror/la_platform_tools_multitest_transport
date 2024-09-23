@@ -43,7 +43,8 @@ const DEFAULT_THRESHOLD_PCT = 75;
  * content remains to be scrolled before triggering a new load, e.g. it will not
  * change based on how much content is already loaded/scrolled past.
  */
-@Directive({selector: '[mttInfiniteScroll]'})
+@Directive({standalone: false,
+            selector: '[mttInfiniteScroll]'})
 export class InfiniteScroll implements OnChanges, OnInit, OnDestroy {
   /**
    * Provides a way to control the initial enabled state of the scroll. When the

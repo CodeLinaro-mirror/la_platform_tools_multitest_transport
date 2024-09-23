@@ -62,6 +62,7 @@ const LOCAL_TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 /** Manages scheduling times using simple fields or cron expressions. */
 @Component({
+  standalone: false,
   selector: 'schedule-time-form',
   styleUrls: ['schedule_time_form.css'],
   templateUrl: './schedule_time_form.ng.html',

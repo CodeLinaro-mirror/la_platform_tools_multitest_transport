@@ -27,6 +27,7 @@ import {TfcClient} from '../services/tfc_client';
 
 /** Search a host or a device then navigate to its page. */
 @Component({
+  standalone: false,
   selector: 'host-device-search',
   styleUrls: ['host_device_search.css'],
   templateUrl: './host_device_search.ng.html',

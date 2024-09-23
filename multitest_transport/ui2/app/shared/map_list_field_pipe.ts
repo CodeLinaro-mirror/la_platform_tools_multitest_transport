@@ -23,7 +23,8 @@ import {Pipe, PipeTransform} from '@angular/core';
  * Example: Given a list of Tests with a 'name' field, it will return a list of
  * the names
  */
-@Pipe({name: 'mapListField'})
+@Pipe({standalone: false,
+       name: 'mapListField'})
 export class MapListFieldPipe implements PipeTransform {
   transform<T>(list: T[]|null, field: keyof T, allowDuplicates = false):
       Array<T[keyof T]> {

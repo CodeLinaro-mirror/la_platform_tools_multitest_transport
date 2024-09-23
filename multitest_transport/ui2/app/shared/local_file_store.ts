@@ -31,6 +31,7 @@ const ROOT_DIRECTORY_RE = new RegExp(`^${ROOT_DIRECTORY}/`);
 
 /** Displays and manages user-uploaded local files. */
 @Component({
+  standalone: false,
   selector: 'local-file-store',
   styleUrls: ['local_file_store.css'],
   templateUrl: './local_file_store.ng.html',

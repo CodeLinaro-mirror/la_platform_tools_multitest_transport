@@ -73,6 +73,7 @@ describe('UnsavedChangeGuard', () => {
 });
 
 @Component({
+  standalone: false,
   selector: 'test-component-child',
   providers: [{provide: FormChangeTracker, useExisting: TestComponentChild}],
   template: `
@@ -88,6 +89,7 @@ class TestComponentChild extends FormChangeTracker {
 }
 
 @Component({
+  standalone: false,
   template: `
       <div>
         <input matInput type="text" [(ngModel)]="value" name="value">

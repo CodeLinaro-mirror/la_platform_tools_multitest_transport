@@ -6,6 +6,7 @@ import {TableColumn} from 'google3/third_party/py/multitest_transport/ui2/app/se
  * shown.
  */
 @Component({
+  standalone: false,
   selector: 'view-columns-button',
   styleUrls: ['view_columns_button.css'],
   templateUrl: './view_columns_button.ng.html',

@@ -24,6 +24,7 @@ import {assertRequiredInput} from './util';
  * Form for managing a list of strings
  */
 @Component({
+  standalone: false,
   selector: 'list-form',
   styleUrls: ['list_form.css'],
   templateUrl: './list_form.ng.html',

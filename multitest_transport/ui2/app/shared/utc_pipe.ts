@@ -21,7 +21,8 @@ import * as moment from 'moment';
  * Converts a dates, strings, or timestamps without timezone information to UTC,
  * instead of using local time as the default.
  */
-@Pipe({name: 'utc'})
+@Pipe({standalone: false,
+       name: 'utc'})
 export class UtcPipe implements PipeTransform {
   transform(date?: Date|string|number): Date|undefined {
     return date || date === 0 ? moment.utc(date).toDate() : undefined;

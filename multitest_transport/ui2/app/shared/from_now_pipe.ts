@@ -18,7 +18,8 @@ import {Pipe, PipeTransform} from '@angular/core';
 import * as moment from 'moment';
 
 /** Formats a date into a relative time, e.g. X minutes ago. */
-@Pipe({name: 'fromNow'})
+@Pipe({standalone: false,
+       name: 'fromNow'})
 export class FromNowPipe implements PipeTransform {
   transform(date?: Date|string|number): string {
     return moment(date || new Date()).fromNow();

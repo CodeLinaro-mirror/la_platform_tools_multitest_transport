@@ -28,6 +28,7 @@ import {assertRequiredInput} from './util';
  * with tableRowsSelectManager and tableRowSelect directives.
  */
 @Directive({
+  standalone: false,
   selector: 'mat-checkbox[tableRowSelectCheckbox]',
   exportAs: 'tableRowSelectCheckbox',
 })
@@ -66,6 +67,7 @@ export class TableRowSelectCheckbox {
  * It should work with tableRowsSelectManager directive.
  */
 @Directive({
+  standalone: false,
   selector: 'mat-checkbox[tableRowsSelectCheckbox]',
   exportAs: 'tableRowsSelectCheckbox',
 })
@@ -100,6 +102,7 @@ export class TableRowsSelectCheckbox {
  * of the table. It should work with tableRowsSelectManager directive.
  */
 @Directive({
+  standalone: false,
   selector: '[tableRowSelect]',
   exportAs: 'tableRowSelect',
   host: {
@@ -161,6 +164,7 @@ export class TableRowSelect {
  * directives.
  */
 @Directive({
+  standalone: false,
   selector: '[tableRowsSelectManager]',
   exportAs: 'tableRowsSelectManager',
   host: {'class': 'selectable'},

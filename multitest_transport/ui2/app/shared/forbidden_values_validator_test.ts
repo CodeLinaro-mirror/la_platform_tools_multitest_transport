@@ -67,6 +67,7 @@ describe('ForbiddenValuesValidator', () => {
 });
 
 @Component({
+  standalone: false,
   template: `<mat-form-field>
                <input matInput mttForbiddenValues [forbiddenValues]="values"
                       [(ngModel)]="data.value" #value="ngModel" />

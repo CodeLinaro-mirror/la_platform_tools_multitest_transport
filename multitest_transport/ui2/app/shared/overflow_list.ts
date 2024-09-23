@@ -26,6 +26,7 @@ export enum OverflowListType {
 
 /** A component for collapsing and displaying a list of objects. */
 @Component({
+  standalone: false,
   selector: 'overflow-list',
   styleUrls: ['overflow_list.css'],
   templateUrl: './overflow_list.ng.html',

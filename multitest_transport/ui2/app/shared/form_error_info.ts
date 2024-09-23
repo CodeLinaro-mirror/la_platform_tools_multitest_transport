@@ -23,6 +23,7 @@ import {navigateToFirstElement} from './util';
  * or warning. It also displays a link for user to navigate to the first error.
  */
 @Component({
+  standalone: false,
   selector: 'form-error-info',
   styleUrls: ['form_error_info.css'],
   templateUrl: './form_error_info.ng.html',

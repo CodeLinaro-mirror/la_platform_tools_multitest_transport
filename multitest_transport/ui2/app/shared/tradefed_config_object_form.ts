@@ -26,6 +26,7 @@ import {assertRequiredInput} from './util';
  * Form for Tradefed Config Object
  */
 @Component({
+  standalone: false,
   selector: 'tradefed-config-object-form',
   styleUrls: ['tradefed_config_object_form.css'],
   templateUrl: './tradefed_config_object_form.ng.html',

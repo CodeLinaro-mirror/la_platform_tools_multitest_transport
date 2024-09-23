@@ -19,6 +19,7 @@ import {AbstractControl, NG_VALIDATORS, ValidationErrors, Validator} from '@angu
 
 /** A directive that checks whether the control value is forbidden. */
 @Directive({
+  standalone: false,
   selector: '[mttForbiddenValues]',
   providers: [
     {provide: NG_VALIDATORS, useExisting: ForbiddenValuesValidator, multi: true}

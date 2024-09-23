@@ -20,7 +20,8 @@ import {UserService} from '../services/user_service';
 /**
  * Checks user is admin or lab owner.
  */
-@Pipe({name: 'permissionCheck'})
+@Pipe({standalone: false,
+       name: 'permissionCheck'})
 export class PermissionCheckPipe implements PipeTransform {
   constructor(private readonly userService: UserService) {}
 

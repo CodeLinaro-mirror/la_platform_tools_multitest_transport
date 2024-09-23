@@ -17,7 +17,8 @@
 import {Pipe, PipeTransform} from '@angular/core';
 
 /** Renders a file size as a human-friendly format. */
-@Pipe({name: 'fileSize'})
+@Pipe({standalone: false,
+       name: 'fileSize'})
 export class FileSizePipe implements PipeTransform {
   transform(value?: number): string {
     if (value === undefined) {

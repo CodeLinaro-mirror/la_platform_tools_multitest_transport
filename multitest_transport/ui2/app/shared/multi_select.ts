@@ -32,6 +32,7 @@ export interface MultiSelectItem {
  * filtered options. It is used to select multiple options from a long list.
  */
 @Component({
+  standalone: false,
   selector: 'multi-select',
   styleUrls: ['multi_select.css'],
   templateUrl: './multi_select.ng.html',

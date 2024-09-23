@@ -18,7 +18,8 @@ import {Pipe, PipeTransform, SecurityContext} from '@angular/core';
 import {DomSanitizer} from '@angular/platform-browser';
 
 /** Converts URL strings into anchor elements. Should be bound to innerHTML. */
-@Pipe({name: 'linkify'})
+@Pipe({standalone: false,
+       name: 'linkify'})
 export class LinkifyPipe implements PipeTransform {
   constructor(private readonly sanitizer: DomSanitizer) {}
 

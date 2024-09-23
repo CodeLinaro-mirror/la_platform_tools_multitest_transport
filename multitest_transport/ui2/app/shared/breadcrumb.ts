@@ -21,6 +21,7 @@ import {assertRequiredInput} from './util';
  * Breadcrumb component
  */
 @Component({
+  standalone: false,
   selector: 'breadcrumb',
   styleUrls: ['breadcrumb.css'],
   templateUrl: './breadcrumb.ng.html',

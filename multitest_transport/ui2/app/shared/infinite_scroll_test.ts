@@ -122,6 +122,7 @@ describe('InfiniteScroll', () => {
 });
 
 @Component({
+  standalone: false,
   template: `<div mttInfiniteScroll
                   class="container"
                   style="overflow-y: scroll"
