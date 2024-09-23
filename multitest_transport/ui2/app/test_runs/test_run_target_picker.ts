@@ -35,6 +35,7 @@ declare interface AutocompleteOption {
  * A component for selecting run targets.
  */
 @Component({
+  standalone: false,
   selector: 'test-run-target-picker',
   styleUrls: ['test_run_target_picker.css'],
   templateUrl: './test_run_target_picker.ng.html',

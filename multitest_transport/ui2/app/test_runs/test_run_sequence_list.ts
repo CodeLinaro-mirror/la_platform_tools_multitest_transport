@@ -27,6 +27,7 @@ import {TestRunConfigEditor, TestRunConfigEditorData} from './test_run_config_ed
  * A list to display test run sequence information with create and edit buttons.
  */
 @Component({
+  standalone: false,
   selector: 'test-run-sequence-list',
   styleUrls: ['test_run_sequence_list.css'],
   templateUrl: './test_run_sequence_list.ng.html',

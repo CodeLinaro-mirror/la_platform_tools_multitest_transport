@@ -22,6 +22,7 @@ import {assertRequiredInput} from '../shared/util';
 
 /** A component for displaying the fields of a test run. */
 @Component({
+  standalone: false,
   selector: 'test-run-tree-table',
   template: `<tree-table [data]="treeNodes"
                          [columns]="treeTableColumns"></tree-table>`,

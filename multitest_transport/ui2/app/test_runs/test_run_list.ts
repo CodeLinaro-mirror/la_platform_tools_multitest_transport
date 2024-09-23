@@ -36,6 +36,7 @@ const COLUMN_DISPLAY_STORAGE_KEY = 'TEST_RUN_LIST_COLUMN_DISPLAY';
 
 /** A component for displaying a list of test runs. */
 @Component({
+  standalone: false,
   selector: 'test-run-list',
   styleUrls: ['test_run_list.css'],
   templateUrl: './test_run_list.ng.html',

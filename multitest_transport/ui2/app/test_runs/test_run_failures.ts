@@ -37,6 +37,7 @@ export enum DisplayMode {
  * A component for displaying a test run results (tests failed / tests run).
  */
 @Component({
+  standalone: false,
   selector: 'test-run-failures',
   styleUrls: ['test_run_failures.css'],
   templateUrl: './test_run_failures.ng.html',

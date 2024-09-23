@@ -21,6 +21,7 @@ import {APPLICATION_NAME} from '../shared/shared_module';
 
 /** A component for displaying a list of test runs. */
 @Component({
+  standalone: false,
   selector: 'test-run-list-page',
   templateUrl: './test_run_list_page.ng.html',
 })

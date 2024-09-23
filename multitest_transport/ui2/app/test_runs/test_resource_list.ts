@@ -24,6 +24,7 @@ import {assertRequiredInput} from '../shared/util';
 
 /** A component for displaying the console output from a test run. */
 @Component({
+  standalone: false,
   selector: 'test-resource-list',
   templateUrl: './test_resource_list.ng.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

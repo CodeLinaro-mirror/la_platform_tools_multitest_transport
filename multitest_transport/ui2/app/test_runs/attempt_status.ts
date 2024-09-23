@@ -24,6 +24,7 @@ import {assertRequiredInput} from '../shared/util';
 
 /** A component for displaying a test job status info. */
 @Component({
+  standalone: false,
   selector: 'attempt-status',
   styleUrls: ['attempt_status.css'],
   templateUrl: './attempt_status.ng.html',

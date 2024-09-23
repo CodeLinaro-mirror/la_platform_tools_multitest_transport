@@ -21,7 +21,8 @@ import {TestPackageInfo} from '../services/mtt_models';
 /**
  * Returns a string containing the name and version of the test package
  */
-@Pipe({name: 'testPackageInfo'})
+@Pipe({standalone: false,
+       name: 'testPackageInfo'})
 export class TestPackageInfoPipe implements PipeTransform {
   transform(testPackage: TestPackageInfo): string {
     if (!testPackage || !testPackage.name || !testPackage.version) {

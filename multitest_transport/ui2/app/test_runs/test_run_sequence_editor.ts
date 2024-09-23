@@ -27,6 +27,7 @@ import {TestRunConfigEditor, TestRunConfigEditorData} from './test_run_config_ed
  * Displays a list of test run configs that can be editted.
  */
 @Component({
+  standalone: false,
   selector: 'test-run-sequence-editor',
   styleUrls: ['test_run_sequence_editor.css'],
   templateUrl: './test_run_sequence_editor.ng.html',

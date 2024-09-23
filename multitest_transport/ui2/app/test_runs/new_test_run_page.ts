@@ -53,6 +53,7 @@ const DISK_SPACE_USAGE_ALARMS = ['disk_space._data.disk_space_usage'];
  * Form for running a new test
  */
 @Component({
+  standalone: false,
   selector: 'new-test-run-page',
   styleUrls: ['new_test_run_page.css'],
   templateUrl: './new_test_run_page.ng.html',

@@ -50,6 +50,7 @@ const TOTAL_STEPS = 4;
  * This component is used to create or update a test run config.
  */
 @Component({
+  standalone: false,
   selector: 'test-run-config-editor',
   styleUrls: ['test_run_config_editor.css'],
   templateUrl: './test_run_config_editor.ng.html',

@@ -35,6 +35,7 @@ import {NewTestRunPage} from './new_test_run_page';
 import {TestRunsModule} from './test_runs_module';
 
 @Component({
+  standalone: false,
   selector: 'device-list',
   template: '',
   jit: true,

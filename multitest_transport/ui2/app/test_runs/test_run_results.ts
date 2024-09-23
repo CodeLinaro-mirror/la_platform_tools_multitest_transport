@@ -23,6 +23,7 @@ import {assertRequiredInput, millisToDuration} from '../shared/util';
 
 /** A component for displaying the module level test run results. */
 @Component({
+  standalone: false,
   selector: 'test-run-results',
   template: `<tree-table [data]="treeNodes"
                          [columns]="treeTableColumns"></tree-table>`,

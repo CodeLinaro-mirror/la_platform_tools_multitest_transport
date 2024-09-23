@@ -37,6 +37,7 @@ import {TestRunActionPickerDialog, TestRunActionPickerDialogData} from '../test_
 
 /** A component for displaying the details of a test run. */
 @Component({
+  standalone: false,
   selector: 'test-run-detail',
   styleUrls: ['test_run_detail.css'],
   templateUrl: './test_run_detail.ng.html',

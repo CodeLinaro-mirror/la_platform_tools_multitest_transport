@@ -38,6 +38,7 @@ interface ModuleResultNode {
  * Displays a list of test suite modules from the test results.
  */
 @Component({
+  standalone: false,
   selector: 'test-module-result-list',
   styleUrls: ['test_module_result_list.css'],
   templateUrl: './test_module_result_list.ng.html',

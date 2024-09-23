@@ -46,6 +46,7 @@ export const POLL_INTERVAL = 4_000;
 
 /** A component for displaying the console output from a test run. */
 @Component({
+  standalone: false,
   selector: 'test-run-console',
   styleUrls: ['test_run_console.css'],
   templateUrl: './test_run_console.ng.html',

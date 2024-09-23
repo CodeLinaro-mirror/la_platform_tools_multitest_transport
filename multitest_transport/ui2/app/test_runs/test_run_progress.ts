@@ -69,6 +69,7 @@ interface CommandStateStatNode {
 
 /** Displays the test run progress entities (log entries and attempts). */
 @Component({
+  standalone: false,
   selector: 'test-run-progress',
   styleUrls: ['test_run_progress.css'],
   templateUrl: './test_run_progress.ng.html',
