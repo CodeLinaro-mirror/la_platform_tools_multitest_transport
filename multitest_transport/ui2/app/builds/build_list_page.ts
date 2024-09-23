@@ -21,6 +21,7 @@ import {APPLICATION_NAME} from '../shared/shared_module';
 
 /** A component for a build list page. */
 @Component({
+  standalone: false,
   selector: 'build-list-page',
   templateUrl: './build_list_page.ng.html',
 })

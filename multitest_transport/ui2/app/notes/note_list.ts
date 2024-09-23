@@ -33,6 +33,7 @@ import {UserService} from '../services/user_service';
 
 /** Display a list of notes from a device or a host. */
 @Component({
+  standalone: false,
   selector: 'note-list',
   styleUrls: ['note_list.css'],
   templateUrl: './note_list.ng.html',

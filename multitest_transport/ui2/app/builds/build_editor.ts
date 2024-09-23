@@ -41,6 +41,7 @@ export interface BuildEditorData {
  * Component for updating a build.
  */
 @Component({
+  standalone: false,
   selector: 'build-editor',
   styleUrls: ['build_editor.css'],
   templateUrl: './build_editor.ng.html',

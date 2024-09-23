@@ -35,6 +35,7 @@ interface TestRequirementData {
  * A component for displaying a list of test requirements for a build.
  */
 @Component({
+  standalone: false,
   selector: 'test-requirements',
   styleUrls: ['test_requirements.css'],
   templateUrl: './test_requirements.ng.html',

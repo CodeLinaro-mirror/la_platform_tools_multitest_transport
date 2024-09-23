@@ -56,6 +56,7 @@ export interface PredefinedMessagesEditorDialogParams {
 
 /** Creates or edit predefined message. */
 @Component({
+  standalone: false,
   selector: 'predefined-messages-editor',
   styleUrls: ['predefined_messages_editor.css'],
   templateUrl: './predefined_messages_editor.ng.html',

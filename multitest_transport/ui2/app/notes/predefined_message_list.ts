@@ -45,6 +45,7 @@ export type SingleValueField = 'lab'|'messageCategory'|'messageType';
 
 /** Display list of predefined message. */
 @Component({
+  standalone: false,
   selector: 'predefined-message-list',
   styleUrls: ['predefined_message_list.css'],
   templateUrl: './predefined_message_list.ng.html',

@@ -56,6 +56,7 @@ export interface NoteDialogParams {
 
 /** Component that displays note list or note editor. */
 @Component({
+  standalone: false,
   selector: 'notes-dialog',
   styleUrls: ['notes_dialog.css'],
   templateUrl: './notes_dialog.ng.html',

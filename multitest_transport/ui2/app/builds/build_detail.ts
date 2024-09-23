@@ -32,6 +32,7 @@ import {XtsRequirementDetect, XtsRequirementDetectData} from './xts_requirement_
 
 /** A component for displaying the details of a build. */
 @Component({
+  standalone: false,
   selector: 'build-detail',
   styleUrls: ['build_detail.css'],
   templateUrl: './build_detail.ng.html',

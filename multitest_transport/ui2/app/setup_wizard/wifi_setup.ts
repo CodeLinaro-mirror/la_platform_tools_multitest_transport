@@ -28,6 +28,7 @@ import {buildApiErrorMessage} from '../shared/util';
  * setup action.
  */
 @Component({
+  standalone: false,
   selector: 'wifi-setup',
   templateUrl: './wifi_setup.ng.html',
 })

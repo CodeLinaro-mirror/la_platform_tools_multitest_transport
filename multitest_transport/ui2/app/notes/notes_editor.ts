@@ -68,6 +68,7 @@ export const dateTimeValidator: ValidatorFn =
 
 /** Adds or Edit notes for hosts or devices. */
 @Component({
+  standalone: false,
   selector: 'notes-editor',
   styleUrls: ['notes_editor.css'],
   templateUrl: './notes_editor.ng.html',

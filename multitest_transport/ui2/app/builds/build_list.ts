@@ -31,6 +31,7 @@ import {buildApiErrorMessage} from '../shared/util';
  * A component for displaying a list of builds.
  */
 @Component({
+  standalone: false,
   selector: 'build-list',
   styleUrls: ['build_list.css'],
   templateUrl: './build_list.ng.html',

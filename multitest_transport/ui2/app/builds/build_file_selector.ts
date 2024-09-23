@@ -29,6 +29,7 @@ export interface BuildFileSelectorData {
  * Component to select a resource file for a build.
  */
 @Component({
+  standalone: false,
   selector: 'build-file-selector',
   styleUrls: ['build_file_selector.css'],
   templateUrl: './build_file_selector.ng.html',

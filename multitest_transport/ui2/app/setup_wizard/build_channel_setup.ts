@@ -25,6 +25,7 @@ const GOOGLE_DRIVE_ID = 'google_drive';
 
 /** Allows users to authenticate their Google Drive build channel. */
 @Component({
+  standalone: false,
   selector: 'build-channel-setup',
   styleUrls: ['build_channel_setup.css'],
   templateUrl: './build_channel_setup.ng.html',

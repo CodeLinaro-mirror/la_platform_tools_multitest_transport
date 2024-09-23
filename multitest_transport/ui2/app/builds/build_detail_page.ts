@@ -22,6 +22,7 @@ import {APPLICATION_NAME} from '../shared/shared_module';
 
 /** A component for a build detail page. */
 @Component({
+  standalone: false,
   selector: 'build-detail-page',
   templateUrl: './build_detail_page.ng.html',
 })

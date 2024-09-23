@@ -23,6 +23,7 @@ import {buildApiErrorMessage} from '../shared/util';
 
 /** A component for restore a backup config exported from an MTT instance. */
 @Component({
+  standalone: false,
   selector: 'config-restore-step',
   styleUrls: ['config_restore_step.css'],
   templateUrl: './config_restore_step.ng.html',

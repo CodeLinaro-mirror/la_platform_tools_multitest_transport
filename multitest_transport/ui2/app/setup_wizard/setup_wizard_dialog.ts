@@ -29,6 +29,7 @@ import {SetupWizardStepper} from './setup_wizard_stepper';
  * A component for the setup wizard overlay
  */
 @Component({
+  standalone: false,
   selector: 'setup-wizard-dialog',
   styleUrls: ['setup_wizard_dialog.css'],
   templateUrl: './setup_wizard_dialog.ng.html',

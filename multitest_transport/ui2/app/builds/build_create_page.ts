@@ -35,6 +35,7 @@ import {BuildFileSelector, BuildFileSelectorData} from './build_file_selector';
  * Component for creating a build.
  */
 @Component({
+  standalone: false,
   selector: 'build-create-page',
   styleUrls: ['build_create_page.css'],
   templateUrl: './build_create_page.ng.html',

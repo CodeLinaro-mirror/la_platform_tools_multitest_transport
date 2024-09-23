@@ -24,6 +24,7 @@ import {buildApiErrorMessage, delay} from '../shared/util';
 
 /** A component for restore a backup config exported from an MTT instance. */
 @Component({
+  standalone: false,
   selector: 'default-auth-step',
   styleUrls: ['default_auth_step.css'],
   templateUrl: './default_auth_step.ng.html',

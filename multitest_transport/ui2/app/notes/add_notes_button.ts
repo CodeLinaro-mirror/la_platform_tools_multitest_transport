@@ -24,6 +24,7 @@ import {NoteType} from '../services/mtt_lab_models';
 
 /** Opens a notes dialog for hosts or devices. */
 @Component({
+  standalone: false,
   selector: 'add-notes-button',
   templateUrl: './add_notes_button.ng.html',
 })

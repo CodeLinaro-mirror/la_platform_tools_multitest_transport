@@ -46,6 +46,7 @@ const TOTAL_STEPS = 2;
  * This component is used to set up xTS requirement detection config.
  */
 @Component({
+  standalone: false,
   selector: 'xts-requirement-detect',
   styleUrls: ['xts_requirement_detect.css'],
   templateUrl: './xts_requirement_detect.ng.html',
