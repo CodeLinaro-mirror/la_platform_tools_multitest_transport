@@ -32,6 +32,7 @@ import {assertRequiredInput} from '../shared/util';
 
 /** Displaying history list of a host. */
 @Component({
+  standalone: false,
   selector: 'host-details-history',
   styleUrls: ['./host_details_history.css'],
   templateUrl: './host_details_history.ng.html',

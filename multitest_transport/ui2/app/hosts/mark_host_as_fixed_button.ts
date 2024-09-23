@@ -27,6 +27,7 @@ import {HostRecoveryStateRequest, RecoveryState} from '../services/tfc_models';
 
 /** A button for users to mark hosts recovery state as 'VERIFIED'. */
 @Component({
+  standalone: false,
   selector: 'mark-host-as-fixed-button',
   styleUrls: ['mark_host_as_fixed_button.css'],
   templateUrl: './mark_host_as_fixed_button.ng.html',

@@ -22,6 +22,7 @@ import {LAB_APPLICATION_NAME} from '../shared/shared_module';
 
 /** A component for displaying the details of a host. */
 @Component({
+  standalone: false,
   selector: 'host-details-page',
   templateUrl: './host_details_page.ng.html',
 })

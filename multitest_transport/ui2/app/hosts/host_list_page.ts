@@ -22,6 +22,7 @@ import {APPLICATION_NAME, LAB_APPLICATION_NAME} from '../shared/shared_module';
 
 /** Displaying a list of hosts. */
 @Component({
+  standalone: false,
   selector: 'host-list-page',
   templateUrl: './host_list_page.ng.html',
 })

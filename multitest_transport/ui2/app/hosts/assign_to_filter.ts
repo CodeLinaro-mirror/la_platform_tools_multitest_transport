@@ -28,6 +28,7 @@ import {Notifier} from '../services/notifier';
  * owners from the menu or input username to assign hosts to specified user.
  */
 @Component({
+  standalone: false,
   selector: 'assign-to-filter',
   styleUrls: ['assign_to_filter.css'],
   templateUrl: './assign_to_filter.ng.html',

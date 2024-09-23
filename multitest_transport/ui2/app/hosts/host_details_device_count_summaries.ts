@@ -26,6 +26,7 @@ import {assertRequiredInput} from '../shared/util';
 
 /** Display a list of devices count summaries from a host. */
 @Component({
+  standalone: false,
   selector: 'host-details-device-count-summaries',
   styleUrls: ['host_details_device_count_summaries.css'],
   templateUrl: './host_details_device_count_summaries.ng.html',

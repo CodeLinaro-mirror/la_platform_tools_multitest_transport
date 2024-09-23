@@ -67,6 +67,7 @@ interface HostCountByHarnessVersionElement {
 
 /** Component that manages host updates in a lab. */
 @Component({
+  standalone: false,
   selector: 'host-update-dialog',
   styleUrls: ['host_update_dialog.css'],
   templateUrl: './host_update_dialog.ng.html',

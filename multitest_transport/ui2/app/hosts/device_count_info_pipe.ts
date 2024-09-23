@@ -22,7 +22,8 @@ import {LabHostExtraInfo} from '../services/mtt_lab_models';
 /**
  * Returns a string containing the value and percentage of the device status.
  */
-@Pipe({name: 'deviceCountInfo'})
+@Pipe({standalone: false,
+       name: 'deviceCountInfo'})
 export class DeviceCountInfoPipe implements PipeTransform {
   constructor(@Inject(LOCALE_ID) private readonly locale: string) {}
   transform(hostExtraInfo: LabHostExtraInfo, target: string): string {

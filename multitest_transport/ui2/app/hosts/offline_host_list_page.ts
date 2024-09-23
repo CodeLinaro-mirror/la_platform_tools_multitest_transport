@@ -24,6 +24,7 @@ import {LAB_APPLICATION_NAME} from '../shared/shared_module';
  * devices.
  */
 @Component({
+  standalone: false,
   selector: 'offline-host-list-page',
   styleUrls: ['offline_host_list_page.css'],
   templateUrl: './offline_host_list_page.ng.html',

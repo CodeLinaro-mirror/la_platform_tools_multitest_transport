@@ -46,6 +46,7 @@ export interface HostDetailsDialogParams {
  * Displays host details information.
  */
 @Component({
+  standalone: false,
   selector: 'host-details',
   styleUrls: ['host_details.css'],
   templateUrl: './host_details.ng.html',

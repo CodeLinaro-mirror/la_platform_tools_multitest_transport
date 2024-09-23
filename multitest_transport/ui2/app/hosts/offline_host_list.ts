@@ -35,6 +35,7 @@ import {filterHostListDataSource} from './offline_host_filter';
 
 /** Displays offline hosts or hosts with offline devices. */
 @Component({
+  standalone: false,
   selector: 'offline-host-list',
   styleUrls: ['offline_host_list.css'],
   templateUrl: './offline_host_list.ng.html',

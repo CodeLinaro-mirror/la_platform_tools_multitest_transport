@@ -28,6 +28,7 @@ import {assertRequiredInput} from '../shared/util';
 
 /** Readonly form for host details summary. */
 @Component({
+  standalone: false,
   selector: 'host-details-summary',
   styleUrls: ['./host_details_summary.css'],
   templateUrl: './host_details_summary.ng.html',

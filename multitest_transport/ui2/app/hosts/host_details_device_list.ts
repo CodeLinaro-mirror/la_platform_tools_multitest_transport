@@ -31,6 +31,7 @@ import {assertRequiredInput} from '../shared/util';
 
 /** Display a list of devices from a host. */
 @Component({
+  standalone: false,
   selector: 'host-details-device-list',
   styleUrls: ['host_details_device_list.css'],
   templateUrl: './host_details_device_list.ng.html',

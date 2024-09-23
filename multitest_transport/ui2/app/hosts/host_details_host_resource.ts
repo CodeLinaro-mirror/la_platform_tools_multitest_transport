@@ -34,6 +34,7 @@ declare interface NameValueTimeTuple {
 
 /** Displaying extra info list of a host. */
 @Component({
+  standalone: false,
   selector: 'host-details-host-resource',
   styleUrls: ['host_details_host_resource.css'],
   templateUrl: 'host_details_host_resource.ng.html',

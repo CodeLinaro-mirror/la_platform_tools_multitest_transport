@@ -21,6 +21,7 @@ import {LabHostExtraInfo} from '../services/mtt_lab_models';
 
 /** Displaying extra info list of a host. */
 @Component({
+  standalone: false,
   selector: 'host-details-extra-infos',
   styleUrls: ['host_details_extra_infos.css'],
   templateUrl: 'host_details_extra_infos.ng.html',

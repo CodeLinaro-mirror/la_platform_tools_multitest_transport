@@ -46,6 +46,7 @@ import {UnassignedOfflineHostList} from './unassigned_offline_host_list';
  * offline devices.
  */
 @Component({
+  standalone: false,
   selector: 'offline-host-assignments-page',
   styleUrls: ['offline_host_assignments_page.css'],
   templateUrl: './offline_host_assignments_page.ng.html',

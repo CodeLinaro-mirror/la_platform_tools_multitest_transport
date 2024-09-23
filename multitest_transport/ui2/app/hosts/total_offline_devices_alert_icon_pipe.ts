@@ -21,7 +21,8 @@ import {Pipe, PipeTransform} from '@angular/core';
  * We use the 'error' icon here with yellow color and the 'warning' icon with
  * red color.
  */
-@Pipe({name: 'totalOfflineDevicesAlertIcon'})
+@Pipe({standalone: false,
+       name: 'totalOfflineDevicesAlertIcon'})
 export class TotalOfflineDevicesAlertIconPipe implements PipeTransform {
   transform(offlineDevices: number, allDevices: number, highlightRatio: number):
       string {

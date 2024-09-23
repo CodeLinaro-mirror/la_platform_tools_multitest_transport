@@ -42,6 +42,7 @@ import {HostUpdateDialog, HostUpdateDialogData} from './host_update_dialog';
 
 /** Displaying a list of hosts. */
 @Component({
+  standalone: false,
   selector: 'host-list',
   styleUrls: ['host_list.css'],
   templateUrl: './host_list.ng.html',

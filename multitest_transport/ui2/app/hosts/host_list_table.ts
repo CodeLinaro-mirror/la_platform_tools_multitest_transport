@@ -40,6 +40,7 @@ import {HostDetails, HostDetailsDialogParams} from './host_details';
  * A component for displaying a list of hosts.
  */
 @Component({
+  standalone: false,
   selector: 'host-list-table',
   styleUrls: ['host_list_table.css'],
   templateUrl: './host_list_table.ng.html',

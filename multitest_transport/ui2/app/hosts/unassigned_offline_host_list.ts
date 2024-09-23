@@ -26,6 +26,7 @@ import {HostListTable} from './host_list_table';
 
 /** Displays unassigned offline hosts or hosts with offline devices. */
 @Component({
+  standalone: false,
   selector: 'unassigned-offline-host-list',
   styleUrls: ['unassigned_offline_host_list.css'],
   templateUrl: './unassigned_offline_host_list.ng.html',

@@ -25,6 +25,7 @@ import {HostListTable} from './host_list_table';
 
 /** Displays assigned to others offline hosts or hosts with offline devices. */
 @Component({
+  standalone: false,
   selector: 'assigned-others-offline-host-list',
   styleUrls: ['assigned_others_offline_host_list.css'],
   templateUrl: './assigned_others_offline_host_list.ng.html',
