@@ -57,6 +57,7 @@ export const MAX_KEY_COMBINATION_MILLIS = 2000;
  * on the selected device.
  */
 @Component({
+  standalone: false,
   selector: 'workflow-editor',
   templateUrl: './workflow_editor.ng.html',
   styleUrls: ['./workflow_editor.css'],

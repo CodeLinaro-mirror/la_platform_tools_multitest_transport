@@ -22,6 +22,7 @@ import {APPLICATION_NAME} from '../shared/shared_module';
 import {buildApiErrorMessage, reloadPage} from '../shared/util';
 /** A component for display settings */
 @Component({
+  standalone: false,
   selector: 'setting-page',
   styleUrls: ['setting_page.css'],
   templateUrl: './setting_page.ng.html',

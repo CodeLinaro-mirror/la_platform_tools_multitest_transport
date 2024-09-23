@@ -38,6 +38,7 @@ export interface ErrorDialogData {
 
 /** Component that displays an error popup dialog box */
 @Component({
+  standalone: false,
   selector: 'error-dialog',
   templateUrl: './error_dialog.ng.html',
   styleUrls: ['./error_dialog.css'],

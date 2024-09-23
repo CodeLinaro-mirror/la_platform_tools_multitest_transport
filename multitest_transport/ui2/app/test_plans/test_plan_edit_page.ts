@@ -43,6 +43,7 @@ const TOTAL_STEPS = 4;
  * Form for creating or editing a test plan
  */
 @Component({
+  standalone: false,
   selector: 'test-plan-edit-page',
   styleUrls: ['test_plan_edit_page.css'],
   templateUrl: './test_plan_edit_page.ng.html',

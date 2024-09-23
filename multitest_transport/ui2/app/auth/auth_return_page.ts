@@ -22,6 +22,7 @@ import {Component, OnInit} from '@angular/core';
  * localhost/127.0.0.1, and accidently closed its parent window
  */
 @Component({
+  standalone: false,
   selector: 'auth-return-page',
   template: '<div>{{message}}</div>',
 })

@@ -24,6 +24,7 @@ declare var analyticsEnabled: boolean;
 
 /** Main application {@link Component}. */
 @Component({
+  standalone: false,
   selector: 'aoa-app',
   templateUrl: './app.ng.html',
   styleUrls: ['./app.css'],

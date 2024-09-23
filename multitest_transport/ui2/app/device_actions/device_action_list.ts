@@ -27,6 +27,7 @@ import {buildApiErrorMessage} from '../shared/util';
 
 /** A component for displaying a list of device actions. */
 @Component({
+  standalone: false,
   selector: 'device-action-list',
   styleUrls: ['device_action_list.css'],
   templateUrl: './device_action_list.ng.html',

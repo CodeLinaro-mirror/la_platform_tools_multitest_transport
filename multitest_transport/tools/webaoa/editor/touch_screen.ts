@@ -25,6 +25,7 @@ const MAX_CLICK_MILLIS = 100;
 
 /** A device's touchscreen, capable of handling clicks and gestures. */
 @Component({
+  standalone: false,
   selector: 'touch-screen',
   templateUrl: './touch_screen.ng.html',
   styleUrls: ['./touch_screen.css'],

@@ -18,6 +18,7 @@ import {Component} from '@angular/core';
 
 /** Component that displays a authentication dialog box */
 @Component({
+  standalone: false,
   selector: 'auth-dialog',
   templateUrl: './auth_dialog.ng.html',
   styleUrls: ['./auth_dialog.css'],

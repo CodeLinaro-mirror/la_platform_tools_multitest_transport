@@ -30,6 +30,7 @@ import {buildApiErrorMessage} from '../shared/util';
  * A component for displaying a list of test plans.
  */
 @Component({
+  standalone: false,
   selector: 'test-plan-list',
   styleUrls: ['test_plan_list.css'],
   templateUrl: './test_plan_list.ng.html',

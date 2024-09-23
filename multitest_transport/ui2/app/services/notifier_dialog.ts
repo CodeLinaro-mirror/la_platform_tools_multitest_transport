@@ -29,6 +29,7 @@ export interface NotifierDialogData {
 
 /** Component that displays a popup dialog box */
 @Component({
+  standalone: false,
   selector: 'notifier-dialog',
   templateUrl: './notifier_dialog.ng.html',
   styleUrls: ['./notifier_dialog.css'],

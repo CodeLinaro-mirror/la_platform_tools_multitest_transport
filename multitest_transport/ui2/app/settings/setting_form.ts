@@ -28,6 +28,7 @@ import {buildApiErrorMessage} from '../shared/util';
 
 /** A component for displaying setting form */
 @Component({
+  standalone: false,
   selector: 'setting-form',
   styleUrls: ['setting_form.css'],
   templateUrl: './setting_form.ng.html',

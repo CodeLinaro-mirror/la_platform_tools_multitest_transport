@@ -26,6 +26,7 @@ import {buildApiErrorMessage} from '../shared/util';
 
 /** A component for displaying a list of imported config sets. */
 @Component({
+  standalone: false,
   selector: 'config-set-list',
   styleUrls: ['config_set_list.css'],
   templateUrl: './config_set_list.ng.html',

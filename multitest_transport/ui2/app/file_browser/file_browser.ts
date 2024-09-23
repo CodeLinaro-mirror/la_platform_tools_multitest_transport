@@ -27,6 +27,7 @@ import {buildApiErrorMessage, noAwait} from '../shared/util';
 
 /** A component for file browsing */
 @Component({
+  standalone: false,
   selector: 'file-browser',
   styleUrls: ['file_browser.css'],
   templateUrl: './file_browser.ng.html',

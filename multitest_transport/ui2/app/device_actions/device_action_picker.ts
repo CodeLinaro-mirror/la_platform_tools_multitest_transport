@@ -30,6 +30,7 @@ import {assertRequiredInput} from '../shared/util';
  * select device actions such as flush, and reboot before a test can be run.
  */
 @Component({
+  standalone: false,
   selector: 'device-action-picker',
   styleUrls: ['device_action_picker.css'],
   templateUrl: './device_action_picker.ng.html',

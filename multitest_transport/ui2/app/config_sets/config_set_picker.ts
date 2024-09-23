@@ -28,6 +28,7 @@ import {buildApiErrorMessage} from '../shared/util';
 
 /** A component for selecting remote config sets to import. */
 @Component({
+  standalone: false,
   selector: 'config-set-picker',
   styleUrls: ['config_set_picker.css'],
   templateUrl: './config_set_picker.ng.html',

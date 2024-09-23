@@ -28,6 +28,7 @@ export interface AoaActionEditorResult {
 
 /** Dialog used to edit AOA actions. */
 @Component({
+  standalone: false,
   selector: 'action-editor',
   templateUrl: './action_editor.ng.html',
   styleUrls: ['./action_editor.css'],

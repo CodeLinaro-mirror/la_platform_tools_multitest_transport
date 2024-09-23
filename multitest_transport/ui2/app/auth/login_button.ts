@@ -24,6 +24,7 @@ import {buildApiErrorMessage, delay, reloadPage} from '../shared/util';
 
 /** A component for displaying the login button. */
 @Component({
+  standalone: false,
   selector: 'login-button',
   styleUrls: ['login_button.css'],
   templateUrl: './login_button.ng.html',

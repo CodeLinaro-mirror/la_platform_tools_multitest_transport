@@ -30,6 +30,7 @@ import {buildApiErrorMessage, FormMode} from '../shared/util';
  * Form for creating a device action
  */
 @Component({
+  standalone: false,
   selector: 'device-action-edit-page',
   styleUrls: ['device_action_edit_page.css'],
   templateUrl: './device_action_edit_page.ng.html',

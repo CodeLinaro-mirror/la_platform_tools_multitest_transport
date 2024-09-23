@@ -20,6 +20,7 @@ import {APPLICATION_NAME} from '../shared/shared_module';
 
 /** A component for file browser page  */
 @Component({
+  standalone: false,
   selector: 'file-browser-page',
   templateUrl: './file_browser_page.ng.html',
 })
