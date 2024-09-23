@@ -41,6 +41,7 @@ export interface DeviceDetailsDialogParams {
  * A component for displaying device details information.
  */
 @Component({
+  standalone: false,
   selector: 'device-details',
   styleUrls: ['device_details.css'],
   templateUrl: './device_details.ng.html',

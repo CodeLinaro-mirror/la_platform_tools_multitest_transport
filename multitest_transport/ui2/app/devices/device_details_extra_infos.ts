@@ -5,6 +5,7 @@ import {LabDeviceExtraInfo} from '../services/mtt_lab_models';
 
 /** Displays extra info list of a device. */
 @Component({
+  standalone: false,
   selector: 'device-details-extra-infos',
   styleUrls: ['device_details_extra_infos.css'],
   templateUrl: 'device_details_extra_infos.ng.html',

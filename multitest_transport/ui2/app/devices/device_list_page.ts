@@ -22,6 +22,7 @@ import {APPLICATION_NAME} from '../shared/shared_module';
 
 /** A component for displaying a list of devices. */
 @Component({
+  standalone: false,
   selector: 'device-list-page',
   templateUrl: './device_list_page.ng.html',
 })

@@ -20,6 +20,7 @@ import {DeviceInfo} from '../services/tfc_models';
 
 /** A component for displaying a given list of devices. */
 @Component({
+  standalone: false,
   selector: 'simple-device-list',
   styleUrls: ['simple_device_list.css'],
   templateUrl: './simple_device_list.ng.html',

@@ -41,6 +41,7 @@ import {areArraysEqual, assertRequiredInput, buildApiErrorMessage, getFilterDefa
 
 /** Displaying a list of devices. */
 @Component({
+  standalone: false,
   selector: 'device-list',
   styleUrls: ['device_list.css'],
   templateUrl: './device_list.ng.html',

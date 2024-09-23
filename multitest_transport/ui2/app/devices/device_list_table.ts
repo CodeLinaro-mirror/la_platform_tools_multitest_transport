@@ -37,6 +37,7 @@ import {UserService} from '../services/user_service';
  * A component for displaying a list of device.
  */
 @Component({
+  standalone: false,
   selector: 'device-list-table',
   styleUrls: ['device_list_table.css'],
   templateUrl: './device_list_table.ng.html',

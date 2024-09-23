@@ -30,6 +30,7 @@ import {buildApiErrorMessage} from '../shared/util';
 
 /** Readonly form for device summary. */
 @Component({
+  standalone: false,
   selector: 'device-details-summary',
   styleUrls: ['./device_details_summary.css'],
   templateUrl: './device_details_summary.ng.html',

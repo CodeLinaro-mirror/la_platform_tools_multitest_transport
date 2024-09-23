@@ -32,6 +32,7 @@ import {UserService} from '../services/user_service';
 
 /** Form for device history. */
 @Component({
+  standalone: false,
   selector: 'device-details-history',
   styleUrls: ['./device_details_history.css'],
   templateUrl: './device_details_history.ng.html',
