@@ -210,7 +210,8 @@ export const routes: Routes = [
 
 /** Homepage */
 @Component(
-    {selector: 'mtt', styleUrls: ['./app.css'], templateUrl: './app.ng.html'})
+    {standalone: false,
+     selector: 'mtt', styleUrls: ['./app.css'], templateUrl: './app.ng.html'})
 export class Mtt implements OnDestroy {
   sideNavExpanded = false;
   netdataUrl: string = '';
