@@ -205,8 +205,7 @@ export class DeviceList implements OnChanges, OnDestroy, OnInit {
     'note',
     'run_target',
   ];
-  private readonly urlQueryParamObservable: Observable<ParamMap> =
-      this.route.queryParamMap.pipe(take(1));
+  private readonly urlQueryParamObservable: Observable<ParamMap>;
   private readonly autoUpdateInterval = 30_000;
 
   get inputValue(): string {
@@ -271,6 +270,7 @@ export class DeviceList implements OnChanges, OnDestroy, OnInit {
       readonly userService: UserService,
       @Inject(APP_DATA) readonly appData: AppData,
   ) {
+    this.urlQueryParamObservable = this.route.queryParamMap.pipe(take(1));
     if (!this.appData.isAtsLabInstance) {
       // Hide unnecessary fields in the ATS instance.
       this.columns = this.columns.filter(
