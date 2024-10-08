@@ -151,7 +151,7 @@ ENV LD_LIBRARY_PATH /sdk_tools/lib64:${LD_LIBRARY_PATH}
 
 # Install Google Cloud SDK
 # Reference: https://github.com/GoogleCloudPlatform/cloud-sdk-docker/blob/master/Dockerfile
-ENV CLOUD_SDK_VERSION=363.0.0
+ENV CLOUD_SDK_VERSION=467.0.0
 ENV CLOUD_SDK_ROOT=/usr/lib/google-cloud-sdk
 RUN apt-get -qqy update && apt-get install -qqy \
         gcc \
