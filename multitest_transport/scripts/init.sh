@@ -136,7 +136,8 @@ then
         --enable_client_file_transfer=false \
         --enable_grpc_lab_server=true \
         --enable_simple_scheduler_shuffle=true \
-        --olc_database_jdbc_url='jdbc:mysql:///ats_db?socketFactory=org.newsclub.net.mysql.AFUNIXDatabaseSocketFactory&junixsocket.file=/data/ats_db/mysqld.sock' \
+        --olc_database_jdbc_property='socketFactory=org.newsclub.net.mysql.AFUNIXDatabaseSocketFactory,junixsocket.file=/data/ats_db/mysqld.sock' \
+        --olc_database_jdbc_url='jdbc:mysql:///ats_db' \
         --olc_server_port="${OLC_SERVER_PORT}" \
         --public_dir="${MTT_LOG_DIR}" \
         --resource_dir_name="olc_server_res_files" \
