@@ -20,9 +20,11 @@ import logging
 import os
 import queue
 import re
+import time
 from typing import Callable, Iterator, List, Optional
 import uuid
 
+import grpc
 from multitest_transport.models import ndb_models
 from multitest_transport.util import file_util
 from multitest_transport.util import olcs_session_client
@@ -276,7 +278,7 @@ class OlcsSessionStub:
         map(
             self._ConvertCommandDetail,
             request_detail.command_details.values(),
-            itertools.repeat(request_detail)
+            itertools.repeat(request_detail),
         )
     )
 
@@ -395,6 +397,7 @@ class OlcsSessionStub:
     self._executor.submit(
         self._ProcessSubscribeSessionResponses,
         subscribe_id,
+        request_id,
         session_response_subscriber,
         subscribe_session_responses,
     )
@@ -403,6 +406,7 @@ class OlcsSessionStub:
   def _ProcessSubscribeSessionResponses(
       self,
       subscribe_id: str,
+      request_id: str,
       session_response_subscriber: Callable[
           [session_service_pb2.SubscribeSessionResponse], None
       ],
@@ -414,13 +418,24 @@ class OlcsSessionStub:
 
     Args:
       subscribe_id: The id of the subscribe.
+      request_id: The id of the request it subscribes to.
       session_response_subscriber: The callback method to be called when there's
         subscribed response.
       subscribe_session_responses: The subscribe session responses.
     """
-    for subscribe_session_response in subscribe_session_responses:
-      session_response_subscriber(subscribe_session_response)
-    self._subscribe_session_queues.pop(subscribe_id)
+    try:
+      for subscribe_session_response in subscribe_session_responses:
+        session_response_subscriber(subscribe_session_response)
+    except grpc.RpcError as e:  
+      logging.exception(
+          "Failed to process subscribe session %s responses", request_id
+      )
+      if e.code() == grpc.StatusCode.UNAVAILABLE:   # pytype: disable=attribute-error
+        # Sleep 60 seconds to wait for the server to be back.
+        time.sleep(60)
+        self.StartSubscribeSession(request_id, session_response_subscriber)
+    finally:
+      self._subscribe_session_queues.pop(subscribe_id)
 
   def StopSubscribeSession(self, subscribe_id: str):
     """Stop subscribing session to OLCS.
@@ -583,9 +598,8 @@ class OlcsSessionStub:
         command_info_proto.device_dimensions.append(
             device_attribute_requirement
         )
-        command_info_proto.sharding_mode = (
-            xts_common_pb2.ShardingMode.Value(
-                command_info.sharding_mode)
+        command_info_proto.sharding_mode = xts_common_pb2.ShardingMode.Value(
+            command_info.sharding_mode
         )
       # TODO: add device dimension
     if request.max_retry_on_test_failures:

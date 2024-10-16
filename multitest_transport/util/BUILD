@@ -329,6 +329,7 @@ pytype_strict_library(
         ":file_util_lib",
         ":olcs_session_client_lib",
         "//google/protobuf:duration_py_pb2",
+        "//net/grpc/python:grpc",
         "@com_google_deviceinfra//src/devtools/mobileharness/infra/ats/server/proto:service_py_proto",
         "@com_google_deviceinfra//src/devtools/mobileharness/infra/client/longrunningservice/proto:session_py_proto",
         "@com_google_deviceinfra//src/devtools/mobileharness/infra/client/longrunningservice/proto:session_service_py_proto",
