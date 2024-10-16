@@ -254,9 +254,15 @@ class OlcsSessionStub:
     )
     request_message.priority = request_detail.priority
     request_message.queue_timeout_seconds = request_detail.queue_timeout.seconds
-    request_message.cancel_reason = _TEST_RUN_CANCEL_REASON_MAP.get(
-        request_detail.cancel_reason, common.CancelReason.UNKNOWN
-    )
+    if request_detail.state == service_pb2.RequestDetail.RequestState.CANCELED:
+      request_message.cancel_reason = _TEST_RUN_CANCEL_REASON_MAP.get(
+          request_detail.cancel_reason, common.CancelReason.UNKNOWN
+      )
+    elif request_detail.state == service_pb2.RequestDetail.RequestState.ERROR:
+      request_message.error_reason = service_pb2.ErrorReason.Name(
+          request_detail.error_reason
+      )
+    request_message.error_message = request_detail.error_message
     request_message.max_retry_on_test_failures = (
         request_detail.max_retry_on_test_failures
     )

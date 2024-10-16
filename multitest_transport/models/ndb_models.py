@@ -658,6 +658,7 @@ class TestRun(ndb.Model):
     hook_data: additional data used by hooks
     cancel_reason: cancellation reason
     error_reason: error reason
+    error_message: error message
   """
   prev_test_run_key = ndb.KeyProperty(kind='TestRun')
   user = ndb.StringProperty()
@@ -693,6 +694,7 @@ class TestRun(ndb.Model):
 
   cancel_reason = ndb.EnumProperty(common.CancelReason)
   error_reason = ndb.TextProperty()
+  error_message = ndb.TextProperty()
 
   @classmethod
   def get_by_id(cls, id_, **kwargs):

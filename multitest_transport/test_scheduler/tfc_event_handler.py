@@ -213,6 +213,13 @@ def _ProcessRequestEvent(test_run_id, message):
     test_run.failed_test_run_count = message.failed_test_run_count
   test_run.cancel_reason = (
       message.request.cancel_reason if message.request else None)
+  if (
+      os.environ.get('IS_OMNILAB_BASED') == 'true'
+  ):
+    test_run.error_reason = (
+        message.request.error_reason if message.request else None)
+    test_run.error_message = (
+        message.request.error_message if message.request else None)
   test_run.put()
 
 

@@ -48,11 +48,16 @@
                                fxFlex>
             </test-run-failures>
           </div>
-          <div class="state-info" #stateInfo
+          <div class="state-info state-text" #stateInfo
                [title]="stateInfo.offsetWidth < stateInfo.scrollWidth ? testRun.state_info : ''">
             {{testRun.state_info}}
           </div>
-          <div class="action-buttons">
+          <div class="error-message state-text"  #errorMessage
+              [title]="errorMessage.offsetWidth < errorMessage.scrollWidth ? testRun.error_message : ''"
+              *ngIf="testRun.error_message">
+            Error Message: {{testRun.error_message}}
+          </div>
+          <div class="action-buttons" *ngIf="isFinalTestRunState(testRun.state)">
             <button mat-flat-button color="accent" (click)="rerunTestRun()"
                     *ngIf="isFinalTestRunState(testRun.state); else cancel">
               Rerun

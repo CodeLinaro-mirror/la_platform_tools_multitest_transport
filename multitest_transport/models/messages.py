@@ -1157,6 +1157,9 @@ class TestRun(messages.Message):
   test_package_info = messages.MessageField(TestPackageInfo, 24)
   log_entries = messages.MessageField(EventLogEntry, 25, repeated=True)
 
+  error_reason = messages.StringField(26)
+  error_message = messages.StringField(27)
+
 
 @Converter(ndb_models.TestRun, TestRun)
 def _TestRunConverter(obj):
@@ -1200,6 +1203,8 @@ def _TestRunConverter(obj):
       test_devices=ConvertList(obj.test_devices, TestDeviceInfo),
       test_package_info=Convert(obj.test_package_info, TestPackageInfo),
       log_entries=ConvertList(event_log.GetEntries(obj), EventLogEntry),
+      error_reason=obj.error_reason,
+      error_message=obj.error_message,
   )
 
 
