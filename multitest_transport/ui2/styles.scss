@@ -22,7 +22,6 @@
 
 // Core material styles
 @include mat-deprecated.all-legacy-component-typographies();
-@include mat.core();
 @include mat.app-background();
 @include mat.elevation-classes();
 
