@@ -57,7 +57,7 @@
               *ngIf="testRun.error_message">
             Error Message: {{testRun.error_message}}
           </div>
-          <div class="action-buttons" *ngIf="isFinalTestRunState(testRun.state)">
+          <div class="action-buttons">
             <button mat-flat-button color="accent" (click)="rerunTestRun()"
                     *ngIf="isFinalTestRunState(testRun.state); else cancel">
               Rerun
