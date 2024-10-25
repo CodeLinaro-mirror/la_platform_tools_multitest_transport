@@ -545,6 +545,7 @@ class OlcsSessionStub:
     command_attempt_message.state = _COMMAND_STATE_MAP.get(
         command_detail.state, common.CommandState.UNKNOWN
     )
+    command_attempt_message.error = command_detail.error_message
     command_attempt_message.start_time = command_detail.start_time.ToDatetime()
     command_attempt_message.end_time = command_detail.end_time.ToDatetime()
     command_attempt_message.create_time = (
