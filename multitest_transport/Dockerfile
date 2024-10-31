@@ -118,18 +118,18 @@ RUN git clone https://github.com/grpc/grpc && \
     cd - && \
     rm -rf grpc
 
-# Install JDK11 from AOSP (https://android.googlesource.com/platform/prebuilts/jdk/jdk11.git/+/4b776e23b6964354047211b1e343dc3ca14ce60a)
-RUN mkdir -p /jdk/jdk11 && \
-    cd /jdk/jdk11 && \
+# Install JDK21 from AOSP (https://android.googlesource.com/platform/prebuilts/jdk/jdk21/+/26b6463692d88004bf9eba1eef15bc968cf99b4f)
+RUN mkdir -p /jdk/jdk21 && \
+    cd /jdk/jdk21 && \
     git init && \
-    git remote add origin https://android.googlesource.com/platform/prebuilts/jdk/jdk11.git && \
+    git remote add origin https://android.googlesource.com/platform/prebuilts/jdk/jdk21.git && \
     git config core.sparseCheckout true && \
     echo "linux-x86/" >> .git/info/sparse-checkout && \
-    git fetch origin 4b776e23b6964354047211b1e343dc3ca14ce60a --depth 1 && \
-    git checkout 4b776e23b6964354047211b1e343dc3ca14ce60a && \
+    git fetch origin 26b6463692d88004bf9eba1eef15bc968cf99b4f --depth 1 && \
+    git checkout 26b6463692d88004bf9eba1eef15bc968cf99b4f && \
     rm -rf .git/ && \
     cd -
-ENV JAVA_HOME /jdk/jdk11/linux-x86
+ENV JAVA_HOME /jdk/jdk21/linux-x86
 ENV PATH ${JAVA_HOME}/bin:${PATH}
 
 # Install SDK tools (aapt, adb, fastboot, mke2fs)
