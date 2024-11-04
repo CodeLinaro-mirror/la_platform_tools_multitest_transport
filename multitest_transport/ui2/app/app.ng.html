@@ -38,6 +38,19 @@
     <div class="sidenav-container">
       <mat-nav-list>
         <h3 matSubheader>
+          <span>Build Approval</span>
+        </h3>
+
+        <a mat-list-item routerLink="/builds" routerLinkActive="active" [matTooltip]="'Builds'">
+          <mat-icon matListItemIcon>build</mat-icon>
+          <span matListItemMeta>
+            <span>Builds</span>
+          </span>
+        </a>
+
+        <mat-divider></mat-divider>
+
+        <h3 matSubheader>
           <span>Testing</span>
         </h3>
 
