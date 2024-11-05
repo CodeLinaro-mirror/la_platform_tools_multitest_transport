@@ -50,7 +50,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -
         xz-utils \
         zip
 
-RUN add-apt-repository ppa:deadsnakes/ppa
+RUN add-apt-repository -y ppa:deadsnakes/ppa
 RUN export DEBIAN_FRONTEND=noninteractive; apt update -qq; apt install -y -qq \
   python python3.8 python3.9 python3-pip python3.9-dev \
   python3-distutils python3.9-distutils
@@ -147,7 +147,6 @@ RUN wget -q --retry-connrefused -O platform-tools.zip https://dl.google.com/andr
         platform-tools/mke2fs \
     && rm platform-tools.zip
 ENV PATH /tmp/custom_sdk_tools:/sdk_tools:${PATH}
-ENV LD_LIBRARY_PATH /sdk_tools/lib64:${LD_LIBRARY_PATH}
 
 # Install Google Cloud SDK
 # Reference: https://github.com/GoogleCloudPlatform/cloud-sdk-docker/blob/master/Dockerfile
