@@ -72,13 +72,15 @@
   <!-- Build fingerprint -->
   <ng-container matColumnDef="fingerprint">
     <mat-header-cell *matHeaderCellDef fxFlex> Fingerprint </mat-header-cell>
-    <mat-cell *matCellDef="let build" fxFlex> {{build.fingerprint}} </mat-cell>
+    <mat-cell *matCellDef="let build" [matTooltip]="build.fingerprint" fxFlex>
+      {{build.fingerprint}}
+    </mat-cell>
   </ng-container>
 
   <!-- Build source url -->
   <ng-container matColumnDef="source">
-    <mat-header-cell *matHeaderCellDef fxFlex class="build-source-column"> Source </mat-header-cell>
-    <mat-cell *matCellDef="let build" fxFlex class="build-source-column">
+    <mat-header-cell *matHeaderCellDef fxFlex> Source </mat-header-cell>
+    <mat-cell *matCellDef="let build" [matTooltip]="build.file_url" fxFlex>
       {{build.file_url}}
     </mat-cell>
   </ng-container>
