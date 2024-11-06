@@ -59,6 +59,7 @@ pytype_strict_library(
     name = "operation_lib",
     srcs = ["operation.py"],
     deps = [
+        "//third_party/py/distutils",
         "//multitest_transport/models:messages_lib",
         "//multitest_transport/models:ndb_models_lib",
         "//multitest_transport/util:file_util_lib",
