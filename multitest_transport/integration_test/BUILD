@@ -30,6 +30,7 @@ py_test(
         "base_integration_test.py",
     ],
     features = ["-enable_relr"],
+    linking_mode = "static",
     tags = ["local"],
     deps = [
         ":integration_util",
@@ -48,6 +49,7 @@ py_test(
         "test_data/e2e_test_config.yaml",
     ],
     features = ["-enable_relr"],
+    linking_mode = "static",
     tags = ["local"],
     deps = [
         ":integration_util",
@@ -61,6 +63,7 @@ py_test(
         "event_handler_integration_test.py",
     ],
     features = ["-enable_relr"],
+    linking_mode = "static",
     shard_count = 2,
     tags = ["local"],
     deps = [
@@ -80,6 +83,7 @@ py_test(
         "test_data/test_result.xml",
     ],
     features = ["-enable_relr"],
+    linking_mode = "static",
     tags = ["local"],
     deps = [
         ":integration_util",
@@ -93,6 +97,7 @@ py_test(
         "test_scheduler_integration_test.py",
     ],
     features = ["-enable_relr"],
+    linking_mode = "static",
     tags = ["local"],
     deps = [
         ":integration_util",
