@@ -96,7 +96,17 @@ fi
 if [[ -z "${MTT_CONTROL_SERVER_URL}" ]] || [[ "${OPERATION_MODE}"=="on_premise" ]]
 then
   # Start RabbitMQ server
-  time service rabbitmq-server start || (cat /var/log/rabbitmq/startup_*; false)
+  RABBITMQ_PID_DIR="/var/run/rabbitmq"
+  RABBITMQ_USER="rabbitmq"
+  if [ ! -d ${RABBITMQ_PID_DIR} ] ; then
+    mkdir -p ${RABBITMQ_PID_DIR}
+    chown -R ${RABBITMQ_USER}:${RABBITMQ_USER} ${RABBITMQ_PID_DIR}
+    chmod 755 ${RABBITMQ_PID_DIR}
+  fi
+  export RABBITMQ_PID_FILE="${RABBITMQ_PID_DIR}/pid"
+  rabbitmq-server >/var/log/rabbitmq/startup_log 2>&1 &
+  time rabbitmqctl wait --timeout 600 "${RABBITMQ_PID_FILE}" || \
+  (cat /var/log/rabbitmq/startup_*; false)
 
   MTT_CONTROL_SERVER_PORT="${MTT_CONTROL_SERVER_PORT:-8000}"
   MTT_CONTROL_SERVER_LOG_DIR="${MTT_LOG_DIR}/server"
