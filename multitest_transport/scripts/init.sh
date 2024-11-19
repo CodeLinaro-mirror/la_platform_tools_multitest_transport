@@ -243,7 +243,14 @@ fi
 if [[ "${MAX_LOCAL_VIRTUAL_DEVICES}" -ne 0 ]]
 then
   # Start rsyslog which is a dependency of crosvm.
+  # It starts slowly if open file limit is high.
+  # Reference: https://github.com/rsyslog/rsyslog/issues/5158
+  OPEN_FILE_LIMIT="$(ulimit -Sn)"
+  if [[ "${OPEN_FILE_LIMIT}" -gt 32768 ]] || [[ "${OPEN_FILE_LIMIT}" == unlimited ]]; then
+    ulimit -Sn 32768
+  fi
   rsyslogd -iNONE
+  ulimit -Sn "${OPEN_FILE_LIMIT}"
   # Start cuttlefish service.
   if [[ -n "${IPV6_BRIDGE_NETWORK}" ]]
   then
