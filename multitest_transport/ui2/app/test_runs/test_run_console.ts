@@ -34,10 +34,18 @@ export const LOG_TYPES = {
   'Host Log': 'host_log.txt',
   'Test Log': 'stdout.txt',
 };
-/** Omnilab log types and filenames. */
-export const OMNILAB_LOG_TYPES = {
-  'Host Log': 'test_output.txt',
-  'Test Log': 'xts_tf_output.log',
+/** Source types for test run logs */
+export const SOURCE_TYPE = ['Tradefed', 'OLC Server', 'Mobly'];
+/** Log types and filenames for Tradefed jobs */
+export const TF_LOG_TYPES = {
+  'Driver log': 'test_output.txt',
+  'Host log': 'xts_tf_output.log',
+  'Test log': 'tool-logs/stdout.txt'
+};
+/** Log types and filenames for Mobly jobs */
+export const MOBLY_LOG_TYPES = {
+  'Mobly Log': 'mobly_logs/test_log.INFO',
+  'Driver log': 'test_output.txt'
 };
 /** Maximum lines to keep. */
 export const MAX_CONSOLE_LENGTH = 200;
@@ -61,6 +69,15 @@ export class TestRunConsole implements OnInit, OnChanges, OnDestroy {
   selectedAttempt?: CommandAttempt;
   LOG_TYPES = LOG_TYPES;
   selectedType = Object.values(LOG_TYPES)[0];
+  isOmnilabBased = false;
+  SOURCE_TYPE = SOURCE_TYPE;
+  selectedSourceType = Object.values(SOURCE_TYPE)[0];
+  TF_LOG_TYPES = TF_LOG_TYPES;
+  selectedTfLogType = Object.values(TF_LOG_TYPES)[2];
+  MOBLY_LOG_TYPES = MOBLY_LOG_TYPES;
+  selectedMoblyLogType = Object.values(MOBLY_LOG_TYPES)[0];
+  moblyTestIds: string[] = [];
+  selectedMoblyTestId = '';
   /** True if current logs have been fetched at least once. */
   initialized = false;
   offset?: number;
@@ -77,7 +94,7 @@ export class TestRunConsole implements OnInit, OnChanges, OnDestroy {
       @Inject(APP_DATA) private readonly appData: AppData,
       private readonly fs: FileService, private readonly mtt: MttClient) {
     if (this.appData.isOmniLabBased) {
-      this.LOG_TYPES = OMNILAB_LOG_TYPES;
+      this.isOmnilabBased = true;
       this.selectedType = Object.values(this.LOG_TYPES)[0];
     }
   }
@@ -98,6 +115,12 @@ export class TestRunConsole implements OnInit, OnChanges, OnDestroy {
   /** Update parameters and polling. */
   private update(force = false) {
     this.invocations = this.request && this.request.command_attempts || [];
+    if (this.invocations.length > 0 && this.isOmnilabBased) {
+      this.moblyTestIds = this.invocations[0].mobly_test_id || [];
+      if (this.moblyTestIds.length > 0) {
+        this.selectedMoblyTestId = this.moblyTestIds[0];
+      }
+    }
 
     // Check if disabled or nothing to display.
     if (this.disabled || !this.invocations) {
@@ -128,11 +151,14 @@ export class TestRunConsole implements OnInit, OnChanges, OnDestroy {
     }
     const isActive = !isFinalCommandState(this.selectedAttempt.state);
     if (this.appData.isOmniLabBased) {
-      if (!this.selectedAttempt.log_dir_path) {
-        return null;
+      if (this.selectedSourceType === 'OLC Server') {
+        return 'logs/olc_server_session_logs/olc_server_session_log.txt';
+      } else if (this.selectedSourceType === 'Mobly') {
+        return `logs/non-tradefed_logs/MoblyAospPackageTest_test_${
+            this.selectedMoblyTestId}/${this.selectedMoblyLogType}`;
+      } else {  // Tradefed Logs
+        return `${this.selectedAttempt.tf_log_path}/${this.selectedTfLogType}`;
       }
-      return this.selectedAttempt.log_dir_path + '/XtsTradefedTest_test_' +
-          `${this.selectedAttempt.attempt_id}/${this.selectedType}`;
     }
     return (isActive ? ACTIVE_LOG_DIR : FINAL_LOG_DIR) + this.selectedType;
   }

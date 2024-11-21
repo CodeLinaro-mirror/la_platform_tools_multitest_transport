@@ -436,7 +436,7 @@ class OlcsSessionStub:
       logging.exception(
           "Failed to process subscribe session %s responses", request_id
       )
-      if e.code() == grpc.StatusCode.UNAVAILABLE:   # pytype: disable=attribute-error
+      if e.code() == grpc.StatusCode.UNAVAILABLE:  # pytype: disable=attribute-error
         # Sleep 60 seconds to wait for the server to be back.
         time.sleep(60)
         self.StartSubscribeSession(request_id, session_response_subscriber)
@@ -566,13 +566,24 @@ class OlcsSessionStub:
         command_attempt_message.command_id,
         "logs",
     )
-    # TODO: add log path for mobly test.
     if os.path.exists(log_dir_path):
       for dir_name in os.listdir(log_dir_path):
-        logging.info("dir_name: %s", dir_name)
         if re.match(r"inv_\d+", dir_name):
-          command_attempt_message.log_dir_path = "logs/" + dir_name
-          break
+          tf_path_with_inv_id = os.path.join(log_dir_path, dir_name)
+          for tf_dir_name in os.listdir(tf_path_with_inv_id):
+            if re.match(r"XtsTradefedTest_test_.*", tf_dir_name):
+              command_attempt_message.tf_log_path = os.path.join(
+                  "logs", dir_name, tf_dir_name
+              )
+              break
+      mobly_log_dir_path = os.path.join(log_dir_path, "non-tradefed_logs")
+      if os.path.exists(mobly_log_dir_path):
+        for dir_name in os.listdir(mobly_log_dir_path):
+          if re.match(r"MoblyAospPackageTest_test_.*", dir_name):
+            prefix = "MoblyAospPackageTest_test_"
+            command_attempt_message.mobly_test_id.append(
+                dir_name[len(prefix) :]
+            )
     return command_attempt_message
 
   @staticmethod

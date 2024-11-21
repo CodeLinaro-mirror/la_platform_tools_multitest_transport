@@ -190,8 +190,12 @@ class OlcsSessionStubTest(testbed_dependent_test.TestbedDependentTest):
       request_detail = text_format.Parse(
           text_format_file.read(), service_pb2.RequestDetail()
       )
-    mock_exists.return_value = True
-    mock_listdir.return_value = ['inv_1234567890']
+    mock_exists.side_effect = [True, True]  # log_dir_path, mobly_log_dir_path
+    mock_listdir.side_effect = [
+        ['inv_1234567890', 'other_dir'],  # Top-level directory
+        ['XtsTradefedTest_test_TEST_ID1', 'unmatched_dir'],  # Inside inv_...
+        ['MoblyAospPackageTest_test_TEST_ID2'],  # non-tradefed_logs
+    ]
     client_response = session_service_pb2.GetSessionResponse()
     client_response.session_detail.session_output.session_plugin_output[
         olcs_session_stub.SESSION_PLUGIN_LABEL
@@ -285,9 +289,10 @@ class OlcsSessionStubTest(testbed_dependent_test.TestbedDependentTest):
         command_detail.update_time.ToDatetime(),
     )
     self.assertEqual(
-        command_attempt_message.log_dir_path,
-        'logs/inv_1234567890',
+        command_attempt_message.tf_log_path,
+        'logs/inv_1234567890/XtsTradefedTest_test_TEST_ID1',
     )
+    self.assertEqual(command_attempt_message.mobly_test_id, ['TEST_ID2'])
 
   def test_generate_request_proto(self):
     with open(

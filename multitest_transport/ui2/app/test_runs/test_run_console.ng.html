@@ -25,16 +25,56 @@
     </mat-select>
   </mat-form-field>
 
-  <mat-form-field appearance="outline">
-    <mat-label>Type</mat-label>
-    <mat-select [(ngModel)]="selectedType"
-                (selectionChange)="clearConsole(); resetPolling()">
-      <mat-option *ngFor="let type of LOG_TYPES | keyvalue" [value]="type.value">
-        {{type.key}}
-      </mat-option>
-    </mat-select>
-  </mat-form-field>
+  <div *ngIf="!isOmnilabBased">
+    <mat-form-field appearance="outline">
+      <mat-label>Type</mat-label>
+      <mat-select [(ngModel)]="selectedType"
+                  (selectionChange)="clearConsole(); resetPolling()">
+        <mat-option *ngFor="let type of LOG_TYPES | keyvalue" [value]="type.value">
+          {{type.key}}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
 
+  <div *ngIf="isOmnilabBased">
+    <mat-form-field appearance="outline">
+      <mat-label>Log Source</mat-label>
+      <mat-select [(ngModel)]="selectedSourceType"
+                  (selectionChange)="clearConsole(); resetPolling()">
+        <mat-option *ngFor="let type of SOURCE_TYPE" [value]="type">
+          {{type}}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline" *ngIf="selectedSourceType === 'Tradefed'">
+      <mat-label>Tradefed Log Type</mat-label>
+      <mat-select [(ngModel)]="selectedTfLogType"
+                  (selectionChange)="clearConsole(); resetPolling()">
+        <mat-option *ngFor="let type of TF_LOG_TYPES | keyvalue" [value]="type.value">
+          {{type.key}}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline" *ngIf="selectedSourceType === 'Mobly'">
+      <mat-label>Mobly Test Id</mat-label>
+      <mat-select [(ngModel)]="selectedMoblyTestId"
+                  (selectionChange)="clearConsole(); resetPolling()">
+        <mat-option *ngFor="let testId of moblyTestIds" [value]="testId">
+          {{testId}}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline" *ngIf="selectedSourceType === 'Mobly'">
+      <mat-label>Mobly Log Type</mat-label>
+      <mat-select [(ngModel)]="selectedMoblyLogType"
+                  (selectionChange)="clearConsole(); resetPolling()">
+        <mat-option *ngFor="let type of MOBLY_LOG_TYPES | keyvalue" [value]="type.value">
+          {{type.key}}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
   <span fxFlex></span>
 
   <a mat-stroked-button color="accent" [href]="getLogUrl()" target="_blank" *ngIf="output.length">
