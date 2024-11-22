@@ -105,6 +105,7 @@ js_binary(
     externs_list = [
         "//third_party/javascript/moment:externs",
     ],
+    use_precompiled_libraries = False,
     deps = [
         ":app_lib",
     ],
