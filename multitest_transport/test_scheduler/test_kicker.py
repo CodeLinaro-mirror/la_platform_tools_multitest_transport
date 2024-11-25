@@ -490,6 +490,9 @@ def _CreateTFCRequest(test_run_id):
   # Buid command infos
   command_infos = []
   max_concurrent_tasks = None
+  enable_xts_dynamic_download = (
+      test_run.test_run_config.enable_xts_dynamic_download
+  )
   sharding_mode = ndb_models.ShardingMode(
       test_run.test_run_config.sharding_mode or ndb_models.ShardingMode.RUNNER)
   if sharding_mode == ndb_models.ShardingMode.RUNNER:
@@ -518,8 +521,12 @@ def _CreateTFCRequest(test_run_id):
             run_count=test_run.test_run_config.run_count,
             shard_count=1,
             allow_partial_device_match=(
-                test_run.test_run_config.allow_partial_device_match),
-            sharding_mode=sharding_mode.name))
+                test_run.test_run_config.allow_partial_device_match
+            ),
+            sharding_mode=sharding_mode.name,
+            enable_xts_dynamic_download=enable_xts_dynamic_download,
+        )
+    )
   elif env.IS_OMNILAB_BASED and sharding_mode == ndb_models.ShardingMode.MODULE:
     test_bench = _DeviceSpecsToTFCTestBench(
         test_run.test_run_config.cluster, test_run.test_run_config.device_specs)
@@ -529,7 +536,10 @@ def _CreateTFCRequest(test_run_id):
             test_bench=test_bench,
             run_count=test_run.test_run_config.run_count,
             allow_partial_device_match=True,
-            sharding_mode=sharding_mode.name))
+            sharding_mode=sharding_mode.name,
+            enable_xts_dynamic_download=enable_xts_dynamic_download,
+        )
+    )
   elif sharding_mode == ndb_models.ShardingMode.MODULE:
     # Each command in MODULE sharding mode should target one device.
     # Combine if there are multiple device specs e.g.
@@ -686,7 +696,10 @@ def _GetTradefedConfigObjects(test_run):
   objs = []
   # Adding default TF config objects.
   objs.extend(DEFAULT_TF_CONFIG_OBJECTS)
-  if test_run.test.use_dynamic_download_mcts:
+  if (
+      test_run.test_run_config.enable_xts_dynamic_download
+      and not env.IS_OMNILAB_BASED
+  ):
     test_run.test_run_config.use_parallel_setup = False
     objs.extend(DYNAMIC_DOWNLOAD_MCTS_TF_CONFIG)
   for action in test_run.before_device_actions:

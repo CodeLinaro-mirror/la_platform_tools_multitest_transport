@@ -456,12 +456,23 @@ class OlcsSessionStub:
   def _ConvertProtoToCommandInfo(
       self, proto: service_pb2.CommandInfo
   ) -> api_messages.CommandInfo:
+    """Convert Command Info proto to TFC CommandInfo.
+
+    Args:
+      proto: Command Info proto.
+
+    Returns:
+      The CommandInfo defined by TFC.
+    """
     command_info_message = api_messages.CommandInfo()
     command_info_message.name = proto.name
     command_info_message.command_line = proto.command_line
     # TODO: add cluster
     command_info_message.run_count = proto.run_count
     command_info_message.shard_count = proto.shard_count
+    command_info_message.enable_xts_dynamic_download = (
+        proto.enable_xts_dynamic_download
+    )
     return command_info_message
 
   def _ConvertCommandDetail(
@@ -618,6 +629,9 @@ class OlcsSessionStub:
         )
         command_info_proto.sharding_mode = xts_common_pb2.ShardingMode.Value(
             command_info.sharding_mode
+        )
+        command_info_proto.enable_xts_dynamic_download = (
+            command_info.enable_xts_dynamic_download
         )
       # TODO: add device dimension
     if request.max_retry_on_test_failures:

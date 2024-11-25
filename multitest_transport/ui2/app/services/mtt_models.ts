@@ -694,6 +694,8 @@ export declare interface TestRunConfig {
   use_parallel_setup?: boolean;
   /** Whether to allow partial device match or not */
   allow_partial_device_match?: boolean;
+  /** Whether to enable xts dynamic download or not */
+  enable_xts_dynamic_download?: boolean;
 }
 
 /** initialize a new test run config */
@@ -716,6 +718,7 @@ export function initTestRunConfig(
     test_resource_objs: [],
     use_parallel_setup: true,
     allow_partial_device_match: false,
+    enable_xts_dynamic_download: false,
   };
 
   if (test) {
@@ -723,6 +726,8 @@ export function initTestRunConfig(
     config.test_id = test.id || '';
     config.command = test.command || '';
     config.retry_command = test.retry_command_line || '';
+    config.enable_xts_dynamic_download =
+        test.use_dynamic_download_mcts || false;
 
     const parameters = test.default_test_run_parameters;
     if (parameters) {

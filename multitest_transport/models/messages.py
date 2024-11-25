@@ -877,6 +877,7 @@ class TestRunConfig(messages.Message):
       TestResourceObj, 18, repeated=True)
   use_parallel_setup = messages.BooleanField(19, default=True)
   allow_partial_device_match = messages.BooleanField(20, default=False)
+  enable_xts_dynamic_download = messages.BooleanField(21, default=False)
 
 
 @Converter(ndb_models.TestRunConfig, TestRunConfig)
@@ -913,7 +914,8 @@ def _TestRunConfigConverter(obj):
           obj.test_run_action_refs, TestRunActionRef),
       test_resource_objs=ConvertList(obj.test_resource_objs, TestResourceObj),
       use_parallel_setup=obj.use_parallel_setup,
-      allow_partial_device_match=obj.allow_partial_device_match)
+      allow_partial_device_match=obj.allow_partial_device_match,
+      enable_xts_dynamic_download=obj.enable_xts_dynamic_download)
 
 
 @Converter(TestRunConfig, ndb_models.TestRunConfig)
@@ -943,7 +945,8 @@ def _TestRunConfigMessageConverter(msg):
       test_resource_objs=ConvertList(
           msg.test_resource_objs, ndb_models.TestResourceObj),
       use_parallel_setup=msg.use_parallel_setup,
-      allow_partial_device_match=msg.allow_partial_device_match)
+      allow_partial_device_match=msg.allow_partial_device_match,
+      enable_xts_dynamic_download=msg.enable_xts_dynamic_download)
 
 
 class TestRunConfigList(messages.Message):

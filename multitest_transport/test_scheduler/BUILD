@@ -71,6 +71,7 @@ pytype_strict_library(
         ":download_util_lib",
         ":sharding_strategies_lib",
         ":test_run_manager_lib",
+        "//third_party/py/flask:flask_without_jinja",
         "//multitest_transport/models",
         "//multitest_transport/util",
         "//multitest_transport/util:olcs_session_stub",

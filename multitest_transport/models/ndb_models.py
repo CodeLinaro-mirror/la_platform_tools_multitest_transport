@@ -446,6 +446,8 @@ class TestRunConfig(ndb.Model):
     use_parallel_setup: a flag on whether to setup devices in parallel.
     allow_partial_device_match: a flag on whether to allow partial device match
         or not
+    enable_xts_dynamic_download: a flag on whether to enable dynamic download
+        of XTS.
   """
   test_key = ndb.KeyProperty(kind=Test, required=True)
   cluster = ndb.StringProperty(required=True, default=DEFAULT_CLUSTER)
@@ -473,6 +475,7 @@ class TestRunConfig(ndb.Model):
       TestResourceObj, repeated=True)
   use_parallel_setup = ndb.BooleanProperty(default=True)
   allow_partial_device_match = ndb.BooleanProperty(default=False)
+  enable_xts_dynamic_download = ndb.BooleanProperty(default=False)
 
 
 class TestRunConfigList(ndb.Model):
