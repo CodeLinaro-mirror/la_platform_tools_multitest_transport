@@ -156,10 +156,11 @@ export class TestRunProgress implements OnInit, OnChanges {
 
     // Convert attempts
     const commands = this.request && this.request.commands || [];
-    const commandMap = commands.reduce((map: Map<string, Command>, obj: Command) => {
-      map.set(obj.id, obj);
-      return map;
-    }, new Map<string, Command>());
+    const commandMap =
+        commands.reduce((map: Map<string, Command>, obj: Command) => {
+          map.set(obj.id, obj);
+          return map;
+        }, new Map<string, Command>());
     const attempts = this.request && this.request.command_attempts || [];
     const attemptEntities: AttemptEntity[] = attempts.map(e => {
       return {
@@ -302,7 +303,16 @@ export class TestRunProgress implements OnInit, OnChanges {
             res => {
               const attemptNodeMap:
                   {[attemptId: string]: CommandAttemptNode} = {};
-              for (const attempt of res.command_attempts) {
+              const sortedAttempts = res.command_attempts.sort((a, b) => {
+                const timeA = a.create_time ?
+                    moment.utc(a.create_time).valueOf() :
+                    Infinity;
+                const timeB = b.create_time ?
+                    moment.utc(b.create_time).valueOf() :
+                    Infinity;
+                return timeA - timeB;
+              });
+              for (const attempt of sortedAttempts) {
                 attemptNodeMap[attempt.attempt_id] = Object.assign(attempt, {
                   expanded: false,
                 });
