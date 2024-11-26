@@ -312,7 +312,6 @@ else
     --enable_device_system_settings_change=false \
     --enable_external_master_server=true \
     --enable_root_device=false \
-    --enable_xts_dynamic_downloader=true \
     --master_grpc_target="${OLC_SERVER_GRPC_TARGET}" \
     --mute_android=false \
     --public_dir="${MTT_LOG_DIR}" \
