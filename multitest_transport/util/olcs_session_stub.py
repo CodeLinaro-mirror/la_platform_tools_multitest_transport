@@ -579,7 +579,7 @@ class OlcsSessionStub:
     )
     if os.path.exists(log_dir_path):
       for dir_name in os.listdir(log_dir_path):
-        if re.match(r"inv_\d+", dir_name):
+        if re.match(r"inv_[a-z0-9-]+", dir_name):
           tf_path_with_inv_id = os.path.join(log_dir_path, dir_name)
           for tf_dir_name in os.listdir(tf_path_with_inv_id):
             if re.match(r"XtsTradefedTest_test_.*", tf_dir_name):
