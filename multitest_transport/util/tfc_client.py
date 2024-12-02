@@ -18,6 +18,7 @@ import json
 import logging
 import os
 import threading
+import traceback
 from typing import List, Optional
 
 import apiclient
@@ -105,6 +106,10 @@ def _ProcessSubscribedSessionResponse(response):
         new_state=test_request.state,
         request=test_request,
         event_time=datetime.datetime.now(),
+    )
+    logging.info('Calling stack:\n%s', traceback.format_stack())
+    logging.info(
+        'request_event from subscribe session in tfc client: %s', request_event
     )
     if request_event_message_handler:
       request_event_message_handler(request_event)

@@ -18,6 +18,7 @@ import json
 import logging
 import os
 import threading
+import traceback
 from typing import Union
 import zlib
 
@@ -54,6 +55,8 @@ LOCAL_ID_TAG = 'custom'
 APP = flask.Flask(__name__)
 
 _tls = threading.local()
+_lock = threading.Lock()
+_subscriptions = {}
 
 
 def _GetOlcsSessionStub() -> olcs_session_stub.OlcsSessionStub:
@@ -155,18 +158,61 @@ def _AfterTestRunHandler(test_run_id):
                                    test_run.sequence_id, test_run.key)
 
 
+def _StartSubscribeSession(test_run_id, request_id):
+  """Starts a session subscription for a request."""
+  if request_id in _subscriptions:
+    return
+  logging.info(
+      'StartSubscribeSession session: %s, test run: %s',
+      request_id,
+      test_run_id,
+  )
+  subscription_id = _GetOlcsSessionStub().StartSubscribeSession(
+      request_id,
+      ndb.with_ndb_context(_ProcessSubscribedSessionResponse),
+  )
+  _subscriptions[request_id] = subscription_id
+
+
+def _StopSubscribeSession(test_run_id, request_id):
+  """Stops a session subscription for a request."""
+  if request_id not in _subscriptions:
+    return
+  logging.info(
+      'StopSubscribeSession session: %s, test run: %s',
+      request_id,
+      test_run_id,
+  )
+  _GetOlcsSessionStub().StopSubscribeSession(_subscriptions[request_id])
+  del _subscriptions[request_id]
+
+
 def ProcessRequestEvent(message: api_messages.RequestEventMessage):
   """Process a TFC request state change event message."""
+  logging.info('Calling stack:\n%s', traceback.format_stack())
+  logging.info('ProcessRequestEvent: %s', message)
   test_run = _GetTestRunToUpdate(message)
   if not test_run:
     return
   _ProcessRequestEvent(test_run.key.id(), message)
   test_run = test_run.key.get()
   if test_run.IsFinal():
+    with _lock:
+      _StopSubscribeSession(test_run.key.id(), message.request_id)
     if test_run.test.result_file:
       test_result_handler.UpdateTestRunSummary(test_run.key.id())
     if not test_run.is_finalized:
       _AfterTestRunHandler(test_run.key.id())
+  elif (
+      os.environ.get('IS_OMNILAB_BASED') == 'true'
+      and test_run.request_id
+      and message.request_id
+      and test_run.request_id != message.request_id
+  ):
+    # Subscribe to retry request's status update.
+    with _lock:
+      _StartSubscribeSession(test_run.key.id(), test_run.request_id)
+      _StopSubscribeSession(test_run.key.id(), message.request_id)
 
 
 @ndb.transactional()
@@ -185,11 +231,6 @@ def _ProcessRequestEvent(test_run_id, message):
   ):
     test_run.request_id = message.request.next_attempt_session_id
     test_run.put()
-    # Listen to retry request's status update.
-    _GetOlcsSessionStub().StartSubscribeSession(
-        test_run.request_id,
-        ndb.with_ndb_context(_ProcessSubscribedSessionResponse),
-    )
     return
 
   if not test_run.IsFinal():

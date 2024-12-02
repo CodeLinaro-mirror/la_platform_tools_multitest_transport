@@ -21,6 +21,7 @@ import os
 import queue
 import re
 import time
+import traceback
 from typing import Callable, Iterator, List, Optional
 import uuid
 
@@ -219,6 +220,7 @@ class OlcsSessionStub:
     response.session_detail.session_output.session_plugin_output[
         SESSION_PLUGIN_LABEL
     ].output.Unpack(request_detail)
+    logging.info("Calling stack:\n%s", traceback.format_stack())
     logging.info(
         "Fetched %s status request detail proto from OLCS: %s",
         response.session_detail.session_status,
@@ -305,14 +307,11 @@ class OlcsSessionStub:
     )
 
     # add all previous attempts' session IDs.
-    if request_detail.original_request.retry_previous_session_id:
-      previous_request = self.GetRequest(
-          request_detail.original_request.retry_previous_session_id
-      )
-      request_message.previous_attempt_session_ids = (
-          previous_request.previous_attempt_session_ids
-      )
-      request_message.previous_attempt_session_ids.append(previous_request.id)
+    if request_detail.original_request.all_previous_session_ids:
+      for (
+          session_id
+      ) in request_detail.original_request.all_previous_session_ids:
+        request_message.previous_attempt_session_ids.append(session_id)
     return request_message
 
   def GetRequest(self, request_id: str) -> api_messages.RequestMessage:
@@ -431,6 +430,10 @@ class OlcsSessionStub:
     """
     try:
       for subscribe_session_response in subscribe_session_responses:
+        logging.info(
+            "subscribe_session_response: %s", subscribe_session_response
+        )
+        logging.info("Calling stack:\n%s", traceback.format_stack())
         session_response_subscriber(subscribe_session_response)
     except grpc.RpcError as e:  
       logging.exception(
