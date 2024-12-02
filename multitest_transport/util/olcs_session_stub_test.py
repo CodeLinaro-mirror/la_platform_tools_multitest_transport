@@ -268,6 +268,10 @@ class OlcsSessionStubTest(testbed_dependent_test.TestbedDependentTest):
         command_attempt_message.total_test_count,
         command_detail.total_test_count,
     )
+    self.assertEqual(
+        command_attempt_message.failed_test_run_count,
+        command_detail.failed_module_count,
+    )
     self.assertCountEqual(
         command_attempt_message.device_serials,
         request_detail.command_attempt_details[0].device_serials,

@@ -555,7 +555,7 @@ class OlcsSessionStub:
     command_attempt_message.attempt_id = (
         command_detail.request_id + "_" + command_detail.id
     )
-    command_attempt_message.task_id = "0"  # TODO: what is this
+    command_attempt_message.task_id = "0"
     command_attempt_message.state = _COMMAND_STATE_MAP.get(
         command_detail.state, common.CommandState.UNKNOWN
     )
@@ -571,6 +571,9 @@ class OlcsSessionStub:
     command_attempt_message.passed_test_count = command_detail.passed_test_count
     command_attempt_message.failed_test_count = command_detail.failed_test_count
     command_attempt_message.total_test_count = command_detail.total_test_count
+    command_attempt_message.failed_test_run_count = (
+        command_detail.failed_module_count
+    )
 
     log_dir_path = os.path.join(
         file_util.GetLocalFilePath(

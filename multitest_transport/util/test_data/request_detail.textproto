@@ -41,6 +41,7 @@ command_details {
     passed_test_count: 12
     failed_test_count: 0
     total_test_count: 12
+    failed_module_count: 0
     start_time {
       seconds: 1719198663
       nanos: 7000000
