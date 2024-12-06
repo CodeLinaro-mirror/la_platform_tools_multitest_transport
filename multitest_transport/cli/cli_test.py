@@ -436,6 +436,65 @@ class CliTest(parameterized.TestCase):
             raise_on_failure=False),
     ])
 
+  def testStart_doNotMountHostAndroidDir(self):
+    args = self.arg_parser.parse_args(['start', '--no-mount_host_android_dir'])
+    cli.Start(args, self._CreateHost(cluster_name='acluster'))
+
+    self.mock_context.Run.assert_has_calls([
+        mock.call([
+            'docker',
+            'create',
+            '--name',
+            'mtt',
+            '-it',
+            *_DEFAULT_CREATE_ARGS,
+            '--hostname',
+            'mock-host',
+            '--network',
+            'bridge',
+            '-e',
+            'OPERATION_MODE=unknown',
+            '-e',
+            'MTT_CLI_VERSION=dev_version',
+            '-e',
+            'MTT_CONTROL_SERVER_URL=url',
+            '-e',
+            'CLUSTER=acluster',
+            '-e',
+            'IMAGE_NAME=gcr.io/android-mtt/mtt:prod',
+            '-e',
+            'USER=user',
+            '-e',
+            'TZ=Etc/UTC',
+            '-e',
+            'MTT_SERVER_LOG_LEVEL=info',
+            '--mount',
+            'type=volume,src=mtt-data,dst=/data',
+            '--mount',
+            'type=volume,src=mtt-temp,dst=/tmp',
+            '--mount',
+            'type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock',
+            '--mount',
+            'type=bind,src=/local/.ats_storage,dst=/tmp/.mnt/.ats_storage',
+            '-p',
+            '127.0.0.1:5037:5037',
+            '--cap-add',
+            'sys_admin',
+            '--device',
+            '/dev/fuse',
+            '--security-opt',
+            'apparmor:unconfined',
+            '--security-opt',
+            'seccomp=/tmp/mtt_seccomp.json',
+            'gcr.io/android-mtt/mtt:prod',
+        ]),
+        mock.call(['docker', 'start', 'mtt']),
+        mock.call(
+            ['docker', 'exec', 'mtt', 'printenv', 'MTT_VERSION'],
+            raise_on_failure=False,
+        ),
+    ])
+
   def testStart_withServiceAccount(self):
     """Test Start function."""
     args = self.arg_parser.parse_args([

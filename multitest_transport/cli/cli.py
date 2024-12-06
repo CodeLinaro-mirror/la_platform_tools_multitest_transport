@@ -547,7 +547,7 @@ def _StartMttNode(args, host):
     logger.debug('NO_PROXY=%s', no_proxy)
     docker_helper.AddEnv('NO_PROXY', no_proxy)
 
-  if host.context.IsLocal():
+  if host.context.IsLocal() and args.mount_host_android_dir:
     android_sdk_path = os.path.expanduser('~/.android')
     if os.path.exists(android_sdk_path):
       # If running locally, bind ~/.android to access existing adb fingerprints.
@@ -1183,6 +1183,24 @@ def _CreateStartArgParser():
       default=False,
       help='Use OmniLab based servers.',
   )
+
+  parser.add_argument(
+      '--mount_host_android_dir',
+      dest='mount_host_android_dir',
+      action='store_true',
+      help=(
+          'Mount the ~/.android directory from the host, which contains'
+          ' existing adb keys. Default is true.'
+      ),
+  )
+  parser.add_argument(
+      '--no-mount_host_android_dir',
+      dest='mount_host_android_dir',
+      action='store_false',
+      help='Do not mount the ~/.android directory from the host',
+  )
+  parser.set_defaults(mount_host_android_dir=True)
+
   parser.set_defaults(func=Start)
   return parser
 
