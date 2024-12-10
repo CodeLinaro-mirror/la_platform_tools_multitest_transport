@@ -114,6 +114,7 @@ js_binary(
 js_binary(
     name = "uncompiled",
     compile = False,
+    use_precompiled_libraries = False,
     deps = THIRD_PARTY_JS,
 )
 
