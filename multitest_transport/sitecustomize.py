@@ -15,7 +15,7 @@
 
 import sys
 
-import google3
+import google3  
 
 # Search installed packages first (necessary to use host-side grpc package).
 sys.path.sort(key=lambda p: p.endswith('google3/third_party/py'))
