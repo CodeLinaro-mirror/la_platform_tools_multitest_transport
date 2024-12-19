@@ -58,33 +58,9 @@ command_details {
       seconds: 1719198915
       nanos: 504000000
     }
+    device_serials: "29081FDH200D3U"
+    command_attempt_id: "5c61296b-56b4-4711-9c27-2e669d4f0fa8"
   }
-}
-command_attempt_details {
-  id: "5c61296b-56b4-4711-9c27-2e669d4f0fa8"
-  request_id: "abf34558-6dcc-41bc-955e-295c9ad01c98"
-  command_id: "277b9aa5-46c4-32a1-be60-d46cb80f3b64"
-  device_serials: "29081FDH200D3U"
-  start_time {
-    seconds: 1719198670
-    nanos: 504193000
-  }
-  end_time {
-    seconds: 1719198913
-    nanos: 165103000
-  }
-  create_time {
-    seconds: 1719198668
-    nanos: 328196000
-  }
-  update_time {
-    seconds: 1719198913
-    nanos: 171794000
-  }
-  state: COMPLETED
-  passed_test_count: 12
-  failed_test_count: 0
-  total_test_count: 12
 }
 original_request {
   user_id: "test_kicker"

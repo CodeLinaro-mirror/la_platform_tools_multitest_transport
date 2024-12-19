@@ -294,12 +294,10 @@ class OlcsSessionStub:
       command_attempt_message = self._GenerateCommandAttemptFromCommand(
           command_detail, request_detail
       )
-      device_serials = set()
-      for command_attempt_detail in request_detail.command_attempt_details:
-        if command_attempt_detail.command_id == command_detail.id:
-          command_attempt_message.attempt_id = command_attempt_detail.id
-          device_serials.update(command_attempt_detail.device_serials)
-      command_attempt_message.device_serials = list(device_serials)
+      command_attempt_message.attempt_id = command_detail.command_attempt_id
+      command_attempt_message.device_serials = list(
+          command_detail.device_serials
+      )
       request_message.command_attempts.append(command_attempt_message)
 
     request_message.next_attempt_session_id = (
