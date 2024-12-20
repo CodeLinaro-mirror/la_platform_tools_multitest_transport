@@ -370,7 +370,7 @@ export class HID {
   static readonly TOUCH_SCREEN = new HID(new Uint8Array([
     0x05, 0x0D,        // Usage Page (Digitizer)
     0x09, 0x04,        // Usage (Touch Screen)
-    0xA1, 0x01,        // Collection (Application)
+    0xA1, 0x00,        // Collection (Physical)
     0x09, 0x32,        //   Usage (In Range) - proximity to screen
     0x09, 0x33,        //   Usage (Touch) - contact with screen
     0x15, 0x00,        //   Logical Minimum (0)
