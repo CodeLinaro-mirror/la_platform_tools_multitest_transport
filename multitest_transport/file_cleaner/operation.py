@@ -24,13 +24,35 @@ YAML config example:
   operation:
     type: DELETE
 """
-import distutils.util
 import logging
 import pathlib
 
 from multitest_transport.models import messages
 from multitest_transport.models import ndb_models
 from multitest_transport.util import file_util
+
+
+# Copy from deprecated distutils.util.strtobool
+def StrToBool(val: str) -> bool:
+  """Converts a string representation of truth to True or False.
+
+  True values are 'y', 'yes', 't', 'true', 'on', and '1'; false values
+  are 'n', 'no', 'f', 'false', 'off', and '0'.  Raises ValueError if
+  'val' is anything else.
+
+  Args:
+    val: string representation of truth value.
+
+  Returns:
+    True or False
+  """
+  val = val.lower()
+  if val in ('y', 'yes', 't', 'true', 'on', '1'):
+    return True
+  elif val in ('n', 'no', 'f', 'false', 'off', '0'):
+    return False
+  else:
+    raise ValueError('invalid truth value %r' % (val,))
 
 
 class Operation(object):
@@ -50,7 +72,7 @@ class Archive(Operation):
 
   def __init__(self, remove_file: str = 'True'):
     super().__init__()
-    self.remove_file = distutils.util.strtobool(remove_file)
+    self.remove_file = StrToBool(remove_file)
 
   def Apply(self, path: str):
     logging.info('Archiving %s', path)
@@ -74,7 +96,7 @@ class Delete(Operation):
 
 Operations = {
     ndb_models.FileCleanerOperationType.ARCHIVE: Archive,
-    ndb_models.FileCleanerOperationType.DELETE: Delete
+    ndb_models.FileCleanerOperationType.DELETE: Delete,
 }
 
 
@@ -88,4 +110,5 @@ def BuildOperation(config: messages.FileCleanerOperation) -> 'Operation':
     Operation
   """
   return Operations[config.type](
-      **messages.ConvertNameValuePairsToDict(config.params))
+      **messages.ConvertNameValuePairsToDict(config.params)
+  )
