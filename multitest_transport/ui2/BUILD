@@ -102,11 +102,9 @@ THIRD_PARTY_JS = [
 js_binary(
     name = "compiled",
     defs = COMPILER_FLAGS,
-    externs_list = [
-        "//third_party/javascript/moment:externs",
-    ],
     use_precompiled_libraries = False,
     deps = [
+        "//third_party/javascript/moment:externs_lib",
         ":app_lib",
     ],
 )
