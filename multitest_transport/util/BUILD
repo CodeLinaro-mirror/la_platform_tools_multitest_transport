@@ -404,6 +404,20 @@ pytype_strict_library(
     ],
 )
 
+pytype_strict_library(
+    name = "lru_cache",
+    srcs = ["lru_cache.py"],
+)
+
+py_test(
+    name = "lru_cache_test",
+    srcs = ["lru_cache_test.py"],
+    deps = [
+        ":lru_cache",
+        "//testing/pybase",
+    ],
+)
+
 py_test(
     name = "olcs_lab_record_client_test",
     srcs = [

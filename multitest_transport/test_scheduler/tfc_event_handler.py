@@ -14,6 +14,7 @@
 
 """A module to process TFC events."""
 import datetime
+import hashlib
 import json
 import logging
 import os
@@ -23,6 +24,7 @@ from typing import Union
 import zlib
 
 import flask
+from protorpc import messages
 from protorpc import protojson
 from tradefed_cluster import api_messages
 from tradefed_cluster import common
@@ -40,6 +42,7 @@ from multitest_transport.util import analytics
 from multitest_transport.util import file_util
 from multitest_transport.util import tfc_client
 from multitest_transport.util import olcs_session_stub
+from multitest_transport.util import lru_cache
 
 TEST_RUN_STATE_MAP = {
     api_messages.RequestState.UNKNOWN: ndb_models.TestRunState.UNKNOWN,
@@ -57,6 +60,25 @@ APP = flask.Flask(__name__)
 _tls = threading.local()
 _lock = threading.Lock()
 _subscriptions = {}
+_request_cache = lru_cache.LRUCache(1000)
+
+
+def _GenerateHashOfProtorpcObject(message):
+  """Generates a hash of a protorpc object.
+
+  Args:
+    message: The protorpc object to hash.
+
+  Returns:
+    The hexadecimal representation of the hash.
+  """
+  if not isinstance(message, messages.Message):
+    return None
+  serialized_message = protojson.encode_message(message)  # pytype: disable=module-attr
+  hash_object = hashlib.sha256()
+  hash_object.update(serialized_message.encode('utf-8'))
+  hex_digest = hash_object.hexdigest()
+  return hex_digest
 
 
 def _GetOlcsSessionStub() -> olcs_session_stub.OlcsSessionStub:
@@ -189,6 +211,15 @@ def _StopSubscribeSession(test_run_id, request_id):
 
 def ProcessRequestEvent(message: api_messages.RequestEventMessage):
   """Process a TFC request state change event message."""
+  requets_hash = _GenerateHashOfProtorpcObject(message.request)
+  with _lock:
+    if _request_cache.get(requets_hash) is not None:
+      logging.info(
+          'Skipping processing request event %s, already processed',
+          message.request,
+      )
+      return
+    _request_cache.put(requets_hash, '')
   logging.info('Calling stack:\n%s', traceback.format_stack())
   logging.info('ProcessRequestEvent: %s', message)
   test_run = _GetTestRunToUpdate(message)
