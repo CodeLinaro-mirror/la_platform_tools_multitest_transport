@@ -181,6 +181,106 @@ class OlcsSessionStubTest(testbed_dependent_test.TestbedDependentTest):
     manager.__exit__(None, None, None)
     return result
 
+  def GetLatestFinishedAttemptsWrapper(self, request_id):
+    """Wrapper for GetRequest, which creates NDB context before the test so the ndb operation can suceed."""
+    manager = ndb_test_lib.NdbContextManager()
+    manager.__enter__()
+    result = self.session_stub.GetLatestFinishedAttempts(request_id)
+    manager.__exit__(None, None, None)
+    return result
+
+  @mock.patch('os.path.exists')
+  @mock.patch('os.listdir')
+  def testGetLatestFinishedAttempts(self, mock_listdir, mock_exists):
+    with open(
+        os.path.join(TEST_DATA_DIR, 'request_detail.textproto')
+    ) as text_format_file:
+      request_detail = text_format.Parse(
+          text_format_file.read(), service_pb2.RequestDetail()
+      )
+    mock_exists.side_effect = [True, True]  # log_dir_path, mobly_log_dir_path
+    mock_listdir.side_effect = [
+        ['inv_1234567890', 'other_dir'],  # Top-level directory
+        ['XtsTradefedTest_test_TEST_ID1', 'unmatched_dir'],  # Inside inv_...
+        ['MoblyAospPackageTest_test_TEST_ID2'],  # non-tradefed_logs
+    ]
+    client_response = session_service_pb2.GetSessionResponse()
+    client_response.session_detail.session_output.session_plugin_output[
+        olcs_session_stub.SESSION_PLUGIN_LABEL
+    ].output.Pack(request_detail)
+
+    application_future = self._executor.submit(
+        self.GetLatestFinishedAttemptsWrapper, request_detail.id
+    )
+    _, _, rpc = self._channel.take_unary_unary(
+        self._descriptor.methods_by_name['GetSession']
+    )
+    rpc.send_initial_metadata(())
+    rpc.terminate(
+        client_response,
+        self._trailing_metadata,
+        grpc.StatusCode.OK,
+        self._detailed_message,
+    )
+
+    command_attempts = application_future.result()
+    self.assertLen(command_attempts, 1)
+    command_detail = list(request_detail.command_details.values())[0]
+    # Verify the command attempt message.
+    command_attempt_message = command_attempts[0]
+    self.assertEqual(
+        command_attempt_message.request_id, command_detail.request_id
+    )
+    self.assertEqual(command_attempt_message.command_id, command_detail.id)
+    self.assertEqual(
+        command_attempt_message.state, api_messages.CommandState.COMPLETED
+    )
+    self.assertEqual(
+        command_attempt_message.passed_test_count,
+        command_detail.passed_test_count,
+    )
+    self.assertEqual(
+        command_attempt_message.failed_test_count,
+        command_detail.failed_test_count,
+    )
+    self.assertEqual(
+        command_attempt_message.total_test_count,
+        command_detail.total_test_count,
+    )
+    self.assertEqual(
+        command_attempt_message.failed_test_run_count,
+        command_detail.failed_module_count,
+    )
+    self.assertCountEqual(
+        command_attempt_message.attempt_id,
+        command_detail.command_attempt_id,
+    )
+    self.assertCountEqual(
+        command_attempt_message.device_serials,
+        command_detail.device_serials,
+    )
+    self.assertEqual(
+        command_attempt_message.start_time,
+        command_detail.start_time.ToDatetime(),
+    )
+    self.assertEqual(
+        command_attempt_message.end_time,
+        command_detail.end_time.ToDatetime(),
+    )
+    self.assertEqual(
+        command_attempt_message.create_time,
+        command_detail.create_time.ToDatetime(),
+    )
+    self.assertEqual(
+        command_attempt_message.update_time,
+        command_detail.update_time.ToDatetime(),
+    )
+    self.assertEqual(
+        command_attempt_message.tf_log_path,
+        'logs/inv_1234567890/XtsTradefedTest_test_TEST_ID1',
+    )
+    self.assertEqual(command_attempt_message.mobly_test_id, ['TEST_ID2'])
+
   @mock.patch('os.path.exists')
   @mock.patch('os.listdir')
   def testGetRequest(self, mock_listdir, mock_exists):

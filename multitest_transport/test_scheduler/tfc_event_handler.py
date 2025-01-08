@@ -44,6 +44,7 @@ from multitest_transport.util import tfc_client
 from multitest_transport.util import olcs_session_stub
 from multitest_transport.util import lru_cache
 
+IsFinalRequestState = common.IsFinalRequestState
 TEST_RUN_STATE_MAP = {
     api_messages.RequestState.UNKNOWN: ndb_models.TestRunState.UNKNOWN,
     api_messages.RequestState.QUEUED: ndb_models.TestRunState.QUEUED,
@@ -256,6 +257,25 @@ def _ProcessRequestEvent(test_run_id, message):
   # Update test run information
   test_run.request_event_time = message.event_time
   test_run.update_time = message.event_time
+
+  # Process command attempt result if the request session is finished.
+  if (
+      os.environ.get('IS_OMNILAB_BASED') == 'true'
+      and message.request.state
+      and IsFinalRequestState(message.request.state)
+  ):
+    try:
+      _ProcessCommandAttemptResult(test_run_id, test_run, message.request)
+    except Exception as e:  
+      logging.exception(
+          'Exception %s when processing command attempt result for test'
+          ' run: %s',
+          test_run_id,
+          e,
+      )
+
+  # Check if the request is being retried. If yes, wait for the retry request
+  # to be finished.
   if (
       os.environ.get('IS_OMNILAB_BASED') == 'true'
       and message.request.next_attempt_session_id
@@ -266,17 +286,8 @@ def _ProcessRequestEvent(test_run_id, message):
 
   if not test_run.IsFinal():
     test_run.state = TEST_RUN_STATE_MAP.get(
-        message.new_state, ndb_models.TestRunState.UNKNOWN)
-    if os.environ.get('IS_OMNILAB_BASED') == 'true' and test_run.IsFinal():
-      try:
-        _ProcessCommandAttemptResult(test_run_id, test_run, message.request)
-      except Exception as e:  
-        logging.exception(
-            'Exception %s when processing command attempt result for test'
-            ' run: %s',
-            test_run_id,
-            e,
-        )
+        message.new_state, ndb_models.TestRunState.UNKNOWN
+    )
   if not test_run.test.result_file:
     # No test results file to parse, use partial test counts
     test_run.total_test_count = (message.failed_test_count +
@@ -313,12 +324,39 @@ def _ProcessCommandAttemptResult(test_run_id, test_run, request):
     )
     logging.info('test_run.test_devices: %s', test_run.test_devices)
     results = sql_models.GetTestModuleResults([attempt.attempt_id])
-    result_url = file_util.GetResultUrl(test_run, attempt)
+
     # Skip loading test results if they already exist in DB.
-    if result_url and not results:
-      test_result_handler.StoreTestResults(
-          test_run_id, attempt.attempt_id, result_url
-      )
+    if not results and common.IsFinalCommandState(attempt.state):
+      _StoreTestResults(test_run_id, test_run, attempt)
+      _InvokeAttemptHandler(test_run_id, test_run, attempt)
+
+
+def _StoreTestResults(test_run_id, test_run, attempt):
+  """Store test results to database and invoke after attempt hooks."""
+  result_url = file_util.GetResultUrl(test_run, attempt)
+  if result_url:
+    task_scheduler.AddCallableTask(
+        test_result_handler.StoreTestResults,
+        test_run_id,
+        attempt.attempt_id,
+        result_url,
+        _transactional=True,
+    )
+  else:
+    logging.warning(
+        'No result file for test run %s, skip processing', test_run_id
+    )
+
+
+def _InvokeAttemptHandler(test_run_id, test_run, attempt):
+  if not test_run.is_finalized:
+    task_scheduler.AddCallableTask(
+        test_run_hook.ExecuteHooks,
+        test_run_id,
+        ndb_models.TestRunPhase.AFTER_ATTEMPT,
+        attempt_id=attempt.attempt_id,
+        _transactional=True,
+    )
 
 
 def ProcessCommandAttemptEvent(
@@ -348,19 +386,8 @@ def _ProcessCommandAttemptEvent(test_run_id, message):
 
   # Store attempt test results and invoke after attempt hooks
   if common.IsFinalCommandState(attempt.state):
-    result_url = file_util.GetResultUrl(test_run, attempt)
-    if result_url:
-      task_scheduler.AddCallableTask(test_result_handler.StoreTestResults,
-                                     test_run_id, attempt.attempt_id,
-                                     result_url, _transactional=True)
-    else:
-      logging.warning('No result file for test run %s, skip processing',
-                      test_run_id)
-    if not test_run.is_finalized:
-      task_scheduler.AddCallableTask(test_run_hook.ExecuteHooks, test_run_id,
-                                     ndb_models.TestRunPhase.AFTER_ATTEMPT,
-                                     attempt_id=attempt.attempt_id,
-                                     _transactional=True)
+    _StoreTestResults(test_run_id, test_run, attempt)
+    _InvokeAttemptHandler(test_run_id, test_run, attempt)
 
 
 def _GetTestContext(request_id):

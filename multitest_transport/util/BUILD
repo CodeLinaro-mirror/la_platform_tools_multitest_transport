@@ -336,6 +336,7 @@ pytype_strict_library(
         "//multitest_transport/models:ndb_models_lib",
         "@tradefed_cluster//tradefed_cluster:api_messages_lib",
         "@tradefed_cluster//tradefed_cluster:common_lib",
+        "@tradefed_cluster//tradefed_cluster/util:ndb_shim_lib",
     ],
 )
 
@@ -414,7 +415,7 @@ py_test(
     srcs = ["lru_cache_test.py"],
     deps = [
         ":lru_cache",
-        "//testing/pybase",
+        third_party("absl/testing:absltest"),
     ],
 )
 

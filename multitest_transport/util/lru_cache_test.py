@@ -3,11 +3,11 @@
 These tests cover the basic functionality of the LRUCache class.
 """
 
-import unittest
+from absl.testing import absltest
 from multitest_transport.util import lru_cache
 
 
-class TestLRUCache(unittest.TestCase):
+class TestLRUCache(absltest.TestCase):
 
   def test_empty_cache(self):
     cache = lru_cache.LRUCache(3)
@@ -65,3 +65,7 @@ class TestLRUCache(unittest.TestCase):
     cache = lru_cache.LRUCache(0)
     cache.put("a", "apple")
     self.assertIsNone(cache.get("a"))
+
+
+if __name__ == "__main__":
+  absltest.main()

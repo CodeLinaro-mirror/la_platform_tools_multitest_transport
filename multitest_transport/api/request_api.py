@@ -71,16 +71,10 @@ class TestRequestApi(remote.Service):
   def ListCommandAttempts(self, request):
     test_request = self._olcs_session_stub.GetRequest(request.request_id)
     attempt_list = []
-    all_requests = [test_request]
-    for previous_request_id in test_request.previous_attempt_session_ids:
-      all_requests.append(
-          self._olcs_session_stub.GetRequest(previous_request_id)
-      )
-    for test_request in all_requests:
-      for attempt in test_request.command_attempts:
-        if attempt.command_id == request.command_id:
-          attempt_list.append(attempt)
-
+    if test_request:
+      for command_attempt in test_request.command_attempts:
+        if command_attempt.command_id == request.command_id:
+          attempt_list.append(command_attempt)
     attempt_collection = api_messages.CommandAttemptMessageCollection(
         command_attempts=attempt_list
     )

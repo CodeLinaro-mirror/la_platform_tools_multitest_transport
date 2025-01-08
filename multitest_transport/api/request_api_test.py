@@ -47,26 +47,16 @@ class RequestApiTest(api_test_util.TestCase):
       response.commands = [command]
       response.next_attempt_session_id = "retry_request_id"
 
-      retry_response = api_messages.RequestMessage()
-      retry_response.id = "retry_request_id"
-      retry_command = api_messages.CommandMessage()
-      retry_command.id = "command_id"
-      retry_command.request_id = "retry_request_id"
-      retry_command.command_line = "command_line"
-      retry_command.state = api_messages.CommandState.RUNNING
       retry_command_attempt = api_messages.CommandAttemptMessage()
       retry_command_attempt.attempt_id = "retry_command_attempt_id"
       retry_command_attempt.request_id = "retry_request_id"
       retry_command_attempt.command_id = "command_id"
       retry_command_attempt.state = api_messages.CommandState.RUNNING
       retry_command_attempt.task_id = "task_id"
-      retry_response.command_attempts = [retry_command_attempt]
-      retry_response.commands = [command]
-      retry_response.previous_attempt_session_ids = ["request_id"]
+      response.command_attempts.append(retry_command_attempt)
 
       self._olcs_session_stub.GetRequest.side_effect = {
           "request_id": response,
-          "retry_request_id": retry_response,
       }.get
 
   def setUp(self):
@@ -85,31 +75,16 @@ class RequestApiTest(api_test_util.TestCase):
     res_msg = protojson.decode_message(
         api_messages.CommandAttemptMessageCollection, res.body
     )
-    command_attempt = res_msg.command_attempts[0]
-    self.assertEqual(command_attempt.attempt_id, "command_attempt_id")
-    self.assertEqual(command_attempt.request_id, "request_id")
-    self.assertEqual(command_attempt.command_id, "command_id")
-    self.assertEqual(command_attempt.state, api_messages.CommandState.RUNNING)
-
-  def testListCommandAttemptsWithPreviousAttempt(self):
-    res = self.app.get(
-        "/_ah/api/mtt/v1/requests/%s/commands/%s/command_attempts"
-        % ("retry_request_id", "command_id")
-    )
-    res_msg = protojson.decode_message(
-        api_messages.CommandAttemptMessageCollection, res.body
-    )
     self.assertLen(res_msg.command_attempts, 2)
-    print(res_msg.command_attempts)
     command_attempt0 = res_msg.command_attempts[0]
-    self.assertEqual(command_attempt0.attempt_id, "retry_command_attempt_id")
-    self.assertEqual(command_attempt0.request_id, "retry_request_id")
+    self.assertEqual(command_attempt0.attempt_id, "command_attempt_id")
+    self.assertEqual(command_attempt0.request_id, "request_id")
     self.assertEqual(command_attempt0.command_id, "command_id")
     self.assertEqual(command_attempt0.state, api_messages.CommandState.RUNNING)
 
     command_attempt1 = res_msg.command_attempts[1]
-    self.assertEqual(command_attempt1.attempt_id, "command_attempt_id")
-    self.assertEqual(command_attempt1.request_id, "request_id")
+    self.assertEqual(command_attempt1.attempt_id, "retry_command_attempt_id")
+    self.assertEqual(command_attempt1.request_id, "retry_request_id")
     self.assertEqual(command_attempt1.command_id, "command_id")
     self.assertEqual(command_attempt1.state, api_messages.CommandState.RUNNING)
 

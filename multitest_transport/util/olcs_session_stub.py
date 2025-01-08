@@ -20,6 +20,7 @@ import logging
 import os
 import queue
 import re
+import threading
 import time
 import traceback
 from typing import Callable, Iterator, List, Optional
@@ -44,6 +45,7 @@ SESSION_PLUGIN_LABEL = "AtsServerSessionPlugin"
 NANOS_PER_MILLISECOND = 1000000
 MILLIS_PER_SECOND = 1000
 
+_lock = threading.Lock()
 
 _REQUEST_STATE_MAP = {
     service_pb2.RequestDetail.RequestState.UNKNOWN: common.RequestState.UNKNOWN,
@@ -157,9 +159,19 @@ class OlcsSessionStub:
   def GetLatestFinishedAttempts(
       self, request_id: str
   ) -> List[api_messages.CommandAttemptMessage]:
+    """Get latest finished attempts from OLCS.
+
+    Args:
+      request_id: The request id of the request.
+
+    Returns:
+      A list of latest finished attempts of the request.
+    """
     request = self.GetRequest(request_id)
     attempt_map = {}
-    for attempt in request.command_attempts:
+    attempt_list = request.command_attempts or []
+    attempt_list.sort(key=lambda attempt: attempt.start_time, reverse=True)
+    for attempt in attempt_list:
       if not common.IsFinalCommandState(attempt.state):
         continue
       attempt_map[attempt.command_id] = attempt
@@ -304,12 +316,16 @@ class OlcsSessionStub:
         request_detail.next_attempt_session_id
     )
 
-    # add all previous attempts' session IDs.
-    if request_detail.original_request.all_previous_session_ids:
-      for (
-          session_id
-      ) in request_detail.original_request.all_previous_session_ids:
-        request_message.previous_attempt_session_ids.append(session_id)
+    # add all previous attempts from previous sessions
+    last_attempt_session_id = (
+        request_detail.original_request.retry_previous_session_id
+    )
+    if last_attempt_session_id:
+      last_attempt_request_message = self.GetRequest(last_attempt_session_id)
+      if last_attempt_request_message:
+        request_message.command_attempts.extend(
+            last_attempt_request_message.command_attempts
+        )
     return request_message
 
   def GetRequest(self, request_id: str) -> api_messages.RequestMessage:
@@ -321,24 +337,41 @@ class OlcsSessionStub:
     Returns:
       The request message defined by TFC.
     """
-    test_request = ndb_models.RequestInfo.get_by_id(request_id)
-    if test_request:
-      request_detail = service_pb2.RequestDetail()
-      decoded_bytes = base64.b64decode(test_request.request_detail_proto_str)
-      request_detail.ParseFromString(decoded_bytes)
+    request_detail = self._LoadRequestDetailFromDatabase(request_id)
+    if request_detail:
       return self._GenerateRequestMessage(request_detail)
     request_finished, request_detail = self._FetchRequestDetail(request_id)
     if request_detail:
       if request_finished:
-        request_detail_str = request_detail.SerializeToString()
-        base64_string = base64.b64encode(request_detail_str).decode("utf-8")
-        request_info = ndb_models.RequestInfo(
-            id=request_id,
-            request_detail_proto_str=base64_string,
-        )
-        request_info.put()
+        self._SaveRequestDetailToDatabase(request_id, request_detail)
       return self._GenerateRequestMessage(request_detail)
     return None
+
+  def _LoadRequestDetailFromDatabase(
+      self, request_id: str
+  ) -> Optional[service_pb2.RequestDetail]:
+    """Load request detail from database."""
+    with _lock:
+      test_request = ndb_models.RequestInfo.get_by_id(request_id)
+      if test_request:
+        request_detail = service_pb2.RequestDetail()
+        decoded_bytes = base64.b64decode(test_request.request_detail_proto_str)
+        request_detail.ParseFromString(decoded_bytes)
+        return request_detail
+      return None
+
+  def _SaveRequestDetailToDatabase(
+      self, request_id: str, request_detail: service_pb2.RequestDetail
+  ) -> None:
+    """Save request detail to database."""
+    with _lock:
+      request_detail_str = request_detail.SerializeToString()
+      base64_string = base64.b64encode(request_detail_str).decode("utf-8")
+      request_info = ndb_models.RequestInfo(
+          id=request_id,
+          request_detail_proto_str=base64_string,
+      )
+      request_info.put()
 
   def GetAttempt(
       self, request_id: str, attempt_id: str

@@ -142,7 +142,7 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
 
   @mock.patch.object(sql_models, 'GetTestModuleResults')
   @mock.patch.object(file_util, 'GetResultUrl')
-  @mock.patch.object(test_result_handler, 'StoreTestResults')
+  @mock.patch.object(task_scheduler, 'AddCallableTask')
   @mock.patch.object(tfc_event_handler, '_AfterTestRunHandler')
   @mock.patch.object(test_result_handler, 'UpdateTestRunSummary')
   @mock.patch.dict(os.environ, {'IS_OMNILAB_BASED': 'true'}, clear=True)
@@ -150,7 +150,7 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
       self,
       mock_update_summary,
       mock_after_test,
-      mock_store_test_results,
+      mock_add_task,
       mock_get_result_url,
       mock_get_test_module_results,
   ):
@@ -172,13 +172,28 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
     mock_get_test_module_results.assert_called_once_with(['attempt_id'])
     mock_update_summary.assert_called_once_with(self.mock_test_run.key.id())
     mock_after_test.assert_called_with(self.mock_test_run.key.id())
-    mock_store_test_results.assert_called_once_with(
-        self.mock_test_run.key.id(), 'attempt_id', 'test_results_url'
-    )
+
+    # test results stored and after attempt hooks executed
+    mock_add_task.assert_has_calls([
+        mock.call(
+            test_result_handler.StoreTestResults,
+            self.mock_test_run.key.id(),
+            'attempt_id',
+            'test_results_url',
+            _transactional=True,
+        ),
+        mock.call(
+            test_run_hook.ExecuteHooks,
+            self.mock_test_run.key.id(),
+            ndb_models.TestRunPhase.AFTER_ATTEMPT,
+            attempt_id='attempt_id',
+            _transactional=True,
+        ),
+    ])
 
   @mock.patch.object(sql_models, 'GetTestModuleResults')
   @mock.patch.object(file_util, 'GetResultUrl')
-  @mock.patch.object(test_result_handler, 'StoreTestResults')
+  @mock.patch.object(task_scheduler, 'AddCallableTask')
   @mock.patch.object(tfc_event_handler, '_AfterTestRunHandler')
   @mock.patch.object(test_result_handler, 'UpdateTestRunSummary')
   @mock.patch.dict(os.environ, {'IS_OMNILAB_BASED': 'true'}, clear=True)
@@ -186,7 +201,7 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
       self,
       mock_update_summary,
       mock_after_test,
-      mock_store_test_results,
+      mock_add_task,
       mock_get_result_url,
       mock_get_test_module_results,
   ):
@@ -208,12 +223,26 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
     mock_get_test_module_results.assert_called_once_with(['attempt_id'])
     mock_update_summary.assert_called_once_with(self.mock_test_run.key.id())
     mock_after_test.assert_called_with(self.mock_test_run.key.id())
-    mock_store_test_results.assert_called_once_with(
-        self.mock_test_run.key.id(), 'attempt_id', 'test_results_url'
-    )
+    # test results stored and after attempt hooks executed
+    mock_add_task.assert_has_calls([
+        mock.call(
+            test_result_handler.StoreTestResults,
+            self.mock_test_run.key.id(),
+            'attempt_id',
+            'test_results_url',
+            _transactional=True,
+        ),
+        mock.call(
+            test_run_hook.ExecuteHooks,
+            self.mock_test_run.key.id(),
+            ndb_models.TestRunPhase.AFTER_ATTEMPT,
+            attempt_id='attempt_id',
+            _transactional=True,
+        ),
+    ])
 
     # Reset mocks and process the same event again.
-    mock_store_test_results.reset_mock()
+    mock_add_task.reset_mock()
     mock_get_test_module_results.reset_mock()
     mock_update_summary.reset_mock()
     mock_after_test.reset_mock()
@@ -227,10 +256,10 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
     mock_get_test_module_results.assert_not_called()
     mock_update_summary.assert_not_called()
     mock_after_test.assert_not_called()
-    mock_store_test_results.assert_not_called()
+    mock_add_task.assert_not_called()
 
     # Reset mocks and process a different event.
-    mock_store_test_results.reset_mock()
+    mock_add_task.reset_mock()
     mock_get_test_module_results.reset_mock()
     mock_update_summary.reset_mock()
     mock_after_test.reset_mock()
@@ -252,13 +281,26 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
     mock_get_test_module_results.assert_called_once_with(['attempt_id2'])
     mock_update_summary.assert_called_once_with(self.mock_test_run.key.id())
     mock_after_test.assert_called_with(self.mock_test_run.key.id())
-    mock_store_test_results.assert_called_once_with(
-        self.mock_test_run.key.id(), 'attempt_id2', 'test_results_url'
-    )
+    mock_add_task.assert_has_calls([
+        mock.call(
+            test_result_handler.StoreTestResults,
+            self.mock_test_run.key.id(),
+            'attempt_id2',
+            'test_results_url',
+            _transactional=True,
+        ),
+        mock.call(
+            test_run_hook.ExecuteHooks,
+            self.mock_test_run.key.id(),
+            ndb_models.TestRunPhase.AFTER_ATTEMPT,
+            attempt_id='attempt_id2',
+            _transactional=True,
+        ),
+    ])
 
   @mock.patch.object(sql_models, 'GetTestModuleResults')
   @mock.patch.object(file_util, 'GetResultUrl')
-  @mock.patch.object(test_result_handler, 'StoreTestResults')
+  @mock.patch.object(task_scheduler, 'AddCallableTask')
   @mock.patch.object(tfc_event_handler, '_AfterTestRunHandler')
   @mock.patch.object(test_result_handler, 'UpdateTestRunSummary')
   @mock.patch.dict(os.environ, {'IS_OMNILAB_BASED': 'true'}, clear=True)
@@ -266,7 +308,7 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
       self,
       mock_update_summary,
       mock_after_test,
-      mock_store_test_results,
+      mock_add_task,
       mock_get_result_url,
       mock_get_test_module_results,
   ):
@@ -288,7 +330,7 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
     mock_get_test_module_results.assert_called_once_with(['attempt_id'])
     mock_update_summary.assert_called_once_with(self.mock_test_run.key.id())
     mock_after_test.assert_called_with(self.mock_test_run.key.id())
-    mock_store_test_results.assert_not_called()
+    mock_add_task.assert_not_called()
 
   @mock.patch.object(tfc_event_handler, '_AfterTestRunHandler')
   @mock.patch.object(test_result_handler, 'UpdateTestRunSummary')
