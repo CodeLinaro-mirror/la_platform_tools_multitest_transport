@@ -35,7 +35,7 @@ class CredentialType(enum.Enum):
 
 # Constants and default values
 UNKNOWN = 'UNKNOWN'
-DEFAULT_QUEUE_TIMEOUT_SECONDS = 86400  # one day
+DEFAULT_QUEUE_TIMEOUT_SECONDS = 7200  # two hours
 DEFAULT_INVOCATION_TIMEOUT_SECONDS = 0  # no timeout
 DEFAULT_OUTPUT_IDLE_TIMEOUT_SECONDS = 3600  # one hour
 
