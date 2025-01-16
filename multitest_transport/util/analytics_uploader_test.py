@@ -49,14 +49,14 @@ class AnalyticsUploaderTest(testbed_dependent_test.TestbedDependentTest):
     self.assertLen(data['events'], 1)
     self.assertListEqual(['name', 'params'], list(data['events'][0]))
     self.assertEqual(action, data['events'][0]['name'])
-    self.assertDictContainsSubset(
-        {
-            'event_category': category,
-            'app_version': env.VERSION,
-            'is_google': True,
-            'user_tag': 'test_user_tag',
-        },
-        data['events'][0]['params'],
+    expected = {
+        'event_category': category,
+        'app_version': env.VERSION,
+        'is_google': True,
+        'user_tag': 'test_user_tag',
+    }
+    self.assertEqual(
+        data['events'][0]['params'], {**data['events'][0]['params'], **expected}
     )
 
   @mock.patch.object(urllib.request, 'urlopen')
