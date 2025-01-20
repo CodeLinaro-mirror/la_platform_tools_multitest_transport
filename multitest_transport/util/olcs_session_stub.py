@@ -170,7 +170,7 @@ class OlcsSessionStub:
     request = self.GetRequest(request_id)
     attempt_map = {}
     attempt_list = request.command_attempts or []
-    attempt_list.sort(key=lambda attempt: attempt.start_time, reverse=True)
+    attempt_list.sort(key=lambda attempt: attempt.start_time)
     for attempt in attempt_list:
       if not common.IsFinalCommandState(attempt.state):
         continue
