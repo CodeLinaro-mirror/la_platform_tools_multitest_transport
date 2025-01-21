@@ -196,6 +196,7 @@ pytype_strict_library(
     ],
     deps = [
         ":env_lib",
+        ":olcs_lab_info_stub",
         ":olcs_session_stub",
         "@tradefed_cluster//tradefed_cluster:api_messages_lib",
         "@tradefed_cluster//tradefed_cluster:common_lib",
@@ -408,6 +409,36 @@ pytype_strict_library(
 pytype_strict_library(
     name = "lru_cache",
     srcs = ["lru_cache.py"],
+)
+
+pytype_strict_library(
+    name = "olcs_lab_info_stub",
+    srcs = ["olcs_lab_info_stub.py"],
+    deps = [
+        ":olcs_lab_info_client_lib",
+        "@com_google_deviceinfra//src/devtools/mobileharness/api/model/proto:device_py_pb2",
+        "@com_google_deviceinfra//src/devtools/mobileharness/shared/labinfo/proto:lab_info_service_py_proto",
+        "//third_party/py/endpoints:endpoints_library",
+        "//third_party/py/protorpc:protorpc_all",
+        "@tradefed_cluster//tradefed_cluster:api_messages_lib",
+        "@tradefed_cluster//tradefed_cluster:common_lib",
+    ],
+)
+
+py_test(
+    name = "olcs_lab_info_stub_test",
+    srcs = ["olcs_lab_info_stub_test.py"],
+    deps = [
+        ":olcs_lab_info_client_lib",
+        ":olcs_lab_info_stub",
+        "@com_google_deviceinfra//src/devtools/mobileharness/api/model/proto:device_py_pb2",
+        "@com_google_deviceinfra//src/devtools/mobileharness/infra/master/rpc/proto:lab_record_service_py_proto",
+        "@com_google_deviceinfra//src/devtools/mobileharness/shared/labinfo/proto:lab_info_service_py_proto",
+        "//third_party/py/absl/testing:absltest",
+        "//third_party/py/protorpc:protorpc_all",
+        "@tradefed_cluster//tradefed_cluster:api_messages_lib",
+        "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
+    ],
 )
 
 py_test(

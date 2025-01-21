@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """A TFC client module."""
+
 import datetime
 import json
 import logging
@@ -24,6 +25,7 @@ from typing import List, Optional
 import apiclient
 import httplib2
 from multitest_transport.util import env
+from multitest_transport.util import olcs_lab_info_stub
 from multitest_transport.util import olcs_session_stub
 from protorpc import protojson
 import requests
@@ -32,6 +34,7 @@ from tradefed_cluster.common import IsFinalCommandState
 from tradefed_cluster.common import ObjectEventType
 from tradefed_cluster.services import app_manager
 from tradefed_cluster.util import ndb_shim as ndb
+
 
 API_NAME = 'tradefed_cluster'
 API_VERSION = 'v1'
@@ -93,6 +96,13 @@ def _GetOlcsSessionStub() -> olcs_session_stub.OlcsSessionStub:
   if not hasattr(_tls, 'olcs_session_stub'):
     _tls.olcs_session_stub = olcs_session_stub.OlcsSessionStub(None)
   return _tls.olcs_session_stub
+
+
+def _GetOlcsLabInfoStub() -> olcs_lab_info_stub.OlcsLabInfoStub:
+  """Returns a OlcsLabInfoStub for TFC."""
+  if not hasattr(_tls, 'olcs_lab_info_stub'):
+    _tls.olcs_lab_info_stub = olcs_lab_info_stub.OlcsLabInfoStub(None)
+  return _tls.olcs_lab_info_stub
 
 
 def _ProcessSubscribedSessionResponse(response):
@@ -297,6 +307,8 @@ def GetDeviceInfo(serial_num: str) -> Optional[api_messages.DeviceInfo]:
   Returns:
     A device info object or None if not found.
   """
+  if os.environ.get('IS_OMNILAB_BASED') == 'true':
+    return _GetOlcsLabInfoStub().GetDevice(serial_num)
   try:
     res = _GetAPIClient().devices().get(device_serial=serial_num).execute()
     return protojson.decode_message(api_messages.DeviceInfo, json.dumps(res))  # pytype: disable=module-attr

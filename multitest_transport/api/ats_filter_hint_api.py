@@ -18,9 +18,9 @@ from typing import Optional
 
 import endpoints
 from multitest_transport.api import base
-from multitest_transport.api import device_api
 from multitest_transport.api import host_api
 from multitest_transport.util import olcs_lab_info_client
+from multitest_transport.util import olcs_lab_info_stub
 from protorpc import message_types
 from protorpc import messages
 from protorpc import remote
@@ -241,7 +241,7 @@ class AtsFilterHintApi(remote.Service):
     get_lab_info_request.lab_query.device_view_request.device_limit = 0
     response = self._olcs_lab_info_client.get_lab_info(get_lab_info_request)
     return [
-        device_api.DeviceApi.ConvertDeviceInfo(
+        olcs_lab_info_stub.OlcsLabInfoStub.ConvertDeviceInfo(
             data, response.lab_query_result.timestamp
         )
         for data in response.lab_query_result.device_view.grouped_devices.device_list.device_info

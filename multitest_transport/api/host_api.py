@@ -20,8 +20,8 @@ from typing import Optional
 
 import endpoints
 from multitest_transport.api import base
-from multitest_transport.api import device_api
 from multitest_transport.util import olcs_lab_info_client
+from multitest_transport.util import olcs_lab_info_stub
 from multitest_transport.util import olcs_lab_record_client
 from protorpc import message_types
 from protorpc import messages
@@ -336,7 +336,7 @@ class HostApi(remote.Service):
     offline_devices = 0
     device_infos = []
     for olcs_device_info in host_info.device_list.device_info:
-      device_info = device_api.DeviceApi.ConvertDeviceInfo(
+      device_info = olcs_lab_info_stub.OlcsLabInfoStub.ConvertDeviceInfo(
           olcs_device_info, timestamp
       )
       if device_info.run_target in device_count_summaries:

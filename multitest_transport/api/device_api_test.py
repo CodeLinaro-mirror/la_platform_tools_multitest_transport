@@ -18,6 +18,7 @@ from absl.testing import absltest
 from multitest_transport.api import api_test_util
 from multitest_transport.api import device_api
 from multitest_transport.util import olcs_lab_info_client
+from multitest_transport.util import olcs_lab_info_stub
 from multitest_transport.util import olcs_lab_record_client
 from protorpc import protojson
 from tradefed_cluster import api_messages
@@ -62,6 +63,10 @@ class DeviceApiTest(api_test_util.TestCase):
       self._init_device_info(device_record.device_info)
       self._olcs_lab_record_client.get_device_record.return_value = (
           get_device_record_response
+      )
+
+      self._olcs_lab_info_stub = olcs_lab_info_stub.OlcsLabInfoStub(
+          self._olcs_lab_info_client
       )
 
     def _init_device_info(self, device_info):
