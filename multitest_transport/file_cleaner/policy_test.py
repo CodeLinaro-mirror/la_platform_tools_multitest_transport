@@ -13,23 +13,34 @@
 # limitations under the License
 """Tests for multitest_transport.file_cleaner.policy.py."""
 import os
+from unittest import mock
 
 from absl.testing import absltest
-from pyfakefs import fake_filesystem_unittest
-
-
 from multitest_transport.file_cleaner import policy
 from multitest_transport.models import messages
 from multitest_transport.models import ndb_models
 from multitest_transport.util import env
+from multitest_transport.util import file_util
+from pyfakefs import fake_filesystem_unittest
 
 
-class PolicyTest(fake_filesystem_unittest.TestCase):
+class PolicyTest(fake_filesystem_unittest.TestCase, absltest.TestCase):
   """Tests Policy functionality."""
 
   def setUp(self):
     super(PolicyTest, self).setUp()
     self.setUpPyfakefs()
+
+    # After Python 3.12, we cannot mock shutil.os to use MockGFile because
+    # shutil's methods assert that operations are performed with the base os
+    # module.
+    self.enter_context(
+        mock.patch.object(
+            file_util.shutil,
+            'rmtree',
+            side_effect=self.fs.remove_object,
+        )
+    )
     env.STORAGE_PATH = '/test'
 
   def testPolicy_file(self):
