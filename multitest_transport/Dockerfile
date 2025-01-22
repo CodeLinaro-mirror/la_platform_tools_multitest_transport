@@ -147,6 +147,8 @@ RUN wget -q --retry-connrefused -O platform-tools.zip https://dl.google.com/andr
         platform-tools/mke2fs \
     && rm platform-tools.zip
 ENV PATH /tmp/custom_sdk_tools:/sdk_tools:${PATH}
+# b/391280214: disable libusb for adb r35.0.2
+ENV ADB_LIBUSB 0
 
 # Install Google Cloud SDK
 # Reference: https://github.com/GoogleCloudPlatform/cloud-sdk-docker/blob/master/Dockerfile
