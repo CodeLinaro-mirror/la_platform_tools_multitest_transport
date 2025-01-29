@@ -67,7 +67,6 @@ py_appengine_binary(
         "//multitest_transport/file_server:file_server_lib",
         "//multitest_transport/scripts",
     ],
-    python_version = "PY3",
     deps = [
         ":server_lib",
         "//multitest_transport/app_helper:launcher_lib",
