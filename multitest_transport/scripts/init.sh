@@ -30,6 +30,8 @@ readonly PRERUN_SCRIPT_PATH="/mtt/scripts/init_pre_run.sh"
 # TODO Move the post-run script to run after lab server startup.
 readonly POSTRUN_SCRIPT_PATH="/mtt/scripts/init_post_run.sh"
 
+readonly MYSQL_SCRIPT_PATH="/mtt/scripts/mysql.sh"
+
 function start_ndppd {
   # This function generates a configuration file and starts ndppd. The arguments
   # are the networks to which the neighbor solocitations are forwarded.
@@ -93,6 +95,10 @@ if [[ -f "${PRERUN_SCRIPT_PATH}" ]]; then
   source ${PRERUN_SCRIPT_PATH}
 fi
 
+if [[ -f "${MYSQL_SCRIPT_PATH}" ]]; then
+  source ${MYSQL_SCRIPT_PATH}
+fi
+
 if [[ -z "${MTT_CONTROL_SERVER_URL}" ]] || [[ "${OPERATION_MODE}"=="on_premise" ]]
 then
   # Start RabbitMQ server
@@ -123,33 +129,7 @@ then
     FILE_SERVICE_ONLY="true"
   fi
 
-  # Bind to IPv4 only because endpoints service cannot convert IPv6 addresses to
-  # URLs correctly.
-  BIND_ADDRESS="0.0.0.0"
-
-  # Set the credential type for the OLC server.
-  if [[ "${OLC_SERVER_OPTS}" == *"--use_alts=true"* ]]; then
-    OLCS_CREDENTIAL_TYPE="alts"
-  else
-    OLCS_CREDENTIAL_TYPE="no_credential"
-  fi
-
-  # Start the ATS server and pass empty sql_database_uri to launch DB server.
-  /mtt/serve.sh \
-      --storage_path "${MTT_STORAGE_PATH}" \
-      --bind_address "${BIND_ADDRESS}" \
-      --port "${MTT_CONTROL_SERVER_PORT}" \
-      --log_level "${MTT_SERVER_LOG_LEVEL}" \
-      --file_service_only "${FILE_SERVICE_ONLY}" \
-      --sql_database_uri "" \
-      --control_server_url "${MTT_CONTROL_SERVER_URL}" \
-      --olcs_server_address "localhost:${OLC_SERVER_PORT}" \
-      --olcs_credential_type "${OLCS_CREDENTIAL_TYPE}" \
-      --report_generator_jar "${MTT_REPORT_GENERATOR_JAR}" \
-      --is_omnilab_based "${IS_OMNILAB_BASED}" \
-      2>&1 | multilog s10485760 n10 "${MTT_CONTROL_SERVER_LOG_DIR}" &
-
-
+  SQL_DATABASE_URI=""
   if [[ ! -z "${IS_OMNILAB_BASED}" ]]
   then
     OLC_SERVER_PORT="${OLC_SERVER_PORT:-7030}"
@@ -161,15 +141,18 @@ then
     rm -rf "${MTT_MH_WORK_DIR}"
     mkdir -p "${MTT_MH_WORK_DIR}"
 
+    start_mysql_database "${MTT_STORAGE_PATH}"
+
+    echo "Waiting for MySQL ready..."
     for i in $(seq 30)
     do
-      if [[ -f /data/ats_db/mysqld.sock ]]
-      then
-        mysql -S /data/ats_db/mysqld.sock -D ats_db < /deviceinfra/sql/test_allocations.sql
-        mysql -S /data/ats_db/mysqld.sock -D ats_db < /deviceinfra/sql/unfinished_sessions.sql
+      if mysqladmin -S "$MYSQL_SOCKET" ping > /dev/null 2>&1; then
+        mysql -S "${MYSQL_SOCKET}" -D "${DB_NAME}" < /deviceinfra/sql/test_allocations.sql
+        mysql -S "${MYSQL_SOCKET}" -D "${DB_NAME}" < /deviceinfra/sql/unfinished_sessions.sql
+        echo "MySQL initialized"
         break
       else
-        echo "MySQL socket file not found. Retrying in 1 second..."
+        echo "MySQL is not ready. Retrying in 1 second..."
         sleep 1
       fi
     done
@@ -201,6 +184,32 @@ then
       ATS_FILE_SERVER="$(echo ${MTT_CONTROL_SERVER_URL} | sed 's,^\(\([^:/]\+://\)\?\([^:/]\+\)\)\(:\([0-9]\{1\,5\}\)\)\?\+.*$,\1,g'):${ATS_FILE_SERVER_PORT}"
     fi
   fi
+
+  # Bind to IPv4 only because endpoints service cannot convert IPv6 addresses to
+  # URLs correctly.
+  BIND_ADDRESS="0.0.0.0"
+
+  # Set the credential type for the OLC server.
+  if [[ "${OLC_SERVER_OPTS}" == *"--use_alts=true"* ]]; then
+    OLCS_CREDENTIAL_TYPE="alts"
+  else
+    OLCS_CREDENTIAL_TYPE="no_credential"
+  fi
+
+  # Start the ATS server and pass empty sql_database_uri to launch DB server.
+  /mtt/serve.sh \
+      --storage_path "${MTT_STORAGE_PATH}" \
+      --bind_address "${BIND_ADDRESS}" \
+      --port "${MTT_CONTROL_SERVER_PORT}" \
+      --log_level "${MTT_SERVER_LOG_LEVEL}" \
+      --file_service_only "${FILE_SERVICE_ONLY}" \
+      --sql_database_uri "${SQL_DATABASE_URI}" \
+      --control_server_url "${MTT_CONTROL_SERVER_URL}" \
+      --olcs_server_address "localhost:${OLC_SERVER_PORT}" \
+      --olcs_credential_type "${OLCS_CREDENTIAL_TYPE}" \
+      --report_generator_jar "${MTT_REPORT_GENERATOR_JAR}" \
+      --is_omnilab_based "${IS_OMNILAB_BASED}" \
+      2>&1 | multilog s10485760 n10 "${MTT_CONTROL_SERVER_LOG_DIR}" &
 fi
 
 # Construct TF global config

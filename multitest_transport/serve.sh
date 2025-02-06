@@ -21,6 +21,7 @@ trap "echo cleaning up... && pkill -P $$ -TERM" SIGINT SIGTERM EXIT
 readonly SCRIPT_PATH="$(realpath "$0")"
 readonly SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
 readonly NETDATA_STREAM_API_KEY="2ba5b231-875d-4d39-82b0-adafd4c977d9"
+readonly MYSQL_SCRIPT_PATH="${SCRIPT_DIR}/scripts/mysql.sh"
 
 # Set environment defaults
 ADB_VERSION="$(adb version | grep -oP "Version \K(.*)")"
@@ -93,6 +94,10 @@ if [[ ! -d "$STORAGE_PATH/netdata" ]]; then
   mkdir -p "$STORAGE_PATH/netdata/log"
 fi
 
+if [[ -f "${MYSQL_SCRIPT_PATH}" ]]; then
+  source "${MYSQL_SCRIPT_PATH}"
+fi
+
 function start_rabbitmq_puller {
   # Start RabbitMQ puller
   echo "Starting RabbitMQ puller..."
@@ -150,30 +155,6 @@ function wait_for_datastore {
   local status_url="http://localhost:${DATASTORE_EMULATOR_PORT}/"
   timeout 5m \
     bash -c "while [[ \$(curl -s ${status_url}) != \"Ok\" ]]; do sleep 1; done"
-}
-
-function start_mysql_database {
-  # Skip starting DB if URI already set
-  if [[ -n "${SQL_DATABASE_URI}" ]]; then return; fi
-
-  echo "Starting MySQL database..."
-  local db_name="ats_db"
-  local datadir="${STORAGE_PATH}/${db_name}"
-  local socket="${datadir}/mysqld.sock"
-  local pidfile="${datadir}/mysqld.pid"
-  # Ensure DB directory is created and initialized
-  mkdir -p "${datadir}"
-  chown -R mysql:mysql "${datadir}"
-  # Start DB with specific socket/pid to prevent clashes. Does not check access
-  # (system/grant tables don't need to exist), but network access is disabled.
-  mysqld_safe \
-    --socket="${socket}" \
-    --pid-file="${pidfile}" \
-    --skip-grant-tables \
-    --skip-networking \
-    --datadir="${datadir}" \
-    &
-  SQL_DATABASE_URI="mysql+pymysql://root@/${db_name}?unix_socket=${socket}"
 }
 
 function start_main_server {
@@ -283,7 +264,7 @@ if [ $FILE_SERVICE_ONLY == "false" ]
 then
   start_local_file_server
   start_datastore_emulator
-  start_mysql_database
+  start_mysql_database "${STORAGE_PATH}"
   start_rabbitmq_puller
   start_main_server
   start_file_cleaner
