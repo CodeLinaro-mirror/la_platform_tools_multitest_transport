@@ -147,8 +147,8 @@ then
     for i in $(seq 30)
     do
       if mysqladmin -S "$MYSQL_SOCKET" ping > /dev/null 2>&1; then
-        mysql -S "${MYSQL_SOCKET}" -D "${DB_NAME}" < /deviceinfra/sql/test_allocations.sql
-        mysql -S "${MYSQL_SOCKET}" -D "${DB_NAME}" < /deviceinfra/sql/unfinished_sessions.sql
+        mysql -S "${MYSQL_SOCKET}" -D "${DB_NAME}" < /deviceinfra/test_allocations.sql
+        mysql -S "${MYSQL_SOCKET}" -D "${DB_NAME}" < /deviceinfra/unfinished_sessions.sql
         echo "MySQL initialized"
         break
       else
