@@ -548,7 +548,7 @@ class OlcsSessionStubTest(testbed_dependent_test.TestbedDependentTest):
                   type=service_pb2.DeviceActionConfigObject.DeviceActionConfigObjectType.TARGET_PREPARER,
                   class_name='com.android.tradefed.targetprep.DeviceCleaner',
                   option_values=[
-                      service_pb2.DeviceActionConfigObject.Option(
+                      service_pb2.Option(
                           name='post-cleanup', value=['SCREEN_OFF']
                       )
                   ],
@@ -556,6 +556,17 @@ class OlcsSessionStubTest(testbed_dependent_test.TestbedDependentTest):
               service_pb2.DeviceActionConfigObject(
                   type=service_pb2.DeviceActionConfigObject.DeviceActionConfigObjectType.RESULT_REPORTER,
                   class_name='com.google.android.tradefed.result.teststorage.ResultReporter',
+              ),
+          ],
+      )
+      self.assertEqual(
+          request_proto.test_environment.tradefed_options,
+          [
+              service_pb2.Option(
+                  name='online-wait-time', value=['300001']
+              ),
+              service_pb2.Option(
+                  name='bugreport-on-invocation-ended', value=['true']
               ),
           ],
       )

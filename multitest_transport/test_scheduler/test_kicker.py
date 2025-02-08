@@ -96,6 +96,7 @@ TF_DEVICE_COUNT_ENV_VAR = '${TF_DEVICE_COUNT}'
 # the effect of the concatenated options.
 REPEATABLE_TF_OPTIONS = ('gce-driver-file-param',)
 MAX_COMMANDS = 500
+TRADEFED_OPTIONS_CLASS_NAME = 'tradefed_options'
 
 APP = flask.Flask(__name__)
 
@@ -634,6 +635,7 @@ def _CreateTFCRequest(test_run_id):
               api_messages.KeyValuePair(key=p.name, value=p.value)
               for p in test_run.test.build_attributes
           ],
+          tradefed_options=_GetTradefedOptions(test_run),
       ),
       test_resources=test_resources,
       prev_test_context=prev_test_context,
@@ -683,6 +685,18 @@ def _DeviceSpecsToTFCTestBench(
   ]
   return api_messages.TestBenchRequirement(
       cluster=cluster, host=api_messages.HostRequirement(groups=groups))
+
+
+def _GetTradefedOptions(test_run):
+  """Return a list of Tradefed options for a test run."""
+  tradefed_options = []
+  for action in test_run.before_device_actions:
+    option_values = [
+        api_messages.KeyMultiValuePair(key=o.name, values=o.values)
+        for o in action.tradefed_options
+    ]
+    tradefed_options.extend(option_values)
+  return tradefed_options
 
 
 def _GetTradefedConfigObjects(test_run):

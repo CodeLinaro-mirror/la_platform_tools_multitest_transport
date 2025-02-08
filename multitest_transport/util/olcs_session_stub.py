@@ -766,6 +766,11 @@ class OlcsSessionStub:
             OlcsSessionStub._ConvertToDeviceActionConfigObject(obj)
             for obj in request.test_environment.tradefed_config_objects
         ])
+      if request.test_environment.tradefed_options:
+        request_proto.test_environment.tradefed_options.extend([
+            service_pb2.Option(name=o.key, value=o.values)
+            for o in request.test_environment.tradefed_options
+        ])
 
     end_request = session_service_pb2.CreateSessionRequest()
     session_plugin_config = (
@@ -794,7 +799,7 @@ class OlcsSessionStub:
         ),
         class_name=obj.class_name,
         option_values=[
-            service_pb2.DeviceActionConfigObject.Option(
+            service_pb2.Option(
                 name=kv.key, value=kv.values
             )
             for kv in obj.option_values

@@ -921,10 +921,25 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
             ),
             ndb_models.TradefedConfigObject(class_name='com.android.bar'),
         ])
+    before_device_action = ndb_models.DeviceAction(
+        name='Before Device Action',
+        tradefed_target_preparers=[
+            ndb_models.TradefedConfigObject(
+                class_name='com.android.before_device_action',
+            )
+        ],
+        tradefed_options=[
+            ndb_models.NameMultiValuePair(
+                name='bugreport-on-invocation-ended', values=['true']
+            )
+        ],
+    )
     test_run_action.put()
+    before_device_action.put()
     # Create test run with test run action
     test_run = self._CreateMockTestRun(command='command')
     test_run.test_run_actions = [test_run_action]
+    test_run.before_device_actions = [before_device_action]
     test_run.put()
     test_run_id = test_run.key.id()
     test_run = ndb_models.TestRun.get_by_id(test_run_id)
@@ -967,18 +982,39 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
     tradefed_config_objects = msg.test_environment.tradefed_config_objects
     self.assertEqual(
         [tradefed_config_objects.pop(0)], test_kicker.DEFAULT_TF_CONFIG_OBJECTS)
-    self.assertLen(tradefed_config_objects, 2)
-    self.assertEqual(api_messages.TradefedConfigObjectType.RESULT_REPORTER,
-                     tradefed_config_objects[1].type)
-    self.assertEqual('com.android.foo', tradefed_config_objects[0].class_name)
-    self.assertEqual('test-run-id',
-                     tradefed_config_objects[0].option_values[0].key)
-    self.assertEqual([str(test_run_id)],
-                     tradefed_config_objects[0].option_values[0].values)
-    self.assertEqual(api_messages.TradefedConfigObjectType.RESULT_REPORTER,
-                     tradefed_config_objects[1].type)
-    self.assertEqual('com.android.bar', tradefed_config_objects[1].class_name)
-    self.assertEmpty(tradefed_config_objects[1].option_values)
+    self.assertLen(tradefed_config_objects, 3)
+    self.assertEqual(
+        api_messages.TradefedConfigObjectType.TARGET_PREPARER,
+        tradefed_config_objects[0].type,
+    )
+    self.assertEqual(
+        'com.android.before_device_action',
+        tradefed_config_objects[0].class_name,
+    )
+    self.assertEqual(
+        api_messages.TradefedConfigObjectType.RESULT_REPORTER,
+        tradefed_config_objects[1].type,
+    )
+    self.assertEqual('com.android.foo', tradefed_config_objects[1].class_name)
+    self.assertEqual(
+        'test-run-id', tradefed_config_objects[1].option_values[0].key
+    )
+    self.assertEqual(
+        [str(test_run_id)], tradefed_config_objects[1].option_values[0].values
+    )
+    self.assertEqual(
+        api_messages.TradefedConfigObjectType.RESULT_REPORTER,
+        tradefed_config_objects[2].type,
+    )
+    self.assertEqual('com.android.bar', tradefed_config_objects[2].class_name)
+    self.assertEmpty(tradefed_config_objects[2].option_values)
+
+    self.assertEqual(
+        api_messages.KeyMultiValuePair(
+            key='bugreport-on-invocation-ended', values=['true']
+        ),
+        msg.test_environment.tradefed_options[0],
+    )
 
     # Test run now queued
     test_run = ndb_models.TestRun.get_by_id(test_run_id)

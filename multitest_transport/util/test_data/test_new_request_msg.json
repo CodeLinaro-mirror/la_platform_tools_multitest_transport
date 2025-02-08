@@ -85,6 +85,10 @@
         "class_name": "com.google.android.tradefed.result.teststorage.ResultReporter"
       }
     ],
+    "tradefed_options": [
+      { "key": "online-wait-time", "values": ["300001"] },
+      { "key": "bugreport-on-invocation-ended", "values": ["true"] }
+    ],
     "use_parallel_setup": true
   },
   "test_resources": [
