@@ -143,19 +143,24 @@ then
 
     start_mysql_database "${MTT_STORAGE_PATH}"
 
-    echo "Waiting for MySQL ready..."
-    for i in $(seq 30)
-    do
-      if mysqladmin -S "$MYSQL_SOCKET" ping > /dev/null 2>&1; then
-        mysql -S "${MYSQL_SOCKET}" -D "${DB_NAME}" < /deviceinfra/test_allocations.sql
-        mysql -S "${MYSQL_SOCKET}" -D "${DB_NAME}" < /deviceinfra/unfinished_sessions.sql
-        echo "MySQL initialized"
-        break
-      else
-        echo "MySQL is not ready. Retrying in 1 second..."
-        sleep 1
-      fi
-    done
+    # Wait for MySQL to be ready.
+    if [[ "${IS_CONTROLLER}" == "true" ]]
+    then
+      echo "Waiting for MySQL ready..."
+      for i in $(seq 30)
+      do
+        if mysqladmin -S "$MYSQL_SOCKET" ping > /dev/null 2>&1; then
+          echo "MySQL is started. Start initializing MySQL database..."
+          mysql -S "${MYSQL_SOCKET}" -D "${DB_NAME}" < /deviceinfra/test_allocations.sql
+          mysql -S "${MYSQL_SOCKET}" -D "${DB_NAME}" < /deviceinfra/unfinished_sessions.sql
+          echo "MySQL initialized"
+          break
+        else
+          echo "MySQL is not started. Retrying in 1 second..."
+          sleep 1
+        fi
+      done
+    fi
 
     if [[ "${FILE_SERVICE_ONLY}" == "false" ]]
     then
