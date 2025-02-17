@@ -57,7 +57,7 @@ RUN export DEBIAN_FRONTEND=noninteractive; apt update -qq; apt install -y -qq \
 
 # Install rabbitmq from official channel.
 # Add the Erlang repository maintained by RabbitMQ
-RUN add-apt-repository ppa:rabbitmq/rabbitmq-erlang
+RUN add-apt-repository -y ppa:rabbitmq/rabbitmq-erlang
 RUN curl -s https://packagecloud.io/install/repositories/rabbitmq/rabbitmq-server/script.deb.sh | bash
 # Install Erlang packages
 RUN export DEBIAN_FRONTEND=noninteractive && \
