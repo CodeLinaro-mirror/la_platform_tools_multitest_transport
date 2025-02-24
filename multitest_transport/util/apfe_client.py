@@ -127,24 +127,6 @@ class ApfeClient(object):
     apfe_build = protojson.decode_message(ApfeBuild, res)  # pytype: disable=module-attr
     return apfe_build
 
-  def GetLatestBtsReport(self, build_name):
-    """Gets the latest BTS report from APFE for a build."""
-
-    res = (
-        self._GetClient()
-        .compatibility()
-        .devices()
-        .products()
-        .builds()
-        .nreports()
-        .list(parent=build_name, n=1, includeReportTypes=['BTS_V2'])
-        .execute(http=self._GetHttp(), num_retries=constant.NUM_RETRIES)
-    )
-    response = protojson.decode_message(ListNReportsResponse, res)  # pytype: disable=module-attr
-    if response.reports:
-      return response.reports[0]
-    return None
-
   def GetLatestApfeReport(self, report_name):
     """Gets the latest report from APFE."""
 
@@ -233,12 +215,6 @@ def ConvertApfeReport(msg, test_run_key):
       build_fingerprint=msg.buildFingerprint,
       process_state=msg.processState,
   )
-
-
-class ListNReportsResponse(messages.Message):
-  """A response from list n reports query."""
-
-  reports = messages.MessageField(ApfeReport, 1, repeated=True)  
 
 
 class RequiredReport(messages.Message):

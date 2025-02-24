@@ -118,9 +118,6 @@ class XtsRequirementsDetectorTest(testbed_dependent_test.TestbedDependentTest):
     mock_client.GetLatestApfeBuild.return_value = apfe_client.ApfeBuild(
         name='apfe build',
     )
-    mock_client.GetLatestBtsReport.return_value = apfe_client.ApfeReport(
-        processState=ndb_models.ReportProcessState.COMPLETE,
-    )
     xts_requirements_detector.KickDetection(
         self.device_spec, self.test_resource_objs, str(self.mock_build.key.id())
     )
@@ -162,9 +159,6 @@ class XtsRequirementsDetectorTest(testbed_dependent_test.TestbedDependentTest):
     mock_client.GetLatestApfeBuild.return_value = apfe_client.ApfeBuild(
         name='apfe build',
         approvalStatus=ndb_models.BuildApprovalStatus.APPROVED,
-    )
-    mock_client.GetLatestBtsReport.return_value = apfe_client.ApfeReport(
-        processState=ndb_models.ReportProcessState.COMPLETE,
     )
     mock_client.GetRequiredReports.return_value = (
         apfe_client.RequiredReportInfo(
@@ -380,9 +374,6 @@ class XtsRequirementsDetectorTest(testbed_dependent_test.TestbedDependentTest):
     mock_client.GetLatestApfeBuild.return_value = apfe_client.ApfeBuild(
         name='apfe build',
     )
-    mock_client.GetLatestBtsReport.return_value = apfe_client.ApfeReport(
-        processState=ndb_models.ReportProcessState.COMPLETE,
-    )
     mock_client.GetRequiredReports.return_value = (
         apfe_client.RequiredReportInfo(
             requiredReports=[
@@ -437,86 +428,6 @@ class XtsRequirementsDetectorTest(testbed_dependent_test.TestbedDependentTest):
         ],
     )
     mock_add_task.assert_not_called()
-
-  @mock.patch.object(apfe_client, 'ApfeClient')
-  def testProcessDetectionEvent_analysisRunning_btsReportMissing(
-      self, mock_client_factory
-  ):
-    self.mock_build.detection_status = (
-        ndb_models.XtsRequirementsDetectionStatus.ANALYSIS_RUNNING
-    )
-    self.mock_build.put()
-    mock_client = mock.MagicMock()
-    mock_client_factory.return_value = mock_client
-    mock_client.GetLatestApfeReport.return_value = apfe_client.ApfeReport(
-        processState=ndb_models.ReportProcessState.COMPLETE,
-    )
-    mock_client.GetLatestApfeBuild.return_value = apfe_client.ApfeBuild(
-        name='apfe build',
-    )
-    mock_client.GetLatestBtsReport.return_value = None
-
-    xts_requirements_detector.ProcessDetectionEvent(
-        str(self.mock_build.key.id()), self.attempt_count
-    )
-    self.mock_build = self.mock_build.key.get()
-
-    self.assertEqual(
-        ndb_models.XtsRequirementsDetectionStatus.ERROR,
-        self.mock_build.detection_status,
-    )
-    self.assertEqual(
-        self.mock_build.detection_error_reason,
-        'BTS report not ready. Please upload the software build to Android'
-        ' Firmware Analysis portal in advance.',
-    )
-
-  @mock.patch.object(task_scheduler, 'AddTask')
-  @mock.patch.object(apfe_client, 'ApfeClient')
-  def testProcessDetectionEvent_analysisRunning_btsReportInProgress(
-      self, mock_client_factory, mock_add_task
-  ):
-    self.mock_build.detection_status = (
-        ndb_models.XtsRequirementsDetectionStatus.ANALYSIS_RUNNING
-    )
-    self.mock_build.put()
-    mock_client = mock.MagicMock()
-    mock_client_factory.return_value = mock_client
-    mock_client.GetLatestApfeReport.return_value = apfe_client.ApfeReport(
-        processState=ndb_models.ReportProcessState.COMPLETE,
-    )
-    mock_client.GetLatestApfeBuild.return_value = apfe_client.ApfeBuild(
-        name='apfe build',
-    )
-    mock_client.GetLatestBtsReport.return_value = apfe_client.ApfeReport(
-        processState=ndb_models.ReportProcessState.IN_PROGRESS,
-    )
-
-    xts_requirements_detector.ProcessDetectionEvent(
-        str(self.mock_build.key.id()), self.attempt_count
-    )
-    self.mock_build = self.mock_build.key.get()
-
-    self.assertEqual(
-        self.mock_build.detection_status,
-        ndb_models.XtsRequirementsDetectionStatus.ANALYSIS_RUNNING,
-    )
-    _, task_args = mock_add_task.call_args
-    self.assertEqual(
-        task_args['queue_name'],
-        xts_requirements_detector.XTS_REQUIREMENTS_DETECTION_EVENT_QUEUE,
-    )
-    self.assertEqual(
-        json.loads(task_args['payload']),
-        {
-            'build_id': str(self.mock_build.key.id()),
-            'attempt_count': self.attempt_count + 1,
-        },
-    )
-    self.assertEqual(
-        task_args['target'],
-        'default',
-    )
 
   @mock.patch.object(task_scheduler, 'AddTask')
   @mock.patch.object(apfe_client, 'ApfeClient')

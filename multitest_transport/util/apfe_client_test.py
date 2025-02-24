@@ -138,58 +138,6 @@ class ApfeClientTest(absltest.TestCase):
         },
     )
 
-  def testGetLatestBtsReport(self):
-    """Tests latest BTS report can be retrieved from APFE."""
-    self.client.compatibility().devices().products().builds().nreports().list().execute.return_value = json.dumps({
-        'reports': [
-            {
-                'name': self.mock_report_name,
-                'type': 'BTS_V2',
-                'companyId': self.mock_company_id,
-                'companyName': self.mock_company_name,
-                'deviceName': self.mock_device_name,
-                'productName': self.mock_product_name,
-                'modelName': self.mock_model_name,
-                'buildFingerprint': self.mock_build_fingerprint,
-                'processState': 'COMPLETE',
-            },
-        ]
-    })
-
-    latest_bts_report = self.apfe_client.GetLatestBtsReport(
-        self.mock_build_name
-    )
-    self.assertEqual(
-        latest_bts_report,
-        apfe_client.ApfeReport(
-            name=self.mock_report_name,
-            type=ndb_models.ReportType.BTS_V2,
-            companyId=self.mock_company_id,
-            companyName=self.mock_company_name,
-            deviceName=self.mock_device_name,
-            productName=self.mock_product_name,
-            modelName=self.mock_model_name,
-            buildFingerprint=self.mock_build_fingerprint,
-            processState=ndb_models.ReportProcessState.COMPLETE,
-        ),
-    )
-    request = (
-        self.client.compatibility()
-        .devices()
-        .products()
-        .builds()
-        .nreports()
-        .list.call_args_list[1][1]
-    )
-    self.assertEqual(
-        request,
-        {
-            'parent': self.mock_build_name,
-            'n': 1,
-            'includeReportTypes': ['BTS_V2'],
-        },
-    )
-
   def testGetLatestApfeReport(self):
     """Tests latest APFE report can be retrieved."""
     self.client.compatibility().devices().products().builds().reports().get().execute.return_value = json.dumps({
