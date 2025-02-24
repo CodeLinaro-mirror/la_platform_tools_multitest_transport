@@ -109,7 +109,7 @@ class BuildApi(remote.Service):
   def Update(self, request):
     """Updates a build.
 
-    Only name, fingerprint, labels, file_url and size fields are updatable.
+    Only name, fingerprint, and labels fields are updatable.
 
     Body:
       Build data
@@ -122,8 +122,6 @@ class BuildApi(remote.Service):
     existing_build.name = self._strip(request.name)
     existing_build.fingerprint = self._strip(request.fingerprint)
     existing_build.labels = request.labels
-    existing_build.file_url = request.file_url
-    existing_build.size = request.size
     self._ValidateBuild(existing_build)
     existing_build.put()
     if existing_fingerprint != existing_build.fingerprint:
@@ -215,19 +213,20 @@ class BuildApi(remote.Service):
       raise endpoints.BadRequestException(
           'Fingerprint in the request is unset.'
       )
-    if build.file_url:
-      local_file_path = file_util.GetLocalFilePath(build.file_url)
-      if not local_file_path:
-        raise endpoints.BadRequestException(
-            'Invalid local file URL %s.' % build.file_url
-        )
-      _, ext = os.path.splitext(local_file_path)
-      if ext not in _ALLOWED_SOURCE_EXT:
-        raise endpoints.BadRequestException(
-            (
-                'The file format for %s has not been supported. For information'
-                ' on supported formats, see'
-                ' https://docs.partner.android.com/partners/guides/afap/builds#prepare-build.'
-            )
-            % build.file_url
-        )
+    if not build.file_url:
+      raise endpoints.BadRequestException('File url in the request is unset.')
+    local_file_path = file_util.GetLocalFilePath(build.file_url)
+    if not local_file_path:
+      raise endpoints.BadRequestException(
+          'Invalid local file URL %s.' % build.file_url
+      )
+    _, ext = os.path.splitext(local_file_path)
+    if ext not in _ALLOWED_SOURCE_EXT:
+      raise endpoints.BadRequestException(
+          (
+              'The file format for %s has not been supported. For information'
+              ' on supported formats, see'
+              ' https://docs.partner.android.com/partners/guides/afap/builds#prepare-build.'
+          )
+          % build.file_url
+      )

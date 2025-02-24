@@ -17,17 +17,10 @@
 import {COMMA, ENTER} from '@angular/cdk/keycodes';
 import {Component, EventEmitter, Inject, Output} from '@angular/core';
 import {MatChipInputEvent} from '@angular/material/chips';
-import {MAT_DIALOG_DATA, MatDialog, MatDialogRef} from '@angular/material/dialog';
-import {ReplaySubject} from 'rxjs';
-import {takeUntil} from 'rxjs/operators';
+import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 
-import {MttClient} from '../services/mtt_client';
 import * as mttModels from '../services/mtt_models';
-import {Notifier} from '../services/notifier';
 import {FormChangeTracker} from '../shared/can_deactivate';
-import {buildApiErrorMessage} from '../shared/util';
-
-import {BuildFileSelector, BuildFileSelectorData} from './build_file_selector';
 
 /**
  * Data passed when opening the dialog to update a build.
@@ -52,12 +45,8 @@ export class BuildEditor extends FormChangeTracker {
 
   readonly separatorKeyCodes: number[] = [ENTER, COMMA];
 
-  private readonly destroy = new ReplaySubject<void>();
-
   constructor(
       @Inject(MAT_DIALOG_DATA) public data: BuildEditorData,
-      private readonly mttClient: MttClient,
-      private readonly notifier: Notifier, private readonly dialog: MatDialog,
       private readonly dialogRef: MatDialogRef<BuildEditor>) {
     super();
   }
@@ -81,34 +70,6 @@ export class BuildEditor extends FormChangeTracker {
     if (index >= 0) {
       this.data.build.labels.splice(index, 1);
     }
-  }
-
-  openBuildFileSelector(build: mttModels.Build) {
-    const data: BuildFileSelectorData = {fileUrl: build.file_url!};
-    const dialogRef = this.dialog.open(BuildFileSelector, {
-      width: '800px',
-      height: '600px',
-      panelClass: 'build-selector-container',
-      data
-    });
-
-    dialogRef.afterClosed().subscribe(fileUrl => {
-      if (fileUrl) {
-        build.file_url = fileUrl;
-        this.mttClient.lookupBuildItem(fileUrl)
-            .pipe(takeUntil(this.destroy))
-            .subscribe(
-                (res) => {
-                  build.size = res.size;
-                },
-                (error) => {
-                  this.notifier.showError(
-                      'Failed to lookup build item.',
-                      buildApiErrorMessage(error));
-                },
-            );
-      }
-    });
   }
 
   validate(): boolean {

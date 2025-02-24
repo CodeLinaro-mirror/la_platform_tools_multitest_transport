@@ -1195,7 +1195,7 @@ class Build(ndb.Model):
   """
   name = ndb.StringProperty(required=True)
   fingerprint = ndb.StringProperty(required=True)
-  file_url = ndb.StringProperty()
+  file_url = ndb.StringProperty(required=True)
   size = ndb.IntegerProperty()
   labels = ndb.StringProperty(repeated=True)
   create_time = ndb.DateTimeProperty(auto_now_add=True)
