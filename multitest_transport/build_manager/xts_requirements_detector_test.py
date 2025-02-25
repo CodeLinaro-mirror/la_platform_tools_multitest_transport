@@ -41,7 +41,9 @@ class XtsRequirementsDetectorTest(testbed_dependent_test.TestbedDependentTest):
     self.mock_test = ndb_models.Test(
         id=xts_requirements_detector.XTS_REQUIREMENTS_DETECTION_TEST_KEY,
         name='test',
-        command='command',
+        command=(
+            'run gts -m GtsEdiHostTestCases --build-path:${BUILD_SOURCE_PATH}'
+        ),
         result_file='result_file',
     )
     self.mock_test.put()
@@ -129,7 +131,11 @@ class XtsRequirementsDetectorTest(testbed_dependent_test.TestbedDependentTest):
     )
     self.assertIsNotNone(self.mock_build.detection_start_time)
     self.assertIsNotNone(self.mock_build.detection_test_run_key)
-
+    test_run = self.mock_build.detection_test_run_key.get()
+    self.assertEqual(
+        test_run.test_run_config.command,
+        'run gts -m GtsEdiHostTestCases --build-path:/root/file/path',
+    )
     _, task_args = mock_add_task.call_args
     self.assertEqual(
         task_args['queue_name'],

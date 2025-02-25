@@ -16,6 +16,7 @@
 import datetime
 import json
 import logging
+import string
 
 import flask
 import pytz
@@ -30,6 +31,7 @@ from multitest_transport.test_scheduler import test_kicker
 from multitest_transport.util import analytics
 from multitest_transport.util import apfe_client
 from multitest_transport.util import constant
+from multitest_transport.util import file_util
 
 MAX_ATTEMPT_COUNT = 15
 MAX_RETRY_COUNT = 5
@@ -289,10 +291,14 @@ def KickDetection(device_spec, test_resource_objs, build_id):
     return updated_build
 
   test_key, test = _GetXtsRequirementsDetectionTest()
+  local_file_path = file_util.GetLocalFilePath(build.file_url)
+  vbmeta_args = string.Template(test.command).safe_substitute({
+      'BUILD_SOURCE_PATH': local_file_path
+  })
   report_upload_action_key, _ = _GetReportUploadAction()
   test_run_config = ndb_models.TestRunConfig(
       test_key=test_key,
-      command=test.command,
+      command=vbmeta_args,
       device_specs=[device_spec],
       test_run_action_refs=[
           ndb_models.TestRunActionRef(action_key=report_upload_action_key)
