@@ -771,7 +771,10 @@ class TestRun(ndb.Model):
         'MTT_TEST_ID': self.test_run_config.test_key.id(),
         'MTT_TEST_NAME': self.test.name,
         'MTT_TEST_PLAN_NAME': (
-            self.test_plan_key.get().name if self.test_plan_key else ''),
+            self.test_plan_key.get().name
+            if self.test_plan_key and self.test_plan_key.get()
+            else ''
+        ),
         'MTT_TEST_RUN_CREATE_TIMESTAMP': ToTimestamp(self.create_time),
         'MTT_TEST_RUN_CREATE_TIMESTAMP_MILLIS':
             ToTimestamp(self.create_time) * 1000,
