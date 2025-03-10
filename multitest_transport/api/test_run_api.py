@@ -224,6 +224,7 @@ class TestRunApi(remote.Service):
     Body:
       Test run request data
     """
+    logging.info('New test run request: %s', protojson.encode_message(request))  # pytype: disable=module-attr
     labels = request.labels
     test_run_config = mtt_messages.Convert(
         request.test_run_config, ndb_models.TestRunConfig
