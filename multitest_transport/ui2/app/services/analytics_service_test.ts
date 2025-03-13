@@ -134,11 +134,8 @@ describe('AnalyticsInterceptor', () => {
         }
       ]
     });
-    // Keeping it compatible with Angular 8,
-    // tslint:disable-next-line:deprecation
-    http = TestBed.get(HttpClient);
-    // tslint:disable-next-line:deprecation
-    httpMock = TestBed.get(HttpTestingController);
+    http = TestBed.inject(HttpClient);
+    httpMock = TestBed.inject(HttpTestingController);
   });
 
   afterEach(() => {
