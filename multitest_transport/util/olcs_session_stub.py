@@ -474,6 +474,10 @@ class OlcsSessionStub:
         # Sleep 60 seconds to wait for the server to be back.
         time.sleep(60)
         self.StartSubscribeSession(request_id, session_response_subscriber)
+    except Exception:  
+      logging.exception(
+          "Failed to process subscribe session %s responses", request_id
+      )
     finally:
       self._subscribe_session_queues.pop(subscribe_id)
 

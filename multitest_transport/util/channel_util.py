@@ -14,6 +14,7 @@
 
 """Utilities for gRPC channels."""
 
+import json
 import grpc
 from multitest_transport.util import env
 from multitest_transport.util import util
@@ -38,9 +39,28 @@ def _create_channel(
     credential_type: env.CredentialType,
 ):
   """Create a gRPC channel."""
+  service_config_json = json.dumps({
+      "methodConfig": [{
+          "name": [{}],  # Apply retry to all methods
+          "retryPolicy": {
+              "maxAttempts": 5,
+              "initialBackoff": "0.1s",
+              "maxBackoff": "1s",
+              "backoffMultiplier": 2,
+              "retryableStatusCodes": ["UNAVAILABLE"],
+          },
+      }]
+  })
+  options = []
+  options.append(("grpc.enable_retries", 1))
+  options.append(("grpc.service_config", service_config_json))
   if credential_type is env.CredentialType.ALTS:
-    return grpc.secure_channel(server_address, grpc.alts_channel_credentials())
+    return grpc.secure_channel(
+        server_address, grpc.alts_channel_credentials(), options=options
+    )
   elif credential_type is env.CredentialType.SSL:
-    return grpc.secure_channel(server_address, grpc.ssl_channel_credentials())
+    return grpc.secure_channel(
+        server_address, grpc.ssl_channel_credentials(), options=options
+    )
   else:
     return grpc.insecure_channel(server_address)
