@@ -10,7 +10,10 @@ sass_library(
     name = "app_styles_lib",
     srcs = ["app.scss"],
     visibility = ["//multitest_transport"],
-    deps = ["//multitest_transport/ui2:constants"],
+    deps = [
+        "//third_party/javascript/angular_components:material_sass",
+        "//multitest_transport/ui2:constants",
+    ],
 )
 
 sass_binary(
@@ -19,7 +22,10 @@ sass_binary(
     output_name = "app.css",
     sass_stack = False,
     strict_deps = False,
-    deps = [":app_styles_lib"],
+    deps = [
+        ":app_styles_lib",
+        "//third_party/javascript/angular_components:material_sass",
+    ],
 )
 
 ng_module(

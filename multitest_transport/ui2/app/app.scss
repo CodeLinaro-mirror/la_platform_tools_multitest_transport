@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@use 'third_party/javascript/angular_components/material' as mat;
+
 
 @import '../constants';
 $sidenav-collapsed-width: 62px;
@@ -96,7 +98,11 @@ mat-nav-list {
 }
 
 .mat-mdc-list-base {
-  --mdc-list-list-item-leading-icon-color: rgba(0, 0, 0, 0.87);
+  @include mat.list-overrides(
+    (
+      list-item-leading-icon-color: rgba(0, 0, 0, 0.87),
+    )
+  );
 }
 
 mat-sidenav-container {
@@ -153,4 +159,3 @@ mat-toolbar {
   object-fit: contain;
   vertical-align: middle;
 }
-

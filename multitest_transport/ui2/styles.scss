@@ -491,10 +491,14 @@ mat-spinner.loading-spinner {
 
 .mat-mdc-tab-group,
 .mat-mdc-tab-nav-bar {
-  --mdc-tab-indicator-active-indicator-color: $accent-dark;
-  --mat-tab-header-active-focus-indicator-color: $accent-dark;
-  --mat-tab-header-active-label-text-color: $accent-dark;
-  --mat-tab-header-active-focus-label-text-color: $accent-dark;
+  @include mat.tabs-overrides(
+    (
+      active-indicator-color: $accent-dark,
+      active-focus-indicator-color: $accent-dark,
+      active-label-text-color: $accent-dark,
+      active-focus-label-text-color: $accent-dark,
+    )
+  );
 }
 
 .mat-mdc-tab-link {
@@ -617,11 +621,19 @@ mat-spinner.loading-spinner {
 }
 
 .mat-toolbar {
-  --mat-toolbar-container-background-color: #fff;
+  @include mat.toolbar-overrides(
+    (
+      container-background-color: #fff,
+    )
+  );
 }
 
 .mat-mdc-form-field {
-  --mdc-filled-text-field-container-color: rgba(0, 0, 0, 0);
+  @include mat.form-field-overrides(
+    (
+      filled-container-color: rgba(0, 0, 0, 0),
+    )
+  );
 }
 
 .mat-mdc-form-field-hint {

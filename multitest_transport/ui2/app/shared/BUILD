@@ -11,6 +11,7 @@ per_file_sass_binaries(
     visibility = ["//visibility:private"],
     deps = [
         ":shared_styles",
+        "//third_party/javascript/angular_components:material_sass",
         "//multitest_transport/ui2:constants",
     ],
 )

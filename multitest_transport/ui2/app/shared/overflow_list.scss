@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@use 'third_party/javascript/angular_components/material' as mat;
 
 @import 'third_party/py/multitest_transport/ui2/constants';
 
@@ -51,7 +52,11 @@ div.mat-mdc-menu-content {
 }
 
 .mat-mdc-chip {
-  --mdc-chip-elevated-container-color: $background-default;
+  @include mat.chips-overrides(
+    (
+      elevated-container-color: $background-default,
+    )
+  );
   border: 1px solid $border-chip;
   font-size: 12px;
 }

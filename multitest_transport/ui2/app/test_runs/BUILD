@@ -7,7 +7,10 @@ licenses(["notice"])
 per_file_sass_binaries(
     name = "styles",
     srcs = glob(["*.scss"]),
-    deps = ["//multitest_transport/ui2:constants"],
+    deps = [
+        "//third_party/javascript/angular_components:material_sass",
+        "//multitest_transport/ui2:constants",
+    ],
 )
 
 ng_module(
