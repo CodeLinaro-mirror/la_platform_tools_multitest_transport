@@ -329,6 +329,7 @@ else
     --android_device_daemon=false \
     --api_config=/deviceinfra/lab_server_api_config.textproto \
     --ats_file_server="${ATS_FILE_SERVER}" \
+    --cache_installed_apks=false \
     --check_device_interval=1h \
     --clear_android_device_multi_users=false \
     --detect_device_interval_sec=2 \
