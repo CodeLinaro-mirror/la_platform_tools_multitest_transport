@@ -60,7 +60,7 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
     self.mock_test_run.put()
     tfc_event_handler._request_cache = lru_cache.LRUCache(10)
 
-  def CreateMockRequestEvent(self, timedelta, state=None):
+  def CreateMockRequestEvent(self, timedelta, state=None, device_serials=None):
     """Create a placeholder TFC request change event."""
     return api_messages.RequestEventMessage(
         type=common.ObjectEventType.REQUEST_STATE_CHANGED,
@@ -73,6 +73,7 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
                     request_id='request_id',
                     command_id='command_id',
                     task_id='task_id',
+                    device_serials=device_serials or [],
                     state=common.CommandState.COMPLETED,
                 )
             ],
@@ -145,9 +146,11 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
   @mock.patch.object(task_scheduler, 'AddCallableTask')
   @mock.patch.object(tfc_event_handler, '_AfterTestRunHandler')
   @mock.patch.object(test_result_handler, 'UpdateTestRunSummary')
+  @mock.patch.object(tfc_client, 'GetDeviceInfo')
   @mock.patch.dict(os.environ, {'IS_OMNILAB_BASED': 'true'}, clear=True)
   def testProcessRequestEventWithOmnilabEnabled_completed_loadResultToDB(
       self,
+      mock_get_device_info,
       mock_update_summary,
       mock_after_test,
       mock_add_task,
@@ -157,8 +160,13 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
     # state changed to COMPLETED from UNKNOWN
     mock_get_result_url.return_value = 'test_results_url'
     mock_get_test_module_results.return_value = []
+    mock_get_device_info.return_value = api_messages.DeviceInfo(
+        device_serial='SERIAL', build_id='TEST'
+    )
     mock_event = self.CreateMockRequestEvent(
-        datetime.timedelta(hours=1), state=api_messages.RequestState.COMPLETED
+        datetime.timedelta(hours=1),
+        state=api_messages.RequestState.COMPLETED,
+        device_serials=['SERIAL'],
     )
 
     tfc_event_handler.ProcessRequestEvent(mock_event)
@@ -168,6 +176,13 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
     self.assertEqual(mock_event.event_time, self.mock_test_run.update_time)
     self.assertEqual(
         ndb_models.TestRunState.COMPLETED, self.mock_test_run.state
+    )
+    expected_device = ndb_models.TestDeviceInfo(
+        device_serial='SERIAL', build_id='TEST'
+    )
+    self.assertEqual(
+        [d.to_dict() for d in self.mock_test_run.test_devices],
+        [expected_device.to_dict()],
     )
     mock_get_test_module_results.assert_called_once_with(['attempt_id'])
     mock_update_summary.assert_called_once_with(self.mock_test_run.key.id())
@@ -190,6 +205,42 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
             _transactional=True,
         ),
     ])
+
+  @mock.patch.object(sql_models, 'GetTestModuleResults')
+  @mock.patch.object(file_util, 'GetResultUrl')
+  @mock.patch.object(tfc_client, 'GetDeviceInfo')
+  @mock.patch.dict(os.environ, {'IS_OMNILAB_BASED': 'true'}, clear=True)
+  def testProcessRequestEventWithOmnilabEnabled_runningState(
+      self,
+      mock_get_device_info,
+      mock_get_result_url,
+      mock_get_test_module_results,
+  ):
+    # state changed to RUNNING from UNKNOWN
+    mock_get_result_url.return_value = 'test_results_url'
+    mock_get_test_module_results.return_value = []
+    mock_get_device_info.return_value = api_messages.DeviceInfo(
+        device_serial='SERIAL', build_id='TEST'
+    )
+    mock_event = self.CreateMockRequestEvent(
+        datetime.timedelta(hours=1),
+        state=api_messages.RequestState.RUNNING,
+        device_serials=['SERIAL'],
+    )
+
+    tfc_event_handler.ProcessRequestEvent(mock_event)
+    self.mock_test_run = self.mock_test_run.key.get()
+
+    # test run information updated and post-run actions executed
+    self.assertEqual(mock_event.event_time, self.mock_test_run.update_time)
+    self.assertEqual(ndb_models.TestRunState.RUNNING, self.mock_test_run.state)
+    expected_device = ndb_models.TestDeviceInfo(
+        device_serial='SERIAL', build_id='TEST'
+    )
+    self.assertEqual(
+        [d.to_dict() for d in self.mock_test_run.test_devices],
+        [expected_device.to_dict()],
+    )
 
   @mock.patch.object(sql_models, 'GetTestModuleResults')
   @mock.patch.object(file_util, 'GetResultUrl')

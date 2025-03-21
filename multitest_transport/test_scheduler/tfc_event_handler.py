@@ -257,6 +257,8 @@ def _ProcessRequestEvent(test_run_id, message):
   # Update test run information
   test_run.request_event_time = message.event_time
   test_run.update_time = message.event_time
+  if os.environ.get('IS_OMNILAB_BASED') == 'true':
+    _UpdateTestRunDevices(test_run, message.request)
 
   # Process command attempt result if the request session is finished.
   if (
@@ -306,6 +308,22 @@ def _ProcessRequestEvent(test_run_id, message):
   test_run.put()
 
 
+def _UpdateTestRunDevices(test_run, request):
+  """Update test run devices."""
+  for attempt in request.command_attempts:
+    device_serials = {device.device_serial for device in test_run.test_devices}
+    logging.info(
+        'request %s, attempt %s device_serials: %s',
+        attempt.request_id,
+        attempt.attempt_id,
+        attempt.device_serials,
+    )
+    test_run.test_devices.extend(
+        _GetTestDeviceInfos(set(attempt.device_serials) - device_serials)
+    )
+    logging.info('test_run.test_devices: %s', test_run.test_devices)
+
+
 def _ProcessCommandAttemptResult(test_run_id, test_run, request):
   """Process command attempt result.
 
@@ -315,14 +333,6 @@ def _ProcessCommandAttemptResult(test_run_id, test_run, request):
     request: the test run's request.
   """
   for attempt in request.command_attempts:
-    device_serials = {
-        device.device_serial for device in test_run.test_devices
-    }
-    logging.info('attempt.device_serials: %s', attempt.device_serials)
-    test_run.test_devices.extend(
-        _GetTestDeviceInfos(set(attempt.device_serials) - device_serials)
-    )
-    logging.info('test_run.test_devices: %s', test_run.test_devices)
     results = sql_models.GetTestModuleResults([attempt.attempt_id])
 
     # Skip loading test results if they already exist in DB.
