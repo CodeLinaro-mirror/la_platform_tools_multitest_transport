@@ -38,7 +38,11 @@ div.mat-mdc-menu-content {
 .dropdown-button {
   margin-left: 2px;
   white-space: nowrap;
-  --mdc-icon-button-icon-size: 14px;
+  @include mat.icon-button-overrides(
+    (
+      icon-size: 14px,
+    )
+  );
 }
 
 .mat-icon {
