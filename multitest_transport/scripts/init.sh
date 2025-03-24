@@ -322,6 +322,17 @@ then
     exec tradefed.sh
 else
   # Start OSS lab server
+  LAB_SERVER_ARGS=""
+  if [[ "${MAX_LOCAL_VIRTUAL_DEVICES}" -gt 0 ]]; then
+    LAB_SERVER_ARGS="--android_jit_emulator_num=${MAX_LOCAL_VIRTUAL_DEVICES} "
+    LAB_SERVER_ARGS+='--noop_jit_emulator=true'
+  fi
+  if [[ "${RVD_COUNT}" -gt 0 ]]; then
+    LAB_SERVER_ARGS="--android_jit_emulator_num=${RVD_COUNT} "
+    LAB_SERVER_ARGS+="--noop_jit_emulator=true "
+    LAB_SERVER_ARGS+="--virtual_device_server_ip=${RVD_HOST} "
+    LAB_SERVER_ARGS+="--virtual_device_server_username=${RVD_USER} "
+  fi
   java "-Xmx${MAX_HEAP_MB}m" -XX:+HeapDumpOnOutOfMemoryError \
     -jar /deviceinfra/lab_server_oss_deploy.jar \
     --adb_dont_kill_server=true \
@@ -350,5 +361,6 @@ else
     --serv_via_cloud_rpc=false \
     --set_test_harness_property=false \
     --tmp_dir_root="${MTT_MH_WORK_DIR}" \
-    ${LAB_SERVER_OPTS}
+    ${LAB_SERVER_OPTS} \
+    ${LAB_SERVER_ARGS}
 fi

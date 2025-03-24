@@ -237,52 +237,12 @@ device_actions:
     default_download_url: file:///bin/acloud_prebuilt
     test_resource_type: UNKNOWN
 
-- id: lvd_setup2
-  name: ATS 2.0 Local Virtual Device Setup
-  description: >
-    Setup a local virtual device. The device type is Cuttlefish:
-    https://source.android.com/setup/create/cuttlefish
-  tradefed_options:
-  - name: gce-driver-path
-    values:
-    - ${TF_WORK_DIR}/acloud
-  - name: gce-boot-timeout
-    values:
-    - 10m
-  - name: device-type
-    values:
-    - LOCAL_VIRTUAL_DEVICE
-  - name: gce-driver-param
-    values:
-    - --avd-type
-    - cuttlefish
-    - --boot-timeout
-    - '540'
-  - name: gce-driver-file-param
-    values:
-    - local-image=${TF_WORK_DIR}/lvd_images
-    - local-tool=${TF_WORK_DIR}/lvd_tools
-  - name: disable-usb-reset
-    values: 'true'
-  test_resource_defs:
-  - name: cvd-host_package.tar.gz
-    test_resource_type: UNKNOWN
-    decompress: true
-    decompress_dir: lvd_tools
-  - name: device
-    test_resource_type: DEVICE_IMAGE
-    decompress: true
-    decompress_dir: lvd_images
-  - name: acloud
-    default_download_url: file:///bin/acloud_prebuilt
-    test_resource_type: UNKNOWN
-
 - id: rvd_setup
   name: Remote Virtual Device Setup
   description: >
     Setup a remote virtual device. The device type is Cuttlefish:
     https://source.android.com/setup/create/cuttlefish
-  device_spec: '\b(device_serial:\S+:gce-device-\S+|device_type:REMOTE_VIRTUAL)\b'
+  device_spec: '\b(device_serial:(?:\S+:)?gce-device-\S+|device_type:REMOTE_VIRTUAL)\b'
   tradefed_options:
   - name: gce-driver-path
     values:

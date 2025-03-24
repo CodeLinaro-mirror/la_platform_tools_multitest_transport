@@ -15,6 +15,8 @@
 """A OLCS lab info service stub that fetches device and lab info from OLCS."""
 
 import datetime
+import logging
+import re
 from typing import Optional
 
 import endpoints
@@ -25,6 +27,14 @@ from tradefed_cluster import common
 
 from com_google_deviceinfra.src.devtools.mobileharness.api.model.proto import device_pb2
 from com_google_deviceinfra.src.devtools.mobileharness.shared.labinfo.proto import lab_info_service_pb2
+
+# Local virtual device id pattern: <hostname>:<port> or <ip>:<port>.
+LOCAL_VIRTUAL_DEVICE_ID_PATTERN = r'^([\w\.]+):local-virtual-device-(\d+)$'
+
+# Remote virtual device id pattern:
+# gce-device-<server_ip>-<instance_index>-<username>.
+REMOTE_VIRTUAL_DEVICE_ID_PATTERN = r'gce-device-([\d.]+)-(\d+)-([^-]+)'
+CVD_BASE_PORT = 6520
 
 
 class OlcsLabInfoStub:
@@ -89,11 +99,28 @@ class OlcsLabInfoStub:
     Returns:
       an ATS device info
     """
+    preconfigured_device_num_offset = 0
+    preconfigured_ip = device_info.device_locator.lab_locator.ip
     device_type = api_messages.DeviceTypeMessage.PHYSICAL
     if 'AndroidRealDevice' in device_info.device_feature.type:
       device_type = api_messages.DeviceTypeMessage.PHYSICAL
     elif 'NoOpDevice' in device_info.device_feature.type:
       device_type = api_messages.DeviceTypeMessage.NULL
+    elif 'AndroidJitEmulator' in device_info.device_feature.type:
+      local_match = re.match(
+          LOCAL_VIRTUAL_DEVICE_ID_PATTERN, device_info.device_locator.id
+      )
+      remote_match = re.match(
+          REMOTE_VIRTUAL_DEVICE_ID_PATTERN, device_info.device_locator.id
+      )
+      if local_match:
+        device_type = api_messages.DeviceTypeMessage.LOCAL_VIRTUAL
+        preconfigured_device_num_offset = int(local_match.group(2))
+      elif remote_match:
+        preconfigured_ip = remote_match.group(1)
+        device_type = api_messages.DeviceTypeMessage.REMOTE_VIRTUAL
+        preconfigured_device_num_offset = int(remote_match.group(2))
+    logging.info('device_type: %s', device_info.device_feature)
     state = common.DeviceState.UNKNOWN
     if device_info.device_status == device_pb2.DeviceStatus.IDLE:
       state = common.DeviceState.AVAILABLE
@@ -186,6 +213,6 @@ class OlcsLabInfoStub:
         last_recovery_time=datetime.datetime.utcfromtimestamp(0),
         is_stub_device=False,
         display_serial=control_id,
-        preconfigured_ip=device_info.device_locator.lab_locator.ip,
-        preconfigured_device_num_offset=0,
+        preconfigured_ip=preconfigured_ip,
+        preconfigured_device_num_offset=preconfigured_device_num_offset,
     )
