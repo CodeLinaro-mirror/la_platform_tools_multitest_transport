@@ -216,7 +216,10 @@
                   <div fxFlex class="elevated-card attempt"
                        [ngClass]="{'attempt-error': attempt.value.state == CommandState.ERROR}">
                     <div>
-                      <div fxFlex class="id-text inline">
+                      <div fxFlex class="id-text inline" *ngIf="isOmnilabBased">
+                        Attempt {{attempt.value.request_id}}
+                      </div>
+                      <div fxFlex class="id-text inline" *ngIf="!isOmnilabBased">
                         Attempt {{attempt.key}}
                       </div>
 

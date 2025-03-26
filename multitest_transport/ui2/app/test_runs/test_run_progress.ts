@@ -15,10 +15,11 @@
  */
 
 import {KeyValue} from '@angular/common';
-import {Component, Input, OnChanges, OnInit, SimpleChanges} from '@angular/core';
+import {Component, Inject, Input, OnChanges, OnInit, SimpleChanges} from '@angular/core';
 import * as moment from 'moment';
 import {finalize} from 'rxjs/operators';
 
+import {APP_DATA, AppData} from '../services/app_data';
 import {FileService} from '../services/file_service';
 import {EventLogEntry, EventLogLevel, TestRun} from '../services/mtt_models';
 import {TfcClient} from '../services/tfc_client';
@@ -77,6 +78,7 @@ interface CommandStateStatNode {
 export class TestRunProgress implements OnInit, OnChanges {
   readonly EventLogLevel = EventLogLevel;
   readonly CommandState = CommandState;
+  isOmnilabBased = false;
 
   @Input() testRun!: TestRun;
   @Input() request?: Request;
@@ -96,9 +98,14 @@ export class TestRunProgress implements OnInit, OnChanges {
   ];
 
   constructor(
+      @Inject(APP_DATA) private readonly appData: AppData,
       private readonly fs: FileService,
       private readonly tfcClient: TfcClient,
-  ) {}
+  ) {
+    if (this.appData.isOmniLabBased) {
+      this.isOmnilabBased = true;
+    }
+  }
 
   ngOnInit() {
     assertRequiredInput(this.testRun, 'testRun', 'test-run-progress');

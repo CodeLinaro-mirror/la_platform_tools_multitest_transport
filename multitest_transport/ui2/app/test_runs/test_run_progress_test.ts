@@ -19,6 +19,7 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {of as observableOf} from 'rxjs';
 
+import {APP_DATA, AppData} from '../services/app_data';
 import {FileService} from '../services/file_service';
 import {EventLogEntry, TestRun} from '../services/mtt_models';
 import {TfcClient} from '../services/tfc_client';
@@ -38,6 +39,7 @@ describe('TestRunProgress', () => {
   let fixture: ComponentFixture<TestRunProgress>;
   let element: DebugElement;
   let component: TestRunProgress;
+  const appData: AppData = {};
 
   beforeEach(() => {
     command = {
@@ -83,6 +85,7 @@ describe('TestRunProgress', () => {
       providers: [
         {provide: FileService, useValue: fs},
         {provide: TfcClient, useValue: tfcClient},
+        {provide: APP_DATA, useValue: appData},
       ]
     });
 
