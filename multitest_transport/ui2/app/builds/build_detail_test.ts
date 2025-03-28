@@ -61,6 +61,7 @@ describe('BuildDetail', () => {
         observableOf(mttObjectMap));
 
     TestBed.configureTestingModule({
+      rethrowApplicationErrors: false,
       imports: [BuildsModule, NoopAnimationsModule, RouterModule],
       providers: [
         {provide: APP_DATA, useValue: appData},
