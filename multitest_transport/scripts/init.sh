@@ -141,11 +141,10 @@ then
     rm -rf "${MTT_MH_WORK_DIR}"
     mkdir -p "${MTT_MH_WORK_DIR}"
 
-    start_mysql_database "${MTT_STORAGE_PATH}"
-
     # Wait for MySQL to be ready.
     if [[ "${IS_CONTROLLER}" == "true" ]]
     then
+      start_mysql_database "${MTT_STORAGE_PATH}"
       echo "Waiting for MySQL ready..."
       for i in $(seq 30)
       do
