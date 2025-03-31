@@ -493,6 +493,8 @@ def _StartMttNode(args, host):
       'OPERATION_MODE',
       lab_config_pb2.OperationMode.Name(operation_mode).lower())
   docker_helper.AddEnv('MTT_CLI_VERSION', cli_util.GetVersion()[0])
+  if args.omni_mode_usage:
+    docker_helper.AddEnv('OMNI_MODE_USAGE', args.omni_mode_usage)
 
   if control_server_url:
     docker_helper.AddEnv('MTT_CONTROL_SERVER_URL', control_server_url)
@@ -1200,6 +1202,13 @@ def _CreateStartArgParser():
       help='Do not mount the ~/.android directory from the host',
   )
   parser.set_defaults(mount_host_android_dir=True)
+
+  parser.add_argument(
+      '--omni_mode_usage',
+      help='Usage of the lab under Omni mode.',
+      dest='omni_mode_usage',
+      type=str,
+  )
 
   parser.set_defaults(func=Start)
   return parser

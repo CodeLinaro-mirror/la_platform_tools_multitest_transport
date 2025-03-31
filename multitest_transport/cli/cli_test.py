@@ -495,6 +495,21 @@ class CliTest(parameterized.TestCase):
         ),
     ])
 
+  def testStart_omniModeUsageTesting(self):
+    """Test start with omni mode usage set to internal_testing."""
+    usage = 'internal_testing'
+    args = self.arg_parser.parse_args(['start', '--omni_mode_usage', usage])
+    cli.Start(args, self._CreateHost(cluster_name='acluster'))
+
+    self.assertEqual(args.omni_mode_usage, usage)
+
+  def testStart_omniModeUsageNone(self):
+    """Test start without omni mode usage."""
+    args = self.arg_parser.parse_args(['start'])
+    cli.Start(args, self._CreateHost(cluster_name='acluster'))
+
+    self.assertIsNone(args.omni_mode_usage)
+
   def testStart_withServiceAccount(self):
     """Test Start function."""
     args = self.arg_parser.parse_args([
