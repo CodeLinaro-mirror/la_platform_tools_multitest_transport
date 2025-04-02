@@ -150,6 +150,7 @@ then
       do
         if mysqladmin -S "$MYSQL_SOCKET" ping > /dev/null 2>&1; then
           echo "MySQL is started. Start initializing MySQL database..."
+          mysql -S "${MYSQL_SOCKET}" -e "CREATE DATABASE IF NOT EXISTS ${DB_NAME}"
           mysql -S "${MYSQL_SOCKET}" -D "${DB_NAME}" < /deviceinfra/test_allocations.sql
           mysql -S "${MYSQL_SOCKET}" -D "${DB_NAME}" < /deviceinfra/unfinished_sessions.sql
           echo "MySQL initialized"
