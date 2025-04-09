@@ -34,6 +34,21 @@ class OlcsChannel(metaclass=util.Singleton):
     return self._channel
 
 
+class WorkerLabServerChannel(metaclass=util.Singleton):
+  """Singleton Worker Lab Server gRPC channel."""
+
+  def __init__(
+      self,
+      server_address: str = env.WORKER_LAB_SERVER_ADDRESS,
+  ):
+    self._channel = _create_channel(
+        server_address, env.CredentialType.NO_CREDENTIAL
+    )
+
+  def get_channel(self) -> grpc.Channel:
+    return self._channel
+
+
 def _create_channel(
     server_address: str,
     credential_type: env.CredentialType,

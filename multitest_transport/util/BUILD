@@ -463,6 +463,30 @@ py_test(
     ],
 )
 
+pytype_strict_library(
+    name = "worker_lab_health_client",
+    srcs = ["worker_lab_health_client.py"],
+    deps = [
+        ":channel_util_lib",
+        "//net/grpc/python:grpc",
+        "@com_google_deviceinfra//src/devtools/common/metrics/stability/util:grpc_error_util_lib",
+        "@com_google_deviceinfra//src/devtools/deviceinfra/host/daemon/proto:health_service_py_grpc",
+        "@com_google_deviceinfra//src/devtools/deviceinfra/host/daemon/proto:health_service_py_proto",
+    ],
+)
+
+py_test(
+    name = "worker_lab_health_client_test",
+    srcs = ["worker_lab_health_client_test.py"],
+    deps = [
+        ":worker_lab_health_client",
+        "//net/grpc/python:grpc",
+        "@com_google_deviceinfra//src/devtools/deviceinfra/host/daemon/proto:health_service_py_proto",
+        "//third_party/py/absl/testing:absltest",
+        "//third_party/py/grpc_testing",
+    ],
+)
+
 py_test(
     name = "xts_result_test",
     srcs = [

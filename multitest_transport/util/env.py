@@ -73,6 +73,11 @@ OLCS_CREDENTIAL_TYPE = CredentialType(
     os.environ.get('OLCS_CREDENTIAL_TYPE', CredentialType.NO_CREDENTIAL)
 )
 
+# Worker lab server parameters
+WORKER_LAB_SERVER_ADDRESS = os.environ.get(
+    'WORKER_LAB_SERVER_ADDRESS', 'localhost:9994'
+)
+
 # Google OAuth2 parameters
 GOOGLE_OAUTH2_CLIENT_ID = os.environ.get('MTT_GOOGLE_OAUTH2_CLIENT_ID', UNKNOWN)
 GOOGLE_OAUTH2_CLIENT_SECRET = os.environ.get(
