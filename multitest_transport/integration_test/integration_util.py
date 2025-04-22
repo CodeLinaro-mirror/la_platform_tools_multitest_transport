@@ -53,9 +53,10 @@ _SECCOMP_PROFILE_NAME = 'seccomp.json'
 class MttContainer(object):
   """Wrapper around an MTT docker container."""
 
-  def __init__(self, image=None, max_local_virtual_devices=0):
+  def __init__(self, image=None, max_local_virtual_devices=0, ats2=False):
     self._image = image or FLAGS.docker_image
     self._max_local_virtual_devices = max_local_virtual_devices
+    self._ats2 = ats2
 
   def __enter__(self):
     """Start the MTT docker container."""
@@ -81,6 +82,8 @@ class MttContainer(object):
             'seccomp=' + seccomp_profile,
         ],
     }
+    if self._ats2:
+      kwargs['environment']['IS_OMNILAB_BASED'] = 'true'
     if self._max_local_virtual_devices:
       kwargs['cap_add'].append('net_admin')
       kwargs['devices'].extend([
@@ -102,7 +105,10 @@ class MttContainer(object):
     # Determine the base URLs
     self.base_url = 'http://localhost:%d' % self._control_server_port
     self.mtt_api_url = '%s/_ah/api/mtt/v1' % self.base_url
-    self.tfc_api_url = '%s/_ah/api/tradefed_cluster/v1' % self.base_url
+    if self._ats2:
+      self.tfc_api_url = '%s/_ah/api/mtt/v1' % self.base_url
+    else:
+      self.tfc_api_url = '%s/_ah/api/tradefed_cluster/v1' % self.base_url
     # Wait for application start
     try:
       self._WaitForServer()
@@ -144,6 +150,17 @@ class MttContainer(object):
     logging.info('Logs: %s', output.decode())
     _, output = self._delegate.exec_run(['cat', '/data/log/server/current'])
     logging.info('Server logs: %s', output.decode())
+    if self._ats2:
+      _, output = self._delegate.exec_run(
+          ['cat', '/data/log/mh_lab_log/log0.txt']
+      )
+      logging.info('MH lab logs: %s', output.decode())
+      _, output = self._delegate.exec_run(
+          ['cat', '/data/log/olc_server_log/log0.txt']
+      )
+      logging.info('OLCS logs: %s', output.decode())
+      _, output = self._delegate.exec_run(['adb', 'devices'])
+      logging.info('adb devices: %s', output.decode())
 
   def CopyFile(self, src_path, dest_path):
     """Copy a file into the container."""
