@@ -80,8 +80,11 @@ RUN mkdir -p /protoc && \
   unzip -q -o /protoc/protoc-3.20.3-linux-x86_64.zip -d /protoc
 EOF
 
+echo "Starting Docker pull cache image at: $(date)"
 docker pull gcr.io/android-mtt/pex:latest
+echo "Starting Docker build at: $(date)"
 docker build -t docker_pex . --cache-from gcr.io/android-mtt/pex:latest
+echo "Docker build finished at: $(date)"
 
 cat << EOF > inside_docker_build.sh
 # Build python file from proto
@@ -112,8 +115,9 @@ pex --python="python3.11" --python="python3.10" --python="python3.9" --python="p
   --no-emit-warnings
 EOF
 chmod +x inside_docker_build.sh
-
+echo "Starting build inside Docker at: $(date)"
 docker run --rm --mount type=bind,source="$CLI_DIR",target=/workspace docker_pex sh -c /workspace/inside_docker_build.sh
+echo "Build inside Docker finished at: $(date)"
 cd -
 
 popd
