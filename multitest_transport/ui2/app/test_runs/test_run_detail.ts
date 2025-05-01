@@ -15,7 +15,7 @@
  */
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
-import {AfterViewInit, Component, Inject, Input, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, Input, OnDestroy, OnInit, ViewChild, inject} from '@angular/core';
 import {MatButton} from '@angular/material/button';
 import {MatDialog} from '@angular/material/dialog';
 import {MatTabChangeEvent, MatTabGroup} from '@angular/material/tabs';
@@ -43,6 +43,17 @@ import {TestRunActionPickerDialog, TestRunActionPickerDialogData} from '../test_
   templateUrl: './test_run_detail.ng.html',
 })
 export class TestRunDetail implements OnInit, AfterViewInit, OnDestroy {
+  private readonly appData = inject<AppData>(APP_DATA);
+  private readonly notifier = inject(Notifier);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly fs = inject(FileService);
+  private readonly mtt = inject(MttClient);
+  private readonly tfc = inject(TfcClient);
+  private readonly liveAnnouncer = inject(LiveAnnouncer);
+  private readonly analytics = inject(AnalyticsService);
+  private readonly matDialog = inject(MatDialog);
+
   @ViewChild('backButton', {static: false}) backButton?: MatButton;
   // TODO Add test for tab change
   @ViewChild('tabGroup', {static: false}) tabGroup?: MatTabGroup;
@@ -78,19 +89,6 @@ export class TestRunDetail implements OnInit, AfterViewInit, OnDestroy {
 
   readonly matTabOptions =
       ['test_results', 'progress', 'logs', 'test_resources', 'config'];
-
-  constructor(
-      @Inject(APP_DATA) private readonly appData: AppData,
-      private readonly notifier: Notifier,
-      private readonly router: Router,
-      private readonly route: ActivatedRoute,
-      private readonly fs: FileService,
-      private readonly mtt: MttClient,
-      private readonly tfc: TfcClient,
-      private readonly liveAnnouncer: LiveAnnouncer,
-      private readonly analytics: AnalyticsService,
-      private readonly matDialog: MatDialog,
-  ) {}
 
   ngOnInit() {
     assertRequiredInput(this.testRunId, 'testRunId', 'test-run-detail');
