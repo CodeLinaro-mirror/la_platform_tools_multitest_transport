@@ -22,16 +22,16 @@
 @include mat.elevation-classes();
 
 // Application theme
-$primary: mat.define-palette(mat.$grey-palette);
-$accent: mat.define-palette(mat.$blue-palette);
-$theme: mat.define-light-theme(
+$primary: mat.m2-define-palette(mat.$m2-grey-palette);
+$accent: mat.m2-define-palette(mat.$m2-blue-palette);
+$theme: mat.m2-define-light-theme(
   (
     color: (
       primary: $primary,
       accent: $accent,
     ),
     density: 0,
-    typography: mat.define-typography-config(),
+    typography: mat.m2-define-typography-config(),
   )
 );
 @include mat-deprecated.all-legacy-component-themes($theme);
@@ -70,16 +70,16 @@ $typography: mat-deprecated.define-legacy-typography-config();
 @include mat.progress-bar-typography($typography);
 
 // Button theme
-$button-primary: mat.define-palette(mat.$grey-palette);
-$button-accent: mat.define-palette(mat.$blue-palette, 700);
-$button-theme: mat.define-light-theme(
+$button-primary: mat.m2-define-palette(mat.$m2-grey-palette);
+$button-accent: mat.m2-define-palette(mat.$m2-blue-palette, 700);
+$button-theme: mat.m2-define-light-theme(
   (
     color: (
       primary: $button-primary,
       accent: $button-accent,
     ),
     density: 0,
-    typography: mat.define-typography-config(),
+    typography: mat.m2-define-typography-config(),
   )
 );
 @include mat.button-theme($button-theme);

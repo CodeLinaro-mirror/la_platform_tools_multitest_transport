@@ -26,12 +26,12 @@
 @include mat.elevation-classes();
 
 // Application theme
-$primary: mat.define-palette(mat.$grey-palette);
-$accent: mat.define-palette(mat.$blue-palette, 100);
-$warn: mat.define-palette(mat.$amber-palette);
+$primary: mat.m2-define-palette(mat.$m2-grey-palette);
+$accent: mat.m2-define-palette(mat.$m2-blue-palette, 100);
+$warn: mat.m2-define-palette(mat.$m2-amber-palette);
 // TODO: Provide this application's typography in the
 // theme configuration instead of providing null.
-$theme: mat.define-light-theme(
+$theme: mat.m2-define-light-theme(
   (
     color: (
       primary: $primary,
@@ -46,7 +46,7 @@ $typography: mat-deprecated.define-legacy-typography-config();
 
 // Add background theme
 $background-color: $white;
-$background: map-get(mat.get-color-config($theme), background);
+$background: map-get(mat.m2-get-color-config($theme), background);
 $background: map_merge(
   $background,
   (
@@ -92,39 +92,39 @@ $theme: map_merge(
 @include mat.progress-bar-typography($typography);
 @include mat.menu-typography($typography);
 
-$button-primary: mat.define-palette(mat.$grey-palette);
-$button-accent: mat.define-palette(mat.$blue-palette, 700);
-$button-theme: mat.define-light-theme(
+$button-primary: mat.m2-define-palette(mat.$m2-grey-palette);
+$button-accent: mat.m2-define-palette(mat.$m2-blue-palette, 700);
+$button-theme: mat.m2-define-light-theme(
   (
     color: (
       primary: $button-primary,
       accent: $button-accent,
     ),
     density: 0,
-    typography: mat.define-typography-config(),
+    typography: mat.m2-define-typography-config(),
   )
 );
 @include mat.button-theme($button-theme);
 
-$stepper-primary: mat.define-palette(mat.$blue-palette, 700);
-$stepper-accent: mat.define-palette(mat.$blue-palette, 100);
-$stepper-theme: mat.define-light-theme(
+$stepper-primary: mat.m2-define-palette(mat.$m2-blue-palette, 700);
+$stepper-accent: mat.m2-define-palette(mat.$m2-blue-palette, 100);
+$stepper-theme: mat.m2-define-light-theme(
   (
     color: (
       primary: $stepper-primary,
       accent: $stepper-accent,
     ),
     density: 0,
-    typography: mat.define-typography-config(),
+    typography: mat.m2-define-typography-config(),
   )
 );
 @include mat.stepper-theme($stepper-theme);
 
-$input-primary: mat.define-palette(mat.$blue-palette, 600);
-$input-accent: mat.define-palette(mat.$blue-palette, 600);
+$input-primary: mat.m2-define-palette(mat.$m2-blue-palette, 600);
+$input-accent: mat.m2-define-palette(mat.$m2-blue-palette, 600);
 // TODO: Provide this application's typography in the
 // theme configuration instead of providing null.
-$input-theme: mat.define-light-theme(
+$input-theme: mat.m2-define-light-theme(
   (
     color: (
       primary: $input-primary,
@@ -137,10 +137,10 @@ $input-theme: mat.define-light-theme(
 @include mat.input-theme($input-theme);
 
 // Form theme
-$primary: mat.define-palette(mat.$grey-palette);
-$accent: mat.define-palette(mat.$blue-palette, 100);
-$warn: mat.define-palette(mat.$amber-palette);
-$form-field-theme: mat.define-light-theme(
+$primary: mat.m2-define-palette(mat.$m2-grey-palette);
+$accent: mat.m2-define-palette(mat.$m2-blue-palette, 100);
+$warn: mat.m2-define-palette(mat.$m2-amber-palette);
+$form-field-theme: mat.m2-define-light-theme(
   (
     color: (
       primary: $primary,
@@ -148,7 +148,7 @@ $form-field-theme: mat.define-light-theme(
       warn: $warn,
     ),
     density: 0,
-    typography: mat.define-typography-config(),
+    typography: mat.m2-define-typography-config(),
   )
 );
 @include mat.form-field-theme($form-field-theme);
@@ -246,7 +246,7 @@ mat-spinner.loading-spinner {
 }
 
 .description {
-  color: mat.get-color-from-palette(mat.$grey-palette, 700);
+  color: mat.m2-get-color-from-palette(mat.$m2-grey-palette, 700);
   font-size: 12px;
   margin-bottom: 20px;
 }
@@ -561,17 +561,17 @@ mat-spinner.loading-spinner {
 ::-webkit-scrollbar-track {
   background-color: $background-default;
   &:hover {
-    background-color: mat.get-color-from-palette(mat.$grey-palette, 100);
+    background-color: mat.m2-get-color-from-palette(mat.$m2-grey-palette, 100);
   }
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: mat.get-color-from-palette(mat.$grey-palette, 300);
+  background-color: mat.m2-get-color-from-palette(mat.$m2-grey-palette, 300);
   border-radius: 16px;
   border: 5px solid $white;
   &:hover {
-    background-color: mat.get-color-from-palette(mat.$grey-palette, 400);
-    border: 4px solid mat.get-color-from-palette(mat.$grey-palette, 100);
+    background-color: mat.m2-get-color-from-palette(mat.$m2-grey-palette, 400);
+    border: 4px solid mat.m2-get-color-from-palette(mat.$m2-grey-palette, 100);
   }
 }
 
