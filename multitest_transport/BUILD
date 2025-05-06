@@ -1,3 +1,4 @@
+load("//third_party/bazel_rules/rules_shell/shell:sh_binary.bzl", "sh_binary")
 load("@tradefed_cluster//tradefed_cluster:adapter.bzl", "py_appengine_binary", "pytype_strict_library", "third_party")
 load("//tools/build_defs/license:license.bzl", "license")
 load("//tools/build_defs/packaging:genzip.bzl", "genzip")
