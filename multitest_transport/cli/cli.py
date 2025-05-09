@@ -440,6 +440,7 @@ def _StartMttNode(args, host):
   Args:
     args: a parsed argparse.Namespace object.
     host: an instance of host_util.Host.
+
   Raises:
     ActionableError: if a MTT node fails to start due to user errors.
     RuntimeError: if a MTT node fails to start.
@@ -1125,7 +1126,8 @@ def _CreateStartArgParser():
   parser.add_argument(
       '--docker_server',
       help='Docker server to login when using a service account.')
-  # TODO: delete service_account_json_key_path arg.
+
+  # Set env GOOGLE_APPLICATION_CREDENTIALS to the service account json key path.
   parser.add_argument(
       '--service_account_json_key_path', help='Service account json key path.')
   parser.add_argument('--custom_adb_path', help='Path to custom ADB tool')
