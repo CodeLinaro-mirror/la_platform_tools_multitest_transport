@@ -31,6 +31,7 @@ class CredentialType(enum.Enum):
   NO_CREDENTIAL = 'no_credential'
   ALTS = 'alts'
   SSL = 'ssl'
+  LOCAL = 'local'
 
 
 # Constants and default values

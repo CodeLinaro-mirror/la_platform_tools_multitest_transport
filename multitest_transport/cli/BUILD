@@ -29,6 +29,8 @@ py_library(
         ":google_auth_util_lib",
         ":host_util_lib",
         ":ssh_util_lib",
+        "@com_google_deviceinfra//src/devtools/deviceinfra/host/daemon/proto:health_service_py_proto",
+        "//multitest_transport/util:worker_lab_health_client",
         "@tradefed_cluster//tradefed_cluster/configs:lab_config_py_pb2",
         third_party("packaging"),
         third_party("six"),
@@ -200,7 +202,9 @@ py_test(
         ":common",
         ":google_auth_util_lib",
         ":unittest_util_lib",
+        "@com_google_deviceinfra//src/devtools/deviceinfra/host/daemon/proto:health_service_py_proto",
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
+        "//multitest_transport/util:worker_lab_health_client",
         "@tradefed_cluster//tradefed_cluster/configs:lab_config_lib",
         third_party("absl/testing:absltest"),
         third_party("absl/testing:parameterized"),

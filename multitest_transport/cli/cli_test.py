@@ -24,12 +24,14 @@ from absl.testing import parameterized
 from tradefed_cluster.configs import lab_config
 
 
+from com_google_deviceinfra.src.devtools.deviceinfra.host.daemon.proto import health_pb2
 from multitest_transport.cli import command_util
 from multitest_transport.cli import common
 from multitest_transport.cli import cli
 from multitest_transport.cli import cli_util
 from multitest_transport.cli import google_auth_util
 from multitest_transport.cli import unittest_util
+from multitest_transport.util import worker_lab_health_client
 
 _DOCKER_VERSION_STRING = 'Docker version 18.06.1-ce'
 _DEFAULT_CREATE_ARGS = (
@@ -104,6 +106,21 @@ class CliTest(parameterized.TestCase):
         return_value=None)
     self.mock_tf_console_print_out_patcher.start()
 
+    # Mock the worker lab health client's behavior.
+    self.mock_health_client = mock.create_autospec(
+        worker_lab_health_client.WorkerLabHealthClient, spec_set=True
+    )
+    self.mock_health_client.drain = mock.MagicMock()
+    self.mock_health_client.check.return_value = health_pb2.CheckStatusResponse(
+        status=health_pb2.ServingStatus.DRAINED
+    )
+    self.health_client_patcher = mock.patch.object(
+        worker_lab_health_client.WorkerLabHealthClient,
+        'create',
+        return_value=self.mock_health_client,
+    )
+    self.health_client_patcher.start()
+
   def tearDown(self):
     self.get_version_patcher.stop()
     os.environ['USER'] = self.old_user
@@ -113,6 +130,7 @@ class CliTest(parameterized.TestCase):
     self.socket_patcher.stop()
     self.context_patcher.stop()
     self.submit_host_update_event_patcher.stop()
+    self.health_client_patcher.stop()
     try:
       self.mock_tf_console_started_patcher.stop()
     except RuntimeError:
@@ -1619,6 +1637,36 @@ class CliTest(parameterized.TestCase):
                   raise_on_failure=False),
     ])
     is_running.assert_called_once_with('mtt')
+    self.mock_health_client.drain.assert_not_called()
+    self.mock_health_client.check.assert_not_called()
+
+  @mock.patch.object(cli, '_IsDaemonActive')
+  @mock.patch('__main__.cli.command_util.DockerHelper.IsContainerRunning')
+  @mock.patch('__main__.cli.os.geteuid')
+  def testStop_WithDrain(self, euid, is_running, daemon_active):
+    euid.return_value = 123
+    is_running.return_value = True
+    daemon_active.return_value = False
+    self.mock_context.host = 'ahost'
+    args = self.arg_parser.parse_args(['stop', '--drain', 'true'])
+    host = self._CreateHost()
+    cli.Stop(args, host)
+
+    self.mock_context.Run.assert_has_calls([
+        mock.call(
+            ['docker', 'kill', '-s', 'TERM', 'mtt'],
+            timeout=command_util._DOCKER_KILL_CMD_TIMEOUT_SEC,
+        ),
+        mock.call(
+            ['docker', 'container', 'wait', 'mtt'],
+            timeout=cli._SHORT_CONTAINER_SHUTDOWN_TIMEOUT_SEC,
+        ),
+        mock.call(['docker', 'inspect', 'mtt'], raise_on_failure=False),
+        mock.call(['docker', 'container', 'rm', 'mtt'], raise_on_failure=False),
+    ])
+    is_running.assert_called_once_with('mtt')
+    self.mock_health_client.drain.assert_called_once()
+    self.mock_health_client.check.assert_called_once()
 
   @mock.patch.object(cli, '_IsDaemonActive')
   @mock.patch('__main__.cli.command_util.DockerHelper.IsContainerRunning')

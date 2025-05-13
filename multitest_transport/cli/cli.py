@@ -36,11 +36,13 @@ from packaging import version
 import six
 
 
+from com_google_deviceinfra.src.devtools.deviceinfra.host.daemon.proto import health_pb2
 from multitest_transport.cli import cli_util
 from multitest_transport.cli import command_util
 from multitest_transport.cli import google_auth_util
 from multitest_transport.cli import host_util
 from multitest_transport.cli import ssh_util
+from multitest_transport.util import worker_lab_health_client
 from tradefed_cluster.configs import lab_config_pb2
 
 _MTT_CONTAINER_NAME = 'mtt'
@@ -769,6 +771,10 @@ def _StopMttNode(args, host):
   # TODO: The kill logic should be more general and works for both
   # mtt and dockerized tf.
   if docker_helper.IsContainerRunning(args.name):
+    if args.drain:
+      logger.info('Draining container %s before stopping it.', args.name)
+      _DrainMttNode()
+
     logger.info('Stopping running container %s.', args.name)
 
     # Remove crash report file to indicate that the docker container was
@@ -805,6 +811,29 @@ def _StopMttNode(args, host):
     return
   logger.info('Remove container %s.', args.name)
   docker_helper.RemoveContainers([args.name], raise_on_failure=False)
+
+
+def _DrainMttNode():
+  """Drain the existing traffic of MTT node on a local host.
+
+  Only applicable when the server is Omnilab based (--is_omnilab_based set to
+  true while starting MTT).
+  """
+  try:
+    health_client = worker_lab_health_client.WorkerLabHealthClient.create()
+    health_client.drain(health_pb2.DrainServerRequest())
+    while True:
+      status_response = health_client.check(health_pb2.CheckStatusRequest())
+      if status_response.status == health_pb2.ServingStatus.DRAINED:
+        break
+      logger.info(
+          'Waiting for drain to complete. Current status: %s',
+          health_pb2.ServingStatus.Name(status_response.status),
+      )
+      time.sleep(30)
+    logger.info('Drain complete.')
+  except worker_lab_health_client.WorkerLabHealthRpcError as e:
+    logger.error('Failed to drain lab: %s', e)
 
 
 def _DetectAndKillDeadContainer(host, docker_helper, container_name, timeout):
@@ -1220,6 +1249,15 @@ def _CreateStopArgParser():
   """Create argparser for Stop."""
   parser = argparse.ArgumentParser(add_help=False)
   parser.add_argument('--wait', action='store_true')
+  parser.add_argument(
+      '--drain',
+      action='store_true',
+      help=(
+          'Whether to drain the existing traffic of the lab. Default is false.'
+          ' Only applicable when the server is Omnilab based'
+          ' (--is_omnilab_based set to true while starting MTT).'
+      ),
+  )
   parser.set_defaults(func=Stop)
   return parser
 

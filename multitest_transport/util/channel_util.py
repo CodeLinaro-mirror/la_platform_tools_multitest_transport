@@ -41,9 +41,7 @@ class WorkerLabServerChannel(metaclass=util.Singleton):
       self,
       server_address: str = env.WORKER_LAB_SERVER_ADDRESS,
   ):
-    self._channel = _create_channel(
-        server_address, env.CredentialType.NO_CREDENTIAL
-    )
+    self._channel = _create_channel(server_address, env.CredentialType.LOCAL)
 
   def get_channel(self) -> grpc.Channel:
     return self._channel
@@ -76,6 +74,10 @@ def _create_channel(
   elif credential_type is env.CredentialType.SSL:
     return grpc.secure_channel(
         server_address, grpc.ssl_channel_credentials(), options=options
+    )
+  elif credential_type is env.CredentialType.LOCAL:
+    return grpc.secure_channel(
+        server_address, grpc.local_channel_credentials(), options=options
     )
   else:
     return grpc.insecure_channel(server_address)
