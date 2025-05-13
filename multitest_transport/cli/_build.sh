@@ -36,6 +36,37 @@ pushd "${CLI_DIR}"
 mkdir src
 mv -t src multitest_transport tradefed_cluster setup.py
 
+# Also move device-infra source code needed by MTT CLI to the src directory:
+# Moving device-infra's grpc_error_util.py
+mkdir -p src/google3/third_party/deviceinfra/src/devtools/common/metrics/stability/util/
+mv $KOKORO_ARTIFACTS_DIR/git/device-infra/src/devtools/common/metrics/stability/util/grpc_error_util.py src/google3/third_party/deviceinfra/src/devtools/common/metrics/stability/util/grpc_error_util.py
+
+# Moving device-infra's exception.proto
+mkdir -p src/com_google_deviceinfra/src/devtools/common/metrics/stability/model/proto/
+mkdir -p src/src/devtools/common/metrics/stability/model/proto/
+# Note the com_google_deviceinfra path is how it's referenced in Python source
+# code: https://github.com/google/device-infra/blob/fc4e20e65e69700422cab4c0d7378745d82fb659/src/devtools/common/metrics/stability/util/grpc_error_util.py#L22
+# (It's processed by Copybara: http://google3/third_party/deviceinfra/copy.bara.sky;l=571-575;rcl=755968683)
+mv $KOKORO_ARTIFACTS_DIR/git/device-infra/src/devtools/common/metrics/stability/model/proto/exception.proto src/com_google_deviceinfra/src/devtools/common/metrics/stability/model/proto/exception.proto
+mv $KOKORO_ARTIFACTS_DIR/git/device-infra/src/devtools/common/metrics/stability/model/proto/error_id.proto src/src/devtools/common/metrics/stability/model/proto/error_id.proto
+mv $KOKORO_ARTIFACTS_DIR/git/device-infra/src/devtools/common/metrics/stability/model/proto/error_type.proto src/src/devtools/common/metrics/stability/model/proto/error_type.proto
+mv $KOKORO_ARTIFACTS_DIR/git/device-infra/src/devtools/common/metrics/stability/model/proto/namespace.proto src/src/devtools/common/metrics/stability/model/proto/namespace.proto
+
+# Moving device-infra's rpc_error_payload.proto
+mkdir -p src/com_google_deviceinfra/src/devtools/common/metrics/stability/rpc/proto/
+mkdir -p src/src/devtools/common/metrics/stability/rpc/proto/
+mv $KOKORO_ARTIFACTS_DIR/git/device-infra/src/devtools/common/metrics/stability/rpc/proto/rpc_error_payload.proto src/com_google_deviceinfra/src/devtools/common/metrics/stability/rpc/proto/rpc_error_payload.proto
+mv $KOKORO_ARTIFACTS_DIR/git/device-infra/src/devtools/common/metrics/stability/rpc/proto/rpc_error.proto src/src/devtools/common/metrics/stability/rpc/proto/rpc_error.proto
+
+# Moving device-infra's health.proto
+mkdir -p src/google3/third_party/deviceinfra/src/devtools/deviceinfra/host/daemon/proto/
+mv $KOKORO_ARTIFACTS_DIR/git/device-infra/src/devtools/deviceinfra/host/daemon/proto/health.proto src/google3/third_party/deviceinfra/src/devtools/deviceinfra/host/daemon/proto/health.proto
+
+# Adding __init__.py in all subdirectories so Python can import modules in them
+# correctly.
+find src/google3 src/com_google_deviceinfra src/src src/multitest_transport \
+-type d -exec touch {}/__init__.py \;
+
 cat << EOF > src/VERSION
 [version]
 VERSION=${VERSION}
@@ -92,14 +123,61 @@ cat << EOF > inside_docker_build.sh
   --proto_path /workspace/src/tradefed_cluster/configs/ \
   /workspace/src/tradefed_cluster/configs/lab_config.proto
 
+/protoc/bin/protoc --python_out=/workspace/src/ \
+--proto_path /workspace/src/ \
+/workspace/src/com_google_deviceinfra/src/devtools/common/metrics/stability/model/proto/exception.proto
+
+/protoc/bin/protoc --python_out=/workspace/src/ \
+--proto_path /workspace/src/ \
+/workspace/src/src/devtools/common/metrics/stability/model/proto/error_id.proto
+
+/protoc/bin/protoc --python_out=/workspace/src/ \
+--proto_path /workspace/src/ \
+/workspace/src/src/devtools/common/metrics/stability/model/proto/error_type.proto
+
+/protoc/bin/protoc --python_out=/workspace/src/ \
+--proto_path /workspace/src/ \
+/workspace/src/src/devtools/common/metrics/stability/model/proto/namespace.proto
+
+/protoc/bin/protoc --python_out=/workspace/src/ \
+--proto_path /workspace/src/ \
+/workspace/src/com_google_deviceinfra/src/devtools/common/metrics/stability/rpc/proto/rpc_error_payload.proto
+
+/protoc/bin/protoc --python_out=/workspace/src/ \
+--proto_path /workspace/src/ \
+/workspace/src/src/devtools/common/metrics/stability/rpc/proto/rpc_error.proto
+
+/protoc/bin/protoc --python_out=/workspace/src/ \
+--proto_path /workspace/src/ \
+/workspace/src/google3/third_party/deviceinfra/src/devtools/deviceinfra/host/daemon/proto/health.proto
+
+# Generate gRPC server and client code for health.proto.
+python3 -m grpc_tools.protoc \
+  --proto_path /workspace/src/ \
+  --grpc_python_out=/workspace/src/ \
+  /workspace/src/google3/third_party/deviceinfra/src/devtools/deviceinfra/host/daemon/proto/health.proto
+
 cd /workspace
 # Build mtt pex package.
+# For the --platform options:
+# The Pillow dependency (needed by appengine-python-standard) is resolved to
+# the manylinux_2_28_x86_64 Wheel version by default in this Docker container,
+# but the Kokoro build environment where the pex is run and tested needs the
+# manylinux_2_27_x86_64 version. By specifying the following platforms options,
+# the pex built will include both the manylinux_2_28_x86_64 version and the
+# manylinux_2_17_x86_64.manylinux2014_x86_64 (sufficing manylinux_2_27_x86_64)
+# version of the Pillow wheels.
 pex --python="python3.11" --python="python3.10" --python="python3.9" --python="python3.8" \
   --python-shebang="/usr/bin/env python3" \
   -D src -r requirements.txt \
   -m multitest_transport.cli.cli \
   -o mtt \
-  --no-emit-warnings
+  --no-emit-warnings \
+  --platform manylinux2014_x86_64-cp-311-cp311 \
+  --platform manylinux2014_x86_64-cp-310-cp310 \
+  --platform manylinux2014_x86_64-cp-39-cp39 \
+  --platform manylinux2014_x86_64-cp-38-cp38
+
 # Build zip file include all mtt source.
 cd src/
 zip -r /workspace/mtt.zip *
@@ -112,7 +190,11 @@ pex --python="python3.11" --python="python3.10" --python="python3.9" --python="p
   -D src -r requirements.txt \
   -m multitest_transport.cli.lab_cli \
   -o mtt_lab \
-  --no-emit-warnings
+  --no-emit-warnings \
+  --platform manylinux2014_x86_64-cp-311-cp311 \
+  --platform manylinux2014_x86_64-cp-310-cp310 \
+  --platform manylinux2014_x86_64-cp-39-cp39 \
+  --platform manylinux2014_x86_64-cp-38-cp38
 EOF
 chmod +x inside_docker_build.sh
 echo "Starting build inside Docker at: $(date)"

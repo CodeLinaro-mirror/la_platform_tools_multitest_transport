@@ -7,6 +7,15 @@ package(
 
 licenses(["notice"])
 
+exports_files(
+    [
+        "env.py",
+        "util.py",
+        "worker_lab_health_client.py",
+        "channel_util.py",
+    ],
+)
+
 pytype_strict_library(
     name = "util_lib",
     srcs = [

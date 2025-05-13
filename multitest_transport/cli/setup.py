@@ -40,6 +40,7 @@ setuptools.setup(
     },
     install_requires=[
         'ansible-base',
+        'appengine-python-standard >= 1.0.0',
         'attrs',
         'fabric',
         'grpcio == 1.49.1',
