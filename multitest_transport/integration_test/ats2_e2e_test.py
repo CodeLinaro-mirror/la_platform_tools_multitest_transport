@@ -37,7 +37,7 @@ _ARTIFACTS_DOWNLOAD_URL = (
     'https://www.googleapis.com/android/internal/build/'
     'v3/builds/%s/%s/attempts/latest/artifacts/%s/url'
 )
-_BUILD_ID = '11807604'
+_BUILD_ID = '13281750'
 _BUILD_TARGET = 'aosp_cf_x86_64_phone-trunk_staging-userdebug'
 _CVD_HOST_PACKAGE_URL = _ARTIFACTS_DOWNLOAD_URL % (
     _BUILD_ID,
