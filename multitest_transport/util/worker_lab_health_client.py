@@ -45,8 +45,8 @@ class WorkerLabHealthClient:
     except grpc.RpcError as e:
       exception_detail = grpc_error_util.to_exception_detail(e)
       raise WorkerLabHealthRpcError(
-          'Failed to drain lab: %s' % exception_detail.summary
-          if exception_detail
+          exception_detail.summary.message
+          if exception_detail and exception_detail.summary.message
           else ''
       ) from e
 
@@ -58,7 +58,7 @@ class WorkerLabHealthClient:
     except grpc.RpcError as e:
       exception_detail = grpc_error_util.to_exception_detail(e)
       raise WorkerLabHealthRpcError(
-          "Failed to check lab's drain status: %s" % exception_detail.summary
-          if exception_detail
+          exception_detail.summary.message
+          if exception_detail and exception_detail.summary.message
           else ''
       ) from e
