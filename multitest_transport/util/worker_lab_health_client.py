@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """Client for sending requests to the worker lab server's Health service."""
+from typing import Optional
 import grpc
 from multitest_transport.util import channel_util
 from com_google_deviceinfra.src.devtools.common.metrics.stability.util import grpc_error_util
@@ -32,7 +33,9 @@ class WorkerLabHealthClient:
     self._stub = health_pb2_grpc.HealthStub(channel)
 
   @classmethod
-  def create(cls, server_address: str | None = None) -> 'WorkerLabHealthClient':
+  def create(
+      cls, server_address: Optional[str] = None
+  ) -> 'WorkerLabHealthClient':
     """Create worker lab server's Health service client."""
     channel = channel_util.WorkerLabServerChannel(server_address).get_channel()
     return WorkerLabHealthClient(channel)
