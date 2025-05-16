@@ -12,9 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from concurrent import futures
+from unittest import mock
 from absl.testing import absltest
 import grpc
 import grpc_testing
+from multitest_transport.util import channel_util
 from multitest_transport.util import worker_lab_health_client
 from com_google_deviceinfra.src.devtools.deviceinfra.host.daemon.proto import health_pb2
 
@@ -30,7 +32,6 @@ class WorkerLabHealthClientTest(absltest.TestCase):
         self._descriptor,
         self._time,
     )
-    self._client = worker_lab_health_client.WorkerLabHealthClient(self._channel)
     self._trailing_metadata = ()
     self._detailed_message = ''
 
@@ -38,7 +39,43 @@ class WorkerLabHealthClientTest(absltest.TestCase):
     self._executor.shutdown(wait=True)
     super().tearDown()
 
+  @mock.patch.object(channel_util, 'WorkerLabServerChannel', autospec=True)
+  def testCreate_withoutServerAddress(self, mock_worker_lab_server_channel):
+    mock_worker_lab_server_channel_instance = (
+        mock_worker_lab_server_channel.return_value
+    )
+    mock_worker_lab_server_channel_instance.get_channel.return_value = (
+        self._channel
+    )
+
+    client = worker_lab_health_client.WorkerLabHealthClient.create()
+
+    mock_worker_lab_server_channel.assert_called_once_with(None)
+    self.assertIsInstance(
+        client, worker_lab_health_client.WorkerLabHealthClient
+    )
+
+  @mock.patch.object(channel_util, 'WorkerLabServerChannel', autospec=True)
+  def testCreate_withServerAddress(self, mock_worker_lab_server_channel):
+    mock_worker_lab_server_channel_instance = (
+        mock_worker_lab_server_channel.return_value
+    )
+    mock_worker_lab_server_channel_instance.get_channel.return_value = (
+        self._channel
+    )
+    server_address = 'localhost:50001'
+
+    client = worker_lab_health_client.WorkerLabHealthClient.create(
+        server_address=server_address
+    )
+
+    mock_worker_lab_server_channel.assert_called_once_with(server_address)
+    self.assertIsInstance(
+        client, worker_lab_health_client.WorkerLabHealthClient
+    )
+
   def testDrain(self):
+    self._client = worker_lab_health_client.WorkerLabHealthClient(self._channel)
     request = health_pb2.DrainServerRequest()
     response = health_pb2.DrainServerResponse()
 
@@ -59,6 +96,7 @@ class WorkerLabHealthClientTest(absltest.TestCase):
     self.assertEqual(actual_response, response)
 
   def testCheckDrainStatus(self):
+    self._client = worker_lab_health_client.WorkerLabHealthClient(self._channel)
     request = health_pb2.CheckStatusRequest()
     response = health_pb2.CheckStatusResponse()
 

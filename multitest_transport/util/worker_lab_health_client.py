@@ -32,9 +32,9 @@ class WorkerLabHealthClient:
     self._stub = health_pb2_grpc.HealthStub(channel)
 
   @classmethod
-  def create(cls) -> 'WorkerLabHealthClient':
+  def create(cls, server_address: str | None = None) -> 'WorkerLabHealthClient':
     """Create worker lab server's Health service client."""
-    channel = channel_util.WorkerLabServerChannel().get_channel()
+    channel = channel_util.WorkerLabServerChannel(server_address).get_channel()
     return WorkerLabHealthClient(channel)
 
   def drain(

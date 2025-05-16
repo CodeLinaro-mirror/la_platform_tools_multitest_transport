@@ -488,6 +488,7 @@ py_test(
     name = "worker_lab_health_client_test",
     srcs = ["worker_lab_health_client_test.py"],
     deps = [
+        ":channel_util_lib",
         ":worker_lab_health_client",
         "//net/grpc/python:grpc",
         "@com_google_deviceinfra//src/devtools/deviceinfra/host/daemon/proto:health_service_py_proto",
