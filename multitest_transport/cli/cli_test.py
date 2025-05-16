@@ -2268,6 +2268,35 @@ class CliTest(parameterized.TestCase):
       new_key = f.read()
     self.assertEqual('{"private_key_id": "id1"}', new_key)
 
+  def test_GetWorkerLabGprcServerAddress_withGrpcPort(self):
+    docker_helper = mock.MagicMock()
+    docker_helper.GetEnv.return_value = [
+        'LAB_SERVER_OPTS=--no_op_device_num=5 --grpc_port=50001'
+    ]
+
+    self.assertEqual(
+        'localhost:50001',
+        cli._GetWorkerLabGprcServerAddress('mtt', docker_helper),
+    )
+
+  def test_GetWorkerLabGprcServerAddress_withoutGrpcPort(self):
+    docker_helper = mock.MagicMock()
+    docker_helper.GetEnv.return_value = ['LAB_SERVER_OPTS=--no_op_device_num=5']
+
+    self.assertEqual(
+        'localhost:9994',
+        cli._GetWorkerLabGprcServerAddress('mtt', docker_helper),
+    )
+
+  def test_GetWorkerLabGprcServerAddress_withoutLabServerOpts(self):
+    docker_helper = mock.MagicMock()
+    docker_helper.GetEnv.return_value = []
+
+    self.assertEqual(
+        'localhost:9994',
+        cli._GetWorkerLabGprcServerAddress('mtt', docker_helper),
+    )
+
 
 _ALL_START_OPTIONS = (
     ('force_update', True),

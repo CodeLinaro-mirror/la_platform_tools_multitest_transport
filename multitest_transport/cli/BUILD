@@ -30,6 +30,7 @@ py_library(
         ":host_util_lib",
         ":ssh_util_lib",
         "@com_google_deviceinfra//src/devtools/deviceinfra/host/daemon/proto:health_service_py_proto",
+        "//multitest_transport/util:env_lib",
         "//multitest_transport/util:worker_lab_health_client",
         "@tradefed_cluster//tradefed_cluster/configs:lab_config_py_pb2",
         third_party("packaging"),

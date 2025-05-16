@@ -42,6 +42,7 @@ from multitest_transport.cli import command_util
 from multitest_transport.cli import google_auth_util
 from multitest_transport.cli import host_util
 from multitest_transport.cli import ssh_util
+from multitest_transport.util import env
 from multitest_transport.util import worker_lab_health_client
 from tradefed_cluster.configs import lab_config_pb2
 
@@ -773,7 +774,7 @@ def _StopMttNode(args, host):
   if docker_helper.IsContainerRunning(args.name):
     if args.drain:
       logger.info('Draining container %s before stopping it.', args.name)
-      _DrainMttNode()
+      _DrainMttNode(args.name, docker_helper)
 
     logger.info('Stopping running container %s.', args.name)
 
@@ -813,14 +814,23 @@ def _StopMttNode(args, host):
   docker_helper.RemoveContainers([args.name], raise_on_failure=False)
 
 
-def _DrainMttNode():
+def _DrainMttNode(name, docker_helper):
   """Drain the existing traffic of MTT node on a local host.
 
   Only applicable when the server is Omnilab based (--is_omnilab_based set to
   true while starting MTT).
+
+  Args:
+    name: string, the name of docker container to drain.
+    docker_helper: an instance of command_util.DockerHelper.
   """
+  worker_lab_grpc_server_address = _GetWorkerLabGprcServerAddress(
+      name, docker_helper
+  )
   try:
-    health_client = worker_lab_health_client.WorkerLabHealthClient.create()
+    health_client = worker_lab_health_client.WorkerLabHealthClient.create(
+        worker_lab_grpc_server_address
+    )
     health_client.drain(health_pb2.DrainServerRequest())
     while True:
       status_response = health_client.check(health_pb2.CheckStatusRequest())
@@ -834,6 +844,41 @@ def _DrainMttNode():
     logger.info('Drain complete.')
   except worker_lab_health_client.WorkerLabHealthRpcError as e:
     logger.error('Failed to drain lab: %s', e)
+
+
+def _GetWorkerLabGprcServerAddress(name, docker_helper):
+  """Get the worker lab server address used to call its gRPC services.
+
+  Args:
+    name: string, the name of docker container to drain.
+    docker_helper: an instance of command_util.DockerHelper.
+
+  Returns:
+    The worker lab gRPC server address. The default address is returned if the
+    gRPC port wasn't overridden when starting the MTT container.
+  """
+  # We try to parse out the --grpc_port parameter value (if set when bringing up
+  # the MTT container) from the Docker container's LAB_SERVER_OPTS environment
+  # variable.
+  # Example: "LAB_SERVER_OPTS=--no_op_device_num=5 --grpc_port=50001"
+  grpc_port_param = env.WORKER_LAB_SERVER_PORT
+
+  docker_env = docker_helper.GetEnv(name)
+  for env_var in docker_env:
+    if not env_var.startswith('LAB_SERVER_OPTS='):
+      continue
+    # 1. Remove "LAB_SERVER_OPTS=" prefix
+    lab_server_opts = env_var.replace('LAB_SERVER_OPTS=', '', 1)
+    # 2. Split into individual key-value pairs.
+    params = [param for param in lab_server_opts.split(' ')]
+    # 3. Iterate through individual parameters to find the target
+    for param in params:
+      if param.startswith('--grpc_port='):
+        grpc_port_param = param.split('=', 1)[1]
+
+  server_address = f'localhost:{grpc_port_param}'
+  logger.debug('Will use worker lab gRPC server address: %s', server_address)
+  return server_address
 
 
 def _DetectAndKillDeadContainer(host, docker_helper, container_name, timeout):

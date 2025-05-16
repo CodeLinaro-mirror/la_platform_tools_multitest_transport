@@ -75,8 +75,9 @@ OLCS_CREDENTIAL_TYPE = CredentialType(
 )
 
 # Worker lab server parameters
+WORKER_LAB_SERVER_PORT = 9994
 WORKER_LAB_SERVER_ADDRESS = os.environ.get(
-    'WORKER_LAB_SERVER_ADDRESS', 'localhost:9994'
+    'WORKER_LAB_SERVER_ADDRESS', f'localhost:{WORKER_LAB_SERVER_PORT}'
 )
 
 # Google OAuth2 parameters
