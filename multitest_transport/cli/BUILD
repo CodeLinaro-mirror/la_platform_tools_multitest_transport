@@ -156,7 +156,6 @@ py_library(
         "@tradefed_cluster//tradefed_cluster/configs:lab_config_lib",
         third_party("apiclient"),
         third_party("google_auth_httplib2"),
-        third_party("pytz"),
     ],
 )
 

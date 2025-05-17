@@ -19,7 +19,6 @@ from unittest import mock
 import urllib.request
 
 from absl.testing import absltest
-import pytz
 from tradefed_cluster import testbed_dependent_test
 from tradefed_cluster.plugins import base as tfc_plugins
 import webtest
@@ -62,7 +61,9 @@ class CronKickerTest(testbed_dependent_test.TestbedDependentTest):
         queue_names=[cron_kicker.CRON_KICKER_QUEUE])
     self.assertLen(tasks, 1)
     task = tasks[0]
-    self.assertEqual(pytz.UTC.localize(next_run_time), task.eta)
+    self.assertEqual(
+        next_run_time.replace(tzinfo=datetime.timezone.utc), task.eta
+    )
     new_cron_job = cron_kicker.CronJob.FromJson(task.payload)
     self.assertEqual(cron_job.url, new_cron_job.url)
     self.assertEqual(cron_job.schedule, new_cron_job.schedule)

@@ -41,7 +41,6 @@ pytype_strict_library(
         "@tradefed_cluster//tradefed_cluster/services:task_scheduler_lib",
         third_party("antlr3:v3_1_1"),
         third_party("flask"),
-        third_party("pytz"),
         third_party("yaml"),
     ],
 )

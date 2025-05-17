@@ -21,7 +21,6 @@ from typing import Union
 import uuid
 
 import pika
-import pytz
 
 
 from tradefed_cluster.plugins import base
@@ -40,7 +39,7 @@ def _ToEpochMillis(dt):
   """
   if dt.tzinfo:
     # Convert dt to be timezone-naive.
-    dt = dt.astimezone(pytz.UTC).replace(tzinfo=None)
+    dt = dt.astimezone(datetime.timezone.utc).replace(tzinfo=None)
   return int((dt - datetime.datetime(1970, 1, 1)).total_seconds() * 1000)
 
 

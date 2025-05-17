@@ -20,7 +20,6 @@ from unittest import mock
 
 from absl.testing import absltest
 import pika
-import pytz
 
 
 from multitest_transport.app_helper import rabbitmq_plugin
@@ -41,7 +40,7 @@ class TaskSchedulerTest(absltest.TestCase):
         rabbitmq_plugin._ToEpochMillis(dt + datetime.timedelta(days=1)))
 
   def testToEpochMillis_withTimezone(self):
-    dt = pytz.UTC.localize(datetime.datetime(1970, 1, 2))
+    dt = datetime.datetime(1970, 1, 2).replace(tzinfo=datetime.timezone.utc)
     self.assertEqual(86400000, rabbitmq_plugin._ToEpochMillis(dt))
 
   def testEncodeTaskPayload(self):

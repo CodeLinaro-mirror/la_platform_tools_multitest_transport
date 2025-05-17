@@ -74,13 +74,13 @@ def _ClearNextRun(test_plan_status):
 
 def _GetNextRunTime(cron_expression, timezone):
   """Calculate the next run time for a cron expression and timezone."""
-  utc_time = pytz.UTC.localize(_GetCurrentTime())
+  utc_time = _GetCurrentTime().replace(tzinfo=datetime.timezone.utc)
   # Determine next run time relative to the requested timezone
   relative_time = utc_time.astimezone(timezone)
   cron = croniter.croniter(cron_expression, relative_time)
   relative_next_run = cron.get_next(datetime.datetime)
   # Convert back to a naive UTC datetime as NDB doesn't support timezones
-  utc_next_run = relative_next_run.astimezone(pytz.UTC)
+  utc_next_run = relative_next_run.astimezone(datetime.timezone.utc)
   return utc_next_run.replace(tzinfo=None)
 
 
@@ -117,7 +117,8 @@ def ScheduleCronKick(test_plan_id, next_run_time=None):
   task = task_scheduler.AddTask(
       queue_name=TEST_PLAN_KICKER_QUEUE,
       payload=payload,
-      eta=pytz.UTC.localize(test_plan_status.next_run_time))
+      eta=test_plan_status.next_run_time.replace(tzinfo=datetime.timezone.utc),
+  )
   test_plan_status.next_run_task_name = task.name
   test_plan_status.put()
   logging.info('Scheduled the next kick task %s (eta=%s)', task.name, task.eta)

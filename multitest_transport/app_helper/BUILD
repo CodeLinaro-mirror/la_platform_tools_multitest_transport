@@ -50,7 +50,6 @@ pytype_strict_library(
     deps = [
         "@tradefed_cluster//tradefed_cluster/plugins:base_lib",
         third_party("pika"),
-        third_party("pytz"),
     ],
 )
 

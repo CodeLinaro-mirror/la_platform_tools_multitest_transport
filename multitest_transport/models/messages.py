@@ -15,11 +15,11 @@
 """API messages."""
 
 import collections
+import datetime
 import logging
 
 from protorpc import message_types
 from protorpc import messages
-import pytz
 from tradefed_cluster import api_messages
 from tradefed_cluster.util import ndb_shim as ndb
 
@@ -137,10 +137,10 @@ def ConvertToDeviceSpecs(run_target):
   return ['device_serial:%s' % s for s in run_target.split(';')]
 
 
-def _AddTimezone(datetime, timezone=pytz.UTC):
+def _AddTimezone(date_time, timezone=datetime.timezone.utc):
   """Adds timezone to an NDB datetime (which doesn't store timezone)."""
-  if datetime:
-    return datetime.replace(tzinfo=timezone)  
+  if date_time:
+    return date_time.replace(tzinfo=timezone)  
 
 
 class AuthorizationInfo(messages.Message):

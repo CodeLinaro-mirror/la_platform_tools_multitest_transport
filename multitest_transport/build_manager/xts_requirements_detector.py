@@ -19,7 +19,6 @@ import logging
 import string
 
 import flask
-import pytz
 from tradefed_cluster import common
 from tradefed_cluster.services import task_scheduler
 from tradefed_cluster.util import ndb_shim as ndb
@@ -74,7 +73,7 @@ def _ScheduleNextProcessTask(build_id, attempt_count, delta_minutes=1):
       queue_name=XTS_REQUIREMENTS_DETECTION_EVENT_QUEUE,
       payload=payload,
       target='default',
-      eta=pytz.UTC.localize(next_process_time),
+      eta=next_process_time.replace(tzinfo=datetime.timezone.utc),
   )
 
 

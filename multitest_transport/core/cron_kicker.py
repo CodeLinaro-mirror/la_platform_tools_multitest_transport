@@ -20,7 +20,6 @@ import os
 import urllib.request
 
 import flask
-import pytz
 import yaml
 
 
@@ -142,7 +141,7 @@ def ScheduleNextKick(cron_job, next_run_time=None):
   task_scheduler.AddTask(
       queue_name=CRON_KICKER_QUEUE,
       payload=cron_job.ToJson(),
-      eta=pytz.UTC.localize(cron_job.next_run_time))
+      eta=cron_job.next_run_time.replace(tzinfo=datetime.timezone.utc))
 
 
 @APP.route('/', methods=['POST'])

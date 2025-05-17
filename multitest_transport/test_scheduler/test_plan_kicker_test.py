@@ -19,7 +19,6 @@ import os.path
 from unittest import mock
 
 from absl.testing import absltest
-import pytz
 from tradefed_cluster import testbed_dependent_test
 
 
@@ -43,7 +42,9 @@ class TestPlanKickerTest(testbed_dependent_test.TestbedDependentTest):
     test_plan_id = test_plan.key.id()
     # Current time is 12:30 AM UTC and next run time is the following midnight
     get_current_time.return_value = datetime.datetime(1970, 1, 1, 0, 30, 0)
-    next_run_time = pytz.UTC.localize(datetime.datetime(1970, 1, 2, 0, 0, 0))
+    next_run_time = datetime.datetime(1970, 1, 2, 0, 0, 0).replace(
+        tzinfo=datetime.timezone.utc
+    )
 
     test_plan_kicker.ScheduleCronKick(test_plan_id)
 
@@ -65,7 +66,9 @@ class TestPlanKickerTest(testbed_dependent_test.TestbedDependentTest):
     test_plan.put()
     # Current time is 12:30 AM UTC and next run time is midnight PT (8 AM UTC)
     get_current_time.return_value = datetime.datetime(1970, 1, 1, 0, 30, 0)
-    next_run_time = pytz.UTC.localize(datetime.datetime(1970, 1, 1, 8, 0, 0))
+    next_run_time = datetime.datetime(1970, 1, 1, 8, 0, 0).replace(
+        tzinfo=datetime.timezone.utc
+    )
 
     test_plan_kicker.ScheduleCronKick(test_plan.key.id())
 

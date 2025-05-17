@@ -22,8 +22,6 @@ import httplib2
 
 from multitest_transport.cli import google_auth_util
 
-import pytz
-
 logger = logging.getLogger(__name__)
 
 _API_VERSION = 'v1'
@@ -140,7 +138,7 @@ class ControlServerClient(object):
 
     
     now_sec = int(datetime.datetime.utcnow()
-                  .replace(tzinfo=pytz.utc).timestamp())
+                  .replace(tzinfo=datetime.timezone.utc).timestamp())
     body = {
         'host_events': [
             {
