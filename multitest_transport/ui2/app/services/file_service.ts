@@ -75,14 +75,17 @@ export class FileService {
    */
   getTestRunFileUrl(testRun: TestRun, attempt: CommandAttempt, path = ''):
       string {
+    const outputUrl = testRun.output_url || '';
     if (isFinalCommandState(attempt.state)) {
       // Completed run files are stored in the configured output location.
-      const outputUrl = testRun.output_url || '';
       if (this.appData.isOmniLabBased) {
         return joinPath(
             outputUrl, attempt.request_id, attempt.command_id, path);
       }
       return joinPath(outputUrl, attempt.command_id, attempt.attempt_id, path);
+    }
+    if (this.appData.isOmniLabBased) {
+      return this.getFileUrl('localhost', path);
     }
     // Active run files are stored in a local temporary location.
     return this.getFileUrl(attempt.hostname, 'tmp', attempt.attempt_id, path);

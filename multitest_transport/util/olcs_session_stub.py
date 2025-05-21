@@ -609,6 +609,8 @@ class OlcsSessionStub:
     command_attempt_message.failed_test_run_count = (
         command_detail.failed_module_count
     )
+    command_attempt_message.working_job_id = request_detail.working_job_id
+    command_attempt_message.working_test_id = request_detail.working_test_id
 
     log_dir_path = os.path.join(
         file_util.GetLocalFilePath(

@@ -157,6 +157,20 @@ export class TestRunConsole implements OnInit, OnChanges, OnDestroy {
         return `logs/non-tradefed_logs/MoblyAospPackageTest_test_${
             this.selectedMoblyTestId}/${this.selectedMoblyLogType}`;
       } else {  // Tradefed Logs
+        if (isActive) {
+          if (this.selectedTfLogType === 'test_output.txt') {
+            return `log/mh_lab_gen_files/${
+                this.selectedAttempt.working_job_id}/test_${
+                this.selectedAttempt.working_test_id}/local_test_log.txt`;
+          } else if (this.selectedTfLogType === 'xts_tf_output.log') {
+            return `log/mh_lab_gen_files/${
+                this.selectedAttempt.working_job_id}/test_${
+                this.selectedAttempt.working_test_id}/xts_tf_output.log`;
+          } else {
+            return `mh/xts-root-dir-${
+                this.selectedAttempt.working_test_id}/logs/stdout.txt`;
+          }
+        }
         return `${this.selectedAttempt.tf_log_path}/${this.selectedTfLogType}`;
       }
     }

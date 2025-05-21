@@ -265,6 +265,8 @@ export declare interface CommandAttempt {
   readonly log_dir_path?: string;
   readonly mobly_test_id?: string[];
   readonly tf_log_path?: string;
+  readonly working_job_id?: string;
+  readonly working_test_id?: string;
 }
 
 /** A list of command attempts */
