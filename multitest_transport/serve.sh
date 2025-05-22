@@ -113,8 +113,8 @@ function start_rabbitmq_puller {
 
 function start_local_file_server {
   # Start local file server
-  echo "Starting local file server..."
-  NUM_FILE_SERVER_WORKERS=2
+  NUM_FILE_SERVER_WORKERS="${FILE_SERVER_WORKERS:-4}"
+  echo "Starting local file server with ${NUM_FILE_SERVER_WORKERS} workers..."
   # Uses gthread workers since the default sync workers would time out when sending large files:
   # https://docs.gunicorn.org/en/stable/design.html?highlight=gthread#asyncio-workers
   NUM_THREADS=10
