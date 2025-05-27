@@ -556,11 +556,17 @@ def GetWorkFileUrl(attempt, file_path: str = '') -> str:
     attempt's work directory URL
   """
   if os.environ.get('IS_OMNILAB_BASED') == 'true':
-    # TODO: add remote mode
-    url = GetAppStorageUrl([
-        file_path,
-    ])
-    return url
+    if env.OPERATION_MODE == env.OperationMode.ON_PREMISE:
+      return GetAppStorageUrl(
+          [
+              file_path,
+          ],
+          attempt.hostname,
+      )
+    else:
+      return GetAppStorageUrl([
+          file_path,
+      ])
   if env.OPERATION_MODE == env.OperationMode.ON_PREMISE:
     return GetAppStorageUrl(['tmp', attempt.attempt_id, file_path],
                             attempt.hostname)
