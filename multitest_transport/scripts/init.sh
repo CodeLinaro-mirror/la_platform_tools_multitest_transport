@@ -349,7 +349,6 @@ else
     --disable_device_reboot_for_ro_properties=true \
     --disable_wifi_util_func=true \
     --enable_android_device_ready_check=false \
-    --enable_ats_mode=true \
     --enable_ats_file_server_uploader=true \
     --enable_device_state_change_recover=false \
     --enable_device_system_settings_change=false \
@@ -363,6 +362,7 @@ else
     --serv_via_cloud_rpc=false \
     --set_test_harness_property=false \
     --tmp_dir_root="${MTT_MH_WORK_DIR}" \
+    --use_emulator_name_in_uuid=true \
     ${LAB_SERVER_OPTS} \
     ${LAB_SERVER_ARGS}
 fi
