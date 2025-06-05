@@ -42,6 +42,9 @@ _CVD_HOST_PACKAGE_URL = _ARTIFACTS_DOWNLOAD_URL % (
     _BUILD_ID, _BUILD_TARGET, 'cvd-host_package.tar.gz')
 _IMG_ZIP_URL = _ARTIFACTS_DOWNLOAD_URL % (
     _BUILD_ID, _BUILD_TARGET, f'aosp_cf_x86_64_phone-img-{_BUILD_ID}.zip')
+_CTS_FILE_NAME = (
+    'android-cts-git_24Q3-release-test_suites_x86_64-11835886-trimmed.zip'
+)
 
 
 class E2eIntegrationTest(integration_util.DockerContainerTest):
@@ -59,6 +62,11 @@ class E2eIntegrationTest(integration_util.DockerContainerTest):
     config_file = os.path.join(TEST_DATA_DIR, 'e2e_test_config.yaml')
     with open(config_file) as f:
       cls.container.ImportConfig(f.read())
+    cts_file = os.path.join(
+        TEST_DATA_DIR,
+        _CTS_FILE_NAME,
+    )
+    cls.container.CopyFile(cts_file, '/data/android-cts.zip')
 
   def _GetOutputDir(self, test_run):
     """Returns the path to a test run's output directory."""
@@ -142,10 +150,10 @@ class E2eIntegrationTest(integration_util.DockerContainerTest):
     test_run_id = self.container.ScheduleTestRun(
         FLAGS.serial_number,
         test_id='android.cts.10_0.arm',
-        extra_args='-m Gesture',  # arbitrary small module
+        extra_args='-m CtsUsbTests',  # arbitrary small module
         test_resource_objs=[{
             'name': 'android-cts.zip',
-            'url': CTS_DOWNLOAD_URL % FLAGS.architecture,
+            'url': 'file:///data/android-cts.zip',
         }])['id']
     self.container.WaitForState(test_run_id, 'COMPLETED', timeout=30 * 60)
     # Verify that the tests were executed (after waiting for result processing).

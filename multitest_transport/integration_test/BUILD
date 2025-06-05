@@ -47,6 +47,7 @@ py_test(
         "e2e_test.py",
     ],
     data = [
+        "test_data/android-cts-git_24Q3-release-test_suites_x86_64-11835886-trimmed.zip",
         "test_data/e2e_test_config.yaml",
     ],
     features = ["-enable_relr"],
