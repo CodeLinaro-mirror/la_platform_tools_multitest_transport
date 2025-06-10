@@ -28,7 +28,11 @@ class OlcsChannel(metaclass=util.Singleton):
       server_address: str = env.OLCS_SERVER_ADDRESS,
       credential_type: env.CredentialType = env.OLCS_CREDENTIAL_TYPE,
   ):
-    self._channel = _create_channel(server_address, credential_type)
+    self._channel = _create_channel(
+        server_address,
+        credential_type,
+        unlimited_max_receive_message_length=True,
+    )
 
   def get_channel(self) -> grpc.Channel:
     return self._channel
@@ -50,6 +54,7 @@ class WorkerLabServerChannel(metaclass=util.Singleton):
 def _create_channel(
     server_address: str,
     credential_type: env.CredentialType,
+    unlimited_max_receive_message_length: bool = False,
 ):
   """Create a gRPC channel."""
   service_config_json = json.dumps({
@@ -67,6 +72,11 @@ def _create_channel(
   options = []
   options.append(("grpc.enable_retries", 1))
   options.append(("grpc.service_config", service_config_json))
+  if unlimited_max_receive_message_length:
+    # Set the maximum message length that the channel can receive to be
+    # unlimited.
+    # http://google3/third_party/grpc/include/grpc/impl/channel_arg_names.h;l=40-43;rcl=745827384
+    options.append(("grpc.max_receive_message_length", -1))
   if credential_type is env.CredentialType.ALTS:
     return grpc.secure_channel(
         server_address, grpc.alts_channel_credentials(), options=options
