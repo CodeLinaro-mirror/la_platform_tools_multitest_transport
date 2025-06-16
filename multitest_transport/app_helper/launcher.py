@@ -61,6 +61,7 @@ flags.DEFINE_enum(
     case_sensitive=False)
 flags.DEFINE_bool('live_reload', False, 'Restart modules when code changes')
 flags.DEFINE_string('init', None, 'Init request. e.g. module:/init')
+flags.DEFINE_integer('workers', 4, 'Number of workers')
 
 LOG_FORMAT = ('%(levelname)s\t%(asctime)s '
               '{module}:%(filename)s:%(lineno)d] %(message)s')
@@ -147,12 +148,16 @@ class InMemoryAppManager(base.AppManager):
 class ModuleApplication(gunicorn.app.base.BaseApplication):
   """Gunicorn application corresponding to a module."""
 
-  def __init__(self, module, host=None, log_level=None, live_reload=None):
+  def __init__(
+      self, module, host=None, log_level=None, live_reload=None, workers=None
+  ):
     self.module = module
-    self.bind_address = self.format_host_port(host or FLAGS.host,
-                                              self.module.port)
+    self.bind_address = self.format_host_port(
+        host or FLAGS.host, self.module.port
+    )
     self.log_level = log_level or FLAGS.log_level
     self.live_reload = live_reload or FLAGS.live_reload
+    self.workers = workers or FLAGS.workers
     super(ModuleApplication, self).__init__()
 
   @staticmethod
@@ -176,7 +181,9 @@ class ModuleApplication(gunicorn.app.base.BaseApplication):
     # Increase worker timeout as errors may cause test runs to fail
     self.cfg.set('timeout', 5 * 60)
     self.cfg.set('worker_class', 'gthread')
-    self.cfg.set('workers', 2)  # Have two workers to ensure availability
+    self.cfg.set(
+        'workers', self.workers
+    )  # Have multiple workers to ensure availability
 
   def load(self):
     return RawPathMiddleware(CloudNdbMiddleware(self.module.app))

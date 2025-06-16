@@ -195,6 +195,7 @@ function start_main_server {
       --datastore_emulator_host="localhost:$DATASTORE_EMULATOR_PORT" \
       --log_level="${LOG_LEVEL}" \
       --live_reload="${LIVE_RELOAD}" \
+      --workers="${MAIN_SERVER_WORKERS:-4}" \
       --module "default=multitest_transport.server:APP" \
       --module "core=multitest_transport.server:CORE" \
       --module "tfc=tradefed_cluster.server:TFC" \
