@@ -18,6 +18,7 @@ This tool is supposed to be bootstrapped by 'mtt' script and expects the current
 working directory to be the root of MTT package.
 """
 import argparse
+import hashlib
 from importlib import resources
 import json
 import logging
@@ -114,6 +115,9 @@ PACKAGE_LOGGER_NAME = 'multitest_transport.cli'
 logger = logging.getLogger(__name__)
 
 _CRASH_REPORT_FILE_PATH = '/data/.crash_report_file'
+
+# Percentage of hosts to rollout ATS2. This is a integer between 0 and 100.
+_ATS2_ROLLOUT_PERCENTAGE = 0
 
 
 class ActionableError(Exception):
@@ -669,7 +673,7 @@ def _StartMttNode(args, host):
     docker_helper.AddFile(
         args.extra_ca_cert, '/usr/local/share/ca-certificates/')
 
-  if args.is_omnilab_based:
+  if _IsOmnilabBased(args):
     docker_helper.AddEnv('IS_OMNILAB_BASED', 'true')
     if (
         network == _DOCKER_BRIDGE_NETWORK
@@ -699,7 +703,7 @@ def _StartMttNode(args, host):
     # localhost URL.
     hostname = 'localhost'
   if control_server_url:
-    if _IsConsoleSuccessfullyStarted(host, args.is_omnilab_based):
+    if _IsConsoleSuccessfullyStarted(host, _IsOmnilabBased(args)):
       logger.info('ATS replica is running.')
   else:
     url = 'http://%s:%s' % (hostname, args.port)
@@ -709,6 +713,11 @@ def _StartMttNode(args, host):
       raise RuntimeError(
           'ATS server failed to start in %ss' % _MTT_SERVER_WAIT_TIME_SECONDS)
     logger.info('ATS is serving at %s', url)
+  if _IsOmnilabBased(args):
+    logger.info(
+        'Currently running ATS 2.0 (Omnilab based). You can override this by'
+        ' setting --force_ats_version 1 to override this.'
+    )
 
 
 def _StartMttDaemon(args, host):
@@ -817,8 +826,7 @@ def _StopMttNode(args, host):
 def _DrainMttNode(name, docker_helper):
   """Drain the existing traffic of MTT node on a local host.
 
-  Only applicable when the server is Omnilab based (--is_omnilab_based set to
-  true while starting MTT).
+  Only applicable when the server is Omnilab based while starting MTT.
 
   Args:
     name: string, the name of docker container to drain.
@@ -1259,9 +1267,17 @@ def _CreateStartArgParser():
   parser.add_argument(
       '--is_omnilab_based',
       default=False,
-      help='Use OmniLab based servers.',
+      help=(
+          'Use OmniLab based servers. This flag is deprecated. Please use'
+          ' force_ats_version flag instead.'
+      ),
   )
-
+  parser.add_argument(
+      '--force_ats_version',
+      type=int,
+      choices=[1, 2],
+      help='Force to use ATS version 1 or 2. Allowed input is 1 or 2.',
+  )
   parser.add_argument(
       '--mount_host_android_dir',
       dest='mount_host_android_dir',
@@ -1288,6 +1304,32 @@ def _CreateStartArgParser():
 
   parser.set_defaults(func=Start)
   return parser
+
+
+def _IsOmnilabBased(args) -> bool:
+  """Wether to use ATS 2.0."""
+  if args.force_ats_version:
+    return args.force_ats_version == 2
+  if args.is_omnilab_based:
+    logging.info(
+        '"--is_omnilab_based" flag is deprecated. Please use'
+        ' "--force_ats_version" flag instead.'
+    )
+    return True
+  operation_mode = lab_config_pb2.OperationMode.Value(args.operation_mode)
+  # On Premise mode does not have percentage rollout to ATS 2.0.
+  if operation_mode == lab_config_pb2.OperationMode.ON_PREMISE:
+    return False
+  hostname = socket.gethostname()
+  hash_value = int(hashlib.sha256(hostname.encode('utf-8')).hexdigest(), 16)
+  rollout_number = (hash_value % 100) + 1
+  logger.debug(
+      'Random number for ATS 2.0 rollout: %s, hostname: %s, hash value: %s',
+      rollout_number,
+      hostname,
+      hash_value,
+  )
+  return rollout_number <= _ATS2_ROLLOUT_PERCENTAGE
 
 
 def _CreateStopArgParser():

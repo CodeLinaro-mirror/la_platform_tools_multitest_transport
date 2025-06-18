@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """Unit tests for cli."""
+import argparse
 import os
 import shutil
 import tempfile
@@ -2296,6 +2297,108 @@ class CliTest(parameterized.TestCase):
         'localhost:9994',
         cli._GetWorkerLabGprcServerAddress('mtt', docker_helper),
     )
+
+  @parameterized.named_parameters(
+      (
+          'force_ats_version_1',
+          argparse.Namespace(
+              force_ats_version=1,
+              is_omnilab_based=False,
+              operation_mode='UNKNOWN',
+          ),
+          False,
+      ),
+      (
+          'force_ats_version_2',
+          argparse.Namespace(
+              force_ats_version=2,
+              is_omnilab_based=False,
+              operation_mode='UNKNOWN',
+          ),
+          True,
+      ),
+      (
+          'is_omnilab_based_true',
+          argparse.Namespace(
+              force_ats_version=None,
+              is_omnilab_based=True,
+              operation_mode='UNKNOWN',
+          ),
+          True,
+      ),
+      (
+          'is_omnilab_based_false',
+          argparse.Namespace(
+              force_ats_version=None,
+              is_omnilab_based=False,
+              operation_mode='UNKNOWN',
+          ),
+          False,
+      ),
+      (
+          'on_premise_mode',
+          argparse.Namespace(
+              force_ats_version=None,
+              is_omnilab_based=False,
+              operation_mode='ON_PREMISE',
+          ),
+          False,
+      ),
+  )
+  @mock.patch.object(cli, '_ATS2_ROLLOUT_PERCENTAGE', new=0)
+  def test_IsOmnilabBased_noRollout(self, args, expected):
+    self.assertEqual(expected, cli._IsOmnilabBased(args))
+
+  @parameterized.named_parameters(
+      (
+          'force_ats_version_1',
+          argparse.Namespace(
+              force_ats_version=1,
+              is_omnilab_based=False,
+              operation_mode='UNKNOWN',
+          ),
+          False,
+      ),
+      (
+          'force_ats_version_2',
+          argparse.Namespace(
+              force_ats_version=2,
+              is_omnilab_based=False,
+              operation_mode='UNKNOWN',
+          ),
+          True,
+      ),
+      (
+          'is_omnilab_based_true',
+          argparse.Namespace(
+              force_ats_version=None,
+              is_omnilab_based=True,
+              operation_mode='UNKNOWN',
+          ),
+          True,
+      ),
+      (
+          'is_omnilab_based_false',
+          argparse.Namespace(
+              force_ats_version=None,
+              is_omnilab_based=False,
+              operation_mode='UNKNOWN',
+          ),
+          True,
+      ),
+      (
+          'on_premise_mode',
+          argparse.Namespace(
+              force_ats_version=None,
+              is_omnilab_based=False,
+              operation_mode='ON_PREMISE',
+          ),
+          False,
+      ),
+  )
+  @mock.patch.object(cli, '_ATS2_ROLLOUT_PERCENTAGE', new=100)
+  def test_IsOmnilabBased_fullRollout(self, args, expected):
+    self.assertEqual(expected, cli._IsOmnilabBased(args))
 
 
 _ALL_START_OPTIONS = (

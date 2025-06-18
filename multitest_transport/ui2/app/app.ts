@@ -214,6 +214,7 @@ export const routes: Routes = [
      selector: 'mtt', styleUrls: ['./app.css'], templateUrl: './app.ng.html'})
 export class Mtt implements OnDestroy {
   sideNavExpanded = false;
+  atsMajorVersionStr = '';
   netdataUrl: string = '';
   dialogRef!: MatDialogRef<SetupWizardDialog>;
   private readonly destroy = new ReplaySubject<void>();
@@ -232,6 +233,11 @@ export class Mtt implements OnDestroy {
         panelClass: 'no-padding-container',
         width: '600px',
       });
+    }
+    if (appData.isOmniLabBased) {
+      this.atsMajorVersionStr = 'ATS 2.0';
+    } else {
+      this.atsMajorVersionStr = 'ATS 1.0';
     }
     if (appData.netdataUrl) {
       this.netdataUrl = convertLocalUrl(appData.netdataUrl, appData.hostname);
