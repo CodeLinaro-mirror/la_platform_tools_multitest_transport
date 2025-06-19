@@ -389,7 +389,13 @@ def _PrepareTestResources(test_run_id):
     test_run_id: a test run ID.
   """
   test_run = ndb_models.TestRun.get_by_id(test_run_id)
-  assert test_run.state == ndb_models.TestRunState.PENDING
+  if test_run.state != ndb_models.TestRunState.PENDING:
+    logging.info(
+        'Test run %s is %s; aborting _PrepareTestResources()',
+        test_run_id,
+        test_run.state,
+    )
+    return
 
   logging.info(
       'Preparing test resources for test run %s: test_resources=%s',
@@ -456,6 +462,13 @@ def _CreateTFCRequest(test_run_id):
     test_run_id: a test run ID.
   """
   test_run = ndb_models.TestRun.get_by_id(test_run_id, use_cache=False)
+  if test_run.state != ndb_models.TestRunState.PENDING:
+    logging.info(
+        'Test run %s is %s; aborting _CreateTFCRequest()',
+        test_run_id,
+        test_run.state,
+    )
+    return
 
   logging.info(
       'Creating a TFC request: test=%s, test_run_config=%s',
@@ -647,8 +660,13 @@ def _CreateTFCRequest(test_run_id):
   # Update test run to QUEUED and store TFC request ID.
   def _Txn():
     txn_test_run = ndb_models.TestRun.get_by_id(test_run_id)
-    if (not txn_test_run or
-        txn_test_run.state != ndb_models.TestRunState.PENDING):
+    if (
+        not txn_test_run
+        or txn_test_run.state != ndb_models.TestRunState.PENDING
+    ):
+      # If the test run is not pending, it means the test run is proceeded to
+      # the next step. Cancel the created request as well.
+      tfc_client.CancelRequest(request.id)
       return
     txn_test_run.output_path = output_path
     txn_test_run.output_url = output_url
