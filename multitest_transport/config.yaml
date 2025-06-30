@@ -548,7 +548,6 @@ tests:
     value: ${TF_WORK_DIR}/android-cts/lib:${TF_WORK_DIR}/android-cts/lib64
   setup_scripts:
   output_file_patterns:
-  - android-cts/logs/.*
   - android-cts/results/.+\.html
   - android-cts/results/[^/]+/compatibility_result\..*
   - android-cts/results/[^/]+/logo.png
@@ -588,7 +587,6 @@ tests:
     value: ${TF_WORK_DIR}/android-cts/lib:${TF_WORK_DIR}/android-cts/lib64
   setup_scripts:
   output_file_patterns:
-  - android-cts/logs/.*
   - android-cts/results/.+\.html
   - android-cts/results/[^/]+/compatibility_result\..*
   - android-cts/results/[^/]+/logo.png
@@ -628,7 +626,6 @@ tests:
     value: ${TF_WORK_DIR}/android-cts/lib:${TF_WORK_DIR}/android-cts/lib64
   setup_scripts:
   output_file_patterns:
-  - android-cts/logs/.*
   - android-cts/results/.+\.html
   - android-cts/results/[^/]+/compatibility_result\..*
   - android-cts/results/[^/]+/logo.png
@@ -668,7 +665,6 @@ tests:
     value: ${TF_WORK_DIR}/android-cts/lib:${TF_WORK_DIR}/android-cts/lib64
   setup_scripts:
   output_file_patterns:
-  - android-cts/logs/.*
   - android-cts/results/.+\.html
   - android-cts/results/[^/]+/compatibility_result\..*
   - android-cts/results/[^/]+/logo.png
@@ -712,7 +708,6 @@ tests:
     value: ${TF_WORK_DIR}/android-cts/lib:${TF_WORK_DIR}/android-cts/lib64
   setup_scripts:
   output_file_patterns:
-  - android-cts/logs/.*
   - android-cts/results/.+\.html
   - android-cts/results/[^/]+/compatibility_result\..*
   - android-cts/results/[^/]+/logo.png
