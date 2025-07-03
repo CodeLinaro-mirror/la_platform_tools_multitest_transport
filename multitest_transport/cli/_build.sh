@@ -100,9 +100,10 @@ RUN export DEBIAN_FRONTEND=noninteractive; apt update -qq; apt install -y -qq \
 RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.8 1000
 
 COPY ./requirements.txt /tmp
+COPY ./constraints.txt /tmp
 RUN pip3 install --upgrade setuptools pip
 RUN pip3 install pex==2.1.137
-RUN pip3 install -r /tmp/requirements.txt
+RUN pip3 install -r /tmp/requirements.txt -c /tmp/constraints.txt
 RUN pip3 install --upgrade keyrings.alt
 
 # Upgrade to the latest verified version of protoc which supports python3.10.
@@ -169,7 +170,9 @@ cd /workspace
 # version of the Pillow wheels.
 pex --python="python3.11" --python="python3.10" --python="python3.9" --python="python3.8" \
   --python-shebang="/usr/bin/env python3" \
-  -D src -r requirements.txt \
+  -D src \
+  -r requirements.txt \
+  --constraints constraints.txt \
   -m multitest_transport.cli.cli \
   -o mtt \
   --no-emit-warnings \
@@ -186,8 +189,10 @@ cd ..
 # Build mtt_lab pex package.
 cp mtt src/mtt_binary
 pex --python="python3.11" --python="python3.10" --python="python3.9" --python="python3.8" \
-  --python-sheban="/usr/bin/env python3" \
-  -D src -r requirements.txt \
+  --python-shebang="/usr/bin/env python3" \
+  -D src \
+  -r requirements.txt \
+  --constraints constraints.txt \
   -m multitest_transport.cli.lab_cli \
   -o mtt_lab \
   --no-emit-warnings \
