@@ -160,14 +160,6 @@ python3 -m grpc_tools.protoc \
 
 cd /workspace
 # Build mtt pex package.
-# For the --platform options:
-# The Pillow dependency (needed by appengine-python-standard) is resolved to
-# the manylinux_2_28_x86_64 Wheel version by default in this Docker container,
-# but the Kokoro build environment where the pex is run and tested needs the
-# manylinux_2_27_x86_64 version. By specifying the following platforms options,
-# the pex built will include both the manylinux_2_28_x86_64 version and the
-# manylinux_2_17_x86_64.manylinux2014_x86_64 (sufficing manylinux_2_27_x86_64)
-# version of the Pillow wheels.
 pex --python="python3.11" --python="python3.10" --python="python3.9" \
   --python-shebang="/usr/bin/env python3" \
   -D src \
@@ -175,10 +167,7 @@ pex --python="python3.11" --python="python3.10" --python="python3.9" \
   --constraints constraints.txt \
   -m multitest_transport.cli.cli \
   -o mtt \
-  --no-emit-warnings \
-  --platform manylinux2014_x86_64-cp-311-cp311 \
-  --platform manylinux2014_x86_64-cp-310-cp310 \
-  --platform manylinux2014_x86_64-cp-39-cp39
+  --no-emit-warnings
 
 # Build zip file include all mtt source.
 cd src/
@@ -194,10 +183,7 @@ pex --python="python3.11" --python="python3.10" --python="python3.9" \
   --constraints constraints.txt \
   -m multitest_transport.cli.lab_cli \
   -o mtt_lab \
-  --no-emit-warnings \
-  --platform manylinux2014_x86_64-cp-311-cp311 \
-  --platform manylinux2014_x86_64-cp-310-cp310 \
-  --platform manylinux2014_x86_64-cp-39-cp39
+  --no-emit-warnings
 EOF
 chmod +x inside_docker_build.sh
 echo "Starting build inside Docker at: $(date)"
