@@ -89,18 +89,18 @@ ENV LANG=C.UTF-8
 
 RUN export DEBIAN_FRONTEND=noninteractive; apt update -qq; apt install -y -qq unzip wget zip software-properties-common;
 # Add deadsnakes for different versions of python and distutils
-RUN add-apt-repository ppa:deadsnakes/ppa
+RUN add-apt-repository -y ppa:deadsnakes/ppa
 RUN export DEBIAN_FRONTEND=noninteractive; apt update -qq; apt install -y -qq \
-  python3.8 python3.9 python3.10 python3.11 \
-  python3-distutils python3-pip \
+  python3.9 python3.10 python3.11 \
   python3.9-distutils python3.10-distutils python3.11-distutils \
-  python3.10-dev
+  python3.10-dev python3.10-venv
 
-# Set minimal Python version that client supports.
-RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.8 1000
+# Set Python version to 3.10 since 3.9 will be deprecated on 2025-10.
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1000
 
 COPY ./requirements.txt /tmp
 COPY ./constraints.txt /tmp
+RUN python3 -m ensurepip --upgrade
 RUN pip3 install --upgrade setuptools pip
 RUN pip3 install pex==2.1.137
 RUN pip3 install -r /tmp/requirements.txt -c /tmp/constraints.txt
@@ -168,7 +168,7 @@ cd /workspace
 # the pex built will include both the manylinux_2_28_x86_64 version and the
 # manylinux_2_17_x86_64.manylinux2014_x86_64 (sufficing manylinux_2_27_x86_64)
 # version of the Pillow wheels.
-pex --python="python3.11" --python="python3.10" --python="python3.9" --python="python3.8" \
+pex --python="python3.11" --python="python3.10" --python="python3.9" \
   --python-shebang="/usr/bin/env python3" \
   -D src \
   -r requirements.txt \
@@ -178,8 +178,7 @@ pex --python="python3.11" --python="python3.10" --python="python3.9" --python="p
   --no-emit-warnings \
   --platform manylinux2014_x86_64-cp-311-cp311 \
   --platform manylinux2014_x86_64-cp-310-cp310 \
-  --platform manylinux2014_x86_64-cp-39-cp39 \
-  --platform manylinux2014_x86_64-cp-38-cp38
+  --platform manylinux2014_x86_64-cp-39-cp39
 
 # Build zip file include all mtt source.
 cd src/
@@ -188,7 +187,7 @@ cd ..
 
 # Build mtt_lab pex package.
 cp mtt src/mtt_binary
-pex --python="python3.11" --python="python3.10" --python="python3.9" --python="python3.8" \
+pex --python="python3.11" --python="python3.10" --python="python3.9" \
   --python-shebang="/usr/bin/env python3" \
   -D src \
   -r requirements.txt \
@@ -198,8 +197,7 @@ pex --python="python3.11" --python="python3.10" --python="python3.9" --python="p
   --no-emit-warnings \
   --platform manylinux2014_x86_64-cp-311-cp311 \
   --platform manylinux2014_x86_64-cp-310-cp310 \
-  --platform manylinux2014_x86_64-cp-39-cp39 \
-  --platform manylinux2014_x86_64-cp-38-cp38
+  --platform manylinux2014_x86_64-cp-39-cp39
 EOF
 chmod +x inside_docker_build.sh
 echo "Starting build inside Docker at: $(date)"
