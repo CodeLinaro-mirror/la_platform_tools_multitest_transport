@@ -87,13 +87,14 @@ cat << EOF > Dockerfile
 FROM ubuntu:20.04
 ENV LANG=C.UTF-8
 
-RUN export DEBIAN_FRONTEND=noninteractive; apt update -qq; apt install -y -qq unzip wget zip software-properties-common;
+RUN export DEBIAN_FRONTEND=noninteractive; apt update -qq; apt install -y -qq \
+  unzip wget zip software-properties-common build-essential;
 # Add deadsnakes for different versions of python and distutils
 RUN add-apt-repository -y ppa:deadsnakes/ppa
 RUN export DEBIAN_FRONTEND=noninteractive; apt update -qq; apt install -y -qq \
-  python3.9 python3.10 python3.11 \
+  python3.9 python3.10 python3.11 python3.12 python3.13 \
   python3.9-distutils python3.10-distutils python3.11-distutils \
-  python3.10-dev python3.10-venv
+  python3.10-dev python3.10-venv python3.11-venv python3.12-venv python3.13-venv
 
 # Set Python version to 3.10 since 3.9 will be deprecated on 2025-10.
 RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1000
@@ -102,14 +103,15 @@ COPY ./requirements.txt /tmp
 COPY ./constraints.txt /tmp
 RUN python3 -m ensurepip --upgrade
 RUN pip3 install --upgrade setuptools pip
-RUN pip3 install pex==2.1.137
+RUN pip3 install pex
 RUN pip3 install -r /tmp/requirements.txt -c /tmp/constraints.txt
 RUN pip3 install --upgrade keyrings.alt
 
-# Upgrade to the latest verified version of protoc which supports python3.10.
+# Upgrade to the latest verified version of protoc which supports python3.13.
 RUN mkdir -p /protoc && \
-  wget --no-verbose -O /protoc/protoc-3.20.3-linux-x86_64.zip https://github.com/protocolbuffers/protobuf/releases/download/v3.20.3/protoc-3.20.3-linux-x86_64.zip && \
-  unzip -q -o /protoc/protoc-3.20.3-linux-x86_64.zip -d /protoc
+  wget --no-verbose -O /protoc/protoc-31.1-linux-x86_64.zip \
+  https://github.com/protocolbuffers/protobuf/releases/download/v31.1/protoc-31.1-linux-x86_64.zip && \
+  unzip -q -o /protoc/protoc-31.1-linux-x86_64.zip -d /protoc
 EOF
 
 echo "Starting Docker pull cache image at: $(date)"
@@ -160,14 +162,15 @@ python3 -m grpc_tools.protoc \
 
 cd /workspace
 # Build mtt pex package.
-pex --python="python3.11" --python="python3.10" --python="python3.9" \
+pex --python="python3.13" --python="python3.12" --python="python3.11" \
+  --python="python3.10" --python="python3.9" \
   --python-shebang="/usr/bin/env python3" \
+  --pip-version latest-compatible \
   -D src \
   -r requirements.txt \
   --constraints constraints.txt \
   -m multitest_transport.cli.cli \
-  -o mtt \
-  --no-emit-warnings
+  -o mtt
 
 # Build zip file include all mtt source.
 cd src/
@@ -176,14 +179,15 @@ cd ..
 
 # Build mtt_lab pex package.
 cp mtt src/mtt_binary
-pex --python="python3.11" --python="python3.10" --python="python3.9" \
+pex --python="python3.13" --python="python3.12" --python="python3.11" \
+  --python="python3.10" --python="python3.9" \
   --python-shebang="/usr/bin/env python3" \
+  --pip-version latest-compatible \
   -D src \
   -r requirements.txt \
   --constraints constraints.txt \
   -m multitest_transport.cli.lab_cli \
-  -o mtt_lab \
-  --no-emit-warnings
+  -o mtt_lab
 EOF
 chmod +x inside_docker_build.sh
 echo "Starting build inside Docker at: $(date)"

@@ -19,9 +19,9 @@ import ipaddress
 import json
 import logging
 import os
-import pipes
 import pty
 import re
+import shlex
 import socket
 import subprocess
 import time
@@ -405,7 +405,7 @@ class CommandContext(object):
       run_kwargs['err_stream'] = self._out_stream
     if self._err_stream:
       run_kwargs['err_stream'] = self._err_stream
-    command_str = u' '.join([pipes.quote(token) for token in command])
+    command_str = u' '.join([shlex.quote(token) for token in command])
     res = None
     try:
       if run_config.sudo:
