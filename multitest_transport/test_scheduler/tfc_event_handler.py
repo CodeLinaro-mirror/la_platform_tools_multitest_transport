@@ -94,6 +94,14 @@ def _ProcessSubscribedSessionResponse(response):
   try:
     request_id = response.get_session_response.session_detail.session_id.id
     test_request = _GetOlcsSessionStub().GetRequest(request_id)
+    if not test_request:
+      logging.info(
+          'Skipping processing subscribed session response %s, request %s is'
+          ' not found',
+          response,
+          request_id,
+      )
+      return
     request_event = api_messages.RequestEventMessage(
         type=common.ObjectEventType.REQUEST_STATE_CHANGED,
         request_id=request_id,

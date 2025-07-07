@@ -161,6 +161,62 @@ class OlcsSessionStubTest(testbed_dependent_test.TestbedDependentTest):
     self.assertEqual(actual_test_resource.url, expected_test_resource.url)
     self.assertEqual(actual_test_resource.name, expected_test_resource.name)
 
+  @mock.patch.object(olcs_session_stub.OlcsSessionStub, '_GetRequestDetail')
+  def testGetTestContext_FetchWhenNotInDb(self, mock_get_request_detail):
+    request_id = 'test_request_id_fetch'
+    command_id = 'test_command_id_fetch'
+
+    expected_request_detail = service_pb2.RequestDetail()
+    expected_request_detail.id = request_id
+    test_context_proto = expected_request_detail.test_context[command_id]
+    test_context_proto.command_line = 'sample command line'
+    test_context_proto.env_var['ENV_KEY_1'] = 'ENV_VALUE_1'
+    test_context_proto.env_var['ENV_KEY_2'] = 'ENV_VALUE_2'
+    resource1 = test_context_proto.test_resource.add()
+    resource1.url = 'http://example.com/resource1.zip'
+    resource1.name = 'resource1.zip'
+
+    mock_get_request_detail.return_value = expected_request_detail
+
+    actual_test_context = self.session_stub.GetTestContext(
+        request_id, command_id
+    )
+
+    mock_get_request_detail.assert_called_once_with(request_id)
+
+    self.assertEqual(
+        actual_test_context.command_line,
+        test_context_proto.command_line,
+    )
+    expected_env_vars_list = [
+        api_messages.KeyValuePair(key='ENV_KEY_1', value='ENV_VALUE_1'),
+        api_messages.KeyValuePair(key='ENV_KEY_2', value='ENV_VALUE_2'),
+    ]
+    self.assertCountEqual(actual_test_context.env_vars, expected_env_vars_list)
+
+    self.assertLen(actual_test_context.test_resources, 1)
+    actual_test_resource = actual_test_context.test_resources[0]
+    expected_test_resource_proto = test_context_proto.test_resource[0]
+    self.assertEqual(actual_test_resource.url, expected_test_resource_proto.url)
+    self.assertEqual(
+        actual_test_resource.name, expected_test_resource_proto.name
+    )
+
+  @mock.patch.object(olcs_session_stub.OlcsSessionStub, '_GetRequestDetail')
+  def testGetTestContext_FetchReturnsNone(self, mock_get_request_detail):
+    request_id = 'test_request_id_fetch_none'
+    command_id = 'test_command_id_fetch_none'
+
+    mock_get_request_detail.return_value = None
+
+    actual_test_context = self.session_stub.GetTestContext(
+        request_id, command_id
+    )
+
+    mock_get_request_detail.assert_called_once_with(request_id)
+
+    self.assertEqual(actual_test_context, api_messages.TestContext())
+
   def testGetRequestWithDatabase(self):
     expected_request_detail = service_pb2.RequestDetail(id='test_request_id')
     request_detail_str = expected_request_detail.SerializeToString()
@@ -562,9 +618,7 @@ class OlcsSessionStubTest(testbed_dependent_test.TestbedDependentTest):
       self.assertEqual(
           request_proto.test_environment.tradefed_options,
           [
-              service_pb2.Option(
-                  name='online-wait-time', value=['300001']
-              ),
+              service_pb2.Option(name='online-wait-time', value=['300001']),
               service_pb2.Option(
                   name='bugreport-on-invocation-ended', value=['true']
               ),

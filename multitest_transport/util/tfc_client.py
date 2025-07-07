@@ -110,6 +110,14 @@ def _ProcessSubscribedSessionResponse(response):
   try:
     request_id = response.get_session_response.session_detail.session_id.id
     test_request = _GetOlcsSessionStub().GetRequest(request_id)
+    if not test_request:
+      logging.info(
+          'Skipping processing subscribed session response %s, request %s is'
+          ' not found',
+          response,
+          request_id,
+      )
+      return
     request_event = api_messages.RequestEventMessage(
         type=ObjectEventType.REQUEST_STATE_CHANGED,
         request_id=request_id,
@@ -195,7 +203,10 @@ def GetRequest(request_id: str) -> api_messages.RequestMessage:
     A TFC Request object.
   """
   if os.environ.get('IS_OMNILAB_BASED') == 'true':
-    return _GetOlcsSessionStub().GetRequest(request_id)
+    return (
+        _GetOlcsSessionStub().GetRequest(request_id)
+        or api_messages.RequestMessage()
+    )
   else:
     request_id = int(request_id)
     res = _GetAPIClient().requests().get(request_id=request_id).execute()

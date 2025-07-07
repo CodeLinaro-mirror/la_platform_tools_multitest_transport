@@ -91,14 +91,16 @@ class TestRequestApi(remote.Service):
       name='state_counts',
   )
   def GetCommandStateStats(self, request):
+    command_state_stats = api_messages.CommandStateStats()
     test_request = self._olcs_session_stub.GetRequest(request.request_id)
+    if not test_request:
+      return command_state_stats
     state_count_map = {}
     for command in test_request.commands:
       if command.state in state_count_map:
         state_count_map[command.state] += 1
       else:
         state_count_map[command.state] = 1
-    command_state_stats = api_messages.CommandStateStats()
     state_list = []
     for state, count in state_count_map.items():
       command_state = api_messages.CommandStateStat()
@@ -126,6 +128,8 @@ class TestRequestApi(remote.Service):
   def ListCommands(self, request):
     test_request = self._olcs_session_stub.GetRequest(request.request_id)
     command_collection = api_messages.CommandMessageCollection()
+    if not test_request:
+      return command_collection
     command_collection.commands = test_request.commands
     command_collection.page_token = None
     return command_collection

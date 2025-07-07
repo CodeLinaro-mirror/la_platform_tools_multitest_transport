@@ -45,6 +45,9 @@ SESSION_PLUGIN_LABEL = "AtsServerSessionPlugin"
 NANOS_PER_MILLISECOND = 1000000
 MILLIS_PER_SECOND = 1000
 
+# TODO: The database operation should not be single threaded.
+# Remove this lock after finding better solution to address database data race
+# issue. Potential solution is to use sql database.
 _lock = threading.Lock()
 
 _REQUEST_STATE_MAP = {
@@ -168,6 +171,8 @@ class OlcsSessionStub:
       A list of latest finished attempts of the request.
     """
     request = self.GetRequest(request_id)
+    if not request:
+      return []
     attempt_map = {}
     attempt_list = request.command_attempts or []
     attempt_list.sort(key=lambda attempt: attempt.start_time)
@@ -189,12 +194,9 @@ class OlcsSessionStub:
     Returns:
       The test context of the command.
     """
-    test_request = ndb_models.RequestInfo.get_by_id(request_id)
-    if test_request and test_request.request_detail_proto_str:
-      request_detail = service_pb2.RequestDetail()
-      decoded_bytes = base64.b64decode(test_request.request_detail_proto_str)
-      request_detail.ParseFromString(decoded_bytes)
-      test_context_proto = request_detail.test_context[command_id]
+    request_detail = self._GetRequestDetail(request_id)
+    if request_detail:
+      test_context_proto = request_detail.test_context.get(command_id)
       if test_context_proto:
         test_context = api_messages.TestContext()
         test_context.command_line = test_context_proto.command_line
@@ -326,9 +328,32 @@ class OlcsSessionStub:
         request_message.command_attempts.extend(
             last_attempt_request_message.command_attempts
         )
+    request_message.command_attempts.sort(
+        key=lambda attempt: attempt.start_time
+    )
     return request_message
 
-  def GetRequest(self, request_id: str) -> api_messages.RequestMessage:
+  def _GetRequestDetail(
+      self, request_id: str
+  ) -> Optional[service_pb2.RequestDetail]:
+    """Get request detail from DB or fetch from OLCS."""
+    # First, try to load from the database
+    request_detail = self._LoadRequestDetailFromDatabase(request_id)
+    if request_detail:
+      return request_detail
+
+    # If not in the database, fetch from the OLCS server
+    request_finished, request_detail = self._FetchRequestDetail(request_id)
+
+    # If the request is finished, save the details to the database for caching
+    if request_detail and request_finished:
+      self._SaveRequestDetailToDatabase(request_id, request_detail)
+
+    return request_detail
+
+  def GetRequest(
+      self, request_id: str
+  ) -> Optional[api_messages.RequestMessage]:
     """Get request from OLCS or from Database.
 
     Args:
@@ -337,13 +362,8 @@ class OlcsSessionStub:
     Returns:
       The request message defined by TFC.
     """
-    request_detail = self._LoadRequestDetailFromDatabase(request_id)
+    request_detail = self._GetRequestDetail(request_id)
     if request_detail:
-      return self._GenerateRequestMessage(request_detail)
-    request_finished, request_detail = self._FetchRequestDetail(request_id)
-    if request_detail:
-      if request_finished:
-        self._SaveRequestDetailToDatabase(request_id, request_detail)
       return self._GenerateRequestMessage(request_detail)
     return None
 
@@ -352,7 +372,7 @@ class OlcsSessionStub:
   ) -> Optional[service_pb2.RequestDetail]:
     """Load request detail from database."""
     with _lock:
-      test_request = ndb_models.RequestInfo.get_by_id(request_id)
+      test_request = ndb_models.RequestInfo.get_by_id(request_id, retries=5)
       if test_request:
         request_detail = service_pb2.RequestDetail()
         decoded_bytes = base64.b64decode(test_request.request_detail_proto_str)
@@ -386,6 +406,8 @@ class OlcsSessionStub:
       TFC command attempt, or None if not found
     """
     request = self.GetRequest(request_id)
+    if not request:
+      return None
     attempts = request.command_attempts or []
     return next((a for a in attempts if a.attempt_id == attempt_id), None)
 
@@ -806,9 +828,7 @@ class OlcsSessionStub:
         ),
         class_name=obj.class_name,
         option_values=[
-            service_pb2.Option(
-                name=kv.key, value=kv.values
-            )
+            service_pb2.Option(name=kv.key, value=kv.values)
             for kv in obj.option_values
         ],
     )
