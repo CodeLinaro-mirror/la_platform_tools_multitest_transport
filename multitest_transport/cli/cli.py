@@ -1281,19 +1281,13 @@ def _CreateStartArgParser():
   parser.add_argument(
       '--mount_host_android_dir',
       dest='mount_host_android_dir',
-      action='store_true',
+      action=argparse.BooleanOptionalAction,
+      default=True,
       help=(
           'Mount the ~/.android directory from the host, which contains'
           ' existing adb keys. Default is true.'
       ),
   )
-  parser.add_argument(
-      '--no-mount_host_android_dir',
-      dest='mount_host_android_dir',
-      action='store_false',
-      help='Do not mount the ~/.android directory from the host',
-  )
-  parser.set_defaults(mount_host_android_dir=True)
 
   parser.add_argument(
       '--omni_mode_usage',
