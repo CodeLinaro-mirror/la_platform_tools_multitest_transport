@@ -2283,6 +2283,17 @@ class CliTest(parameterized.TestCase):
               is_omnilab_based=False,
               operation_mode='UNKNOWN',
           ),
+          lab_config.CreateHostConfig(),
+          False,
+      ),
+      (
+          'force_ats_version_in_host_config_1',
+          argparse.Namespace(
+              force_ats_version=None,
+              is_omnilab_based=False,
+              operation_mode='UNKNOWN',
+          ),
+          lab_config.CreateHostConfig(force_ats_version=1),
           False,
       ),
       (
@@ -2292,6 +2303,17 @@ class CliTest(parameterized.TestCase):
               is_omnilab_based=False,
               operation_mode='UNKNOWN',
           ),
+          lab_config.CreateHostConfig(),
+          True,
+      ),
+      (
+          'force_ats_version_in_host_config_2',
+          argparse.Namespace(
+              force_ats_version=None,
+              is_omnilab_based=False,
+              operation_mode='UNKNOWN',
+          ),
+          lab_config.CreateHostConfig(force_ats_version=2),
           True,
       ),
       (
@@ -2301,6 +2323,7 @@ class CliTest(parameterized.TestCase):
               is_omnilab_based=True,
               operation_mode='UNKNOWN',
           ),
+          lab_config.CreateHostConfig(),
           True,
       ),
       (
@@ -2310,6 +2333,7 @@ class CliTest(parameterized.TestCase):
               is_omnilab_based=False,
               operation_mode='UNKNOWN',
           ),
+          lab_config.CreateHostConfig(),
           False,
       ),
       (
@@ -2319,12 +2343,13 @@ class CliTest(parameterized.TestCase):
               is_omnilab_based=False,
               operation_mode='ON_PREMISE',
           ),
+          lab_config.CreateHostConfig(),
           False,
       ),
   )
   @mock.patch.object(cli, '_ATS2_ROLLOUT_PERCENTAGE', new=0)
-  def test_IsOmnilabBased_noRollout(self, args, expected):
-    self.assertEqual(expected, cli._IsOmnilabBased(args))
+  def test_IsOmnilabBased_noRollout(self, args, host_config, expected):
+    self.assertEqual(expected, cli._IsOmnilabBased(args, host_config))
 
   @parameterized.named_parameters(
       (
@@ -2334,6 +2359,17 @@ class CliTest(parameterized.TestCase):
               is_omnilab_based=False,
               operation_mode='UNKNOWN',
           ),
+          lab_config.CreateHostConfig(),
+          False,
+      ),
+      (
+          'force_ats_version_in_host_config_1',
+          argparse.Namespace(
+              force_ats_version=None,
+              is_omnilab_based=False,
+              operation_mode='UNKNOWN',
+          ),
+          lab_config.CreateHostConfig(force_ats_version=1),
           False,
       ),
       (
@@ -2343,6 +2379,17 @@ class CliTest(parameterized.TestCase):
               is_omnilab_based=False,
               operation_mode='UNKNOWN',
           ),
+          lab_config.CreateHostConfig(),
+          True,
+      ),
+      (
+          'force_ats_version_in_host_config_2',
+          argparse.Namespace(
+              force_ats_version=None,
+              is_omnilab_based=False,
+              operation_mode='UNKNOWN',
+          ),
+          lab_config.CreateHostConfig(force_ats_version=2),
           True,
       ),
       (
@@ -2352,6 +2399,7 @@ class CliTest(parameterized.TestCase):
               is_omnilab_based=True,
               operation_mode='UNKNOWN',
           ),
+          lab_config.CreateHostConfig(),
           True,
       ),
       (
@@ -2361,6 +2409,7 @@ class CliTest(parameterized.TestCase):
               is_omnilab_based=False,
               operation_mode='UNKNOWN',
           ),
+          lab_config.CreateHostConfig(),
           True,
       ),
       (
@@ -2370,12 +2419,24 @@ class CliTest(parameterized.TestCase):
               is_omnilab_based=False,
               operation_mode='ON_PREMISE',
           ),
+          lab_config.CreateHostConfig(),
           False,
       ),
   )
   @mock.patch.object(cli, '_ATS2_ROLLOUT_PERCENTAGE', new=100)
-  def test_IsOmnilabBased_fullRollout(self, args, expected):
-    self.assertEqual(expected, cli._IsOmnilabBased(args))
+  def test_IsOmnilabBased_fullRollout(self, args, host, expected):
+    self.assertEqual(expected, cli._IsOmnilabBased(args, host))
+
+  def test_IsOmnilabBased_invalidForceAtsVersionInHostConfig(self):
+    args = argparse.Namespace(
+        force_ats_version=None,
+        is_omnilab_based=False,
+        operation_mode='UNKNOWN',
+    )
+    # Only 1 and 2 are valid values for force_ats_version.
+    host_config = lab_config.CreateHostConfig(force_ats_version=3)
+    with self.assertRaises(ValueError):
+      cli._IsOmnilabBased(args, host_config)
 
 
 _ALL_START_OPTIONS = (

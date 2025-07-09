@@ -673,7 +673,7 @@ def _StartMttNode(args, host):
     docker_helper.AddFile(
         args.extra_ca_cert, '/usr/local/share/ca-certificates/')
 
-  if _IsOmnilabBased(args):
+  if _IsOmnilabBased(args, host.config):
     docker_helper.AddEnv('IS_OMNILAB_BASED', 'true')
     if (
         network == _DOCKER_BRIDGE_NETWORK
@@ -703,7 +703,7 @@ def _StartMttNode(args, host):
     # localhost URL.
     hostname = 'localhost'
   if control_server_url:
-    if _IsConsoleSuccessfullyStarted(host, _IsOmnilabBased(args)):
+    if _IsConsoleSuccessfullyStarted(host, _IsOmnilabBased(args, host.config)):
       logger.info('ATS replica is running.')
   else:
     url = 'http://%s:%s' % (hostname, args.port)
@@ -713,7 +713,7 @@ def _StartMttNode(args, host):
       raise RuntimeError(
           'ATS server failed to start in %ss' % _MTT_SERVER_WAIT_TIME_SECONDS)
     logger.info('ATS is serving at %s', url)
-  if _IsOmnilabBased(args):
+  if _IsOmnilabBased(args, host.config):
     logger.info(
         'Currently running ATS 2.0 (Omnilab based). You can override this by'
         ' setting --force_ats_version 1 to override this.'
@@ -1300,7 +1300,7 @@ def _CreateStartArgParser():
   return parser
 
 
-def _IsOmnilabBased(args) -> bool:
+def _IsOmnilabBased(args, host_config) -> bool:
   """Wether to use ATS 2.0."""
   if args.force_ats_version:
     return args.force_ats_version == 2
@@ -1310,6 +1310,13 @@ def _IsOmnilabBased(args) -> bool:
         ' "--force_ats_version" flag instead.'
     )
     return True
+  if host_config.force_ats_version != 0:
+    if host_config.force_ats_version not in (1, 2):
+      raise ValueError(
+          'Host config has force_ats_version set to an invalid value:'
+          f' {host_config.force_ats_version}.'
+      )
+    return host_config.force_ats_version == 2
   operation_mode = lab_config_pb2.OperationMode.Value(args.operation_mode)
   # On Premise mode does not have percentage rollout to ATS 2.0.
   if operation_mode == lab_config_pb2.OperationMode.ON_PREMISE:
