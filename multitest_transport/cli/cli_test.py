@@ -183,6 +183,7 @@ class CliTest(parameterized.TestCase):
                   secret_project_id=None,
                   service_account_key_secret_id=None,
                   max_concurrent_update_percentage=None,
+                  use_host_network=False,
                   ):
 
     host = cli.host_util.Host(
@@ -205,7 +206,8 @@ class CliTest(parameterized.TestCase):
             max_local_virtual_devices=max_local_virtual_devices,
             secret_project_id=secret_project_id,
             service_account_key_secret_id=service_account_key_secret_id,
-            max_concurrent_update_percentage=max_concurrent_update_percentage))
+            max_concurrent_update_percentage=max_concurrent_update_percentage,
+            use_host_network=use_host_network))
     host.context = self.mock_context
     return host
 
@@ -1183,9 +1185,42 @@ class CliTest(parameterized.TestCase):
     ])
 
   def testStart_withUseHostNetwork(self):
-    """Test start with --use_host_network."""
+    """Test start with --use_host_network command argument."""
     args = self.arg_parser.parse_args(['start', '--use_host_network'])
     cli.Start(args, self._CreateHost())
+
+    self.mock_context.Run.assert_has_calls([
+        mock.call([
+            'docker', 'create',
+            '--name', 'mtt', '-it',
+            *_DEFAULT_CREATE_ARGS,
+            '--network', 'host',
+            '-e', 'OPERATION_MODE=unknown',
+            '-e', 'MTT_CLI_VERSION=dev_version',
+            '-e', 'MTT_CONTROL_SERVER_URL=url',
+            '-e', 'IMAGE_NAME=gcr.io/android-mtt/mtt:prod',
+            '-e', 'USER=user',
+            '-e', 'TZ=Etc/UTC',
+            '-e', 'MTT_SERVER_LOG_LEVEL=info',
+            '--mount', 'type=volume,src=mtt-data,dst=/data',
+            '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
+            '--mount', 'type=bind,src=/local/.android,dst=/root/.android',
+            '--mount', ('type=bind,src=/var/run/docker.sock,'
+                        'dst=/var/run/docker.sock'),
+            '--mount', ('type=bind,src=/local/.ats_storage,'
+                        'dst=/tmp/.mnt/.ats_storage'),
+            '--cap-add', 'sys_admin',
+            '--device', '/dev/fuse',
+            '--security-opt', 'apparmor:unconfined',
+            '--security-opt', 'seccomp=/tmp/mtt_seccomp.json',
+            'gcr.io/android-mtt/mtt:prod']),
+        mock.call(['docker', 'start', 'mtt']),
+    ])
+
+  def testStart_withUseHostNetworkInHostConfig(self):
+    """Test start with use_host_network set to true in host config."""
+    args = self.arg_parser.parse_args(['start'])
+    cli.Start(args, self._CreateHost(use_host_network=True))
 
     self.mock_context.Run.assert_has_calls([
         mock.call([

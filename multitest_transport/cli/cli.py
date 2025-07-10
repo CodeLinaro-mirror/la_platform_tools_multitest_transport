@@ -489,7 +489,7 @@ def _StartMttNode(args, host):
   docker_helper.AddExtraArgs(['--security-opt',
                               'seccomp=' + _CreateSeccompProfile(host)])
 
-  if (not args.use_host_network and
+  if (not (args.use_host_network or host.config.use_host_network) and
       'MTT_SUPPORT_BRIDGE_NETWORK=true' in docker_helper.GetEnv(image_name)):
     docker_helper.SetHostname(host.name)
     network = _DOCKER_BRIDGE_NETWORK
