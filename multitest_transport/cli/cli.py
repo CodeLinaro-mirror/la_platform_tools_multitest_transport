@@ -34,6 +34,7 @@ import time
 import urllib.parse
 import zipfile
 from packaging import version
+from packaging_legacy import version as legacy_version
 import six
 
 
@@ -364,8 +365,8 @@ def _CheckDockerImageVersion(docker_helper, container_name):
     return
 
   try:
-    cli_version_obj = version.parse(cli_version)
-    image_version_obj = version.parse(image_version)
+    cli_version_obj = legacy_version.parse(cli_version)
+    image_version_obj = legacy_version.parse(image_version)
   except version.InvalidVersion:
     logger.debug(
         'CLI or Docker image version is unrecognizable; '

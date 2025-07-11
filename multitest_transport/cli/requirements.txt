@@ -15,6 +15,7 @@ grpcio
 grpcio-status
 grpcio-tools
 packaging
+packaging-legacy
 protobuf
 pyOpenSSL
 python-dateutil

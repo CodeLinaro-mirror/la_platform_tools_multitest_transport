@@ -54,6 +54,7 @@ setuptools.setup(
         'grpcio',
         'grpcio-status',
         'packaging',
+        'packaging-legacy',
         'protobuf',
         'pyOpenSSL',
         'python-dateutil',
@@ -63,5 +64,5 @@ setuptools.setup(
         'six',
         'strictyaml',
         'urllib3',
-    ]
+    ],
 )

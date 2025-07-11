@@ -34,6 +34,7 @@ py_library(
         "//multitest_transport/util:worker_lab_health_client",
         "@tradefed_cluster//tradefed_cluster/configs:lab_config_py_pb2",
         third_party("packaging"),
+        third_party("packaging_legacy"),
         third_party("six"),
     ],
 )
