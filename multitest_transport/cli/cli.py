@@ -898,7 +898,7 @@ def _DetectAndKillDeadContainer(host, docker_helper, container_name, timeout):
     docker_helper: an instance of command_util.DockerHelper.
     container_name: string, the name of docker container to kill.
     timeout: seconds to wait before killing a container. Can be
-        overidden by host config.
+        overridden by host config.
   """
   total_wait_sec = timeout
   logging.debug(
@@ -1302,7 +1302,7 @@ def _CreateStartArgParser():
 
 
 def _IsOmnilabBased(args, host_config) -> bool:
-  """Wether to use ATS 2.0."""
+  """Whether to use ATS 2.0."""
   if args.force_ats_version:
     return args.force_ats_version == 2
   if args.is_omnilab_based:
@@ -1436,7 +1436,7 @@ def CreateParser():
       parents=[_CreateLabConfigArgParser(), _CreateContainerArgParser(),
                _CreateStopArgParser()])
   subparsers.add_parser(
-      'restart', help='Retart a MTT instance on the local host.',
+      'restart', help='Restart a MTT instance on the local host.',
       parents=[
           _CreateLabConfigArgParser(), _CreateImageArgParser(),
           _CreateContainerArgParser(), _CreateRestartArgParser()])

@@ -1985,7 +1985,7 @@ class CliTest(parameterized.TestCase):
   @mock.patch('__main__.cli.command_util.DockerHelper.IsContainerRunning')
   @mock.patch('__main__.cli.command_util.DockerHelper.GetImageIdForContainer')
   @mock.patch('__main__.cli.command_util.DockerHelper.GetRemoteImageDigest')
-  def testPullUpdate_differetImage(
+  def testPullUpdate_differentImage(
       self, get_remote_image_digest, get_image_id, is_running):
     """Test PullUpdate with different remote image."""
     is_running.return_value = True
