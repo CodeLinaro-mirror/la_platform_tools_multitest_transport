@@ -184,6 +184,7 @@ class CliTest(parameterized.TestCase):
                   service_account_key_secret_id=None,
                   max_concurrent_update_percentage=None,
                   use_host_network=False,
+                  skip_mount_host_android_dir=False,
                   ):
 
     host = cli.host_util.Host(
@@ -207,7 +208,8 @@ class CliTest(parameterized.TestCase):
             secret_project_id=secret_project_id,
             service_account_key_secret_id=service_account_key_secret_id,
             max_concurrent_update_percentage=max_concurrent_update_percentage,
-            use_host_network=use_host_network))
+            use_host_network=use_host_network,
+            skip_mount_host_android_dir=skip_mount_host_android_dir))
     host.context = self.mock_context
     return host
 
@@ -475,9 +477,45 @@ class CliTest(parameterized.TestCase):
         ' '.join(docker_create_args),
     )
 
+  def testStart_mountHostAndroidDirInHostConfig(self):
+    args = self.arg_parser.parse_args(['start'])
+    cli.Start(args, self._CreateHost(skip_mount_host_android_dir=False))
+
+    docker_create_args = None
+    for call in self.mock_context.Run.call_args_list:
+      call_args, _ = call
+      command_args = call_args[0]
+      if command_args[:2] == ['docker', 'create']:
+        docker_create_args = command_args
+        break
+
+    self.assertIsNotNone(docker_create_args, 'docker create call not found')
+    self.assertIn(
+        '--mount type=bind,src=/local/.android,dst=/root/.android',
+        ' '.join(docker_create_args),
+    )
+
   def testStart_doNotMountHostAndroidDir(self):
     args = self.arg_parser.parse_args(['start', '--no-mount_host_android_dir'])
     cli.Start(args, self._CreateHost(cluster_name='acluster'))
+
+    docker_create_args = None
+    for call in self.mock_context.Run.call_args_list:
+      call_args, _ = call
+      command_args = call_args[0]
+      if command_args[:2] == ['docker', 'create']:
+        docker_create_args = command_args
+        break
+
+    self.assertIsNotNone(docker_create_args, 'docker create call not found')
+    self.assertNotIn(
+        '--mount type=bind,src=/local/.android,dst=/root/.android',
+        ' '.join(docker_create_args),
+    )
+
+  def testStart_doNotMountHostAndroidDirInHostConfig(self):
+    args = self.arg_parser.parse_args(['start'])
+    cli.Start(args, self._CreateHost(skip_mount_host_android_dir=True))
 
     docker_create_args = None
     for call in self.mock_context.Run.call_args_list:

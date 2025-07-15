@@ -558,10 +558,15 @@ def _StartMttNode(args, host):
     logger.debug('NO_PROXY=%s', no_proxy)
     docker_helper.AddEnv('NO_PROXY', no_proxy)
 
-  if host.context.IsLocal() and args.mount_host_android_dir:
+  if (
+      host.context.IsLocal()
+      and args.mount_host_android_dir
+      and not host.config.skip_mount_host_android_dir
+  ):
     android_sdk_path = os.path.expanduser('~/.android')
     if os.path.exists(android_sdk_path):
-      # If running locally, bind ~/.android to access existing adb fingerprints.
+      # If running locally, bind ~/.android to access existing adb
+      # fingerprints.
       docker_helper.AddBind(android_sdk_path, '/root/.android')
 
   docker_helper.AddVolume('mtt-data', '/data')
