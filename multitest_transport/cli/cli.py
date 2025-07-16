@@ -502,8 +502,10 @@ def _StartMttNode(args, host):
       'OPERATION_MODE',
       lab_config_pb2.OperationMode.Name(operation_mode).lower())
   docker_helper.AddEnv('MTT_CLI_VERSION', cli_util.GetVersion()[0])
-  if args.omni_mode_usage:
-    docker_helper.AddEnv('OMNI_MODE_USAGE', args.omni_mode_usage)
+  if args.omni_mode_usage or host.config.omni_mode_usage:
+    docker_helper.AddEnv(
+        'OMNI_MODE_USAGE', args.omni_mode_usage or host.config.omni_mode_usage
+    )
 
   if control_server_url:
     docker_helper.AddEnv('MTT_CONTROL_SERVER_URL', control_server_url)

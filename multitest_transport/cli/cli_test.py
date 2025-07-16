@@ -163,29 +163,31 @@ class CliTest(parameterized.TestCase):
                     ']}}' % ('true' if self.enable_ipv6 else 'false'))
     return res
 
-  def _CreateHost(self,
-                  hostname='mock-host',
-                  cluster_name=None,
-                  login_name=None,
-                  tmpfs_configs=None,
-                  docker_image='gcr.io/android-mtt/mtt:prod',
-                  graceful_shutdown=False,
-                  shutdown_timeout_sec=0,
-                  enable_stackdriver=False,
-                  lab_name=None,
-                  enable_autoupdate=None,
-                  service_account_json_key_path=None,
-                  extra_docker_args=(),
-                  control_server_url='url',
-                  enable_ui_update=False,
-                  operation_mode=None,
-                  max_local_virtual_devices=None,
-                  secret_project_id=None,
-                  service_account_key_secret_id=None,
-                  max_concurrent_update_percentage=None,
-                  use_host_network=False,
-                  skip_mount_host_android_dir=False,
-                  ):
+  def _CreateHost(
+      self,
+      hostname='mock-host',
+      cluster_name=None,
+      login_name=None,
+      tmpfs_configs=None,
+      docker_image='gcr.io/android-mtt/mtt:prod',
+      graceful_shutdown=False,
+      shutdown_timeout_sec=0,
+      enable_stackdriver=False,
+      lab_name=None,
+      enable_autoupdate=None,
+      service_account_json_key_path=None,
+      extra_docker_args=(),
+      control_server_url='url',
+      enable_ui_update=False,
+      operation_mode=None,
+      omni_mode_usage=None,
+      max_local_virtual_devices=None,
+      secret_project_id=None,
+      service_account_key_secret_id=None,
+      max_concurrent_update_percentage=None,
+      use_host_network=False,
+      skip_mount_host_android_dir=False,
+  ):
 
     host = cli.host_util.Host(
         lab_config.CreateHostConfig(
@@ -204,12 +206,15 @@ class CliTest(parameterized.TestCase):
             service_account_json_key_path=service_account_json_key_path,
             extra_docker_args=list(extra_docker_args),
             operation_mode=operation_mode,
+            omni_mode_usage=omni_mode_usage,
             max_local_virtual_devices=max_local_virtual_devices,
             secret_project_id=secret_project_id,
             service_account_key_secret_id=service_account_key_secret_id,
             max_concurrent_update_percentage=max_concurrent_update_percentage,
             use_host_network=use_host_network,
-            skip_mount_host_android_dir=skip_mount_host_android_dir))
+            skip_mount_host_android_dir=skip_mount_host_android_dir,
+        )
+    )
     host.context = self.mock_context
     return host
 
@@ -545,6 +550,42 @@ class CliTest(parameterized.TestCase):
     cli.Start(args, self._CreateHost(cluster_name='acluster'))
 
     self.assertIsNone(args.omni_mode_usage)
+
+  def testStart_omniModeUsageAsCommandArgs(self):
+    args = self.arg_parser.parse_args(['start', '--omni_mode_usage', 'dda'])
+    cli.Start(args, self._CreateHost())
+
+    docker_create_args = None
+    for call in self.mock_context.Run.call_args_list:
+      call_args, _ = call
+      command_args = call_args[0]
+      if command_args[:2] == ['docker', 'create']:
+        docker_create_args = command_args
+        break
+
+    self.assertIsNotNone(docker_create_args, 'docker create call not found')
+    self.assertIn(
+        '-e OMNI_MODE_USAGE=dda',
+        ' '.join(docker_create_args),
+    )
+
+  def testStart_omniModeUsageInHostConfig(self):
+    args = self.arg_parser.parse_args(['start'])
+    cli.Start(args, self._CreateHost(omni_mode_usage='public_testing'))
+
+    docker_create_args = None
+    for call in self.mock_context.Run.call_args_list:
+      call_args, _ = call
+      command_args = call_args[0]
+      if command_args[:2] == ['docker', 'create']:
+        docker_create_args = command_args
+        break
+
+    self.assertIsNotNone(docker_create_args, 'docker create call not found')
+    self.assertIn(
+        '-e OMNI_MODE_USAGE=public_testing',
+        ' '.join(docker_create_args),
+    )
 
   def testStart_withServiceAccount(self):
     """Test Start function."""
