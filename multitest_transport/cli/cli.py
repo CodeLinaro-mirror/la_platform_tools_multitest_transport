@@ -1078,6 +1078,16 @@ def _UpdateMttNode(args, host):
   """
   if not _PullUpdate(args, host):
     return
+
+  if host.config.update_delay_sec:
+    logger.info(
+        'Delaying for %d seconds based on config update_delay_sec before'
+        ' restarting %s.',
+        host.config.update_delay_sec,
+        args.name,
+    )
+    time.sleep(host.config.update_delay_sec)
+
   logger.info('Restarting %s.', args.name)
   try:
     _StopMttNode(args, host)
