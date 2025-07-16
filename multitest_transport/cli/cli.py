@@ -608,7 +608,9 @@ def _StartMttNode(args, host):
   user_file_store = os.path.expanduser('~/.ats_storage')
   host.context.Run(['mkdir', '-p', user_file_store])
   mount_paths = [user_file_store]
-  mount_paths.extend(args.mount_local_path or [])
+  mount_paths.extend(
+      args.mount_local_path or host.config.mount_local_paths or []
+  )
   for mount_path in mount_paths:
     local_path, remote_path = (mount_path.split(':', 1) + [None])[:2]
     if not remote_path:

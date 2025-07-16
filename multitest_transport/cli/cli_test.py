@@ -182,6 +182,7 @@ class CliTest(parameterized.TestCase):
       operation_mode=None,
       omni_mode_usage=None,
       max_local_virtual_devices=None,
+      mount_local_paths=(),
       secret_project_id=None,
       service_account_key_secret_id=None,
       max_concurrent_update_percentage=None,
@@ -208,6 +209,7 @@ class CliTest(parameterized.TestCase):
             operation_mode=operation_mode,
             omni_mode_usage=omni_mode_usage,
             max_local_virtual_devices=max_local_virtual_devices,
+            mount_local_paths=mount_local_paths,
             secret_project_id=secret_project_id,
             service_account_key_secret_id=service_account_key_secret_id,
             max_concurrent_update_percentage=max_concurrent_update_percentage,
@@ -1374,6 +1376,24 @@ class CliTest(parameterized.TestCase):
             ['docker', 'exec', 'mtt', 'printenv', 'MTT_VERSION'],
             raise_on_failure=False),
     ])
+
+  def testStart_withLocalMountsInHostConfig(self):
+    args = self.arg_parser.parse_args(['start'])
+    cli.Start(args, self._CreateHost(mount_local_paths=['/path/to/mount']))
+
+    docker_create_args = None
+    for call in self.mock_context.Run.call_args_list:
+      call_args, _ = call
+      command_args = call_args[0]
+      if command_args[:2] == ['docker', 'create']:
+        docker_create_args = command_args
+        break
+
+    self.assertIsNotNone(docker_create_args, 'docker create call not found')
+    self.assertIn(
+        '--mount type=bind,src=/path/to/mount,dst=/tmp/.mnt/mount',
+        ' '.join(docker_create_args),
+    )
 
   def testStart_failAdbPortInUse(self):
     """Test start with the adb server port in use."""
