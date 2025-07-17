@@ -229,6 +229,41 @@ class OlcsSessionStubTest(testbed_dependent_test.TestbedDependentTest):
     request_message = self.session_stub.GetRequest('test_request_id')
     self.assertEqual(request_message.id, expected_request_detail.id)
 
+  def testGetRequest_commandTimes(self):
+    """Test that command start/end times are set from attempts."""
+    with open(
+        os.path.join(TEST_DATA_DIR, 'request_detail.textproto')
+    ) as text_format_file:
+      request_detail = text_format.Parse(
+          text_format_file.read(), service_pb2.RequestDetail()
+      )
+
+    # All attempts are finished, command should have latest end time
+    request_message = self.session_stub._GenerateRequestMessage(request_detail)
+    self.assertLen(request_message.commands, 1)
+    command = request_message.commands[0]
+    self.assertEqual(
+        command.start_time,
+        min(
+            c.start_time.ToDatetime()
+            for c in request_detail.command_details.values()
+        ),
+    )
+    self.assertEqual(
+        command.end_time,
+        max(
+            c.end_time.ToDatetime()
+            for c in request_detail.command_details.values()
+        ),
+    )
+
+    # Mark one attempt as not finished
+    list(request_detail.command_details.values())[
+        0
+    ].state = service_pb2.CommandState.RUNNING
+    request_message = self.session_stub._GenerateRequestMessage(request_detail)
+    self.assertIsNone(request_message.commands[0].end_time)
+
   def GetRequestWrapper(self, request_id):
     """Wrapper for GetRequest, which creates NDB context before the test so the ndb operation can suceed."""
     manager = ndb_test_lib.NdbContextManager()
@@ -465,6 +500,7 @@ class OlcsSessionStubTest(testbed_dependent_test.TestbedDependentTest):
       new_request_msg = protojson.decode_message(
           api_messages.NewMultiCommandRequestMessage, f.read()
       )
+      new_request_msg.test_environment.setup_scripts.append('setup.sh')
       create_session_request = (
           olcs_session_stub.OlcsSessionStub.GenerateRequestProto(
               new_request_msg

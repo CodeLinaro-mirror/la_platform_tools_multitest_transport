@@ -15,7 +15,6 @@
 """A OLCS session service stub that is providing similar functionality as tfc_client."""
 import base64
 from concurrent import futures
-import itertools
 import logging
 import os
 import queue
@@ -296,21 +295,29 @@ class OlcsSessionStub:
     request_message.update_time = request_detail.update_time.ToDatetime()
     # TODO: cancel message is deprecated.
 
-    request_message.commands = list(
-        map(
-            self._ConvertCommandDetail,
-            request_detail.command_details.values(),
-            itertools.repeat(request_detail),
-        )
-    )
-
-    for command_detail in request_detail.command_details.values():
-      command_attempt_message = self._GenerateCommandAttemptFromCommand(
-          command_detail, request_detail
+    # Only one command and one command attempt exists for each OLCS session
+    # request.
+    if request_detail.command_details:
+      single_command_detail = next(
+          iter(request_detail.command_details.values())
       )
-      command_attempt_message.attempt_id = command_detail.command_attempt_id
+      if len(request_detail.command_details) > 1:
+        logging.warning(
+            "More than one command detail found in request %s, only the first"
+            " one will be processed.",
+            request_id,
+        )
+      request_message.commands = [
+          self._ConvertCommandDetail(single_command_detail, request_detail)
+      ]
+      command_attempt_message = self._GenerateCommandAttemptFromCommand(
+          single_command_detail, request_detail
+      )
+      command_attempt_message.attempt_id = (
+          single_command_detail.command_attempt_id
+      )
       command_attempt_message.device_serials = list(
-          command_detail.device_serials
+          single_command_detail.device_serials
       )
       request_message.command_attempts.append(command_attempt_message)
 
@@ -331,6 +338,28 @@ class OlcsSessionStub:
     request_message.command_attempts.sort(
         key=lambda attempt: attempt.start_time
     )
+
+    # Consolidate the MTT request message's command duration. It needs to sum up
+    # from the current attempt and previous attempts.
+    if request_message.commands:
+      single_command = request_message.commands[0]
+      if request_message.command_attempts:
+        single_command.start_time = request_message.command_attempts[
+            0
+        ].start_time
+
+        all_finished = all(
+            common.IsFinalCommandState(attempt.state)
+            for attempt in request_message.command_attempts
+        )
+        if all_finished:
+          # The command is finished, use the latest attempt's end time.
+          latest_end_time = request_message.command_attempts[-1].end_time
+          single_command.end_time = latest_end_time
+        else:
+          single_command.end_time = None
+      request_message.commands = [single_command]
+
     return request_message
 
   def _GetRequestDetail(
@@ -738,7 +767,7 @@ class OlcsSessionStub:
         for env_var in request.test_environment.env_vars:
           request_proto.test_environment.env_vars[env_var.key] = env_var.value
       if request.test_environment.setup_scripts:
-        request_proto.test_environment.setup_scripts = (
+        request_proto.test_environment.setup_scripts.extend(
             request.test_environment.setup_scripts
         )
       if request.test_environment.output_file_patterns:

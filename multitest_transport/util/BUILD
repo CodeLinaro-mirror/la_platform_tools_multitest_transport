@@ -346,7 +346,6 @@ pytype_strict_library(
         "//multitest_transport/models:ndb_models_lib",
         "@tradefed_cluster//tradefed_cluster:api_messages_lib",
         "@tradefed_cluster//tradefed_cluster:common_lib",
-        "@tradefed_cluster//tradefed_cluster/util:ndb_shim_lib",
     ],
 )
 
