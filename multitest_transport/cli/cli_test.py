@@ -188,6 +188,7 @@ class CliTest(parameterized.TestCase):
       max_concurrent_update_percentage=None,
       use_host_network=False,
       skip_mount_host_android_dir=False,
+      drain=False,
   ):
 
     host = cli.host_util.Host(
@@ -215,6 +216,7 @@ class CliTest(parameterized.TestCase):
             max_concurrent_update_percentage=max_concurrent_update_percentage,
             use_host_network=use_host_network,
             skip_mount_host_android_dir=skip_mount_host_android_dir,
+            drain=drain,
         )
     )
     host.context = self.mock_context
@@ -1762,6 +1764,34 @@ class CliTest(parameterized.TestCase):
     self.mock_context.host = 'ahost'
     args = self.arg_parser.parse_args(['stop', '--drain', 'true'])
     host = self._CreateHost()
+    cli.Stop(args, host)
+
+    self.mock_context.Run.assert_has_calls([
+        mock.call(
+            ['docker', 'kill', '-s', 'TERM', 'mtt'],
+            timeout=command_util._DOCKER_KILL_CMD_TIMEOUT_SEC,
+        ),
+        mock.call(
+            ['docker', 'container', 'wait', 'mtt'],
+            timeout=cli._SHORT_CONTAINER_SHUTDOWN_TIMEOUT_SEC,
+        ),
+        mock.call(['docker', 'inspect', 'mtt'], raise_on_failure=False),
+        mock.call(['docker', 'container', 'rm', 'mtt'], raise_on_failure=False),
+    ])
+    is_running.assert_called_once_with('mtt')
+    self.mock_health_client.drain.assert_called_once()
+    self.mock_health_client.check.assert_called_once()
+
+  @mock.patch.object(cli, '_IsDaemonActive')
+  @mock.patch('__main__.cli.command_util.DockerHelper.IsContainerRunning')
+  @mock.patch('__main__.cli.os.geteuid')
+  def testStop_WithDrainInHostConfig(self, euid, is_running, daemon_active):
+    euid.return_value = 123
+    is_running.return_value = True
+    daemon_active.return_value = False
+    self.mock_context.host = 'ahost'
+    args = self.arg_parser.parse_args(['stop'])
+    host = self._CreateHost(drain=True)
     cli.Stop(args, host)
 
     self.mock_context.Run.assert_has_calls([

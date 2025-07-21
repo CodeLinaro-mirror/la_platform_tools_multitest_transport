@@ -791,7 +791,7 @@ def _StopMttNode(args, host):
   # TODO: The kill logic should be more general and works for both
   # mtt and dockerized tf.
   if docker_helper.IsContainerRunning(args.name):
-    if args.drain:
+    if args.drain or host.config.drain:
       logger.info('Draining container %s before stopping it.', args.name)
       _DrainMttNode(args.name, docker_helper)
 
