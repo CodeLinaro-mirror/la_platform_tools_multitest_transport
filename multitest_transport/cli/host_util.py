@@ -479,7 +479,9 @@ def BuildLabConfigPool(lab_config_path, key_path=None):
       lab_config_pool = lab_config.UnifiedLabConfigPool(lab_config_path)
     else:
       raise lab_config.ConfigError(
-          '%s is neither yaml lab config nor unified lab config.')
+          f'{lab_config_path} is neither yaml lab config nor unified lab'
+          ' config.'
+      )
   lab_config_pool.LoadConfigs()
   return lab_config_pool
 
