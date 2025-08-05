@@ -67,7 +67,7 @@ _MTTD_FILE = '/etc/systemd/system/mttd.service'
 _CONFIG_ROOT = 'config'
 _VERSION_FILE = 'VERSION'
 _UNKNOWN_VERSION = 'unknown'
-_DAEMON_UPDATE_INTERVAL_SEC = 60
+_DAEMON_UPDATE_INTERVAL_SEC = 600
 _ADB_SERVER_PORT = 5037
 # Docker networking arguments.
 _DOCKER_BRIDGE_NETWORK = 'bridge'
