@@ -79,9 +79,6 @@ class CliTest(parameterized.TestCase):
                              '/mock/id_rsa']
     self.old_user = os.environ.get('USER')
     os.environ['USER'] = 'user'
-    self.mock_timezone_patcher = mock.patch(
-        '__main__.cli._GetHostTimezone', return_value='Etc/UTC')
-    self.mock_timezone_patcher.start()
     self.mock_waiter_patcher = mock.patch('__main__.cli._WaitForServer')
     self.mock_waiter_patcher.start()
     self.tmp_root = tempfile.mkdtemp()
@@ -2409,6 +2406,27 @@ class CliTest(parameterized.TestCase):
     with open(local_key_path) as f:
       new_key = f.read()
     self.assertEqual('{"private_key_id": "id1"}', new_key)
+
+  @mock.patch(
+      'multitest_transport.cli.cli.open',
+      new_callable=mock.mock_open,
+      read_data='America/Los_Angeles',
+  )
+  def testGetHostTimezone_success(self, mock_open):
+    self.assertEqual('America/Los_Angeles', cli._GetHostTimezone())
+    mock_open.assert_called_once_with('/etc/timezone')
+
+  @mock.patch('multitest_transport.cli.cli.open')
+  def testGetHostTimezone_fileNotFound(self, mock_open):
+    mock_open.side_effect = FileNotFoundError()
+    self.assertEqual('Etc/UTC', cli._GetHostTimezone())
+    mock_open.assert_called_once_with('/etc/timezone')
+
+  @mock.patch('multitest_transport.cli.cli.open')
+  def testGetHostTimezone_exception(self, mock_open):
+    mock_open.side_effect = Exception('Failed to open file')
+    self.assertEqual('Etc/UTC', cli._GetHostTimezone())
+    mock_open.assert_called_once_with('/etc/timezone')
 
   def test_GetWorkerLabGprcServerAddress_withGrpcPort(self):
     docker_helper = mock.MagicMock()

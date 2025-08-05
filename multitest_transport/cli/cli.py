@@ -263,8 +263,12 @@ def _GetHostTimezone():
   Returns:
     A TZ name of a host timezone.
   """
-  with open('/etc/timezone') as f:
-    return f.read().strip()
+  try:
+    with open('/etc/timezone') as f:
+      return f.read().strip()
+  except Exception:  
+    logger.exception('Failed to get host timezone from /etc/timezone.')
+    return 'Etc/UTC'
 
 
 def _CheckMttNodePrerequisites(args, host):
