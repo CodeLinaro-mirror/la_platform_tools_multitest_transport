@@ -435,7 +435,7 @@ def Start(args, host=None):
     RuntimeError: if a MTT node fails to start.
   """
   host = host or host_util.CreateHost(args)
-  if host.config.enable_autoupdate:
+  if args.enable_auto_update or host.config.enable_autoupdate:
     _StartMttDaemon(args, host)
     return
   if host.config.enable_ui_update:
@@ -1035,7 +1035,11 @@ def _PullUpdate(args, host):
     logger.info('%s is already using the same image as remote, skip.',
                 args.name)
     return False
-  if host.config.enable_ui_update or host.config.enable_autoupdate:
+  if (
+      host.config.enable_ui_update
+      or args.enable_auto_update
+      or host.config.enable_autoupdate
+  ):
     if (host.config.max_concurrent_update_percentage and
         not host.metadata.get(_ALLOW_TO_UPDATE_KEY, False)):
       logger.info(
@@ -1064,7 +1068,7 @@ def Update(args, host=None):
   """
   host = host or host_util.CreateHost(args)
   _StopMttDaemon(host)
-  if host.config.enable_autoupdate:
+  if args.enable_auto_update or host.config.enable_autoupdate:
     _StartMttDaemon(args, host)
     return
   if host.config.enable_ui_update:
@@ -1120,7 +1124,7 @@ def Restart(args, host=None):
   host = host or host_util.CreateHost(args)
   _StopMttDaemon(host)
   _StopMttNode(args, host)
-  if host.config.enable_autoupdate:
+  if args.enable_auto_update or host.config.enable_autoupdate:
     _StartMttDaemon(args, host)
     return
   if host.config.enable_ui_update:
@@ -1168,7 +1172,7 @@ def _RunDaemonIteration(args, host=None):
         host.config.secret_project_id,
         host.config.service_account_key_secret_id,
         host.config.service_account_json_key_path)
-  if host.config.enable_autoupdate:
+  if args.enable_auto_update or host.config.enable_autoupdate:
     logger.debug('Auto-update enabled.')
     _UpdateMttNode(args, host)
     return
@@ -1294,6 +1298,15 @@ def _CreateStartArgParser():
       help=(
           'Use OmniLab based servers. This flag is deprecated. Please use'
           ' force_ats_version flag instead.'
+      ),
+  )
+  parser.add_argument(
+      '--enable_auto_update',
+      default=False,
+      action='store_true',
+      help=(
+          'Whether to enable auto update through systemd daemon service.'
+          ' Default is false.'
       ),
   )
   parser.add_argument(

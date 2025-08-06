@@ -1977,6 +1977,22 @@ class CliTest(parameterized.TestCase):
   @mock.patch.object(cli, '_StopMttNode')
   @mock.patch.object(cli, '_StartMttDaemon')
   @mock.patch.object(cli, '_StopMttDaemon')
+  def testRestart_EnableAutoupdateInArgs(
+      self, stop_mttd, start_mttd, stop_mtt, start_mtt
+  ):
+    """Test Restart."""
+    args = self.arg_parser.parse_args(['restart', '--enable_auto_update'])
+    host = self._CreateHost(enable_autoupdate=False)
+    cli.Restart(args, host)
+    stop_mttd.assert_called_with(host)
+    stop_mtt.assert_called_once_with(args, host)
+    start_mtt.assert_not_called()
+    start_mttd.assert_called_once_with(args, host)
+
+  @mock.patch.object(cli, '_StartMttNode')
+  @mock.patch.object(cli, '_StopMttNode')
+  @mock.patch.object(cli, '_StartMttDaemon')
+  @mock.patch.object(cli, '_StopMttDaemon')
   def testRestart_EnableUiUpdate(
       self, stop_mttd, start_mttd, stop_mtt, start_mtt):
     args = self.arg_parser.parse_args(['restart'])
@@ -2027,6 +2043,19 @@ class CliTest(parameterized.TestCase):
   def testUpdate_EnableAutoupdate(self, stop_mttd, start_mttd, update_mtt):
     args = self.arg_parser.parse_args(['update'])
     host = self._CreateHost(enable_autoupdate=True)
+    cli.Update(args, host)
+    stop_mttd.assert_called_once()
+    start_mttd.assert_called_once()
+    update_mtt.assert_not_called()
+
+  @mock.patch.object(cli, '_UpdateMttNode')
+  @mock.patch.object(cli, '_StartMttDaemon')
+  @mock.patch.object(cli, '_StopMttDaemon')
+  def testUpdate_EnableAutoupdateInArgs(
+      self, stop_mttd, start_mttd, update_mtt
+  ):
+    args = self.arg_parser.parse_args(['update', '--enable_auto_update'])
+    host = self._CreateHost(enable_autoupdate=False)
     cli.Update(args, host)
     stop_mttd.assert_called_once()
     start_mttd.assert_called_once()
@@ -2288,6 +2317,13 @@ class CliTest(parameterized.TestCase):
   def testRunDaemonIteration_autoUpdate(self, mtt_update):
     args = self.arg_parser.parse_args(['daemon'])
     host = self._CreateHost(enable_autoupdate=True)
+    cli._RunDaemonIteration(args, host)
+    mtt_update.assert_called_with(args, host)
+
+  @mock.patch.object(cli, '_UpdateMttNode')
+  def testRunDaemonIteration_autoUpdateInCommandLineArg(self, mtt_update):
+    args = self.arg_parser.parse_args(['daemon', '--enable_auto_update'])
+    host = self._CreateHost(enable_autoupdate=False)
     cli._RunDaemonIteration(args, host)
     mtt_update.assert_called_with(args, host)
 
