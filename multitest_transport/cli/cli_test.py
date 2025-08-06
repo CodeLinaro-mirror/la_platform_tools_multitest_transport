@@ -1711,6 +1711,7 @@ class CliTest(parameterized.TestCase):
     cli._StartMttDaemon(args, host)
     setup_mttd.assert_called_with(args, host)
     setup_permanent_bin.assert_called_with(args, host)
+    self.assertEqual(self.mock_context.Run.call_count, 2)
     self.mock_context.Run.assert_has_calls([
         mock.call(['systemctl', 'enable', 'mttd.service']),
         mock.call(['systemctl', 'start', 'mttd.service']),
@@ -1734,9 +1735,11 @@ class CliTest(parameterized.TestCase):
     cli._StartMttDaemon(args, host)
     setup_mttd.assert_called_with(args, host)
     setup_permanent_bin.assert_called_with(args, host)
+    self.assertEqual(self.mock_context.Run.call_count, 3)
     self.mock_context.Run.assert_has_calls([
         mock.call(['systemctl', '--user', 'enable', 'mttd-user.service']),
         mock.call(['systemctl', '--user', 'start', 'mttd-user.service']),
+        mock.call(['loginctl', 'enable-linger']),
     ])
 
   @mock.patch.object(cli, '_HasSudoAccess')

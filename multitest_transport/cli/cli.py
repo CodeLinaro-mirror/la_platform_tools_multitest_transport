@@ -819,6 +819,10 @@ def _StartMttDaemon(args, host):
       else ['systemctl', 'start', 'mttd.service']
   )
   host.context.Run(start_cmd)
+  # Enable automatic start-up of systemd user instance
+  # (https://wiki.archlinux.org/title/Systemd/User)
+  if is_user_service:
+    host.context.Run(['loginctl', 'enable-linger'])
   logger.info(('MTT daemon started on %s. '
                'It keeps MTT container up and running on the latest version.'),
               host.name)
