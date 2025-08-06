@@ -1,0 +1,11 @@
+[Unit]
+Description=MTT Daemon (user service)
+
+[Service]
+Type=simple
+ExecStart="%h/.mtt/lib/mtt" --log_file="%h/.mtt/log/mtt.log" -v daemon "%h/.mtt/lib/mtt_host_config.yaml"
+Restart=always
+RestartSec=5s
+
+[Install]
+WantedBy=default.target

@@ -186,6 +186,7 @@ class CliTest(parameterized.TestCase):
       use_host_network=False,
       skip_mount_host_android_dir=False,
       drain=False,
+      run_mttd_as_user_service=False,
   ):
 
     host = cli.host_util.Host(
@@ -214,6 +215,7 @@ class CliTest(parameterized.TestCase):
             use_host_network=use_host_network,
             skip_mount_host_android_dir=skip_mount_host_android_dir,
             drain=drain,
+            run_mttd_as_user_service=run_mttd_as_user_service,
         )
     )
     host.context = self.mock_context
@@ -1714,6 +1716,29 @@ class CliTest(parameterized.TestCase):
         mock.call(['systemctl', 'start', 'mttd.service']),
     ])
 
+  @mock.patch.object(cli, '_IsDaemonActive')
+  @mock.patch.object(cli, '_SetupSystemdScript')
+  @mock.patch.object(cli, '_SetupMTTRuntimeIntoLibPath')
+  def testStartMttDaemonAsUserService_NotYetActive(
+      self, setup_permanent_bin, setup_mttd, is_active
+  ):
+    args = mock.create_autospec(cli.argparse.Namespace)
+    host = self._CreateHost(
+        cluster_name='acluster',
+        hostname='ahost',
+        enable_autoupdate=True,
+        run_mttd_as_user_service=True,
+    )
+    is_active.return_value = False
+
+    cli._StartMttDaemon(args, host)
+    setup_mttd.assert_called_with(args, host)
+    setup_permanent_bin.assert_called_with(args, host)
+    self.mock_context.Run.assert_has_calls([
+        mock.call(['systemctl', '--user', 'enable', 'mttd-user.service']),
+        mock.call(['systemctl', '--user', 'start', 'mttd-user.service']),
+    ])
+
   @mock.patch.object(cli, '_HasSudoAccess')
   @mock.patch.object(cli, '_IsDaemonActive')
   def testStartMttDaemon_NoSudo(self, is_active, has_sudo):
@@ -1910,6 +1935,21 @@ class CliTest(parameterized.TestCase):
     self.mock_context.Run.assert_has_calls([
         mock.call(['systemctl', 'stop', 'mttd.service']),
         mock.call(['systemctl', 'disable', 'mttd.service']),
+    ])
+
+  @mock.patch.object(cli, '_StopMttNode')
+  @mock.patch.object(cli, '_IsDaemonActive')
+  def testStop_DaemonUserServiceIsClosedIfActive(self, is_active, stop_mtt):
+    is_active.return_value = True
+    args = self.arg_parser.parse_args(['stop'])
+    host = self._CreateHost(hostname='ahost', run_mttd_as_user_service=True)
+
+    cli.Stop(args, host)
+
+    stop_mtt.assert_called_with(args, host)
+    self.mock_context.Run.assert_has_calls([
+        mock.call(['systemctl', '--user', 'stop', 'mttd-user.service']),
+        mock.call(['systemctl', '--user', 'disable', 'mttd-user.service']),
     ])
 
   @mock.patch.object(cli, '_HasSudoAccess')
@@ -2197,12 +2237,43 @@ class CliTest(parameterized.TestCase):
     args.cli_path = mtt_path
     host = mock.create_autospec(cli.host_util.Host)
     host.name = 'host1'
+    host.config.run_mttd_as_user_service = False
     cli._SetupSystemdScript(args, host)
     host.context.CopyFile.assert_called_once_with(
         os.path.join(tmp_folder, cli._ZIPPED_MTTD_FILE),
         cli._MTTD_FILE)
     host.context.Run.assert_has_calls([
         mock.call(['systemctl', 'daemon-reload'])])
+
+  @mock.patch.object(tempfile, 'mkdtemp')
+  def testSetupSystemdScriptForUserService(self, mock_create_temp):
+    tmp_folder = os.path.join(self.tmp_root, 'mtt_extracted')
+    os.mkdir(tmp_folder)
+    mock_create_temp.return_value = tmp_folder
+    mtt_path = os.path.join(self.tmp_root, 'mtt')
+    unittest_util.CreateZipFile(
+        mtt_path,
+        [
+            unittest_util.File(
+                filename='multitest_transport/mttd-user.service',
+                content='this is a fake mttd-user systemd script',
+            )
+        ],
+    )
+
+    args = mock.create_autospec(cli.argparse.Namespace)
+    args.cli_path = mtt_path
+    host = mock.create_autospec(cli.host_util.Host)
+    host.name = 'host1'
+    host.config.run_mttd_as_user_service = True
+    cli._SetupSystemdScript(args, host)
+    host.context.CopyFile.assert_called_once_with(
+        os.path.join(tmp_folder, cli._ZIPPED_MTTD_FILE_USER),
+        cli._MTTD_FILE_USER,
+    )
+    host.context.Run.assert_has_calls(
+        [mock.call(['systemctl', '--user', 'daemon-reload'])]
+    )
 
   @mock.patch.object(lab_config.HostConfig, 'Save')
   def testSetupMTTRuntimeIntoPermanentPath(self, mock_save):

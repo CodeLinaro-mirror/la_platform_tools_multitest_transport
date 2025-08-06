@@ -56,14 +56,24 @@ _MTT_SERVER_LOG_PATH = '/data/log/server/current'
 
 _MTT_LIB_DIR = '/var/lib/mtt'
 _MTT_LOG_DIR = '/var/log/mtt'
+_MTT_LIB_DIR_USER = os.path.expanduser('~/.mtt/lib')
+_MTT_LOG_DIR_USER = os.path.expanduser('~/.mtt/log')
 _TMP_DIR = '/tmp'
 _KEY_FILE = os.path.join(_MTT_LIB_DIR, 'keyfile', 'key.json')
+_KEY_FILE_USER = os.path.join(_MTT_LIB_DIR_USER, 'keyfile', 'key.json')
 _DOCKER_KEY_FILE = os.path.join(_TMP_DIR, 'keyfile', 'key.json')
-# Permanent MTT binary path has to match the one in mttd.service file.
+# Permanent MTT binary path has to match the one in mttd.service or
+# mttd-user.service file.
 _MTT_BINARY = os.path.join(_MTT_LIB_DIR, 'mtt')
 _HOST_CONFIG = os.path.join(_MTT_LIB_DIR, 'mtt_host_config.yaml')
+_MTT_BINARY_USER = os.path.join(_MTT_LIB_DIR_USER, 'mtt')
+_HOST_CONFIG_USER = os.path.join(_MTT_LIB_DIR_USER, 'mtt_host_config.yaml')
 _ZIPPED_MTTD_FILE = 'multitest_transport/mttd.service'
+_ZIPPED_MTTD_FILE_USER = 'multitest_transport/mttd-user.service'
+# Location of the MTT systemd daemon script when running as a system service.
 _MTTD_FILE = '/etc/systemd/system/mttd.service'
+# Location of the MTT systemd daemon script when running as a user service.
+_MTTD_FILE_USER = os.path.expanduser('~/.config/systemd/user/mttd-user.service')
 _CONFIG_ROOT = 'config'
 _VERSION_FILE = 'VERSION'
 _UNKNOWN_VERSION = 'unknown'
@@ -205,8 +215,15 @@ def _IsDaemonActive(host):
   Returns:
     Bool, True if the daemon is now active, otherwise False.
   """
-  cmd_result = host.context.Run(['systemctl', 'status', 'mttd.service'],
-                                raise_on_failure=False)
+  status_cmd = (
+      ['systemctl', '--user', 'status', 'mttd-user.service']
+      if host.config.run_mttd_as_user_service
+      else ['systemctl', 'status', 'mttd.service']
+  )
+  cmd_result = host.context.Run(
+      status_cmd,
+      raise_on_failure=False,
+  )
   return cmd_result.return_code == 0
 
 
@@ -223,23 +240,41 @@ def _SetupSystemdScript(args, host):
   """
   logger.info('Setting up MTT systemd daemon script on %s', host.name)
   tmp_folder = tempfile.mkdtemp()
+  is_user_service = host.config.run_mttd_as_user_service
   try:
     with zipfile.ZipFile(args.cli_path, 'r') as cli_zip:
-      mttd_path = cli_zip.extract(_ZIPPED_MTTD_FILE, tmp_folder)
+      mttd_path = cli_zip.extract(
+          _ZIPPED_MTTD_FILE_USER if is_user_service else _ZIPPED_MTTD_FILE,
+          tmp_folder,
+      )
   except zipfile.BadZipfile:
     logger.error('%s is not a zip file.', args.cli_path)
     raise
   except KeyError:
-    logger.error('No %s in %s.', _ZIPPED_MTTD_FILE, args.cli_path)
+    logger.error(
+        'No %s in %s.',
+        _ZIPPED_MTTD_FILE_USER if is_user_service else _ZIPPED_MTTD_FILE,
+        args.cli_path,
+    )
     raise
   else:
-    host.context.CopyFile(mttd_path, _MTTD_FILE)
-    host.context.Run(['systemctl', 'daemon-reload'])
+    mttd_dest = _MTTD_FILE_USER if is_user_service else _MTTD_FILE
+    host.context.CopyFile(mttd_path, mttd_dest)
+    daemon_reload_cmd = (
+        ['systemctl', '--user', 'daemon-reload']
+        if is_user_service
+        else ['systemctl', 'daemon-reload']
+    )
+    host.context.Run(daemon_reload_cmd)
   finally:
     if tmp_folder:
       shutil.rmtree(tmp_folder)
   # Create a log folder for MTT system daemon.
-  host.context.Run(['mkdir', '-p', _MTT_LOG_DIR])
+  host.context.Run([
+      'mkdir',
+      '-p',
+      _MTT_LOG_DIR_USER if is_user_service else _MTT_LOG_DIR,
+  ])
 
 
 def _SetupMTTRuntimeIntoLibPath(args, host):
@@ -249,12 +284,18 @@ def _SetupMTTRuntimeIntoLibPath(args, host):
     args: a parsed argparse.Namespace object.
     host: an instance of host_util.Host.
   """
-  host.context.CopyFile(args.cli_path, _MTT_BINARY)
+  is_user_service = host.config.run_mttd_as_user_service
+  host.context.CopyFile(
+      args.cli_path,
+      _MTT_BINARY_USER if is_user_service else _MTT_BINARY,
+  )
   if host.config.service_account_json_key_path:
+    key_file_path = _KEY_FILE_USER if is_user_service else _KEY_FILE
     host.context.CopyFile(
-        host.config.service_account_json_key_path, _KEY_FILE)
-    host.config = host.config.SetServiceAccountJsonKeyPath(_KEY_FILE)
-  host.config.Save(_HOST_CONFIG)
+        host.config.service_account_json_key_path, key_file_path
+    )
+    host.config = host.config.SetServiceAccountJsonKeyPath(key_file_path)
+  host.config.Save(_HOST_CONFIG_USER if is_user_service else _HOST_CONFIG)
 
 
 def _GetHostTimezone():
@@ -745,23 +786,39 @@ def _StartMttDaemon(args, host):
     RuntimeError: when failing to run command on host.
     ActionableError: when root privileges are not granted.
   """
-  logger.info('Starting MTT daemon on %s.', host.name)
+  is_user_service = host.config.run_mttd_as_user_service
+  logger.info(
+      'Starting MTT daemon on %s as a %s service.',
+      host.name,
+      'user' if is_user_service else 'system',
+  )
   if _IsDaemonActive(host):
     logger.warning('MTT daemon is already running on %s.', host.name)
     return
-  if not _HasSudoAccess():
+  if not is_user_service and not _HasSudoAccess():
     raise ActionableError(
-        'The root privileges are required to start MTT daemon. '
-        'Please consider run MTT CLI with sudo access. '
-        'If you are running MTT Lab CLI, please consider adding flags '
-        ' --sudo_user or/and --ask_sudo_password.')
+        'The root privileges are required to start MTT daemon as a system'
+        ' service. Please consider run MTT CLI with sudo access. If you are'
+        ' running MTT Lab CLI, please consider adding flags --sudo_user and/or'
+        ' --ask_sudo_password.'
+    )
   _SetupMTTRuntimeIntoLibPath(args, host)
   _SetupSystemdScript(args, host)
-  # Enable mttd.service, to make sure it can "start" on system reboot.
+  # Enable the daemon service, to make sure it can "start" on system reboot.
   # Note: this command will not start the service immediately.
-  host.context.Run(['systemctl', 'enable', 'mttd.service'])
-  # Start mttd.service immediately.
-  host.context.Run(['systemctl', 'start', 'mttd.service'])
+  enable_cmd = (
+      ['systemctl', '--user', 'enable', 'mttd-user.service']
+      if is_user_service
+      else ['systemctl', 'enable', 'mttd.service']
+  )
+  host.context.Run(enable_cmd)
+  # Start the daemon service immediately.
+  start_cmd = (
+      ['systemctl', '--user', 'start', 'mttd-user.service']
+      if is_user_service
+      else ['systemctl', 'start', 'mttd.service']
+  )
+  host.context.Run(start_cmd)
   logger.info(('MTT daemon started on %s. '
                'It keeps MTT container up and running on the latest version.'),
               host.name)
@@ -969,20 +1026,32 @@ def _StopMttDaemon(host):
   Raises:
     ActionableError: when root privileges are not granted.
   """
+  is_user_service = host.config.run_mttd_as_user_service
   if not _IsDaemonActive(host):
     logger.debug('MTT daemon is not active on %s. Skip daemon stop.', host.name)
     return
-  if not _HasSudoAccess():
+  if not is_user_service and not _HasSudoAccess():
     raise ActionableError(
-        'The root privileges are required to stop MTT daemon. '
-        'Please consider run MTT CLI with sudo access. '
-        'If you are running MTT Lab CLI, please consider adding flags '
-        ' --sudo_user or/and --ask_sudo_password.')
+        'The root privileges are required to stop MTT daemon run as a system'
+        ' service. Please consider run MTT CLI with sudo access. If you are'
+        ' running MTT Lab CLI, please consider adding flags --sudo_user and/or'
+        ' --ask_sudo_password.'
+    )
   logger.info('Stopping MTT daemon on %s.', host.name)
-  # Stop mttd.service immediately.
-  host.context.Run(['systemctl', 'stop', 'mttd.service'])
-  # Unregister mttd.service, so that it does not start on system reboot.
-  host.context.Run(['systemctl', 'disable', 'mttd.service'])
+  # Stop the daemon service immediately.
+  stop_cmd = (
+      ['systemctl', '--user', 'stop', 'mttd-user.service']
+      if is_user_service
+      else ['systemctl', 'stop', 'mttd.service']
+  )
+  host.context.Run(stop_cmd)
+  # Unregister the daemon service, so that it does not start on system reboot.
+  disable_cmd = (
+      ['systemctl', '--user', 'disable', 'mttd-user.service']
+      if is_user_service
+      else ['systemctl', 'disable', 'mttd.service']
+  )
+  host.context.Run(disable_cmd)
 
 
 def _PullUpdate(args, host):

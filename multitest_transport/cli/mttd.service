@@ -1,5 +1,5 @@
 [Unit]
-Description=MTT Daemon
+Description=MTT Daemon (system service)
 
 [Service]
 Type=simple
