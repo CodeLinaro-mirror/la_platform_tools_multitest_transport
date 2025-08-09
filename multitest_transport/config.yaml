@@ -611,7 +611,7 @@ tests:
   name: CTS 13.0 (ARM)
   description: Compatibility Test Suite 13.0 (ARM)
   test_resource_defs:
-  - default_download_url: https://dl.google.com/dl/android/cts/android-cts-13_r12-linux_x86-arm.zip
+  - default_download_url: https://dl.google.com/dl/android/cts/android-cts-13_r13-linux_x86-arm.zip
     name: android-cts.zip
     test_resource_type: TEST_PACKAGE
     decompress: true
@@ -650,7 +650,7 @@ tests:
   name: CTS 14.0 (ARM)
   description: Compatibility Test Suite 14.0 (ARM)
   test_resource_defs:
-  - default_download_url: https://dl.google.com/dl/android/cts/android-cts-14_r8-linux_x86-arm.zip
+  - default_download_url: https://dl.google.com/dl/android/cts/android-cts-14_r9-linux_x86-arm.zip
     name: android-cts.zip
     test_resource_type: TEST_PACKAGE
     decompress: true
@@ -689,7 +689,51 @@ tests:
   name: CTS 15.0 (ARM)
   description: Compatibility Test Suite 15.0 (ARM)
   test_resource_defs:
-  - default_download_url: https://dl.google.com/dl/android/cts/android-cts-15_r4-linux_x86-arm.zip
+  - default_download_url: https://dl.google.com/dl/android/cts/android-cts-15_r5-linux_x86-arm.zip
+    name: android-cts.zip
+    test_resource_type: TEST_PACKAGE
+    decompress: true
+    mount_zip: true
+  - name: dynamic_download.zip
+    default_download_url: https://dl.google.com/android/xts/mcts/tool/dynamic_download.zip
+    decompress: true
+    test_resource_type: UNKNOWN
+  command: cts --enable-token-sharding --max-testcase-run-count 2 --retry-strategy RETRY_ANY_FAILURE
+  env_vars:
+  - name: JAVA_HOME
+    value: ${TF_WORK_DIR}/android-cts/jdk
+  - name: TF_PATH
+    value: ${TF_WORK_DIR}/android-cts/tools:${TF_WORK_DIR}/android-cts/testcases
+  - name: LD_LIBRARY_PATH
+    value: ${TF_WORK_DIR}/android-cts/lib:${TF_WORK_DIR}/android-cts/lib64
+  setup_scripts:
+  output_file_patterns:
+  - android-cts/results/.+\.html
+  - android-cts/results/[^/]+/compatibility_result\..*
+  - android-cts/results/[^/]+/logo.png
+  - android-cts/results/[^/]+/test_result.xml
+  - android-cts/results/[^/]+/proto/test-record\.pb.*
+  result_file: test_result.xml
+  jvm_options:
+  - '-Xmx24g'
+  java_properties:
+  - name: CTS_ROOT
+    value: ${TF_WORK_DIR}
+  context_file_dir: android-cts/results/
+  context_file_pattern: '[\d_\.]+\.zip'
+  retry_command_line: retry --retry 0
+  runner_sharding_args: --shard-count ${TF_SHARD_COUNT}
+  default_test_run_parameters:
+  - max_retry_on_test_failures: 3
+  module_config_pattern: 'android-cts/testcases/.*\.config'
+  module_execution_args: '-m ${MODULE_NAME}'
+  use_dynamic_download_mcts: true
+
+- id : android.cts.16_0
+  name: CTS 16.0 (ARM)
+  description: Compatibility Test Suite 16.0 (ARM)
+  test_resource_defs:
+  - default_download_url: https://dl.google.com/dl/android/cts/android-cts-16_r2-linux_x86-arm.zip
     name: android-cts.zip
     test_resource_type: TEST_PACKAGE
     decompress: true
