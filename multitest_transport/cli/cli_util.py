@@ -19,6 +19,7 @@ import logging
 import logging.handlers
 import os
 import socket
+from typing import Callable
 import zipfile
 
 import requests
@@ -260,12 +261,41 @@ def _DownloadToolFromHttp(url, local_path):
   logger.info(
       'There is a newer version %s on %s, updating.',
       os.path.basename(local_path), url)
+
+  def _DownloadFromHttp(local_path: str) -> None:
+    r = requests.get(url, stream=True)
+    _WriteResponseToFile(r, local_path)
+
+  return _UpdateLocalFile(local_path, _DownloadFromHttp)
+
+
+def _UpdateLocalFile(
+    local_path: str, write_new_file: Callable[[str], None]
+) -> str:
+  """Update local file with contents from write_new_file function.
+
+  The updated permission is the or operation of the original permission and
+  0o770. The owner and group are preserved.
+
+  Args:
+    local_path: The local path of the file to update. The path should not be a
+      symlink.
+    write_new_file: A function that writes the new file contents to the
+      specified local path.
+
+  Returns:
+    The local path of the updated file.
+  """
+  # The local_path is always the final binary path, not symlink, so we can use
+  # os.stat to get the original permission and owner of the file.
+  original_st = os.stat(local_path)
   os.rename(
       local_path,
       gcs_file_util.CreateBackupFilePath(local_path))
-  r = requests.get(url, stream=True)
-  _WriteResponseToFile(r, local_path)
-  os.chmod(local_path, 0o770)
+  write_new_file(local_path)
+  # Restore the original permission and owner of the file.
+  os.chmod(local_path, original_st.st_mode | 0o770)
+  os.chown(local_path, original_st.st_uid, original_st.st_gid)
   return local_path
 
 
@@ -293,9 +323,8 @@ def _DownloadToolFromGCS(gcs_url, local_path):
   logger.info(
       'There is a newer version %s on %s, updating.',
       os.path.basename(local_path), gcs_url)
-  os.rename(
-      local_path,
-      gcs_file_util.CreateBackupFilePath(local_path))
-  blob.download_to_filename(local_path)
-  os.chmod(local_path, 0o770)
-  return local_path
+
+  def _DownloadFromGCS(local_path: str):
+    blob.download_to_filename(local_path)
+
+  return _UpdateLocalFile(local_path, _DownloadFromGCS)

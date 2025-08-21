@@ -145,16 +145,30 @@ class CliUtilTest(absltest.TestCase):
 
   @mock.patch.object(os, 'rename')
   @mock.patch.object(os, 'chmod')
+  @mock.patch.object(os, 'chown')
+  @mock.patch.object(os, 'stat')
   @mock.patch.object(cli_util.gcs_file_util, 'CalculateMd5Hash')
   @mock.patch.object(cli_util.gcs_file_util, 'CreateBackupFilePath')
   @mock.patch.object(cli_util.requests, 'head')
   @mock.patch.object(cli_util.requests, 'get')
   @mock.patch.object(cli_util, '_WriteResponseToFile')
   def testDownloadToolFromHttp(
-      self, mock_write, mock_get, mock_head, mock_create_backup_path,
-      mock_md5hash, mock_chmod, mock_rename):
+      self,
+      mock_write,
+      mock_get,
+      mock_head,
+      mock_create_backup_path,
+      mock_md5hash,
+      mock_stat,
+      mock_chown,
+      mock_chmod,
+      mock_rename,
+  ):
     mock_head.return_value = mock.MagicMock(
         headers={'x-goog-hash': 'crc32c=crc32chash, md5=md5hash'})
+    mock_stat.return_value = mock.MagicMock(
+        st_mode=0o775, st_uid=123, st_gid=456
+    )
     mock_response = mock.MagicMock()
     mock_get.return_value = mock_response
     mock_create_backup_path.return_value = '/path/to/backup.par'
@@ -167,7 +181,8 @@ class CliUtilTest(absltest.TestCase):
     mock_create_backup_path.assert_called_once_with('/local/path/file.par')
     mock_rename('/local/path/file.par', '/path/to/backup.par')
     mock_write.assert_called_once_with(mock_response, '/local/path/file.par')
-    mock_chmod.assert_called_once_with('/local/path/file.par', 0o770)
+    mock_chown.assert_called_once_with('/local/path/file.par', 123, 456)
+    mock_chmod.assert_called_once_with('/local/path/file.par', 0o775)
 
   @mock.patch.object(cli_util.requests, 'head')
   def testDownloadToolFromHttp_remoteNotExist(self, mock_head):
@@ -189,6 +204,8 @@ class CliUtilTest(absltest.TestCase):
 
   @mock.patch.object(os, 'rename')
   @mock.patch.object(os, 'chmod')
+  @mock.patch.object(os, 'chown')
+  @mock.patch.object(os, 'stat')
   @mock.patch.object(cli_util.gcs_file_util, 'CreateBackupFilePath')
   @mock.patch.object(cli_util.gcs_file_util, 'CalculateMd5Hash')
   @mock.patch.object(cli_util.gcs_file_util, 'CreateGCSClient')
@@ -196,7 +213,7 @@ class CliUtilTest(absltest.TestCase):
   @mock.patch.object(cli_util.google_auth_util, 'GetGCloudCredential')
   def testDownloadToolFromGCS(
       self, create_cred, mock_get_blob, mock_create_gcs_client, mock_md5hash,
-      mock_create_backup_path, mock_chmod, mock_rename):
+      mock_create_backup_path, mock_stat, mock_chown, mock_chmod, mock_rename):
     cred = mock.MagicMock()
     create_cred.return_value = cred
     mock_client = mock.MagicMock()
@@ -205,6 +222,9 @@ class CliUtilTest(absltest.TestCase):
     mock_get_blob.return_value = mock_blob
     mock_create_backup_path.return_value = '/path/to/backup.par'
     mock_md5hash.return_value = six.ensure_text('md5hash')
+    mock_stat.return_value = mock.MagicMock(
+        st_mode=0o711, st_uid=123, st_gid=456
+    )
 
     new_path = cli_util._DownloadToolFromGCS(
         'gs://bucket/remote/path/file.par', '/local/path/file.par')
@@ -218,7 +238,8 @@ class CliUtilTest(absltest.TestCase):
     mock_rename('/local/path/file.par', '/path/to/backup.par')
     mock_blob.download_to_filename.assert_called_once_with(
         '/local/path/file.par')
-    mock_chmod.assert_called_once_with('/local/path/file.par', 0o770)
+    mock_chmod.assert_called_once_with('/local/path/file.par', 0o771)
+    mock_chown.assert_called_once_with('/local/path/file.par', 123, 456)
 
   @mock.patch.object(cli_util.gcs_file_util, 'CreateGCSClient')
   @mock.patch.object(cli_util.gcs_file_util, 'GetGCSBlob')
