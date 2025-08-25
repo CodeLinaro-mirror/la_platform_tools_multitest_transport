@@ -85,7 +85,7 @@ export class FileService {
       return joinPath(outputUrl, attempt.command_id, attempt.attempt_id, path);
     }
     if (this.appData.isOmniLabBased) {
-      return this.getFileUrl('localhost', path);
+      return this.getFileUrl(attempt.hostname, path);
     }
     // Active run files are stored in a local temporary location.
     return this.getFileUrl(attempt.hostname, 'tmp', attempt.attempt_id, path);

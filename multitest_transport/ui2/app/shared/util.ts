@@ -20,7 +20,9 @@ import {ElementRef} from '@angular/core';
 import * as moment from 'moment';
 import {timer} from 'rxjs';
 import {mapTo, switchMap} from 'rxjs/operators';
+
 import {ALL_OPTIONS_VALUE} from '../services/mtt_lab_models';
+import {CommandAttempt} from '../services/tfc_models';
 
 
 /** Page modes for edit/view pages. */
@@ -220,4 +222,13 @@ export function getFilterDefaultSingleValue(
 
   const firstOption = options.length > 0 ? options[0] : '';
   return hasAllOption ? ALL_OPTIONS_VALUE : firstOption;
+}
+
+/**
+ * Returns a relative path to an omnilab test run's output files.
+ * @param attempt The command attempt to get the path for.
+ */
+export function getOmnilabWorkingDirPath(attempt: CommandAttempt): string {
+  return `log/mh_lab_gen_files/${attempt.working_job_id}/test_${
+      attempt.working_test_id}`;
 }

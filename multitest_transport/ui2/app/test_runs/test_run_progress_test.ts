@@ -172,4 +172,19 @@ describe('TestRunProgress', () => {
     const attemptRow = getEl(element, '.attempt-row');
     expect(attemptRow.textContent).toContain('Attempt attempt_id');
   });
+
+  it('correctly builds omnilab URL', () => {
+    component.isOmnilabBased = true;
+    const runningAttempt = {
+      ...attempt,
+      state: CommandState.RUNNING,
+      working_job_id: 'job_id',
+      working_test_id: 'test_id'
+    };
+    component.getOutputFilesUrl(runningAttempt);
+    const omnilabPath = `log/mh_lab_gen_files/${
+        runningAttempt.working_job_id}/test_${runningAttempt.working_test_id}`;
+    expect(fs.getTestRunFileUrl)
+        .toHaveBeenCalledWith(component.testRun, runningAttempt, omnilabPath);
+  });
 });

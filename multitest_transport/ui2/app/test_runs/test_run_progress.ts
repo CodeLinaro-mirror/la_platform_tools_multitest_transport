@@ -24,7 +24,7 @@ import {FileService} from '../services/file_service';
 import {EventLogEntry, EventLogLevel, TestRun} from '../services/mtt_models';
 import {TfcClient} from '../services/tfc_client';
 import {Command, CommandAttempt, CommandState, CommandStateStats, isFinalCommandState, Request} from '../services/tfc_models';
-import {assertRequiredInput, millisToDuration} from '../shared/util';
+import {assertRequiredInput, getOmnilabWorkingDirPath, millisToDuration} from '../shared/util';
 
 /** Progress entity which represents a log entry. */
 interface LogEntity extends EventLogEntry {
@@ -361,7 +361,13 @@ export class TestRunProgress implements OnInit, OnChanges {
 
   /** Generate the output files URL for an attempt. */
   getOutputFilesUrl(attempt: CommandAttempt): string {
-    const url = this.fs.getTestRunFileUrl(this.testRun, attempt);
+    let url: string;
+    if (this.isOmnilabBased && !this.isFinished(attempt)) {
+      const omnilabPath = getOmnilabWorkingDirPath(attempt);
+      url = this.fs.getTestRunFileUrl(this.testRun, attempt, omnilabPath);
+    } else {
+      url = this.fs.getTestRunFileUrl(this.testRun, attempt);
+    }
     return this.fs.getFileBrowseUrl(url);
   }
 

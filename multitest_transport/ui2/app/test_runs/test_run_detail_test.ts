@@ -28,7 +28,7 @@ import {FileService} from '../services/file_service';
 import {MttClient, TestResultClient, TestRunActionClient} from '../services/mtt_client';
 import {Test, TestPackageInfo, TestRun, TestRunAction, TestRunPhase, TestRunState} from '../services/mtt_models';
 import {TfcClient} from '../services/tfc_client';
-import {Command, CommandAttempt, DeviceInfo, Request} from '../services/tfc_models';
+import {Command, CommandAttempt, CommandState, DeviceInfo, Request} from '../services/tfc_models';
 import {TestRunActionPickerDialog, TestRunActionPickerDialogData} from '../test_run_actions/test_run_action_picker_dialog';
 import {getEl, getTextContent} from '../testing/jasmine_util';
 import {newMockDeviceInfo} from '../testing/mtt_lab_mocks';
@@ -48,6 +48,7 @@ describe('TestRunDetail', () => {
   let tfcClient: jasmine.SpyObj<TfcClient>;
   let el: DebugElement;
   let liveAnnouncer: jasmine.SpyObj<LiveAnnouncer>;
+  let appData: {isOmniLabBased?: boolean};
 
   let command: Command;
   let attempt: CommandAttempt;
@@ -103,7 +104,7 @@ describe('TestRunDetail', () => {
     //  'Observable<DeviceInfosResponse>'.
     tfcClient.getDeviceInfos.and.returnValue(observableOf(testDevices));
     tfcClient.getRequest.and.returnValue(observableOf(request));
-    const appData: AppData = {};
+    appData = {};
     TestBed.configureTestingModule({
       imports: [NoopAnimationsModule, TestRunsModule],
       providers: [
@@ -113,7 +114,7 @@ describe('TestRunDetail', () => {
         {provide: TfcClient, useValue: tfcClient},
         {provide: LiveAnnouncer, useValue: liveAnnouncer},
         {provide: AnalyticsService, useValue: {}},
-        {provide: APP_DATA, useValue: appData},
+        {provide: APP_DATA, useValue: appData as AppData},
       ],
     });
     testRunDetailFixture = TestBed.createComponent(TestRunDetail);
@@ -170,6 +171,30 @@ describe('TestRunDetail', () => {
     textContent = getTextContent(el);
     expect(textContent).toContain('View Working Directory');
     expect(testRunDetail.outputFilesUrl).toEqual('browse_url');
+  });
+
+  it('correctly builds omnilab URL', () => {
+    appData.isOmniLabBased = true;
+    const runningAttempt = {
+      ...testUtil.newMockCommandAttempt(),
+      state: CommandState.RUNNING,
+      working_job_id: 'job_id',
+      working_test_id: 'test_id',
+    };
+    testRunDetail.request =
+        testUtil.newMockRequest([command], [runningAttempt]);
+    spyOn(testRunDetail, 'isLastAttemptFinal').and.returnValue(false);
+    testRunDetail.updateOutputFilesUrl();
+    const lastAttempt =
+        testRunDetail.request.command_attempts!
+            [testRunDetail.request.command_attempts!.length - 1];
+    const omnilabPath = `log/mh_lab_gen_files/${
+        lastAttempt.working_job_id}/test_${lastAttempt.working_test_id}`;
+    expect(fs.getTestRunFileUrl)
+        .toHaveBeenCalledWith(testRun, lastAttempt, omnilabPath);
+    expect(fs.getFileBrowseUrl)
+        .toHaveBeenCalledWith(
+            fs.getTestRunFileUrl(testRun, lastAttempt, omnilabPath));
   });
 
   it('shows the execute test run action button when there are manual actions',

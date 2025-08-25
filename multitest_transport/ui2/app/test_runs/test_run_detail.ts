@@ -15,7 +15,7 @@
  */
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
-import {AfterViewInit, Component, Input, OnDestroy, OnInit, ViewChild, inject} from '@angular/core';
+import {AfterViewInit, Component, inject, Input, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {MatButton} from '@angular/material/button';
 import {MatDialog} from '@angular/material/dialog';
 import {MatTabChangeEvent, MatTabGroup} from '@angular/material/tabs';
@@ -32,7 +32,7 @@ import {Notifier} from '../services/notifier';
 import {TfcClient} from '../services/tfc_client';
 import {isFinalCommandState, Request} from '../services/tfc_models';
 import {OverflowListType} from '../shared/overflow_list';
-import {assertRequiredInput, buildApiErrorMessage} from '../shared/util';
+import {assertRequiredInput, buildApiErrorMessage, getOmnilabWorkingDirPath} from '../shared/util';
 import {TestRunActionPickerDialog, TestRunActionPickerDialogData} from '../test_run_actions/test_run_action_picker_dialog';
 
 /** A component for displaying the details of a test run. */
@@ -182,10 +182,16 @@ export class TestRunDetail implements OnInit, AfterViewInit, OnDestroy {
 
     const attempts = this.request.command_attempts;
     const lastAttempt = attempts[attempts.length - 1];
-    const fileUrl = !this.appData.isOmniLabBased &&
-            isTestRunShardingModeModule(this.testRun.test_run_config) ?
-        this.fs.getTestRunMergedReportDirUrl(this.testRun) :
-        this.fs.getTestRunFileUrl(this.testRun, lastAttempt);
+    let fileUrl: string;
+    if (this.appData.isOmniLabBased && !this.isLastAttemptFinal()) {
+      const omnilabPath = getOmnilabWorkingDirPath(lastAttempt);
+      fileUrl =
+          this.fs.getTestRunFileUrl(this.testRun, lastAttempt, omnilabPath);
+    } else if (isTestRunShardingModeModule(this.testRun.test_run_config)) {
+      fileUrl = this.fs.getTestRunMergedReportDirUrl(this.testRun);
+    } else {
+      fileUrl = this.fs.getTestRunFileUrl(this.testRun, lastAttempt);
+    }
     this.outputFilesUrl = this.fs.getFileBrowseUrl(fileUrl);
   }
 
