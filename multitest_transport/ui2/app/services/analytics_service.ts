@@ -33,7 +33,10 @@ export class AnalyticsService {
 
   constructor(@Inject(APP_DATA) data: AppData) {
     this.trackingId = data && data.analyticsTrackingId;
-    this.baseMetrics = {'is_google': data && data.isGoogle ? 'True' : 'False'};
+    this.baseMetrics = {
+      'is_google': data && data.isGoogle ? 'True' : 'False',
+      'is_omni_lab': data && data.isOmniLabBased ? 'True' : 'False',
+    };
   }
 
   /**

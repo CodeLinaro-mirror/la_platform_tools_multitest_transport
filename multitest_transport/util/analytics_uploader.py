@@ -52,6 +52,7 @@ _EVENT_METRIC_KEYS = frozenset([
     'state',
     'is_rerun',
     'is_google',
+    'is_omni_lab',
     'command',
     'failed_test_count_threshold',
     'test_run_command',
@@ -136,6 +137,7 @@ class _EventParams(object):
     # Custom dimensions and metrics
     self.app_version = env.VERSION
     self.is_google = env.IS_GOOGLE
+    self.is_omni_lab = env.IS_OMNILAB_BASED
     for key, value in kwargs.items():
       if key not in _EVENT_METRIC_KEYS:
         logging.warning('Unknown metric key: %s', key)

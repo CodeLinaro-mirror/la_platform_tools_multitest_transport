@@ -56,6 +56,7 @@ describe('AnalyticsService', () => {
       analytics.trackLocation(PATH, TITLE);
       expect(gtag).toHaveBeenCalledWith('config', TRACKING_ID, {
         is_google: 'True',
+        is_omni_lab: 'False',
         page_path: PATH,
         page_title: TITLE,
         custom_map: {dimension1: 'is_google'}
@@ -72,7 +73,8 @@ describe('AnalyticsService', () => {
     it('calls gtag custom event', () => {
       analytics.trackEvent(CATEGORY, ACTION);
       expect(gtag).toHaveBeenCalledWith(
-          'event', ACTION, {is_google: 'True', event_category: CATEGORY});
+          'event', ACTION,
+          {is_google: 'True', is_omni_lab: 'False', event_category: CATEGORY});
     });
 
     it('does nothing without tracking ID', () => {
@@ -85,7 +87,8 @@ describe('AnalyticsService', () => {
     it('calls gtag exception event', () => {
       analytics.trackError(ERROR);
       expect(gtag).toHaveBeenCalledWith(
-          'event', 'exception', {is_google: 'True', description: ERROR});
+          'event', 'exception',
+          {is_google: 'True', is_omni_lab: 'False', description: ERROR});
     });
 
     it('does nothing without tracking ID', () => {
@@ -99,6 +102,7 @@ describe('AnalyticsService', () => {
       analytics.trackTiming(CATEGORY, ACTION, MILLIS);
       expect(gtag).toHaveBeenCalledWith('event', 'timing_complete', {
         is_google: 'True',
+        is_omni_lab: 'False',
         event_category: CATEGORY,
         name: ACTION,
         value: MILLIS,

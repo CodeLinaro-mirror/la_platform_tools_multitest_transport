@@ -33,6 +33,7 @@ class AnalyticsUploaderTest(testbed_dependent_test.TestbedDependentTest):
     super(AnalyticsUploaderTest, self).setUp()
     env.VERSION = 'version'
     env.IS_GOOGLE = True
+    env.IS_OMNILAB_BASED = True
     analytics_uploader._UPLOAD_ERROR_COUNT.value = 0
     analytics_uploader._TRACKING_ID = 'tracking_id'
     private_node_config = ndb_models.GetPrivateNodeConfig()
@@ -53,6 +54,7 @@ class AnalyticsUploaderTest(testbed_dependent_test.TestbedDependentTest):
         'event_category': category,
         'app_version': env.VERSION,
         'is_google': True,
+        'is_omni_lab': True,
         'user_tag': 'test_user_tag',
     }
     self.assertEqual(
@@ -127,6 +129,7 @@ class AnalyticsUploaderTest(testbed_dependent_test.TestbedDependentTest):
             'event_category': 'category',
             'app_version': env.VERSION,
             'is_google': True,
+            'is_omni_lab': True,
             'user_tag': 'test_user_tag',
             'test_name': 'name',
             'test_version': 'version',
