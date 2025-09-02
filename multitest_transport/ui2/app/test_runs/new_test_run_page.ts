@@ -23,7 +23,7 @@ import {MatStepper} from '@angular/material/stepper';
 import {Title} from '@angular/platform-browser';
 import {ActivatedRoute, Params, Router} from '@angular/router';
 import {forkJoin, Observable, of as observableOf} from 'rxjs';
-import {catchError, filter, finalize, first, map, switchMap} from 'rxjs/operators';
+import {catchError, filter, finalize, first, map, switchMap, timeout} from 'rxjs/operators';
 
 import {TestResourceForm} from '../build_channels/test_resource_form';
 import {APP_DATA, AppData} from '../services/app_data';
@@ -454,12 +454,16 @@ export class NewTestRunPage extends FormChangeTracker implements OnInit,
             return observableOf([]);
           }
           return forkJoin(hostnames.map(
-              hostname =>
-                  this.mttClient.netdata
-                      .getAlarms(DISK_SPACE_USAGE_ALARMS, hostname)
-                      .pipe(catchError(
-                          () => observableOf(
-                              {alarms: []} as mttModels.NetdataAlarmList)))));
+              hostname => this.mttClient.netdata
+                              .getAlarms(DISK_SPACE_USAGE_ALARMS, hostname)
+                              .pipe(
+                                  timeout(10000),  // Timeout after 10 seconds
+                                  catchError(() => {
+                                    return observableOf(
+                                        {alarms: []} as
+                                        mttModels.NetdataAlarmList);
+                                  }),
+                                  )));
         }),
         map(alarmLists => {
           const alarms =

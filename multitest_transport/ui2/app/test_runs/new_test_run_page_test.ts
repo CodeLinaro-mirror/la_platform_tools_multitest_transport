@@ -20,7 +20,7 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {MatChipInput} from '@angular/material/chips';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {provideRouter} from '@angular/router';
-import {of as observableOf} from 'rxjs';
+import {of as observableOf, throwError} from 'rxjs';
 
 import {APP_DATA} from '../services/app_data';
 import {FileService} from '../services/file_service';
@@ -251,11 +251,12 @@ describe('NewTestRunPage', () => {
 
   it('does not display warning message when netdata alarm requests fail',
      () => {
-       netdataClient.getAlarms.and.throwError('Error');
+       netdataClient.getAlarms.and.returnValue(throwError(() => 'Error'));
 
        newTestRunPage.startTestRun();
 
        expect(newTestRunPage.warningMessage).toEqual('');
+       expect(mttClient.createNewTestRunRequest).toHaveBeenCalled();
      });
 
   describe('back button', () => {
