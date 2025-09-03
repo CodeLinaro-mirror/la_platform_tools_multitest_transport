@@ -663,6 +663,9 @@ class OlcsSessionStub:
     command_attempt_message.working_job_id = request_detail.working_job_id
     command_attempt_message.working_test_id = request_detail.working_test_id
     command_attempt_message.hostname = command_detail.host_ip
+    command_attempt_message.non_tradefed_log_dir_names = list(
+        request_detail.non_tradefed_log_dir_names
+    )
 
     log_dir_path = os.path.join(
         file_util.GetLocalFilePath(
@@ -682,14 +685,6 @@ class OlcsSessionStub:
                   "logs", dir_name, tf_dir_name
               )
               break
-      mobly_log_dir_path = os.path.join(log_dir_path, "non-tradefed_logs")
-      if os.path.exists(mobly_log_dir_path):
-        for dir_name in os.listdir(mobly_log_dir_path):
-          if re.match(r"MoblyAospPackageTest_test_.*", dir_name):
-            prefix = "MoblyAospPackageTest_test_"
-            command_attempt_message.mobly_test_id.append(
-                dir_name[len(prefix) :]
-            )
     return command_attempt_message
 
   @staticmethod

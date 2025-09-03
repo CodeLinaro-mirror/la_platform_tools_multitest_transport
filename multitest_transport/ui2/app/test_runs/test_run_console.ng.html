@@ -57,11 +57,11 @@
       </mat-select>
     </mat-form-field>
     <mat-form-field appearance="outline" *ngIf="selectedSourceType === 'Mobly'">
-      <mat-label>Mobly Test Id</mat-label>
-      <mat-select [(ngModel)]="selectedMoblyTestId"
+      <mat-label>Mobly Log Directory</mat-label>
+      <mat-select [(ngModel)]="selectedNonTradefedLogDirName"
                   (selectionChange)="clearConsole(); resetPolling()">
-        <mat-option *ngFor="let testId of moblyTestIds" [value]="testId">
-          {{testId}}
+        <mat-option *ngFor="let dirName of nonTradefedLogDirNames" [value]="dirName">
+          {{dirName}}
         </mat-option>
       </mat-select>
     </mat-form-field>

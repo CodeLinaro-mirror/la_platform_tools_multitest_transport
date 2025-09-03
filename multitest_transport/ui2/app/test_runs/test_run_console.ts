@@ -76,8 +76,8 @@ export class TestRunConsole implements OnInit, OnChanges, OnDestroy {
   selectedTfLogType = Object.values(TF_LOG_TYPES)[2];
   MOBLY_LOG_TYPES = MOBLY_LOG_TYPES;
   selectedMoblyLogType = Object.values(MOBLY_LOG_TYPES)[0];
-  moblyTestIds: string[] = [];
-  selectedMoblyTestId = '';
+  nonTradefedLogDirNames: string[] = [];
+  selectedNonTradefedLogDirName = '';
   /** True if current logs have been fetched at least once. */
   initialized = false;
   offset?: number;
@@ -116,9 +116,10 @@ export class TestRunConsole implements OnInit, OnChanges, OnDestroy {
   private update(force = false) {
     this.invocations = this.request && this.request.command_attempts || [];
     if (this.invocations.length > 0 && this.isOmnilabBased) {
-      this.moblyTestIds = this.invocations[0].mobly_test_id || [];
-      if (this.moblyTestIds.length > 0) {
-        this.selectedMoblyTestId = this.moblyTestIds[0];
+      this.nonTradefedLogDirNames =
+          this.invocations[0].non_tradefed_log_dir_names || [];
+      if (this.nonTradefedLogDirNames.length > 0) {
+        this.selectedNonTradefedLogDirName = this.nonTradefedLogDirNames[0];
       }
     }
 
@@ -154,8 +155,8 @@ export class TestRunConsole implements OnInit, OnChanges, OnDestroy {
       if (this.selectedSourceType === 'OLC Server') {
         return 'logs/olc_server_session_logs/olc_server_session_log.txt';
       } else if (this.selectedSourceType === 'Mobly') {
-        return `logs/non-tradefed_logs/MoblyAospPackageTest_test_${
-            this.selectedMoblyTestId}/${this.selectedMoblyLogType}`;
+        return `logs/non-tradefed_logs/${this.selectedNonTradefedLogDirName}/${
+            this.selectedMoblyLogType}`;
       } else {  // Tradefed Logs
         if (isActive) {
           if (this.selectedTfLogType === 'test_output.txt') {

@@ -263,7 +263,7 @@ export declare interface CommandAttempt {
   /** hostname */
   readonly hostname: string;
   readonly log_dir_path?: string;
-  readonly mobly_test_id?: string[];
+  readonly non_tradefed_log_dir_names?: string[];
   readonly tf_log_path?: string;
   readonly working_job_id?: string;
   readonly working_test_id?: string;
