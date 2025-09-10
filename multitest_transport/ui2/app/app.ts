@@ -15,7 +15,7 @@
  */
 
 import {HTTP_INTERCEPTORS, HttpClientModule} from '@angular/common/http';
-import {Component, Inject, NgModule, OnDestroy} from '@angular/core';
+import {Component, Inject, NgModule, OnDestroy, provideZoneChangeDetection} from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialog, MatDialogRef} from '@angular/material/dialog';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {BrowserModule} from '@angular/platform-browser';
@@ -307,6 +307,7 @@ export class Mtt implements OnDestroy {
   ],
   bootstrap: [Mtt],
   providers: [
+    provideZoneChangeDetection(),
     {provide: HTTP_INTERCEPTORS, useClass: AnalyticsInterceptor, multi: true}, {
       provide: HTTP_INTERCEPTORS,
       useClass: StrictParamsInterceptor,  // must be placed after analytics

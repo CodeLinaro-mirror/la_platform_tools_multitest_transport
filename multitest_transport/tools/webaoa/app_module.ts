@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import {NgModule} from '@angular/core';
+import {NgModule, provideZoneChangeDetection} from '@angular/core';
 import {MatButtonModule} from '@angular/material/button';
 import {MatIconModule} from '@angular/material/icon';
 import {MatToolbarModule} from '@angular/material/toolbar';
@@ -29,9 +29,7 @@ import {EditorModule} from './editor/editor_module';
 
 /** Main application {@link NgModule}. */
 @NgModule({
-  declarations: [
-    AppComponent,
-  ],
+  declarations: [AppComponent],
   imports: [
     BrowserModule,
     BrowserAnimationsModule,
@@ -42,6 +40,7 @@ import {EditorModule} from './editor/editor_module';
     MatToolbarModule,
     MatTooltipModule,
   ],
+  providers: [provideZoneChangeDetection()],
   bootstrap: [AppComponent],
 })
 export class AppModule {
