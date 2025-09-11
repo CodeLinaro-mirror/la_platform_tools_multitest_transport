@@ -27,7 +27,7 @@ import {AnalyticsService} from '../services/analytics_service';
 import {APP_DATA, AppData} from '../services/app_data';
 import {FileService, joinPath} from '../services/file_service';
 import {MttClient} from '../services/mtt_client';
-import {isFinalTestRunState, isTestRunShardingModeModule, TestRun, TestRunAction, TestRunActionRef, TestRunPhase, TestRunSummary, TestRunSummaryList} from '../services/mtt_models';
+import {isFinalTestRunState, isTestRunShardingModeModule, NewTestRunRequest, TestRun, TestRunAction, TestRunActionRef, TestRunPhase, TestRunSummary, TestRunSummaryList} from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
 import {TfcClient} from '../services/tfc_client';
 import {isFinalCommandState, Request} from '../services/tfc_models';
@@ -263,6 +263,30 @@ export class TestRunDetail implements OnInit, AfterViewInit, OnDestroy {
   rerunTestRun() {
     this.router.navigate(
         [`test_runs/new`], {queryParams: {'prevTestRunId': this.testRunId}});
+  }
+
+  simpleRerunTestRun() {
+    if (!this.testRun || !this.testRun.test_run_config) {
+      this.notifier.showError('Test run config not loaded.');
+      return;
+    }
+    const newTestRunRequest: NewTestRunRequest = {
+      labels: this.testRun.labels,
+      test_run_config: this.testRun.test_run_config,
+      rerun_context: {},
+      rerun_configs: [],
+    };
+    this.mtt.createNewTestRunRequest(newTestRunRequest)
+        .pipe(first())
+        .subscribe(
+            result => {
+              this.notifier.showMessage(`Test run '${result.id}' started`);
+            },
+            error => {
+              this.notifier.showError(
+                  'Failed to schedule a new test run.',
+                  buildApiErrorMessage(error));
+            });
   }
 
   deleteTestRun() {

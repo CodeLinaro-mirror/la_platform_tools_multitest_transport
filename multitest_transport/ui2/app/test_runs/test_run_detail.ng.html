@@ -62,6 +62,10 @@
                     *ngIf="isFinalTestRunState(testRun.state); else cancel">
               Rerun
             </button>
+            <button mat-stroked-button color="accent" (click)="simpleRerunTestRun()"
+                    *ngIf="appData.mttVersion === 'dev' && isFinalTestRunState(testRun.state)">
+              Simple Rerun
+            </button>
             <ng-template #cancel>
               <button mat-stroked-button color="accent" (click)="cancelTestRun()">
                 Cancel
