@@ -355,8 +355,8 @@ export class TestRunProgress implements OnInit, OnChanges {
     return s.trim().split('\n');
   }
 
-  isFinished(attempt: CommandAttempt): boolean {
-    return isFinalCommandState(attempt.state);
+  isFinished(obj: Command|CommandAttempt): boolean {
+    return isFinalCommandState(obj.state);
   }
 
   /** Generate the output files URL for an attempt. */

@@ -143,7 +143,7 @@
                 </div>
 
                 <div fxFlex="120px" class="display-flex">
-                  <ng-container *ngIf="commandNode.value.failed_test_run_count">
+                  <ng-container *ngIf="commandNode.value.failed_test_run_count && isFinished(commandNode.value)">
                     <mat-icon *ngIf="commandNode.value.failed_test_run_count > 0"
                               class="results error">
                       error_outline
@@ -159,7 +159,7 @@
                 </div>
 
                 <div fxFlex="200px" class="display-flex">
-                  <ng-container *ngIf="commandNode.value.failed_test_count">
+                  <ng-container *ngIf="commandNode.value.failed_test_count && isFinished(commandNode.value)">
                     <mat-icon *ngIf="commandNode.value.failed_test_count > 0"
                               class="results error">
                       error_outline
@@ -224,7 +224,7 @@
                       </div>
 
                       <div fxFlex="120px" class="display-flex">
-                        <ng-container *ngIf="attempt.value.failed_test_run_count">
+                        <ng-container *ngIf="attempt.value.failed_test_run_count && isFinished(attempt.value)">
                           <mat-icon *ngIf="attempt.value.failed_test_run_count > 0"
                                     class="results error">
                             error_outline
@@ -240,7 +240,7 @@
                       </div>
 
                       <div fxFlex="200px" class="display-flex">
-                        <ng-container *ngIf="attempt.value.failed_test_count">
+                        <ng-container *ngIf="attempt.value.failed_test_count && isFinished(attempt.value)">
                           <mat-icon *ngIf="attempt.value.failed_test_count > 0"
                                     class="results error">
                             error_outline
