@@ -37,25 +37,23 @@ mkdir src
 mv -t src multitest_transport tradefed_cluster setup.py
 
 # Also move device-infra source code needed by MTT CLI to the src directory:
+# (device-infra source code is available in $KOKORO_ARTIFACTS_DIR,
+# configured by http://google3/devtools/kokoro/config/data/git_on_borg_resource_acl.gcl;l=18131-18142;rcl=808571504)
+#
 # Moving device-infra's grpc_error_util.py
 mkdir -p src/google3/third_party/deviceinfra/src/devtools/common/metrics/stability/util/
 mv $KOKORO_ARTIFACTS_DIR/git/device-infra/src/devtools/common/metrics/stability/util/grpc_error_util.py src/google3/third_party/deviceinfra/src/devtools/common/metrics/stability/util/grpc_error_util.py
 
 # Moving device-infra's exception.proto
-mkdir -p src/com_google_deviceinfra/src/devtools/common/metrics/stability/model/proto/
 mkdir -p src/src/devtools/common/metrics/stability/model/proto/
-# Note the com_google_deviceinfra path is how it's referenced in Python source
-# code: https://github.com/google/device-infra/blob/fc4e20e65e69700422cab4c0d7378745d82fb659/src/devtools/common/metrics/stability/util/grpc_error_util.py#L22
-# (It's processed by Copybara: http://google3/third_party/deviceinfra/copy.bara.sky;l=571-575;rcl=755968683)
-mv $KOKORO_ARTIFACTS_DIR/git/device-infra/src/devtools/common/metrics/stability/model/proto/exception.proto src/com_google_deviceinfra/src/devtools/common/metrics/stability/model/proto/exception.proto
+mv $KOKORO_ARTIFACTS_DIR/git/device-infra/src/devtools/common/metrics/stability/model/proto/exception.proto src/src/devtools/common/metrics/stability/model/proto/exception.proto
 mv $KOKORO_ARTIFACTS_DIR/git/device-infra/src/devtools/common/metrics/stability/model/proto/error_id.proto src/src/devtools/common/metrics/stability/model/proto/error_id.proto
 mv $KOKORO_ARTIFACTS_DIR/git/device-infra/src/devtools/common/metrics/stability/model/proto/error_type.proto src/src/devtools/common/metrics/stability/model/proto/error_type.proto
 mv $KOKORO_ARTIFACTS_DIR/git/device-infra/src/devtools/common/metrics/stability/model/proto/namespace.proto src/src/devtools/common/metrics/stability/model/proto/namespace.proto
 
 # Moving device-infra's rpc_error_payload.proto
-mkdir -p src/com_google_deviceinfra/src/devtools/common/metrics/stability/rpc/proto/
 mkdir -p src/src/devtools/common/metrics/stability/rpc/proto/
-mv $KOKORO_ARTIFACTS_DIR/git/device-infra/src/devtools/common/metrics/stability/rpc/proto/rpc_error_payload.proto src/com_google_deviceinfra/src/devtools/common/metrics/stability/rpc/proto/rpc_error_payload.proto
+mv $KOKORO_ARTIFACTS_DIR/git/device-infra/src/devtools/common/metrics/stability/rpc/proto/rpc_error_payload.proto src/src/devtools/common/metrics/stability/rpc/proto/rpc_error_payload.proto
 mv $KOKORO_ARTIFACTS_DIR/git/device-infra/src/devtools/common/metrics/stability/rpc/proto/rpc_error.proto src/src/devtools/common/metrics/stability/rpc/proto/rpc_error.proto
 
 # Moving device-infra's health.proto
@@ -64,7 +62,7 @@ mv $KOKORO_ARTIFACTS_DIR/git/device-infra/src/devtools/deviceinfra/host/daemon/p
 
 # Adding __init__.py in all subdirectories so Python can import modules in them
 # correctly.
-find src/google3 src/com_google_deviceinfra src/src src/multitest_transport \
+find src/google3 src/src src/multitest_transport \
 -type d -exec touch {}/__init__.py \;
 
 cat << EOF > src/VERSION
@@ -127,7 +125,7 @@ cat << EOF > inside_docker_build.sh
 
 /protoc/bin/protoc --python_out=/workspace/src/ \
 --proto_path /workspace/src/ \
-/workspace/src/com_google_deviceinfra/src/devtools/common/metrics/stability/model/proto/exception.proto
+/workspace/src/src/devtools/common/metrics/stability/model/proto/exception.proto
 
 /protoc/bin/protoc --python_out=/workspace/src/ \
 --proto_path /workspace/src/ \
@@ -143,7 +141,7 @@ cat << EOF > inside_docker_build.sh
 
 /protoc/bin/protoc --python_out=/workspace/src/ \
 --proto_path /workspace/src/ \
-/workspace/src/com_google_deviceinfra/src/devtools/common/metrics/stability/rpc/proto/rpc_error_payload.proto
+/workspace/src/src/devtools/common/metrics/stability/rpc/proto/rpc_error_payload.proto
 
 /protoc/bin/protoc --python_out=/workspace/src/ \
 --proto_path /workspace/src/ \
