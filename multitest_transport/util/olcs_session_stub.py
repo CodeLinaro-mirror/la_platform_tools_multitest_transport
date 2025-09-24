@@ -748,6 +748,10 @@ class OlcsSessionStub:
       if test_resource.params and test_resource.params.decompress_files:
         for decompress_file in test_resource.params.decompress_files:
           test_resource_proto.params.decompress_files.append(decompress_file)
+      if test_resource.original_download_url:
+        test_resource_proto.original_download_url = (
+            test_resource.original_download_url
+        )
 
     if request.prev_test_context:
       for test_resource in request.prev_test_context.test_resources:

@@ -443,16 +443,22 @@ def _UpdateTestResources(test_run_id, cache_urls, test_package_info):
   test_run.put()
 
 
-def _ConvertToTFCTestResource(obj, url):
+def _ConvertToTFCTestResource(obj, url, set_original_download_url=False):
   """Convert ndb_models.TestResourceObj to TFC api_messages.TestResource."""
+  params = None
+  if obj.params:
+    params = api_messages.TestResourceParameters(
+        decompress_files=obj.params.decompress_files
+    )
   return api_messages.TestResource(
       name=obj.name,
       url=file_util.GetWorkerAccessibleUrl(url),
       decompress=obj.decompress,
       decompress_dir=obj.decompress_dir,
       mount_zip=obj.mount_zip,
-      params=api_messages.TestResourceParameters(
-          decompress_files=obj.params.decompress_files) if obj.params else None)
+      params=params,
+      original_download_url=obj.url if set_original_download_url else None,
+  )
 
 
 def _CreateTFCRequest(test_run_id):
@@ -593,7 +599,8 @@ def _CreateTFCRequest(test_run_id):
       prev_test_context.command_line = retry_command_line
 
   test_resources = [
-      _ConvertToTFCTestResource(r, r.cache_url) for r in test_run.test_resources
+      _ConvertToTFCTestResource(r, r.cache_url, True)
+      for r in test_run.test_resources
   ]
 
   # add metadata URL to the test resources
@@ -603,6 +610,8 @@ def _CreateTFCRequest(test_run_id):
 
   test_resources.append(
       api_messages.TestResource(name=METADATA_FILE, url=metadata_url))
+
+  logging.info('List all test resources: %s', test_resources)
 
   # determine context file pattern
   context_file_pattern = test_run.test.context_file_pattern

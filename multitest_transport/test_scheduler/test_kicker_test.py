@@ -502,16 +502,19 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
     self.assertIsNone(prev_run_key)
     self.assertEqual(expected_context, prev_test_context)
 
-  def _CheckNewRequestMessage(self,
-                              msg,
-                              test_run,
-                              output_url,
-                              test_resource_urls,
-                              command_lines,
-                              retry_command_line=None,
-                              test_bench=None,
-                              shard_count=None,
-                              max_concurrent_tasks=None):
+  def _CheckNewRequestMessage(
+      self,
+      msg,
+      test_run,
+      output_url,
+      test_resource_urls,
+      original_urls,
+      command_lines,
+      retry_command_line=None,
+      test_bench=None,
+      shard_count=None,
+      max_concurrent_tasks=None,
+  ):
     """Compare a new request message to its associated test run."""
     test = test_run.test
     test_run_config = test_run.test_run_config
@@ -542,7 +545,11 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
         msg.test_environment.use_parallel_setup)
     # compare test resources, including additional metadata file
     test_resources = [
-        api_messages.TestResource(name=r.name, url=test_resource_urls[r.name])
+        api_messages.TestResource(
+            name=r.name,
+            url=test_resource_urls[r.name],
+            original_download_url=original_urls[r.name],
+        )
         for r in test_run.test_resources
     ]
     metadata_url = test_resource_urls['mtt.json']
@@ -587,20 +594,28 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
     self._CheckNewRequestMessage(
         msg=msg,
         test_run=test_run,
-        output_url='file:///data/app_default_bucket/test_runs/{}/output'.format(
-            test_run_id),
+        output_url=(
+            'file:///data/app_default_bucket/test_runs/{}/output'.format(
+                test_run_id
+            )
+        ),
         test_resource_urls={
-            'foo':
-                'cache_url',
-            'bar':
-                'cache_url',
-            'mtt.json':
+            'foo': 'cache_url',
+            'bar': 'cache_url',
+            'mtt.json': (
                 'http://localhost:8000/_ah/api/mtt/v1/test_runs/{}/metadata'
                 .format(test_run_id)
+            ),
+        },
+        original_urls={
+            'foo': 'http://foo_origin_url',
+            'bar': 'https://bar_origin_url',
         },
         command_lines=['command --invocation-data mtt=1'],
         test_bench=api_messages.TestBenchRequirement(
-            cluster='cluster', host=api_messages.HostRequirement()))
+            cluster='cluster', host=api_messages.HostRequirement()
+        ),
+    )
     test_run = ndb_models.TestRun.get_by_id(test_run_id)
     self.assertEqual(mock_request.id, test_run.request_id)
     self.assertEqual(ndb_models.TestRunState.QUEUED, test_run.state)
@@ -635,22 +650,30 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
     self._CheckNewRequestMessage(
         msg=msg,
         test_run=test_run,
-        output_url='file:///data/app_default_bucket/test_runs/{}/output'.format(
-            test_run_id),
+        output_url=(
+            'file:///data/app_default_bucket/test_runs/{}/output'.format(
+                test_run_id
+            )
+        ),
         test_resource_urls={
-            'foo':
-                'cache_url',
-            'bar':
-                'cache_url',
-            'mtt.json':
+            'foo': 'cache_url',
+            'bar': 'cache_url',
+            'mtt.json': (
                 'http://localhost:8000/_ah/api/mtt/v1/test_runs/{}/metadata'
                 .format(test_run_id)
+            ),
+        },
+        original_urls={
+            'foo': 'http://foo_origin_url',
+            'bar': 'https://bar_origin_url',
         },
         command_lines=['command --shard-count 2 --invocation-data mtt=1'],
         test_bench=test_kicker._DeviceSpecsToTFCTestBench(
             test_run.test_run_config.cluster,
-            test_run.test_run_config.device_specs),
-        shard_count=1)
+            test_run.test_run_config.device_specs,
+        ),
+        shard_count=1,
+    )
     test_run = ndb_models.TestRun.get_by_id(test_run_id)
     self.assertEqual(mock_request.id, test_run.request_id)
     self.assertEqual(ndb_models.TestRunState.QUEUED, test_run.state)
@@ -718,6 +741,11 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
                 .format(test_run_id)
             ),
         },
+        original_urls={
+            'foo': 'http://foo_origin_url',
+            'bar': 'https://bar_origin_url',
+            'test_package': 'test_package_url',
+        },
         command_lines=[
             (
                 'command -m CtsDeqpTestCases --shard-count 6 --shard-index 0'
@@ -784,23 +812,32 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
     self._CheckNewRequestMessage(
         msg=msg,
         test_run=test_run,
-        output_url='file:///data/app_default_bucket/test_runs/{}/output'.format(
-            test_run_id),
+        output_url=(
+            'file:///data/app_default_bucket/test_runs/{}/output'.format(
+                test_run_id
+            )
+        ),
         test_resource_urls={
-            'foo':
-                'cache_url',
-            'bar':
-                'cache_url',
-            'mtt.json':
+            'foo': 'cache_url',
+            'bar': 'cache_url',
+            'mtt.json': (
                 'http://localhost:8000/_ah/api/mtt/v1/test_runs/{}/metadata'
                 .format(test_run_id)
+            ),
+        },
+        original_urls={
+            'foo': 'http://foo_origin_url',
+            'bar': 'https://bar_origin_url',
         },
         command_lines=[
-            'command --shard-count ${TF_DEVICE_COUNT} --invocation-data mtt=1'],
+            'command --shard-count ${TF_DEVICE_COUNT} --invocation-data mtt=1'
+        ],
         test_bench=test_kicker._DeviceSpecsToTFCTestBench(
             test_run.test_run_config.cluster,
-            test_run.test_run_config.device_specs),
-        shard_count=1)
+            test_run.test_run_config.device_specs,
+        ),
+        shard_count=1,
+    )
     test_run = ndb_models.TestRun.get_by_id(test_run_id)
     self.assertEqual(mock_request.id, test_run.request_id)
     self.assertEqual(ndb_models.TestRunState.QUEUED, test_run.state)
@@ -827,22 +864,30 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
     self._CheckNewRequestMessage(
         msg=msg,
         test_run=test_run,
-        output_url='file:///data/app_default_bucket/test_runs/{}/output'.format(
-            test_run_id),
+        output_url=(
+            'file:///data/app_default_bucket/test_runs/{}/output'.format(
+                test_run_id
+            )
+        ),
         test_resource_urls={
-            'foo':
-                'cache_url',
-            'bar':
-                'cache_url',
-            'mtt.json':
+            'foo': 'cache_url',
+            'bar': 'cache_url',
+            'mtt.json': (
                 'http://localhost:8000/_ah/api/mtt/v1/test_runs/{}/metadata'
                 .format(test_run_id)
+            ),
+        },
+        original_urls={
+            'foo': 'http://foo_origin_url',
+            'bar': 'https://bar_origin_url',
         },
         command_lines=['edited command --invocation-data mtt=1'],
         test_bench=test_kicker._DeviceSpecsToTFCTestBench(
             test_run.test_run_config.cluster,
-            test_run.test_run_config.device_specs),
-        shard_count=1)
+            test_run.test_run_config.device_specs,
+        ),
+        shard_count=1,
+    )
     test_run = ndb_models.TestRun.get_by_id(test_run_id)
     self.assertEqual(mock_request.id, test_run.request_id)
     self.assertEqual(ndb_models.TestRunState.QUEUED, test_run.state)
@@ -878,24 +923,33 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
     self._CheckNewRequestMessage(
         msg=msg,
         test_run=test_run,
-        output_url='file:///data/app_default_bucket/test_runs/{}/output'.format(
-            test_run_id),
+        output_url=(
+            'file:///data/app_default_bucket/test_runs/{}/output'.format(
+                test_run_id
+            )
+        ),
         test_resource_urls={
-            'foo':
-                'cache_url',
-            'bar':
-                'cache_url',
-            'mtt.json':
+            'foo': 'cache_url',
+            'bar': 'cache_url',
+            'mtt.json': (
                 'http://localhost:8000/_ah/api/mtt/v1/test_runs/{}/metadata'
                 .format(test_run_id)
+            ),
+        },
+        original_urls={
+            'foo': 'http://foo_origin_url',
+            'bar': 'https://bar_origin_url',
         },
         command_lines=['command --shard-count 6 --invocation-data mtt=1'],
         retry_command_line=(
-            'retry_command_line --shard-count 6 --invocation-data mtt=1'),
+            'retry_command_line --shard-count 6 --invocation-data mtt=1'
+        ),
         test_bench=test_kicker._DeviceSpecsToTFCTestBench(
             test_run.test_run_config.cluster,
-            test_run.test_run_config.device_specs),
-        shard_count=1)
+            test_run.test_run_config.device_specs,
+        ),
+        shard_count=1,
+    )
     # prev_test_context's command_line should be replaced.
     self.assertEqual(
         'retry_command_line --shard-count 6 --invocation-data mtt=1',
@@ -962,21 +1016,29 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
     self._CheckNewRequestMessage(
         msg=msg,
         test_run=test_run,
-        output_url='file:///data/app_default_bucket/test_runs/{}/output'.format(
-            test_run_id),
+        output_url=(
+            'file:///data/app_default_bucket/test_runs/{}/output'.format(
+                test_run_id
+            )
+        ),
         test_resource_urls={
-            'foo':
-                'cache_url',
-            'bar':
-                'cache_url',
-            'mtt.json':
+            'foo': 'cache_url',
+            'bar': 'cache_url',
+            'mtt.json': (
                 'http://localhost:8000/_ah/api/mtt/v1/test_runs/{}/metadata'
                 .format(test_run_id)
+            ),
+        },
+        original_urls={
+            'foo': 'http://foo_origin_url',
+            'bar': 'https://bar_origin_url',
         },
         command_lines=['command --invocation-data mtt=1'],
         test_bench=test_kicker._DeviceSpecsToTFCTestBench(
             test_run.test_run_config.cluster,
-            test_run.test_run_config.device_specs))
+            test_run.test_run_config.device_specs,
+        ),
+    )
 
     # TFC request has two TF result reporters with right class names and options
     tradefed_config_objects = msg.test_environment.tradefed_config_objects
@@ -1059,12 +1121,15 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
         test_run=test_run,
         output_url=f'${{MTT_CONTROL_FILE_SERVER_URL}}/file/app_default_bucket/test_runs/{test_run_id}/output',
         test_resource_urls={
-            'foo':
-                '${MTT_CONTROL_FILE_SERVER_URL}/file/cache_url',
-            'bar':
-                '${MTT_CONTROL_FILE_SERVER_URL}/file/cache_url',
-            'mtt.json':
-                f'${{MTT_CONTROL_SERVER_URL}}/_ah/api/mtt/v1/test_runs/{test_run_id}/metadata',
+            'foo': '${MTT_CONTROL_FILE_SERVER_URL}/file/cache_url',
+            'bar': '${MTT_CONTROL_FILE_SERVER_URL}/file/cache_url',
+            'mtt.json': (
+                f'${{MTT_CONTROL_SERVER_URL}}/_ah/api/mtt/v1/test_runs/{test_run_id}/metadata'
+            ),
+        },
+        original_urls={
+            'foo': 'http://foo_origin_url',
+            'bar': 'https://bar_origin_url',
         },
         command_lines=['command --invocation-data mtt=1'],
         test_bench=test_kicker._DeviceSpecsToTFCTestBench(
