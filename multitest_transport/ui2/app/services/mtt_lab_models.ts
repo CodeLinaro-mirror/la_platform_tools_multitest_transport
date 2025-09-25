@@ -66,6 +66,7 @@ export declare interface LabDeviceExtraInfo {
   build_id: string;
   sdk_version: string;
   battery_level: number;
+  product_name: string;
   [key: string]: string | number;
 }
 
@@ -575,6 +576,7 @@ export function convertToDeviceExtraInfo(source: KeyValuePair[]):
     build_id: 'UNKNOWN',
     sdk_version: 'UNKNOWN',
     battery_level: 0,
+    product_name: 'UNKNOWN',
   };
 
   for (const entity of source) {

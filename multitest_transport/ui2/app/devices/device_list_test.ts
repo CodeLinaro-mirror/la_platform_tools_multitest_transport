@@ -358,17 +358,34 @@ describe('DeviceList', () => {
     expect(storedObject).toEqual(deviceList.getSearchCriteria());
   });
 
-  it('should hide column on view_columns dropdown when menu button clicked',
+  it('should hide column on view_columns dropdown when shown menu button clicked',
      () => {
        getEl(el, '#view-columns-btn').click();
 
-       const removableColumns = deviceList.columns.filter((c) => c.removable);
-       const column = removableColumns[0];
+       const originalColumnNum = getEls(el, 'mat-header-cell').length;
+       const removableShownColumns =
+           deviceList.columns.filter((c) => c.removable && c.show);
+       const column = removableShownColumns[0];
        getEl(el, '#' + column.fieldName + '-menu-btn').click();
        deviceListFixture.detectChanges();
        el = deviceListFixture.debugElement;
        expect(getEls(el, 'mat-header-cell').length)
-           .toEqual(deviceList.columns.length - 1);
+           .toEqual(originalColumnNum - 1);
+     });
+
+  it('should show column on view_columns dropdown when hidden menu button clicked',
+     () => {
+       getEl(el, '#view-columns-btn').click();
+
+       const originalColumnNum = getEls(el, 'mat-header-cell').length;
+       const removableHiddenColumns =
+           deviceList.columns.filter((c) => c.removable && !c.show);
+       const column = removableHiddenColumns[0];
+       getEl(el, '#' + column.fieldName + '-menu-btn').click();
+       deviceListFixture.detectChanges();
+       el = deviceListFixture.debugElement;
+       expect(getEls(el, 'mat-header-cell').length)
+           .toEqual(originalColumnNum + 1);
      });
 
   it('calls router.navigate when open device details', () => {
@@ -379,11 +396,12 @@ describe('DeviceList', () => {
   });
 
   it('loads display columns from localstorage correctly', () => {
+    const originalColumnNum = deviceList.columns.filter(x => x.show).length;
     const event = new MouseEvent('click');
     deviceList.toggleDisplayColumn(event, true, 3);
     deviceList.loadDisplayColumnFromLocalStorage();
     expect(deviceList.columns.filter(x => x.show).length)
-        .toEqual(deviceList.columns.length - 1);
+        .toEqual(originalColumnNum - 1);
   });
 
   it('can transform input string to filter options', () => {
@@ -829,8 +847,9 @@ describe('DeviceList in ATS instance', () => {
     el = deviceListFixture.debugElement;
   });
 
-  it('displays the 9 columns correctly', () => {
-    expect(deviceList.columns.length).toEqual(9);
+  it('displays the 9 columns and hide 1 column correctly', () => {
+    expect(deviceList.columns.filter(x => x.show).length).toEqual(9);
+    expect(deviceList.columns.length).toEqual(10);
   });
 
   it('should call the queryDeviceInfos api with includeOfflineDevices=false',

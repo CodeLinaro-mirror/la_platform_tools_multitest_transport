@@ -98,6 +98,12 @@ export class DeviceList implements OnChanges, OnDestroy, OnInit {
     {fieldName: 'product', displayName: 'Product', removable: true, show: true},
     {fieldName: 'variant', displayName: 'Variant', removable: true, show: true},
     {
+      fieldName: 'product_name',
+      displayName: 'Product Name',
+      removable: true,
+      show: false
+    },
+    {
       fieldName: 'run_target',
       displayName: 'Run Targets',
       removable: true,

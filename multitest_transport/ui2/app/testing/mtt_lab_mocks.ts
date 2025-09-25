@@ -60,6 +60,7 @@ const PREDEFINED_MESSAGE_TYPE =
     tfcModels.PredefinedMessageType.DEVICE_OFFLINE_REASON;
 const PRODUCT = 'hawk';
 const PRODUCT_VARIANT = 'hawk';
+const PRODUCT_NAME = 'hawk';
 const RECOVERY_ACTION = 'RECOVERY_ACTION';
 const RECOVERY_UNKNOWN_STATE = tfcModels.RecoveryState.UNKNOWN;
 const RUN_TARGET = 'hawk';
@@ -438,8 +439,9 @@ export function newMockDeviceExtraInfo(deviceNoteId: string = DEVICE_NOTE_ID):
   return [
     {key: 'battery_level', value: String(BATTERY_LEVEL)},
     {key: 'build_id', value: BUILD_ID},
-    {key: 'mac_address', value: MAC_ADDRESS},
     {key: 'device_note_id', value: String(deviceNoteId)},
+    {key: 'mac_address', value: MAC_ADDRESS},
+    {key: 'product_name', value: PRODUCT_NAME},
     {key: 'product_variant', value: PRODUCT_VARIANT},
     {key: 'product', value: PRODUCT},
     {key: 'sdk_version', value: SDK_VERSION},
@@ -574,6 +576,7 @@ export function newMockLabDeviceExtraInfo(
     build_id: BUILD_ID,
     device_note_id: deviceNoteId,
     mac_address: MAC_ADDRESS,
+    product_name: PRODUCT_NAME,
     product_variant: PRODUCT_VARIANT,
     product: PRODUCT,
     sdk_version: SDK_VERSION,

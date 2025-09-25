@@ -104,6 +104,11 @@ class OlcsLabInfoStubTest(absltest.TestCase):
     )
     dimension.name = 'control_id'
     dimension.value = 'device1'
+    dimension = (
+        device_info.device_feature.composite_dimension.supported_dimension.add()
+    )
+    dimension.name = 'type'
+    dimension.value = 'panther_name'
 
   def testGetDevice(self):
     """Tests the GetDevice method."""
@@ -143,6 +148,9 @@ class OlcsLabInfoStubTest(absltest.TestCase):
                 api_messages.KeyValuePair(key='product', value='panther'),
                 api_messages.KeyValuePair(
                     key='product_variant', value='panther_variant'
+                ),
+                api_messages.KeyValuePair(
+                    key='product_name', value='panther_name'
                 ),
             ],
             flated_extra_info=[],

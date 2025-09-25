@@ -77,12 +77,12 @@
               </td>
               <td class="value-field">{{ data.extraInfo.product_variant }}</td>
             </tr>
-            <tr *ngIf="showLogLink">
+            <tr>
               <td class="title-field">
-                <mat-label>Sponge</mat-label>
+                <mat-label>State</mat-label>
               </td>
               <td class="value-field">
-                <a href="{{ logUrl }}" target="_blank">sponge</a>
+                <status-button [state]="data.state"></status-button>
               </td>
             </tr>
           </table>
@@ -111,6 +111,12 @@
             </tr>
             <tr>
               <td class="title-field">
+                <mat-label>Product Name</mat-label>
+              </td>
+              <td class="value-field">{{ data.extraInfo.product_name }}</td>
+            </tr>
+            <tr>
+              <td class="title-field">
                 <mat-label>7 Days Utilization</mat-label>
               </td>
               <td class="value-field">{{ data.extraInfo.utilization | percent: "1.2" }}</td>
@@ -128,15 +134,11 @@
             </tr>
             <tr>
               <td class="title-field">
-                <mat-label>State</mat-label>
+                <mat-label *ngIf="showLogLink">Sponge</mat-label>
               </td>
               <td class="value-field">
-                <status-button [state]="data.state"></status-button>
+                <a *ngIf="showLogLink" href="{{ logUrl }}" target="_blank">sponge</a>
               </td>
-            </tr>
-            <tr *ngIf="showLogLink">
-              <td class="title-field"></td>
-              <td class="value-field"></td>
             </tr>
           </table>
         </td>

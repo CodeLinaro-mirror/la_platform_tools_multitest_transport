@@ -152,6 +152,7 @@ class OlcsLabInfoStub:
     battery_level = '100'
     sim_card_info = ''
     control_id = device_info.device_locator.id
+    product_name = ''
     for dimension in dimensions:
       if dimension.name == 'build':
         build_id = dimension.value
@@ -173,6 +174,8 @@ class OlcsLabInfoStub:
         sim_card_info = dimension.value
       elif dimension.name == 'control_id':
         control_id = dimension.value
+      elif dimension.name == 'type':
+        product_name = dimension.value
 
     return api_messages.DeviceInfo(
         device_serial=device_info.device_locator.id,
@@ -206,6 +209,7 @@ class OlcsLabInfoStub:
             api_messages.KeyValuePair(
                 key='product_variant', value=product_variant
             ),
+            api_messages.KeyValuePair(key='product_name', value=product_name),
         ],
         flated_extra_info=[],
         test_harness='OMNILAB',

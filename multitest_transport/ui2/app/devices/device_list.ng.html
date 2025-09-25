@@ -285,6 +285,14 @@
       <mat-cell *matCellDef="let device" fxFlex="180px"> {{ device.product_variant }} </mat-cell>
     </ng-container>
 
+    <!-- Product Name -->
+    <ng-container matColumnDef="product_name">
+      <mat-header-cell *matHeaderCellDef fxFlex="180px"> Product Name </mat-header-cell>
+      <mat-cell *matCellDef="let device" fxFlex="180px">
+        {{ device.extraInfo.product_name }}
+      </mat-cell>
+    </ng-container>
+
     <!-- Run Targets -->
     <ng-container matColumnDef="run_target">
       <mat-header-cell *matHeaderCellDef fxFlex="220px"> Run Targets </mat-header-cell>

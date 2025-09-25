@@ -43,7 +43,7 @@ EXPECTED_HOST_INFO = api_messages.HostInfo(
             run_target='panther',
             build_id='',
             product='panther',
-            product_variant='panther',
+            product_variant='panther_variant',
             sdk_version='',
             state='Available',
             timestamp=datetime.datetime.utcfromtimestamp(60),
@@ -66,7 +66,10 @@ EXPECTED_HOST_INFO = api_messages.HostInfo(
                 api_messages.KeyValuePair(key='build_id', value=''),
                 api_messages.KeyValuePair(key='product', value='panther'),
                 api_messages.KeyValuePair(
-                    key='product_variant', value='panther'
+                    key='product_variant', value='panther_variant'
+                ),
+                api_messages.KeyValuePair(
+                    key='product_name', value='panther_name'
                 ),
             ],
             flated_extra_info=[],
@@ -161,12 +164,17 @@ class HostApiTest(api_test_util.TestCase):
           device_info.device_feature.composite_dimension.supported_dimension.add()
       )
       dimension.name = 'device'
-      dimension.value = 'panther'
+      dimension.value = 'panther_variant'
       dimension = (
           device_info.device_feature.composite_dimension.supported_dimension.add()
       )
       dimension.name = 'control_id'
       dimension.value = 'device1'
+      dimension = (
+          device_info.device_feature.composite_dimension.supported_dimension.add()
+      )
+      dimension.name = 'type'
+      dimension.value = 'panther_name'
 
       self._olcs_lab_info_client.get_lab_info.return_value = (
           get_lab_info_response
