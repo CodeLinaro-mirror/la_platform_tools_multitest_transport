@@ -342,10 +342,12 @@ else
     --ats_file_server="${ATS_FILE_SERVER}" \
     --ats_xts_work_dir="${MTT_MH_WORK_DIR}" \
     --cache_installed_apks=false \
+    --check_android_device_sim_card_type=true \
     --check_device_interval=1h \
     --clear_android_device_multi_users=false \
     --detect_device_interval_sec=2 \
     --disable_calling=false \
+    --disable_device_reboot=true \
     --disable_device_reboot_for_ro_properties=true \
     --disable_wifi_util_func=true \
     --enable_android_device_ready_check=false \
@@ -353,8 +355,10 @@ else
     --enable_device_state_change_recover=false \
     --enable_device_system_settings_change=false \
     --enable_external_master_server=true \
+    --enable_fastboot_detector=false \
     --enable_root_device=false \
     --enable_test_log_collector=true \
+    --ignore_check_device_failure=true \
     --master_grpc_target="${OLC_SERVER_GRPC_TARGET}" \
     --mute_android=false \
     --public_dir="${MTT_LOG_DIR}" \
