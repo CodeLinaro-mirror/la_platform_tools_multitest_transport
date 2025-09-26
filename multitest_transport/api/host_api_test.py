@@ -58,8 +58,8 @@ EXPECTED_HOST_INFO = api_messages.HostInfo(
             device_type=api_messages.DeviceTypeMessage.PHYSICAL,
             mac_address='',
             group_name='',
-            sim_state='ABSENT',
             sim_operator='',
+            sim_state='ABSENT',
             extra_info=[
                 api_messages.KeyValuePair(key='battery_level', value='100'),
                 api_messages.KeyValuePair(key='sdk_version', value=''),
@@ -71,6 +71,8 @@ EXPECTED_HOST_INFO = api_messages.HostInfo(
                 api_messages.KeyValuePair(
                     key='product_name', value='panther_name'
                 ),
+                api_messages.KeyValuePair(key='sim_operator', value=''),
+                api_messages.KeyValuePair(key='sim_state', value='ABSENT'),
             ],
             flated_extra_info=[],
             test_harness='OMNILAB',

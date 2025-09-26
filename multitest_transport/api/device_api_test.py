@@ -118,8 +118,13 @@ class DeviceApiTest(api_test_util.TestCase):
       dimension = (
           device_info.device_feature.composite_dimension.supported_dimension.add()
       )
-      dimension.name = 'sim_card_info'
+      dimension.name = 'sim_operator_alpha'
       dimension.value = 'T-mobile'
+      dimension = (
+          device_info.device_feature.composite_dimension.supported_dimension.add()
+      )
+      dimension.name = 'sim_state'
+      dimension.value = 'READY'
       dimension = (
           device_info.device_feature.composite_dimension.supported_dimension.add()
       )
@@ -178,6 +183,10 @@ class DeviceApiTest(api_test_util.TestCase):
                     api_messages.KeyValuePair(
                         key='product_name', value='panther_name'
                     ),
+                    api_messages.KeyValuePair(
+                        key='sim_operator', value='T-mobile'
+                    ),
+                    api_messages.KeyValuePair(key='sim_state', value='READY'),
                 ],
                 flated_extra_info=[],
                 test_harness='OMNILAB',
@@ -250,6 +259,8 @@ class DeviceApiTest(api_test_util.TestCase):
                 api_messages.KeyValuePair(
                     key='product_name', value='panther_name'
                 ),
+                api_messages.KeyValuePair(key='sim_operator', value='T-mobile'),
+                api_messages.KeyValuePair(key='sim_state', value='READY'),
             ],
             flated_extra_info=[],
             test_harness='OMNILAB',
@@ -306,6 +317,8 @@ class DeviceApiTest(api_test_util.TestCase):
                 api_messages.KeyValuePair(
                     key='product_name', value='panther_name'
                 ),
+                api_messages.KeyValuePair(key='sim_operator', value='T-mobile'),
+                api_messages.KeyValuePair(key='sim_state', value='READY'),
             ],
             flated_extra_info=[],
             test_harness='OMNILAB',

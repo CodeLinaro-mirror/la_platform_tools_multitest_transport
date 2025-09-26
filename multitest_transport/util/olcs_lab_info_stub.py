@@ -150,7 +150,8 @@ class OlcsLabInfoStub:
     )
     lab_name = ''
     battery_level = '100'
-    sim_card_info = ''
+    sim_operator_alpha = ''
+    sim_state = 'ABSENT'
     control_id = device_info.device_locator.id
     product_name = ''
     for dimension in dimensions:
@@ -170,8 +171,10 @@ class OlcsLabInfoStub:
         lab_name = dimension.value
       elif dimension.name == 'battery_level':
         battery_level = dimension.value
-      elif dimension.name == 'sim_card_info':
-        sim_card_info = dimension.value
+      elif dimension.name == 'sim_operator_alpha':
+        sim_operator_alpha = dimension.value
+      elif dimension.name == 'sim_state':
+        sim_state = dimension.value.upper() if dimension.value else sim_state
       elif dimension.name == 'control_id':
         control_id = dimension.value
       elif dimension.name == 'type':
@@ -199,8 +202,8 @@ class OlcsLabInfoStub:
         device_type=device_type,
         mac_address=mac_address,
         group_name='',
-        sim_state='READY' if sim_card_info else 'ABSENT',
-        sim_operator=sim_card_info,
+        sim_operator=sim_operator_alpha,
+        sim_state=sim_state,
         extra_info=[
             api_messages.KeyValuePair(key='battery_level', value=battery_level),
             api_messages.KeyValuePair(key='sdk_version', value=sdk_version),
@@ -210,6 +213,10 @@ class OlcsLabInfoStub:
                 key='product_variant', value=product_variant
             ),
             api_messages.KeyValuePair(key='product_name', value=product_name),
+            api_messages.KeyValuePair(
+                key='sim_operator', value=sim_operator_alpha
+            ),
+            api_messages.KeyValuePair(key='sim_state', value=sim_state),
         ],
         flated_extra_info=[],
         test_harness='OMNILAB',

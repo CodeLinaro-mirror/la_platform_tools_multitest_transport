@@ -97,8 +97,13 @@ class OlcsLabInfoStubTest(absltest.TestCase):
     dimension = (
         device_info.device_feature.composite_dimension.supported_dimension.add()
     )
-    dimension.name = 'sim_card_info'
+    dimension.name = 'sim_operator_alpha'
     dimension.value = 'T-mobile'
+    dimension = (
+        device_info.device_feature.composite_dimension.supported_dimension.add()
+    )
+    dimension.name = 'sim_state'
+    dimension.value = 'READY'
     dimension = (
         device_info.device_feature.composite_dimension.supported_dimension.add()
     )
@@ -137,8 +142,8 @@ class OlcsLabInfoStubTest(absltest.TestCase):
             device_type=api_messages.DeviceTypeMessage.PHYSICAL,
             mac_address='00:90:4c:d2:b1:9e',
             group_name='',
-            sim_state='READY',
             sim_operator='T-mobile',
+            sim_state='READY',
             extra_info=[
                 api_messages.KeyValuePair(key='battery_level', value='90'),
                 api_messages.KeyValuePair(key='sdk_version', value='34'),
@@ -152,6 +157,8 @@ class OlcsLabInfoStubTest(absltest.TestCase):
                 api_messages.KeyValuePair(
                     key='product_name', value='panther_name'
                 ),
+                api_messages.KeyValuePair(key='sim_operator', value='T-mobile'),
+                api_messages.KeyValuePair(key='sim_state', value='READY'),
             ],
             flated_extra_info=[],
             test_harness='OMNILAB',
