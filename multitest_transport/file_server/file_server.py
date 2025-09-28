@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """Android Test Station local file server."""
+import base64
 import enum
 import hashlib
 import http
@@ -43,6 +44,18 @@ def HandleException(error):
   code = getattr(error, 'code', http.HTTPStatus.INTERNAL_SERVER_ERROR)
   message = getattr(error, 'description', None)
   return flask.jsonify({'code': code, 'message': message}), code
+
+
+def _CalculateSha256(file_path):
+  """Calculates sha256 of a file. The result is a string encoded in base64."""
+  sha256 = hashlib.sha256()
+  with open(file_path, 'rb') as f:
+    while True:
+      data = f.read(65536)  # 64kb chunks
+      if not data:
+        break
+      sha256.update(data)
+  return base64.b64encode(sha256.digest()).decode('utf-8')
 
 
 @flask_app.route('/file/<path:path>', methods=['GET'])
@@ -150,6 +163,18 @@ def DeleteFile(path: str) -> flask.Response:
   if os.path.isfile(resolved_path):
     os.remove(resolved_path)
   return flask.Response(status=http.HTTPStatus.NO_CONTENT)
+
+
+@flask_app.route('/hash/<path:path>', methods=['GET'])
+def GetFileHash(path: str) -> flask.Response:
+  """Retrieve file sha256 hash."""
+  flask_app.logger.info('Getting SHA256 hash for file: %s', path)
+  resolved_path = security.safe_join(flask.current_app.root_path, path)
+  if not os.path.isfile(resolved_path):
+    flask.abort(http.HTTPStatus.NOT_FOUND, "File '%s' not found" % path)
+  sha256_hash = _CalculateSha256(resolved_path)
+  flask_app.logger.info('SHA256 hash for file %s: %s', path, sha256_hash)
+  return flask.jsonify({'sha256': sha256_hash})
 
 
 class FileType(str, enum.Enum):

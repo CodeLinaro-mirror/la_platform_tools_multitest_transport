@@ -21,6 +21,7 @@ py_library(
         third_party("attr"),
         third_party("flask"),
         third_party("werkzeug"),
+        "//third_party/py/flask:flask_without_jinja",
     ],
 )
 
@@ -29,8 +30,12 @@ py_strict_test(
     srcs = [
         "file_server_test.py",
     ],
+    data = [
+        "//javatests/com/google/devtools/mobileharness/shared/util/cache/persistent:testdata",
+    ],
     deps = [
         ":file_server_lib",
+        "//pyglib:resources",
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         third_party("absl/testing:absltest"),
         third_party("werkzeug"),

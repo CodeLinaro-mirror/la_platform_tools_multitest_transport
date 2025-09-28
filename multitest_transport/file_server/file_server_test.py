@@ -24,6 +24,8 @@ from unittest import mock
 from absl.testing import absltest
 import werkzeug
 
+from google3.pyglib import resources
+
 
 from multitest_transport.file_server import file_server
 
@@ -39,6 +41,12 @@ class FileServerTest(absltest.TestCase):
     # Create a text file for testing.
     with open(self.app.root_path + '/test.txt', 'wb') as f:
       f.write(b'hello world')
+    self.test_file = resources.GetResourceFilenameInDirectoryTree(
+        os.path.join(
+            'google3/javatests/com/google/devtools/mobileharness/shared/util/cache/persistent/testdata/',
+            'random.out',
+        )
+    )
 
   def tearDown(self):
     super(FileServerTest, self).tearDown()
@@ -269,6 +277,30 @@ class FileServerTest(absltest.TestCase):
     with self.app.test_client() as client:
       response = client.delete('/file/unknown.txt')
       self.assertEqual(204, response.status_code)
+
+  def test_CalculateSha256(self):
+    """Tests that file hash is encoded in base64."""
+    sha256 = file_server._CalculateSha256(self.test_file)
+    self.assertEqual('++Oexfed9geAS8cc8YkJEtsdpux9n2dVQaDD/+b/h+I=', sha256)
+
+  def testGetFileHash(self):
+    """Tests that file hash can be retrieved."""
+    with self.app.test_client() as client:
+      response = client.get('/hash/test.txt')
+      self.assertEqual(200, response.status_code)
+      data = json.loads(response.data)
+      self.assertEqual(
+          'uU0nuZNNPgilLlLX2n2r+sSE7+N6U4DukIj3rOLvzek=',
+          data['sha256'],
+      )
+
+  def testGetFileHash_notFound(self):
+    """Tests that file not found errors are handled when getting hash."""
+    with self.app.test_client() as client:
+      response = client.get('/hash/unknown.txt')
+      self.assertEqual(404, response.status_code)
+      data = json.loads(response.data)
+      self.assertEqual("File 'unknown.txt' not found", data['message'])
 
   def testListDirectory(self):
     """Tests that directory contents can be listed."""
