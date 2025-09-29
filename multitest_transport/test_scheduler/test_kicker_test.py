@@ -1219,5 +1219,64 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
                                 test_version='version',
                                 is_rerun=False)
 
+  @mock.patch.object(env, 'IS_OMNILAB_BASED', True)
+  @mock.patch.object(tfc_client, 'NewRequest', autospec=True)
+  @mock.patch.object(download_util, 'DownloadResources', autospec=True)
+  def testKickTestRun_AllowPartialDeviceMatch_omniLab(
+      self, mock_download_resources, mock_new_request):
+    test_run_id = self._CreateMockTestRun(
+        command='command',
+        runner_sharding_args='--shard-count ${TF_SHARD_COUNT}',
+        cluster='cluster',
+        device_specs=['name:value'],
+        shard_count=2,
+        sharding_mode=ndb_models.ShardingMode.RUNNER,
+        allow_partial_device_match=True).key.id()
+    test_run = ndb_models.TestRun.get_by_id(test_run_id)
+    mock_download_resources.return_value = {
+        r.url: 'cache_url' for r in test_run.test_resources
+    }
+    mock_request = api_messages.RequestMessage(id='request_id')
+    mock_new_request.return_value = mock_request
+
+    test_kicker.KickTestRun(test_run_id)
+
+    mock_download_resources.assert_called_once_with(
+        [r.url for r in test_run.test_resources], test_run=test_run)
+    mock_new_request.assert_called()
+    msg = mock_new_request.call_args[0][0]
+    self._CheckNewRequestMessage(
+        msg=msg,
+        test_run=test_run,
+        output_url=(
+            'file:///data/app_default_bucket/test_runs/{}/output'.format(
+                test_run_id
+            )
+        ),
+        test_resource_urls={
+            'foo': 'cache_url',
+            'bar': 'cache_url',
+            'mtt.json': (
+                'http://localhost:8000/_ah/api/mtt/v1/test_runs/{}/metadata'
+                .format(test_run_id)
+            ),
+        },
+        original_urls={
+            'foo': 'http://foo_origin_url',
+            'bar': 'https://bar_origin_url',
+        },
+        command_lines=[
+            'command --shard-count 2 --invocation-data mtt=1'
+        ],
+        test_bench=test_kicker._DeviceSpecsToTFCTestBench(
+            test_run.test_run_config.cluster,
+            test_run.test_run_config.device_specs,
+        ),
+        shard_count=1,
+    )
+    test_run = ndb_models.TestRun.get_by_id(test_run_id)
+    self.assertEqual(mock_request.id, test_run.request_id)
+    self.assertEqual(ndb_models.TestRunState.QUEUED, test_run.state)
+
 if __name__ == '__main__':
   absltest.main()

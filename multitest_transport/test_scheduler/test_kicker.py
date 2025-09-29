@@ -521,16 +521,21 @@ def _CreateTFCRequest(test_run_id):
     if (test_run.test_run_config.shard_count > 1 and
         test_run.test.runner_sharding_args):
       tmpl = string.Template(test_run.test.runner_sharding_args)
-      if test_run.test_run_config.allow_partial_device_match:
+      # Whether to use ATS 1.0's TFC dynamic sharding. ATS 2.0 uses Omnilab
+      # scheduler and don't need to replace shard count with environment
+      # variable.
+      use_tfc_dynamic_sharding = (
+          test_run.test_run_config.allow_partial_device_match and
+          not env.IS_OMNILAB_BASED)
+      if use_tfc_dynamic_sharding:
         logging.warning(
             'Allow partial device matching require shard_count to be dynamic; '
             'ignoring shard count')
-      sharding_args = tmpl.safe_substitute({
-          'TF_SHARD_COUNT':
-              TF_DEVICE_COUNT_ENV_VAR
-              if test_run.test_run_config.allow_partial_device_match else str(
-                  test_run.test_run_config.shard_count)
-      })
+      shard_count = (
+          TF_DEVICE_COUNT_ENV_VAR if use_tfc_dynamic_sharding
+          else str(test_run.test_run_config.shard_count))
+      sharding_args = tmpl.safe_substitute(
+          {'TF_SHARD_COUNT': shard_count})
       command_line = ' '.join([command_line, sharding_args])
       if retry_command_line:
         retry_command_line = ' '.join([retry_command_line, sharding_args])

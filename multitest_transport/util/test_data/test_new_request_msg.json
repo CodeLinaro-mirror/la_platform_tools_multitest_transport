@@ -6,7 +6,7 @@
       "command_line": "cts --enable-token-sharding --max-testcase-run-count 2 --retry-strategy RETRY_ANY_FAILURE -m Gesture --invocation-data mtt=1",
       "run_count": 1,
       "shard_count": 1,
-      "allow_partial_device_match": false,
+      "allow_partial_device_match": true,
       "test_bench": {
         "cluster": "default",
         "host": {

@@ -537,6 +537,10 @@ class OlcsSessionStubTest(testbed_dependent_test.TestbedDependentTest):
       self.assertEqual(command_proto.command_line, command_msg.command_line)
       self.assertEqual(command_proto.run_count, command_msg.run_count)
       self.assertEqual(command_proto.shard_count, command_msg.shard_count)
+      self.assertEqual(
+          command_proto.allow_partial_device_match,
+          command_msg.allow_partial_device_match,
+      )
 
       self.assertEqual(
           request_proto.max_retry_on_test_failures,

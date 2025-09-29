@@ -216,6 +216,8 @@ export class NewTestRunPage extends FormChangeTracker implements OnInit,
                 this.testRunConfig = mttModels.initTestRunConfig(
                     testId ? this.mttObjectMap.testMap[testId] :
                              Object.values(this.mttObjectMap.testMap)[0]);
+                this.testRunConfig.allow_partial_device_match =
+                    this.appData.isOmniLabBased;
               }
 
               this.updateTestResources();

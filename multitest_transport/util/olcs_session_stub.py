@@ -562,6 +562,9 @@ class OlcsSessionStub:
     command_info_message.enable_xts_dynamic_download = (
         proto.enable_xts_dynamic_download
     )
+    command_info_message.allow_partial_device_match = (
+        proto.allow_partial_device_match
+    )
     return command_info_message
 
   def _ConvertCommandDetail(
@@ -709,6 +712,9 @@ class OlcsSessionStub:
       command_info_proto.command_line = command_info.command_line
       command_info_proto.run_count = command_info.run_count
       command_info_proto.shard_count = command_info.shard_count
+      command_info_proto.allow_partial_device_match = (
+          command_info.allow_partial_device_match
+      )
       for group in command_info.test_bench.host.groups:
         device_attribute = group.run_targets[0].device_attributes[0]
         device_attribute_requirement = service_pb2.CommandInfo.DeviceDimension(
