@@ -333,6 +333,11 @@ else
     LAB_SERVER_ARGS+="--virtual_device_server_ip=${RVD_HOST} "
     LAB_SERVER_ARGS+="--virtual_device_server_username=${RVD_USER} "
   fi
+  PERSITENT_CACHE_DIR="${MTT_STORAGE_PATH}/local_file_store/persistent_cache"
+  if [ ! -d "${PERSITENT_CACHE_DIR}" ]; then
+    mkdir -p "${PERSITENT_CACHE_DIR}"
+  fi
+  LAB_SERVER_ARGS+=" --persistent_cache_dir=${PERSITENT_CACHE_DIR}"
   java "-Xmx${MAX_HEAP_MB}m" -XX:+HeapDumpOnOutOfMemoryError \
     -jar /deviceinfra/lab_server_oss_deploy.jar \
     --adb_dont_kill_server=true \
