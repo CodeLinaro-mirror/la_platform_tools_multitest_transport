@@ -82,7 +82,7 @@ chmod +w src/setup.py
 sed -i "s/VERSION =.*/VERSION = \"${RELEASE}\"/" src/setup.py
 
 cat << EOF > Dockerfile
-FROM ubuntu:20.04
+FROM ubuntu:24.04
 ENV LANG=C.UTF-8
 
 RUN export DEBIAN_FRONTEND=noninteractive; apt update -qq; apt install -y -qq \

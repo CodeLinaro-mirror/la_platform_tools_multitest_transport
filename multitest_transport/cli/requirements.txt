@@ -3,6 +3,7 @@
 ansible-base
 appengine-python-standard >= 1.0.0
 attrs
+cryptography == 41.0.7
 fabric
 google-api-core
 google-api-python-client

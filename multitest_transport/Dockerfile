@@ -48,10 +48,10 @@ ENV GOOGLE_APPLICATION_CREDENTIALS /tmp/keyfile/key.json
 COPY /usr/ /usr/
 
 COPY /mtt/ /mtt/
-# Compile and remove all python source files. Explicitly don't compile flask
-# because google3's flask source code is only compatible with python 3.12+ and
-# MTT still uses python 3.9. Flask is added via pip.
-RUN python3 -m compileall -bq -x /mtt/google3/third_party/py/flask /mtt/google3 \
+# Compile and remove all python source files. Explicitly don't compile
+# flask/scipy/babel because google3's source code is only compatible with python
+# 3.12+ and MTT still uses python 3.9. They are installed via pip.
+RUN python3 -m compileall -bq -x "/mtt/google3/third_party/py/(flask|scipy|babel)" /mtt/google3 \
     && find /mtt/google3 -type f -iname "*.py" ! -iname "gunicorn_config.py" -exec rm -rf {} \;
 # Unzip the selected prebuilt TF runner
 RUN unzip -q /mtt/prebuilts/tradefed/${MTT_TRADEFED_PREBUILT} -d /tradefed
