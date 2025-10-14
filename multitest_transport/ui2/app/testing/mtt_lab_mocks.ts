@@ -401,10 +401,8 @@ export function newMockDeviceInfo(
     state: tfcModels.DeviceState = DEVICE_AVAILABLE_STATE,
     hidden: boolean = HIDDEN, hostname: string = HOSTNAME,
     runTarget = RUN_TARGET, deviceType = tfcModels.DeviceType.PHYSICAL,
-    timestamp: string = TIMESTAMP,
-    testHarness: string = TEST_HARNESS,
-    extraInfo: mttLabModels.KeyValuePair[] | null = null)
-    : tfcModels.DeviceInfo {
+    timestamp: string = TIMESTAMP, testHarness: string = TEST_HARNESS,
+    extraInfo: tfcModels.KeyValuePair[]|null = null): tfcModels.DeviceInfo {
   return {
     battery_level: String(BATTERY_LEVEL),
     build_id: BUILD_ID,
@@ -435,7 +433,7 @@ export function newMockDeviceInfo(
 
 /** Creates a new mock newMockDeviceExtraInfo. */
 export function newMockDeviceExtraInfo(deviceNoteId: string = DEVICE_NOTE_ID):
-    mttLabModels.KeyValuePair[] {
+    tfcModels.KeyValuePair[] {
   return [
     {key: 'battery_level', value: String(BATTERY_LEVEL)},
     {key: 'build_id', value: BUILD_ID},
@@ -618,7 +616,7 @@ export function newMockHostInfo(
     hidden: boolean = HIDDEN,
     labName: string = LAB_NAME,
     hostGroup: string = HOST_GROUP,
-    extraInfo: mttLabModels.KeyValuePair[] = newMockHostExtraInfo(0),
+    extraInfo: tfcModels.KeyValuePair[] = newMockHostExtraInfo(0),
     recoveryState: tfcModels.RecoveryState|null =
         tfcModels.RecoveryState.UNKNOWN,
     assignee: string = '',
@@ -669,7 +667,7 @@ export function newMockLabHostInfo(
     hidden: boolean = HIDDEN,
     labName: string = LAB_NAME,
     hostGroup: string = HOST_GROUP,
-    extraInfo: mttLabModels.KeyValuePair[] = newMockHostExtraInfo(0),
+    extraInfo: tfcModels.KeyValuePair[] = newMockHostExtraInfo(0),
     assignee: string = '',
     deviceCountSummaries: tfcModels.DeviceCountSummary[] =
         DEVICE_COUNT_SUMMARIES[0],
@@ -882,8 +880,8 @@ export function newMockBatchGetHostNotes(
 
 /** This method creates a new host extra info. */
 export function newMockHostExtraInfo(
-    index: number, hostNoteId: number = 0): mttLabModels.KeyValuePair[] {
-  const extraInfo: mttLabModels.KeyValuePair[][] = [];
+    index: number, hostNoteId = 0): tfcModels.KeyValuePair[] {
+  const extraInfo: tfcModels.KeyValuePair[][] = [];
   for (let i = 0; i < TOTAL_DEVICES.length; i++) {
     extraInfo[i] = [
       {key: 'allocated_devices', value: ALLOCATED_DEVICES[i]},
@@ -1002,7 +1000,7 @@ export function newMockRawLabInfo(
     labName: string,
     owners: string[],
     hostUpdateStateSummary?: tfcModels.HostUpdateStateSummary,
-    hostCountByHarnessVersion?: mttLabModels.KeyValuePair[],
+    hostCountByHarnessVersion?: tfcModels.KeyValuePair[],
     hostUpdateStateSummariesByVersion?: tfcModels.HostUpdateStateSummary[],
     ): tfcModels.LabInfo {
   return {
@@ -1018,7 +1016,7 @@ export function newMockRawLabInfo(
 export function newMockRawClusterInfo(
     clusterId: string,
     hostUpdateStateSummary?: tfcModels.HostUpdateStateSummary,
-    hostCountByHarnessVersion?: mttLabModels.KeyValuePair[],
+    hostCountByHarnessVersion?: tfcModels.KeyValuePair[],
     hostUpdateStateSummariesByVersion?: tfcModels.HostUpdateStateSummary[],
     ): tfcModels.ClusterInfo {
   return {
@@ -1078,7 +1076,7 @@ export function newMockLabInfo(
     labName: string,
     owners: string[] = [],
     hostUpdateStateSummary: mttLabModels.HostUpdateStateSummary|null = null,
-    hostCountByHarnessVersion: mttLabModels.KeyValuePair[]|null = null,
+    hostCountByHarnessVersion: tfcModels.KeyValuePair[]|null = null,
     hostUpdateStateSummariesByVersion: mttLabModels.HostUpdateStateSummary[]|
     null = null,
     ): mttLabModels.LabInfo {
@@ -1095,7 +1093,7 @@ export function newMockLabInfo(
 export function newMockClusterInfo(
     clusterId: string,
     hostUpdateStateSummary: mttLabModels.HostUpdateStateSummary|null = null,
-    hostCountByHarnessVersion: mttLabModels.KeyValuePair[]|null = null,
+    hostCountByHarnessVersion: tfcModels.KeyValuePair[]|null = null,
     hostUpdateStateSummariesByVersion: mttLabModels.HostUpdateStateSummary[]|
     null = null,
     ): mttLabModels.ClusterInfo {

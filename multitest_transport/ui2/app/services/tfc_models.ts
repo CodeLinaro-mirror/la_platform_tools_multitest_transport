@@ -16,7 +16,14 @@
 
 // Align backend interface naming
 // tslint:disable:enforce-name-casing
-import {KeyValuePair} from './mtt_lab_models';
+
+/**
+ * An interface that includes key and value properties.
+ */
+export declare interface KeyValuePair {
+  readonly key: string;
+  readonly value: string;
+}
 
 
 /** A big number for retrieving all data without pagination. */
@@ -264,7 +271,7 @@ export declare interface CommandAttempt {
   readonly hostname: string;
   readonly log_dir_path?: string;
   readonly non_tradefed_log_dir_names?: string[];
-  readonly tf_log_path?: string;
+  readonly tf_log_paths?: KeyValuePair[];
   readonly working_job_id?: string;
   readonly working_test_id?: string;
 }

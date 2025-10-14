@@ -369,7 +369,11 @@ class OlcsSessionStubTest(testbed_dependent_test.TestbedDependentTest):
         command_detail.update_time.ToDatetime(),
     )
     self.assertEqual(
-        command_attempt_message.tf_log_path,
+        command_attempt_message.tf_log_paths[0].key,
+        'inv_1234567890',
+    )
+    self.assertEqual(
+        command_attempt_message.tf_log_paths[0].value,
         'logs/inv_1234567890/XtsTradefedTest_test_TEST_ID1',
     )
     self.assertEqual(
@@ -495,7 +499,11 @@ class OlcsSessionStubTest(testbed_dependent_test.TestbedDependentTest):
         command_detail.update_time.ToDatetime(),
     )
     self.assertEqual(
-        command_attempt_message.tf_log_path,
+        command_attempt_message.tf_log_paths[0].key,
+        'inv_1234567890',
+    )
+    self.assertEqual(
+        command_attempt_message.tf_log_paths[0].value,
         'logs/inv_1234567890/XtsTradefedTest_test_TEST_ID1',
     )
     self.assertEqual(

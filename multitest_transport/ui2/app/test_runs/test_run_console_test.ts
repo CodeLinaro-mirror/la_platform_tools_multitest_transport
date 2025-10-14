@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import {SimpleChange} from '@angular/core';
 import {ComponentFixture, fakeAsync, TestBed, tick} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {RouterModule} from '@angular/router';
@@ -24,20 +23,23 @@ import {APP_DATA, AppData} from '../services/app_data';
 import {FileService} from '../services/file_service';
 import {MttClient} from '../services/mtt_client';
 import {TestRunOutput} from '../services/mtt_models';
-import {CommandAttempt, CommandState} from '../services/tfc_models';
+import {CommandAttempt, CommandState, KeyValuePair} from '../services/tfc_models';
 import {newMockRequest, newMockTest, newMockTestRun, newMockTestRunOutput} from '../testing/mtt_mocks';
 
-import {MAX_CONSOLE_LENGTH, POLL_INTERVAL, TestRunConsole} from './test_run_console';
+import {MAX_CONSOLE_LENGTH, POLL_INTERVAL, TestRunConsole, TF_LOG_TYPES} from './test_run_console';
 import {TestRunsModule} from './test_runs_module';
 
 /** Constructs an active or inactive command attempt. */
-function newCommandAttempt(active: boolean, id = 'attempt_id'): CommandAttempt {
+function newCommandAttempt(
+    active: boolean, id = 'attempt_id',
+    tfLogPaths?: KeyValuePair[]): CommandAttempt {
   return {
     request_id: 'request_id',
     command_id: 'command_id',
     attempt_id: id,
     state: active ? CommandState.RUNNING : CommandState.COMPLETED,
     hostname: 'hostname',
+    tf_log_paths: tfLogPaths,
   };
 }
 
@@ -82,18 +84,26 @@ describe('TestRunConsole', () => {
 
   it('stops polling when disabled', () => {
     console.disabled = true;
-    console.ngOnChanges({disabled: new SimpleChange(false, true, true)});
+    console.update(true);
     expect(console.clearConsole).toHaveBeenCalled();
     expect(console.stopPolling).toHaveBeenCalled();
   });
 
   it('starts polling when enabled', () => {
+    // Start with disabled state
+    console.disabled = true;
+    console.update(true);
+    expect(console.stopPolling).toHaveBeenCalled();
+    (console.resetPolling as jasmine.Spy).calls.reset();
+
     const attempt = newCommandAttempt(false);
     console.selectedAttempt = attempt;
     console.request = newMockRequest([], [attempt]);
-    console.ngOnChanges({disabled: new SimpleChange(true, false, true)});
+    // Enable the component
+    console.disabled = false;
+    console.update(true);
 
-    // No changes but will enabling will force polling to restart.
+    // Enabling will force polling to restart.
     expect(console.resetPolling).toHaveBeenCalled();
   });
 
@@ -102,8 +112,7 @@ describe('TestRunConsole', () => {
     const second = newCommandAttempt(false, 'second');
 
     console.request = newMockRequest([], [first, second]);
-    console.ngOnChanges(
-        {request: new SimpleChange(undefined, console.request, true)});
+    console.update(false);
 
     // Selects latest attempt and starts polling.
     expect(console.selectedAttempt).toEqual(second);
@@ -118,8 +127,7 @@ describe('TestRunConsole', () => {
 
     console.selectedAttempt = active;
     console.request = newMockRequest([], [final, other]);
-    console.ngOnChanges(
-        {request: new SimpleChange(undefined, console.request, true)});
+    console.update(false);
 
     // Finds the right attempt without restarting polling.
     expect(console.selectedAttempt).toEqual(final);
@@ -226,6 +234,61 @@ describe('TestRunConsole', () => {
        tick(POLL_INTERVAL / 2);
        expect(mtt.getTestRunOutput).toHaveBeenCalledTimes(3);
 
+       console.stopPolling();
+     }));
+
+  it('correctly initializes tfLogPaths when request loaded', () => {
+    console.isOmnilabBased = true;
+    const first =
+        newCommandAttempt(false, 'first', [{key: 'job1', value: 'path1'}]);
+    const second = newCommandAttempt(
+        false, 'second',
+        [{key: 'job1', value: 'path1'}, {key: 'job2', value: 'path2'}]);
+
+    console.request = newMockRequest([], [first, second]);
+    console.update(false);  // Simulate console.ngOnChanges() being called.
+    expect(console.tfLogPaths).toEqual([
+      {key: 'job1', value: 'path1'}, {key: 'job2', value: 'path2'}
+    ]);
+    expect(console.selectedTfLogPathAttemptId).toEqual('job1');
+  });
+
+  it('can load omnilab console with multiple tf log paths', fakeAsync(() => {
+       console.isOmnilabBased = true;
+       console.selectedAttempt = newCommandAttempt(false, 'attempt_id', [
+         {key: 'job1', value: 'path1'},
+         {key: 'job2', value: 'path2'},
+       ]);
+       console.tfLogPaths = [
+         {key: 'job1', value: 'path1'},
+         {key: 'job2', value: 'path2'},
+       ];
+       console.selectedTfLogPathAttemptId = 'job2';
+       console.selectedSourceType = 'Tradefed';
+       console.selectedTfLogType = TF_LOG_TYPES['Host log'];
+       console.resetPolling();
+
+       expect(mtt.getTestRunOutput)
+           .toHaveBeenCalledWith(
+               'test_run_id', 'attempt_id', 'path2/xts_tf_output.log',
+               undefined);
+       console.stopPolling();
+     }));
+
+  it('can load omnilab console with single tf log path', fakeAsync(() => {
+       console.isOmnilabBased = true;
+       console.selectedAttempt = newCommandAttempt(
+           false, 'attempt_id', [{key: 'job1', value: 'path1'}]);
+       console.tfLogPaths = [{key: 'job1', value: 'path1'}];
+       console.selectedTfLogPathAttemptId = 'job1';
+       console.selectedSourceType = 'Tradefed';
+       console.selectedTfLogType = TF_LOG_TYPES['Host log'];
+       console.resetPolling();
+
+       expect(mtt.getTestRunOutput)
+           .toHaveBeenCalledWith(
+               'test_run_id', 'attempt_id', 'path1/xts_tf_output.log',
+               undefined);
        console.stopPolling();
      }));
 });

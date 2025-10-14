@@ -16,6 +16,7 @@
 
 // TODO: Copy mtt_lab_model_test.ts from ATS lab
 import * as tfcModels from './tfc_models';
+import {KeyValuePair} from './tfc_models';
 
 /** The product id for Feedback service. */
 export const FEEDBACK_PRODUCT_ID = '5164855';
@@ -807,14 +808,6 @@ export enum NavigatePageMode {
 export function getKeyValue(source: KeyValuePair[], key: string): string {
   const keyValue = source.find((x: KeyValuePair) => x.key === key);
   return keyValue ? keyValue.value : '';
-}
-
-/**
- * An interface that includes key and value properties.
- */
-export declare interface KeyValuePair {
-  readonly key: string;
-  readonly value: string;
 }
 
 /** Possible type for a survey trigger. */

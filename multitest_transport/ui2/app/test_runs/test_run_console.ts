@@ -22,7 +22,7 @@ import {APP_DATA, AppData} from '../services/app_data';
 import {FileService} from '../services/file_service';
 import {MttClient} from '../services/mtt_client';
 import {TestRun} from '../services/mtt_models';
-import {CommandAttempt, isFinalCommandState, Request} from '../services/tfc_models';
+import {CommandAttempt, isFinalCommandState, KeyValuePair, Request} from '../services/tfc_models';
 import {assertRequiredInput} from '../shared/util';
 
 /** Log directory when attempt is active. */
@@ -73,11 +73,13 @@ export class TestRunConsole implements OnInit, OnChanges, OnDestroy {
   SOURCE_TYPE = SOURCE_TYPE;
   selectedSourceType = Object.values(SOURCE_TYPE)[0];
   TF_LOG_TYPES = TF_LOG_TYPES;
-  selectedTfLogType = Object.values(TF_LOG_TYPES)[2];
+  selectedTfLogType = TF_LOG_TYPES['Host log'];
   MOBLY_LOG_TYPES = MOBLY_LOG_TYPES;
   selectedMoblyLogType = Object.values(MOBLY_LOG_TYPES)[0];
   nonTradefedLogDirNames: string[] = [];
   selectedNonTradefedLogDirName = '';
+  tfLogPaths: KeyValuePair[] = [];
+  selectedTfLogPathAttemptId = '';
   /** True if current logs have been fetched at least once. */
   initialized = false;
   offset?: number;
@@ -113,7 +115,7 @@ export class TestRunConsole implements OnInit, OnChanges, OnDestroy {
   }
 
   /** Update parameters and polling. */
-  private update(force = false) {
+  update(force = false) {
     this.invocations = this.request && this.request.command_attempts || [];
     if (this.invocations.length > 0 && this.isOmnilabBased) {
       this.nonTradefedLogDirNames =
@@ -138,6 +140,14 @@ export class TestRunConsole implements OnInit, OnChanges, OnDestroy {
       // Previous attempt not found - default to last one.
       this.selectedAttempt = this.invocations[this.invocations.length - 1];
       this.clearConsole();
+      if (this.isOmnilabBased && this.selectedAttempt) {
+        this.tfLogPaths = this.selectedAttempt.tf_log_paths || [];
+        if (this.tfLogPaths.length > 0) {
+          this.selectedTfLogPathAttemptId = this.tfLogPaths[0].key!;
+        } else {
+          this.selectedTfLogPathAttemptId = '';
+        }
+      }
       this.resetPolling();
     } else if (force) {
       // Otherwise, only restart polling if forced.
@@ -151,7 +161,7 @@ export class TestRunConsole implements OnInit, OnChanges, OnDestroy {
       return null;
     }
     const isActive = !isFinalCommandState(this.selectedAttempt.state);
-    if (this.appData.isOmniLabBased) {
+    if (this.isOmnilabBased) {
       if (this.selectedSourceType === 'OLC Server') {
         return 'logs/olc_server_session_logs/olc_server_session_log.txt';
       } else if (this.selectedSourceType === 'Mobly') {
@@ -172,7 +182,20 @@ export class TestRunConsole implements OnInit, OnChanges, OnDestroy {
                 this.selectedAttempt.working_test_id}/logs/stdout.txt`;
           }
         }
-        return `${this.selectedAttempt.tf_log_path}/${this.selectedTfLogType}`;
+        if (this.tfLogPaths.length > 0) {
+          if (this.tfLogPaths.length > 1) {
+            const logPath = this.tfLogPaths.find(
+                x => x.key === this.selectedTfLogPathAttemptId);
+            if (logPath) {
+              return `${logPath.value!}/${this.selectedTfLogType}`;
+            }
+          } else {
+            // Default case that there is only one job's log, don't show the
+            // option to switch between jobs.
+            return `${this.tfLogPaths[0].value!}/${this.selectedTfLogType}`;
+          }
+        }
+        return '';
       }
     }
     return (isActive ? ACTIVE_LOG_DIR : FINAL_LOG_DIR) + this.selectedType;

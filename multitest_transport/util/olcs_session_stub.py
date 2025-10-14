@@ -684,8 +684,11 @@ class OlcsSessionStub:
           tf_path_with_inv_id = os.path.join(log_dir_path, dir_name)
           for tf_dir_name in os.listdir(tf_path_with_inv_id):
             if re.match(r"XtsTradefedTest_test_.*", tf_dir_name):
-              command_attempt_message.tf_log_path = os.path.join(
-                  "logs", dir_name, tf_dir_name
+              command_attempt_message.tf_log_paths.append(
+                  api_messages.KeyValuePair(
+                      key=dir_name,
+                      value=os.path.join("logs", dir_name, tf_dir_name),
+                  )
               )
               break
     return command_attempt_message

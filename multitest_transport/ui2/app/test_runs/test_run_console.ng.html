@@ -14,7 +14,7 @@
  limitations under the License.
 -->
 
-<div class="options">
+<div class="options" [class.is-omnilab]="isOmnilabBased">
   <mat-form-field appearance="outline">
     <mat-label>Invocation</mat-label>
     <mat-select [(ngModel)]="selectedAttempt"
@@ -44,6 +44,15 @@
                   (selectionChange)="clearConsole(); resetPolling()">
         <mat-option *ngFor="let type of SOURCE_TYPE" [value]="type">
           {{type}}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline" *ngIf="selectedSourceType === 'Tradefed' && tfLogPaths.length > 1">
+      <mat-label>Tradefed Invocations</mat-label>
+      <mat-select [(ngModel)]="selectedTfLogPathAttemptId"
+                  (selectionChange)="clearConsole(); resetPolling()">
+        <mat-option *ngFor="let logPath of tfLogPaths" [value]="logPath.key">
+          {{logPath.key}}
         </mat-option>
       </mat-select>
     </mat-form-field>
