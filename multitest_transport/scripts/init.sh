@@ -357,6 +357,7 @@ else
     --disable_wifi_util_func=true \
     --enable_android_device_ready_check=false \
     --enable_ats_file_server_uploader=true \
+    --enable_caching_reserved_device=true \
     --enable_device_state_change_recover=false \
     --enable_device_system_settings_change=false \
     --enable_external_master_server=true \
