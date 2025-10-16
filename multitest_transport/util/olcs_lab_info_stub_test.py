@@ -171,6 +171,21 @@ class OlcsLabInfoStubTest(absltest.TestCase):
         ),
     )
 
+  def testGetDevice_failedDevice_returnsFailedState(self):
+    """Tests that a device with FailedDevice type returns FAILED state."""
+    get_lab_info_response = lab_info_service_pb2.GetLabInfoResponse()
+    get_lab_info_response.lab_query_result.timestamp.seconds = 60
+    device_info = (
+        get_lab_info_response.lab_query_result.device_view.grouped_devices.device_list.device_info.add()
+    )
+    self._init_device_info(device_info)
+    device_info.device_feature.type.append('FailedDevice')
+    self._olcs_lab_info_client.get_lab_info.return_value = get_lab_info_response
+
+    device_info = self._olcs_lab_info_stub.GetDevice('device_uuid1')
+
+    self.assertEqual(device_info.state, 'FAILED')
+
 
 if __name__ == '__main__':
   absltest.main()

@@ -123,7 +123,10 @@ class OlcsLabInfoStub:
     logging.info('device_type: %s', device_info.device_feature)
     state = common.DeviceState.UNKNOWN
     if device_info.device_status == device_pb2.DeviceStatus.IDLE:
-      state = common.DeviceState.AVAILABLE
+      if 'FailedDevice' in device_info.device_feature.type:
+        state = common.DeviceState.FAILED
+      else:
+        state = common.DeviceState.AVAILABLE
     elif device_info.device_status == device_pb2.DeviceStatus.INIT:
       state = common.DeviceState.INIT
     elif device_info.device_status == device_pb2.DeviceStatus.BUSY:

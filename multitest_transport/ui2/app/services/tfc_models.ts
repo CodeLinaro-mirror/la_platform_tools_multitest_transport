@@ -297,6 +297,7 @@ export enum DeviceState {
   PREPPING = 'PREPPING',
   UNAVAILABLE = 'UNAVAILABLE',
   UNKNOWN = 'UNKNOWN',
+  FAILED = 'FAILED',
 }
 
 /** Possible type for a device.  */
