@@ -162,6 +162,11 @@ then
       done
     fi
 
+    if [[ "${ENABLE_PERSISTENT_CACHE}" == "true" ]]
+    then
+      OLC_SERVER_OPTS+=" --enable_persistent_cache=true"
+    fi
+
     if [[ "${FILE_SERVICE_ONLY}" == "false" ]]
     then
       # Start OLC server on the controller
@@ -333,11 +338,21 @@ else
     LAB_SERVER_ARGS+="--virtual_device_server_ip=${RVD_HOST} "
     LAB_SERVER_ARGS+="--virtual_device_server_username=${RVD_USER} "
   fi
-  PERSITENT_CACHE_DIR="${MTT_STORAGE_PATH}/local_file_store/persistent_cache"
-  if [ ! -d "${PERSITENT_CACHE_DIR}" ]; then
-    mkdir -p "${PERSITENT_CACHE_DIR}"
+  PERSISTENT_CACHE_DIR="${MTT_STORAGE_PATH}/local_file_store/persistent_cache"
+  if [ ! -d "${PERSISTENT_CACHE_DIR}" ]; then
+    mkdir -p "${PERSISTENT_CACHE_DIR}"
   fi
-  LAB_SERVER_ARGS+=" --persistent_cache_dir=${PERSITENT_CACHE_DIR}"
+
+  if [[ "${ENABLE_PERSISTENT_CACHE}" == "true" ]]
+  then
+    PERSISTENT_CACHE_OPTS+=" --persistent_cache_dir=${PERSISTENT_CACHE_DIR} --public_dir=${MTT_LOG_DIR}"
+    echo "Start persistent cache manager with opts: ${PERSISTENT_CACHE_OPTS}"
+    java -XX:+HeapDumpOnOutOfMemoryError \
+      -jar /deviceinfra/cache_manager_server_deploy.jar \
+      ${PERSISTENT_CACHE_OPTS} &> /dev/null &
+    LAB_SERVER_ARGS+=" --persistent_cache_dir=${PERSISTENT_CACHE_DIR} --enable_persistent_cache=true"
+  fi
+
   java "-Xmx${MAX_HEAP_MB}m" -XX:+HeapDumpOnOutOfMemoryError \
     -jar /deviceinfra/lab_server_oss_deploy.jar \
     --adb_dont_kill_server=true \
