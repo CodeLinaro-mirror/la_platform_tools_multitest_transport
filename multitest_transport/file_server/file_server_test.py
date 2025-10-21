@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """Android Test Station local file server tests."""
+import datetime
 import io
 import json
 import os
@@ -22,16 +23,22 @@ import tempfile
 from unittest import mock
 
 from absl.testing import absltest
+from tradefed_cluster.util import ndb_test_lib
 import werkzeug
 
 from google3.pyglib import resources
 
 
 from multitest_transport.file_server import file_server
+from multitest_transport.models import ndb_models
 
 
-class FileServerTest(absltest.TestCase):
-  """"Tests fetching file information and uploading/downloading files."""
+class PatchedDateTime(datetime.datetime):
+  pass
+
+
+class FileServerTest(ndb_test_lib.NdbWithContextTest, absltest.TestCase):
+  """Tests fetching file information and uploading/downloading files."""
 
   def setUp(self):
     super(FileServerTest, self).setUp()
@@ -301,6 +308,70 @@ class FileServerTest(absltest.TestCase):
       self.assertEqual(404, response.status_code)
       data = json.loads(response.data)
       self.assertEqual("File 'unknown.txt' not found", data['message'])
+
+  @mock.patch.object(file_server.datetime, 'datetime', new=PatchedDateTime)
+  @mock.patch.object(file_server, '_CalculateSha256')
+  def testFileHash_caching(self, mock_calculate_sha256):
+    """Tests that the file hash is cached in NDB."""
+    PatchedDateTime.utcnow = mock.MagicMock()
+    PatchedDateTime.utcnow.return_value = datetime.datetime(2025, 1, 1, 0, 0, 0)
+    mock_calculate_sha256.return_value = 'fake_hash'
+    test_file_path = os.path.join(self.app.root_path, 'test.txt')
+
+    with self.app.test_client() as client:
+      # First request should trigger a calculation and cache the result.
+      response1 = client.get('/hash/test.txt')
+      self.assertEqual(200, response1.status_code)
+      self.assertEqual('fake_hash', json.loads(response1.data)['sha256'])
+      mock_calculate_sha256.assert_called_once_with(test_file_path)
+
+      # Verify the metadata was stored in NDB.
+      metadata1 = ndb_models.TestResourceMetadata.get_by_id(test_file_path)
+      self.assertIsNotNone(metadata1)
+      self.assertEqual('fake_hash', metadata1.sha256)
+      time1 = metadata1.metadata_access_time
+
+      # Second request within an hour should be served from cache
+      # without updating time.
+      now1 = time1 + datetime.timedelta(minutes=30)
+      PatchedDateTime.utcnow.return_value = datetime.datetime(
+          now1.year,
+          now1.month,
+          now1.day,
+          now1.hour,
+          now1.minute,
+          now1.second,
+          now1.microsecond,
+      )
+      response2 = client.get('/hash/test.txt')
+      self.assertEqual(200, response2.status_code)
+      self.assertEqual('fake_hash', json.loads(response2.data)['sha256'])
+      # Assert that the calculation was NOT run a second time.
+      mock_calculate_sha256.assert_called_once()
+
+      metadata2 = ndb_models.TestResourceMetadata.get_by_id(test_file_path)
+      self.assertEqual(metadata2.metadata_access_time, time1)
+
+      # Third request after more than an hour should update access time.
+      now2 = time1 + datetime.timedelta(minutes=90)
+      PatchedDateTime.utcnow.return_value = datetime.datetime(
+          now2.year,
+          now2.month,
+          now2.day,
+          now2.hour,
+          now2.minute,
+          now2.second,
+          now2.microsecond,
+      )
+      response3 = client.get('/hash/test.txt')
+      self.assertEqual(200, response3.status_code)
+      self.assertEqual('fake_hash', json.loads(response3.data)['sha256'])
+      mock_calculate_sha256.assert_called_once()
+
+      # Verify the access time was updated on the cache hit.
+      metadata3 = ndb_models.TestResourceMetadata.get_by_id(test_file_path)
+      self.assertIsNotNone(metadata3)
+      self.assertGreater(metadata3.metadata_access_time, time1)
 
   def testListDirectory(self):
     """Tests that directory contents can be listed."""

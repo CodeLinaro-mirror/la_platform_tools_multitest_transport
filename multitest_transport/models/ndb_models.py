@@ -984,6 +984,19 @@ class TestResourceTracker(ndb.Model):
   error = ndb.StringProperty()
 
 
+class TestResourceMetadata(ndb.Model):
+  """A file metadata.
+
+  Attributes:
+    sha256: The SHA256 hash of the file content encoded in base64.
+    metadata_access_time: The last access time of this metadata from the ndb. It
+      is used for data cleanup.
+  """
+
+  sha256 = ndb.StringProperty()
+  metadata_access_time = ndb.DateTimeProperty(auto_now=True)
+
+
 def IsLocalId(model_id):
   """Returns true if the given id is a local id, false otherwise."""
   try:

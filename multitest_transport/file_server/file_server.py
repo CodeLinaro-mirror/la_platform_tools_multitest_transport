@@ -14,6 +14,7 @@
 
 """Android Test Station local file server."""
 import base64
+import datetime
 import enum
 import hashlib
 import http
@@ -30,7 +31,11 @@ from absl import app as absl_app
 from absl import flags
 import attr
 import flask
+from tradefed_cluster.util import ndb_shim as ndb
 from werkzeug import security
+
+
+from multitest_transport.models import ndb_models
 
 DEFAULT_CHUNK_SIZE = 4 * 1024  # Default chunk size when writing to file (4 MB)
 
@@ -56,6 +61,29 @@ def _CalculateSha256(file_path):
         break
       sha256.update(data)
   return base64.b64encode(sha256.digest()).decode('utf-8')
+
+
+@ndb.transactional()
+def _CalculateAndCacheSha256(file_path):
+  """Calculates and caches a file's SHA256 hash in a transaction."""
+  # Check if another process cached the hash while we were waiting
+  metadata = ndb_models.TestResourceMetadata.get_by_id(file_path)
+  if metadata:
+    # If metadata is found, it means another process just calculated and stored
+    # it.
+    # The metadata_access_time is already fresh from its recent creation, so no
+    # further update is needed here to avoid redundant transactional writes.
+    return metadata.sha256
+  # Calculate and store the hash
+  sha256_hash = _CalculateSha256(file_path)
+  flask_app.logger.info(
+      'Calculated and cached SHA256 hash for file %s: %s',
+      file_path,
+      sha256_hash,
+  )
+  metadata = ndb_models.TestResourceMetadata(id=file_path, sha256=sha256_hash)
+  metadata.put()
+  return sha256_hash
 
 
 @flask_app.route('/file/<path:path>', methods=['GET'])
@@ -166,14 +194,28 @@ def DeleteFile(path: str) -> flask.Response:
 
 
 @flask_app.route('/hash/<path:path>', methods=['GET'])
+@ndb.with_ndb_context
 def GetFileHash(path: str) -> flask.Response:
   """Retrieve file sha256 hash."""
   flask_app.logger.info('Getting SHA256 hash for file: %s', path)
   resolved_path = security.safe_join(flask.current_app.root_path, path)
   if not os.path.isfile(resolved_path):
     flask.abort(http.HTTPStatus.NOT_FOUND, "File '%s' not found" % path)
-  sha256_hash = _CalculateSha256(resolved_path)
-  flask_app.logger.info('SHA256 hash for file %s: %s', path, sha256_hash)
+
+  # Check for a cached hash
+  metadata = ndb_models.TestResourceMetadata.get_by_id(resolved_path)
+  if metadata:
+    # Only update access time periodically to reduce NDB writes.
+    if (datetime.datetime.utcnow() - metadata.metadata_access_time >
+        datetime.timedelta(hours=1)):
+      metadata.put()
+    flask_app.logger.info(
+        'Returning cached SHA256 hash for file %s: %s', path, metadata.sha256
+    )
+    return flask.jsonify({'sha256': metadata.sha256})
+
+  # If not cached, calculate and cache it transactionally
+  sha256_hash = _CalculateAndCacheSha256(resolved_path)
   return flask.jsonify({'sha256': sha256_hash})
 
 

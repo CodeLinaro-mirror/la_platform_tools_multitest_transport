@@ -124,6 +124,7 @@ function start_local_file_server {
       --chdir "${SCRIPT_DIR}" \
       --config "${SCRIPT_DIR}/file_server/gunicorn_config.py" \
       --env "STORAGE_PATH=${STORAGE_PATH}" \
+      --env "DATASTORE_EMULATOR_HOST=localhost:${DATASTORE_EMULATOR_PORT}" \
       --bind ":${FILE_SERVER_PORT}" \
       --log-level "${LOG_LEVEL}" --access-logfile - \
       --workers "${NUM_FILE_SERVER_WORKERS}" \

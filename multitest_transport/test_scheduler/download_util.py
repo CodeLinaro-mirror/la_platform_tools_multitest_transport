@@ -36,6 +36,8 @@ MAX_WORKERS = 12
 MAX_DOWNLOAD_IDLE_TIME = datetime.timedelta(minutes=10)
 # Max test resource cache access time (will be deleted if exceeded)
 MAX_CACHE_ACCESS_TIME = datetime.timedelta(days=7)
+# Max test resource metadata access time (will be deleted if exceeded)
+MAX_METADATA_CACHE_AGE = datetime.timedelta(days=7)
 
 
 def GetCacheUrl(url: str = '') -> str:
@@ -283,4 +285,18 @@ def TestResourceCacheCleaner():
   """Request handler which periodically deletes unused cached test resources."""
   min_access_time = datetime.datetime.utcnow() - MAX_CACHE_ACCESS_TIME
   CleanTestResourceCache(min_access_time=min_access_time)
+  return common.HTTP_OK
+
+
+def TestResourceMetadataCleaner():
+  """Deletes old TestResourceMetadata entities to keep the cache fresh."""
+  min_access_time = datetime.datetime.utcnow() - MAX_METADATA_CACHE_AGE
+  logging.info(
+      'Cleaning up resource metadata not accessed since %s (UTC)',
+      min_access_time,
+  )
+  keys_to_delete = ndb_models.TestResourceMetadata.query(
+      ndb_models.TestResourceMetadata.metadata_access_time < min_access_time
+  ).fetch(keys_only=True)
+  ndb.delete_multi(keys_to_delete)
   return common.HTTP_OK

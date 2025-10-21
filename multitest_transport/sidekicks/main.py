@@ -32,3 +32,8 @@ APP.add_url_rule(
     '/sidekicks/test_resource_tracker_cleaner',
     endpoint='download_util.TestResourceTrackerCleaner',
     view_func=download_util.TestResourceTrackerCleaner)
+APP.add_url_rule(
+    '/sidekicks/test_resource_metadata_cleaner',
+    endpoint='download_util.TestResourceMetadataCleaner',
+    view_func=download_util.TestResourceMetadataCleaner)
+

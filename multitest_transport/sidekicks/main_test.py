@@ -51,6 +51,16 @@ class MainTest(absltest.TestCase):
     self.assertEqual('200 OK', response.status)
     self.assertTrue(mock_release_download_locks.called)
 
+  @mock.patch('multitest_transport.models.ndb_models.ndb.delete_multi')
+  @mock.patch(
+      'multitest_transport.models.ndb_models.TestResourceMetadata.query'
+  )
+  def testTestResourceMetadataCleaner(self, mock_query, mock_delete_multi):
+    response = self.testapp.get('/sidekicks/test_resource_metadata_cleaner')
+    self.assertEqual('200 OK', response.status)
+    self.assertTrue(mock_query.called)
+    self.assertTrue(mock_delete_multi.called)
+
 
 if __name__ == '__main__':
   absltest.main()

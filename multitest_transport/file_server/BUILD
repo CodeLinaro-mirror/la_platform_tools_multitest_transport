@@ -22,6 +22,8 @@ py_library(
         third_party("flask"),
         third_party("werkzeug"),
         "//third_party/py/flask:flask_without_jinja",
+        "//multitest_transport/models:ndb_models_lib",
+        "@tradefed_cluster//tradefed_cluster/util:ndb_shim_lib",
     ],
 )
 
@@ -39,6 +41,8 @@ py_strict_test(
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         third_party("absl/testing:absltest"),
         third_party("werkzeug"),
+        "//multitest_transport/models:ndb_models_lib",
+        "@tradefed_cluster//tradefed_cluster/util:ndb_test_lib",
     ],
 )
 
