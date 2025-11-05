@@ -521,7 +521,7 @@ class OlcsSessionStub:
       logging.exception(
           "Failed to process subscribe session %s responses", request_id
       )
-      if e.code() == grpc.StatusCode.UNAVAILABLE:  # pytype: disable=attribute-error
+      if e.code() in [grpc.StatusCode.UNAVAILABLE, grpc.StatusCode.INTERNAL]:  # pytype: disable=attribute-error
         # Sleep 60 seconds to wait for the server to be back.
         time.sleep(60)
         self.StartSubscribeSession(request_id, session_response_subscriber)
