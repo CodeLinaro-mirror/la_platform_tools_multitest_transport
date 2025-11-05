@@ -313,6 +313,27 @@ tests:
   description: Empty test suite used for device preparation or experimentation
   command: util/timewaster
 
+- id: noop.ats2
+  name: NOOP for ATS 2.0
+  description: Empty test suite used for device preparation or experimentation in ATS 2.0
+  command: util/timewaster
+  test_resource_defs:
+  - name: android-csuite.zip
+    test_resource_type: TEST_PACKAGE
+    decompress: true
+    mount_zip: true
+  env_vars:
+  - name: TF_PATH
+    value: ${TF_WORK_DIR}/android-csuite/tools:${TF_WORK_DIR}/android-csuite/testcases
+  - name: LD_LIBRARY_PATH
+    value: ${TF_WORK_DIR}/android-csuite/lib:${TF_WORK_DIR}/android-csuite/lib64
+  - name: JAVA_HOME
+    value: ${TF_WORK_DIR}/android-csuite/jdk
+  java_properties:
+  - name: CSUITE_ROOT
+    value: ${TF_WORK_DIR}
+
+
 - id: android.cts.8_0.arm
   name: CTS 8.0 (ARM)
   description: Compatibility Test Suite 8.0 (ARM)
