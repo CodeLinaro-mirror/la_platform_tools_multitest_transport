@@ -300,10 +300,14 @@ def _ProcessRequestEvent(test_run_id, message):
     )
   if not test_run.test.result_file:
     # No test results file to parse, use partial test counts
-    test_run.total_test_count = (message.failed_test_count +
-                                 message.passed_test_count)
-    test_run.failed_test_count = message.failed_test_count
-    test_run.failed_test_run_count = message.failed_test_run_count
+    if (message.failed_test_count is not None and
+        message.passed_test_count is not None):
+      test_run.total_test_count = (message.failed_test_count +
+                                   message.passed_test_count)
+    if message.failed_test_count is not None:
+      test_run.failed_test_count = message.failed_test_count
+    if message.failed_test_run_count is not None:
+      test_run.failed_test_run_count = message.failed_test_run_count
   test_run.cancel_reason = (
       message.request.cancel_reason if message.request else None)
   if (
