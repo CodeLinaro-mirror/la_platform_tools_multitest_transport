@@ -158,10 +158,14 @@ function wait_for_datastore {
     bash -c "while [[ \$(curl -s ${status_url}) != \"Ok\" ]]; do sleep 1; done"
 }
 
-function start_main_server {
+function start_and_wait_for_datastore {
+  start_datastore_emulator
   # ATS may fail to start (e.g. config not reloaded, cron jobs not started) if
   # the datastore is not ready, so wait for it.
   wait_for_datastore
+}
+
+function start_main_server {
   # Start Android Test Station
   echo "Starting main server..."
   PYTHONFAULTHANDLER=1 \
@@ -264,14 +268,15 @@ EOF
 
 if [ $FILE_SERVICE_ONLY == "false" ]
 then
+  start_and_wait_for_datastore
   start_local_file_server
-  start_datastore_emulator
   start_mysql_database "${STORAGE_PATH}"
   start_rabbitmq_puller
   start_main_server
   start_file_cleaner
   start_netdata
 else
+  start_and_wait_for_datastore
   start_local_file_server
   start_file_cleaner
   start_netdata_headless_collector

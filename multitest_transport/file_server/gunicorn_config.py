@@ -34,6 +34,13 @@ def on_starting(server):
   if not os.path.isdir(storage_path):
     raise ValueError('Storage path must be an existing directory')
 
+  # Check for DATASTORE_EMULATOR_HOST
+  emulator_host = os.getenv('DATASTORE_EMULATOR_HOST')
+  if not emulator_host:
+    logger.error('DATASTORE_EMULATOR_HOST environment variable is not set.')
+    raise ValueError('DATASTORE_EMULATOR_HOST is required')
+  logger.info('DATASTORE_EMULATOR_HOST is set to: %s', emulator_host)
+
 
 def when_ready(_):
   """Create the upload directory after starting."""

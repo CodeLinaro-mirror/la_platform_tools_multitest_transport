@@ -194,7 +194,7 @@ def DeleteFile(path: str) -> flask.Response:
 
 
 @flask_app.route('/hash/<path:path>', methods=['GET'])
-@ndb.with_ndb_context
+@ndb.with_local_ndb_context
 def GetFileHash(path: str) -> flask.Response:
   """Retrieve file sha256 hash."""
   flask_app.logger.info('Getting SHA256 hash for file: %s', path)
