@@ -122,7 +122,7 @@ class CliIntegrationTest(absltest.TestCase):
     self._Start()
     self.assertEqual(RUNNING, self._GetStatus())
     self._Stop()
-    with six.assertRaisesRegex(self, CommandError, r'No such object: mtt'):
+    with six.assertRaisesRegex(self, CommandError, r'(?i)No such object: mtt'):
       self._GetStatus()
 
   def testUpdate(self):

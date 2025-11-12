@@ -61,7 +61,7 @@ _IMAGE_ENV_FORMAT = '{{json .Config.Env}}'
 _CONTAINER_STATUS_FORMAT = '{{.State.Status}}'
 _CONTAINER_PID_FORMAT = '{{.State.Pid}}'
 _CONTAINER_RUNNING_STATUS = 'running'
-_NO_SUCH_OBJECT_ERROR = 'No such object'
+_NO_SUCH_OBJECT_ERROR = 'no such object'
 _DEFAULT_TMPFS_SIZE_IN_BYTES = 10 * 2 ** 30  # 10G
 _DOCKER_STOP_CMD_TIMEOUT_SEC = 60 * 60
 _DOCKER_KILL_CMD_TIMEOUT_SEC = 60
@@ -902,7 +902,7 @@ class DockerHelper(object):
         output_format='OK',
         raise_on_failure=False)
     if res.return_code != 0:
-      if res.stderr and _NO_SUCH_OBJECT_ERROR in res.stderr:
+      if res.stderr and _NO_SUCH_OBJECT_ERROR in res.stderr.lower():
         return False
       raise DockerError(
           'Failed to inpect %s:\nstderr:%s\nstdout:%s.' % (
@@ -967,7 +967,7 @@ class DockerHelper(object):
     """Check if container is running or not."""
     res = self.Inspect(container_name, output_format=_CONTAINER_STATUS_FORMAT)
     if res.return_code != 0:
-      if _NO_SUCH_OBJECT_ERROR in res.stderr:
+      if res.stderr and _NO_SUCH_OBJECT_ERROR in res.stderr.lower():
         logger.debug('No container %s.', container_name)
         return False
       raise DockerError(
