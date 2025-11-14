@@ -547,6 +547,13 @@ def _StartMttNode(args, host):
       'OPERATION_MODE',
       lab_config_pb2.OperationMode.Name(operation_mode).lower())
   docker_helper.AddEnv('MTT_CLI_VERSION', cli_util.GetVersion()[0])
+
+  if args.enable_persistent_cache:
+    docker_helper.AddEnv('ENABLE_PERSISTENT_CACHE', 'true')
+  if args.bind_jfs_volume:
+    docker_helper.AddVolume(args.bind_jfs_volume, '/jfs')
+    docker_helper.AddEnv('PERSISTENT_CACHE_DIR', '/jfs/persistent_cache')
+
   if args.omni_mode_usage or host.config.omni_mode_usage:
     docker_helper.AddEnv(
         'OMNI_MODE_USAGE', args.omni_mode_usage or host.config.omni_mode_usage
@@ -1398,11 +1405,21 @@ def _CreateStartArgParser():
           ' existing adb keys. Default is true.'
       ),
   )
-
   parser.add_argument(
       '--omni_mode_usage',
       help='Usage of the lab under Omni mode.',
       dest='omni_mode_usage',
+      type=str,
+  )
+  parser.add_argument(
+      '--enable_persistent_cache',
+      help='Enable persistent cache for the lab.',
+      action='store_true',
+      default=False,
+  )
+  parser.add_argument(
+      '--bind_jfs_volume',
+      help='Name of the docker volume to bind to /jfs in the container.',
       type=str,
   )
 

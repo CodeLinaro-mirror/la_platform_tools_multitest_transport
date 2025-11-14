@@ -338,18 +338,25 @@ else
     LAB_SERVER_ARGS+="--virtual_device_server_ip=${RVD_HOST} "
     LAB_SERVER_ARGS+="--virtual_device_server_username=${RVD_USER} "
   fi
-  PERSISTENT_CACHE_DIR="${MTT_STORAGE_PATH}/local_file_store/persistent_cache"
+  is_cache_local="false"
+  if [[ -z "${PERSISTENT_CACHE_DIR}" ]]; then
+    is_cache_local="true"
+    PERSISTENT_CACHE_DIR="${MTT_STORAGE_PATH}/local_file_store/persistent_cache"
+  fi
   if [ ! -d "${PERSISTENT_CACHE_DIR}" ]; then
     mkdir -p "${PERSISTENT_CACHE_DIR}"
   fi
 
   if [[ "${ENABLE_PERSISTENT_CACHE}" == "true" ]]
   then
-    PERSISTENT_CACHE_OPTS+=" --persistent_cache_dir=${PERSISTENT_CACHE_DIR} --public_dir=${MTT_LOG_DIR}"
-    echo "Start persistent cache manager with opts: ${PERSISTENT_CACHE_OPTS}"
-    java -XX:+HeapDumpOnOutOfMemoryError \
-      -jar /deviceinfra/cache_manager_server_deploy.jar \
-      ${PERSISTENT_CACHE_OPTS} &> /dev/null &
+    # Move this logic to local docker volume setup outside of the mtt container when we migrate to docker compose deployment.
+    if [[ "${is_cache_local}" == "true" ]]; then
+      PERSISTENT_CACHE_OPTS+=" --persistent_cache_dir=${PERSISTENT_CACHE_DIR} --public_dir=${MTT_LOG_DIR}"
+      echo "Start persistent cache manager with opts: ${PERSISTENT_CACHE_OPTS} for local cache."
+      java -XX:+HeapDumpOnOutOfMemoryError \
+        -jar /deviceinfra/cache_manager_server_deploy.jar \
+        ${PERSISTENT_CACHE_OPTS} &> /dev/null &
+    fi
     LAB_SERVER_ARGS+=" --persistent_cache_dir=${PERSISTENT_CACHE_DIR} --enable_persistent_cache=true"
   fi
 
