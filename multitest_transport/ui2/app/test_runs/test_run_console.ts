@@ -296,6 +296,19 @@ export class TestRunConsole implements OnInit, OnChanges, OnDestroy {
     return element.scrollTop === element.scrollHeight - element.clientHeight;
   }
 
+  onInvocationChange() {
+    this.clearConsole();
+    if (this.isOmnilabBased && this.selectedAttempt) {
+      this.tfLogPaths = this.selectedAttempt.tf_log_paths || [];
+      if (this.tfLogPaths.length > 0) {
+        this.selectedTfLogPathAttemptId = this.tfLogPaths[0].key!;
+      } else {
+        this.selectedTfLogPathAttemptId = '';
+      }
+    }
+    this.resetPolling();
+  }
+
   private scrollToBottom() {
     this.outputContainer.nativeElement.scrollTop =
         this.outputContainer.nativeElement.scrollHeight;

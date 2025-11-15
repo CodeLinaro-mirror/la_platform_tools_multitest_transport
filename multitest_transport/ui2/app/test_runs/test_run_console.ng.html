@@ -18,7 +18,7 @@
   <mat-form-field appearance="outline">
     <mat-label>Invocation</mat-label>
     <mat-select [(ngModel)]="selectedAttempt"
-                (selectionChange)="clearConsole(); resetPolling()">
+                (selectionChange)="onInvocationChange()">
       <mat-option *ngFor="let invocation of invocations" [value]="invocation">
         {{invocation.attempt_id}}
       </mat-option>

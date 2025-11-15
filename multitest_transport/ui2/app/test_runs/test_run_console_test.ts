@@ -291,4 +291,57 @@ describe('TestRunConsole', () => {
                undefined);
        console.stopPolling();
      }));
+
+  it('correctly updates tfLogPaths on invocation change', () => {
+    console.isOmnilabBased = true;
+    const first =
+        newCommandAttempt(false, 'first', [{key: 'job0', value: 'path0'}]);
+    const second = newCommandAttempt(
+        false, 'second',
+        [{key: 'job1', value: 'path1'}, {key: 'job2', value: 'path2'}]);
+
+    console.request = newMockRequest([], [first, second]);
+    console.update(false);  // Simulate console.ngOnChanges() being called.
+    expect(console.tfLogPaths).toEqual([
+      {key: 'job1', value: 'path1'}, {key: 'job2', value: 'path2'}
+    ]);
+    expect(console.selectedTfLogPathAttemptId).toEqual('job1');
+
+    // Change selected attempt
+    console.selectedAttempt = first;
+    (console.clearConsole as jasmine.Spy).calls.reset();
+    (console.resetPolling as jasmine.Spy).calls.reset();
+    console.onInvocationChange();
+
+    expect(console.tfLogPaths).toEqual([{key: 'job0', value: 'path0'}]);
+    expect(console.selectedTfLogPathAttemptId).toEqual('job0');
+    expect(console.clearConsole).toHaveBeenCalled();
+    expect(console.resetPolling).toHaveBeenCalled();
+  });
+
+  it('handles missing tfLogPaths on invocation change', () => {
+    console.isOmnilabBased = true;
+    const first = newCommandAttempt(false, 'first');  // tfLogPaths is undefined
+    const second = newCommandAttempt(
+        false, 'second',
+        [{key: 'job1', value: 'path1'}, {key: 'job2', value: 'path2'}]);
+
+    console.request = newMockRequest([], [first, second]);
+    console.update(false);  // Simulate console.ngOnChanges() being called.
+    expect(console.tfLogPaths).toEqual([
+      {key: 'job1', value: 'path1'}, {key: 'job2', value: 'path2'}
+    ]);
+    expect(console.selectedTfLogPathAttemptId).toEqual('job1');
+
+    // Change selected attempt to one without tfLogPaths
+    console.selectedAttempt = first;
+    (console.clearConsole as jasmine.Spy).calls.reset();
+    (console.resetPolling as jasmine.Spy).calls.reset();
+    console.onInvocationChange();
+
+    expect(console.tfLogPaths).toEqual([]);
+    expect(console.selectedTfLogPathAttemptId).toEqual('');
+    expect(console.clearConsole).toHaveBeenCalled();
+    expect(console.resetPolling).toHaveBeenCalled();
+  });
 });
