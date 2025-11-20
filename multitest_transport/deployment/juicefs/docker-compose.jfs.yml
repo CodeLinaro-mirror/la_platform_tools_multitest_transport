@@ -1,0 +1,235 @@
+# This Docker Compose file defines all services but separates them
+# into three profiles. The lifecycle (up, down, format, destroy)
+# is managed by the `jfs_service.sh` script, which calls these profiles.
+#
+# PROFILES:
+#   - jfs-setup: The long-running backend (MySQL, SeaweedFS)
+#   - jfs-vol:   The long-running application (Mount, Cache Manager)
+#   - jfs-tasks: The one-shot admin tasks (Format, Destroy)
+
+services:
+  ##################################################
+  # 1. MySQL Database (Metadata Engine)
+  ##################################################
+  db:
+    image: mysql:latest
+    container_name: jfs-meta
+    profiles: ["jfs-setup"]
+    restart: unless-stopped
+    ports:
+      - "${MYSQL_PORT}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    environment:
+      # Values are loaded from the .env file
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}      # Creates the 'juicefs' database
+      MYSQL_USER: ${MYSQL_USER}   # Creates the 'juicefs_user'
+    healthcheck:
+      # Uses the root password defined above to check health
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  ##################################################
+  # 2. SeaweedFS (Object Storage)
+  ##################################################
+  seaweedfs:
+    image: chrislusf/seaweedfs
+    container_name: jfs-data
+    profiles: ["jfs-setup"]
+    restart: unless-stopped
+    ports:
+      - "${SEAWEEDFS_MASTER_PORT}:9333" # Master port
+      - "${SEAWEEDFS_FILER_PORT}:8888" # Filer UI port
+      - "${SEAWEEDFS_S3_PORT}:8333" # S3 API port
+    volumes:
+      - seaweedfs-data:/data # Mount local dir for persistence
+    # Run server with S3 API and *defined* credentials
+    command: server -s3
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:8888/"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  ##################################################
+  # 3. Create Bucket (From your config)
+  ##################################################
+  # This service creates a Filer directory, which is separate from the S3
+  # storage JuiceFS will use. It's harmless to leave.
+  create-bucket:
+    image: curlimages/curl:latest
+    container_name: seaweedfs-create-bucket
+    profiles: ["jfs-setup"]
+    depends_on:
+      seaweedfs:
+        condition: service_healthy # Wait for the healthcheck to pass
+    environment:
+      BUCKET_NAME: ${BUCKET_NAME}
+    command:
+      - "/bin/sh"
+      - "-c"
+      - |
+        set -e
+        sleep 5
+        (curl -X POST http://seaweedfs:8888/buckets/$${BUCKET_NAME}/ || true)
+        echo "Filer directory /buckets/$${BUCKET_NAME} created or already exists."
+    # This service runs once and exits.
+
+  ##################################################
+  # 4. JuiceFS Formatter (One-shot)
+  ##################################################
+  format:
+    image: juicedata/mount:latest # Re-uses official image
+    container_name: jfs-format
+    profiles: ["jfs-tasks"]
+    depends_on:
+      db:
+        condition: service_healthy
+      create-bucket:
+        condition: service_completed_successfully
+    environment:
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      BUCKET_NAME: ${BUCKET_NAME}
+      JFS_VOLUME_NAME: ${JFS_VOLUME_NAME}
+      JFS_CAPACITY: ${JFS_CAPACITY}
+      # Credentials for the juicefs binary
+      JFS_PASSWORD: ${MYSQL_PASSWORD}
+    # This robust command uses 'sh -c' and a single line for the command
+    command:
+      - "/bin/sh"
+      - "-c"
+      - |
+        set -e
+        echo 'All dependencies are healthy. Formatting filesystem...'
+        # This is now a single, reliable line
+        juicefs format \
+          --storage s3 \
+          --bucket http://seaweedfs:8333/${BUCKET_NAME} \
+          --access-key any \
+          --secret-key any \
+          --trash-days=0 \
+          --capacity=${JFS_CAPACITY} \
+          "mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@tcp(db:3306)/${MYSQL_DATABASE}" \
+          ${JFS_VOLUME_NAME}
+        echo 'JuiceFS format complete.'
+
+  ##################################################
+  # 5. JuiceFS Destroyer (One-shot)
+  ##################################################
+  destroy:
+    image: juicedata/mount:latest
+    container_name: jfs-destroy
+    profiles: ["jfs-tasks"] # Isolated in its own profile
+    depends_on:
+      db:
+        condition: service_healthy
+      seaweedfs:
+        condition: service_healthy
+    environment:
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      JFS_VOLUME_NAME: ${JFS_VOLUME_NAME}
+      HOST_MNT_PATH: ${HOST_MNT_PATH}
+      JFS_PASSWORD: ${MYSQL_PASSWORD}
+    # This robust command uses 'sh -c' and a single line for the destroy script
+    command:
+      - "/bin/sh"
+      - "-c"
+      - |
+        set -e
+        echo "Destroying filesystem: ${JFS_VOLUME_NAME}..."
+        # This is the single-line, robust script for destroy
+        META_URL="mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@tcp(db:3306)/${MYSQL_DATABASE}"
+        echo "Finding UUID..."
+        UUID=$$(juicefs status $${META_URL} | grep '"UUID"' | awk -F '"' '{print $$4}')
+        if [ -z "$$UUID" ]; then
+          echo "Volume ${JFS_VOLUME_NAME} not found."
+        else
+          echo "Destroying volume with UUID: $$UUID"
+          juicefs destroy $${META_URL} $${UUID} --yes
+        fi
+        echo "Filesystem destroy task complete."
+
+  ##################################################
+  # 6. JuiceFS Mount (Sidecar Service)
+  ##################################################
+  juicefs-mount:
+    image: juicedata/mount:latest
+    container_name: jfs-mount
+    profiles: ["jfs-vol"]
+    stop_grace_period: 30s
+    volumes:
+        - ${HOST_MNT_PATH}:/mnt:rw,rshared
+        - ./entrypoint.sh:/entrypoint.sh
+    restart: unless-stopped
+    cap_add:
+      - SYS_ADMIN
+    devices:
+      - /dev/fuse
+    security_opt:
+      - "apparmor:unconfined"
+    environment:
+      JFS_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      BUCKET_NAME: ${BUCKET_NAME}
+    entrypoint: /entrypoint.sh
+    command:
+      - "juicefs"
+      - "mount"
+      - "--storage"
+      - "s3"
+      - "--bucket"
+      - "http://seaweedfs:8333/${BUCKET_NAME}"
+      - "--root-squash"
+      - "0:0"
+      - "mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@tcp(db:3306)/${MYSQL_DATABASE}"
+      - "/mnt"
+    healthcheck:
+        test: ["CMD-SHELL", "cat /mnt/.control"]
+        interval: 60s
+        retries: 5
+        start_period: 30s
+        timeout: 10s
+
+  ##################################################
+  # 7. Cache Manager App (Your Java App)
+  ##################################################
+  cache-manager:
+    image: ${CACHE_MANAGER_IMAGE}
+    container_name: cache-manager
+    profiles: ["jfs-vol"]
+    restart: unless-stopped
+    depends_on:
+      juicefs-mount:
+        condition: service_healthy # Just wait for it to start
+    volumes:
+      - mtt-jfs:/mnt/jfs
+    # --- Pass in variables for your Java app ---
+    environment:
+      PERSISTENT_CACHE_DIR: /mnt/jfs/persistent_cache
+      LOG_DIR: /mnt/jfs/logs
+      CACHE_SIZE: ${CACHE_SIZE} # Read from .env file
+
+# Top-level volumes for persistence
+volumes:
+  mysql-data:
+    name: mysql-data
+  seaweedfs-data:
+    name: seaweedfs-data
+  mtt-jfs:
+    name: mtt-jfs
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '${HOST_MNT_PATH}'
