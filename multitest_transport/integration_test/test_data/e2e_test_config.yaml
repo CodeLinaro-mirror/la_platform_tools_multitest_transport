@@ -8,6 +8,31 @@ device_actions:
       values:
       - echo "Executing e2e_log_action on device $SERIAL"
 
+- id: connect_wifi
+  name: wifi connect
+  tradefed_options:
+  - name: wifi-network
+    values:
+    - MI-HK
+  - name: wifi-psk
+    values:
+    - nanjingcts
+  - name: wifi
+    values:
+    - 'ON'
+  - name: force-skip-system-props
+    values:
+    - 'true'
+  - name: disconnect-wifi-after-test
+    values:
+    - 'false'
+  - name: max-wifi-connect-time
+    values:
+    - '100000'
+  tradefed_target_preparers:
+  - class_name: com.android.tradefed.targetprep.DeviceSetup
+
+
 tests:
 - id: e2e_fake_test
   name: Custom test suite which executes a fake test.

@@ -80,6 +80,32 @@ py_test(
     ],
 )
 
+# Run with blaze test //multitest_transport/integration_test:ats2_e2e_local_validation_test \
+#   --test_arg=--serial_number=<device_serial> \
+#   --test_arg=--container_id=mtt \
+#   --test_output=streamed \
+#   --test_arg=--xts_file=<local_cts_zip_path>
+#   --cache_test_results=no
+py_test(
+    name = "ats2_e2e_local_validation_test",
+    timeout = "eternal",
+    srcs = [
+        "ats2_e2e_local_validation_test.py",
+    ],
+    data = [
+        "test_data/e2e_test_config.yaml",
+    ],
+    features = ["-enable_relr"],
+    linking_mode = "static",
+    tags = ["local"],
+    deps = [
+        ":integration_util",
+        "//third_party/py/absl/flags",
+        "//third_party/py/absl/testing:absltest",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
+    ],
+)
+
 py_test(
     name = "event_handler_integration_test",
     srcs = [

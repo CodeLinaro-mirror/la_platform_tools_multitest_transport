@@ -32,7 +32,12 @@ import retry
 
 FLAGS = flags.FLAGS
 flags.DEFINE_string('docker_image', None, 'MTT docker image to use.')
-flags.mark_flag_as_required('docker_image')
+flags.DEFINE_string(
+    'container_id',
+    None,
+    'ID or name of an existing Docker container to use instead of creating a'
+    ' new one.',
+)
 flags.DEFINE_multi_string('env', [],
                           'Environment variables in the format of NAME=VALUE.')
 flags.DEFINE_enum(
@@ -40,6 +45,17 @@ flags.DEFINE_enum(
     'info',
     ['debug', 'info', 'warn', 'error', 'critical'],
     'Server log level')
+
+
+@flags.multi_flags_validator(
+    ['docker_image', 'container_id'],
+    message=(
+        '--docker_image must be specified if --container_id is not provided.'
+    ),
+)
+def _CheckDockerImageOrContainerId(flags_dict):
+  return flags_dict['container_id'] or flags_dict['docker_image']
+
 
 # Retry parameters for API calls (retry after 2, 4, and 8 seconds)
 RETRY_PARAMS = {'tries': 4, 'delay': 2, 'backoff': 2}
@@ -53,13 +69,48 @@ _SECCOMP_PROFILE_NAME = 'seccomp.json'
 class MttContainer(object):
   """Wrapper around an MTT docker container."""
 
-  def __init__(self, image=None, max_local_virtual_devices=0, ats2=False):
+  def __init__(
+      self,
+      image=None,
+      max_local_virtual_devices=0,
+      ats2=False,
+      container_id=None,
+  ):
     self._image = image or FLAGS.docker_image
     self._max_local_virtual_devices = max_local_virtual_devices
     self._ats2 = ats2
+    self._is_existing = container_id is not None
+    self._container_id = container_id
+    self._delegate = None
+    if self._is_existing:
+      docker_client = docker.from_env()
+      self._delegate = docker_client.containers.get(container_id)
+      try:
+        self._control_server_port = self._delegate.attrs['NetworkSettings'][
+            'Ports'
+        ]['8000/tcp'][0]['HostPort']
+      except (KeyError, IndexError, TypeError) as e:
+        raise RuntimeError(
+            'Could not determine host port for 8000/tcp on container'
+            f' {self._container_id}. Is it running and is port 8000'
+            f' published?: {e}'
+        ) from e
+      self.base_url = 'http://localhost:%s' % self._control_server_port
+      self.mtt_api_url = '%s/_ah/api/mtt/v1' % self.base_url
+      if self._ats2:
+        self.tfc_api_url = '%s/_ah/api/mtt/v1' % self.base_url
+      else:
+        self.tfc_api_url = '%s/_ah/api/tradefed_cluster/v1' % self.base_url
+      logging.info(
+          'Reusing container %s with control server port: %s',
+          self._container_id,
+          self._control_server_port,
+      )
 
   def __enter__(self):
     """Start the MTT docker container."""
+    if self._is_existing:
+      return self
     self._control_server_port = portpicker.pick_unused_port()
     # Docker API takes the seccomp profile as a string.
     seccomp_profile = resources.read_text(
@@ -126,6 +177,11 @@ class MttContainer(object):
 
   def __exit__(self, exception_type, exception_value, traceback):
     """Stop and remove the MTT docker container."""
+    if self._is_existing:
+      logging.info(
+          'Skipping teardown for existing container %s', self._container_id
+      )
+      return
     self._delegate.stop()
     self._delegate.remove()
 
@@ -171,6 +227,29 @@ class MttContainer(object):
       dest_dir = os.path.dirname(dest_path)
       self.Exec('mkdir', '-p', dest_dir)
       return self._delegate.put_archive(path=dest_dir, data=archive)
+
+  def FileExists(self, dest_path):
+    """Checks if a file exists in the container.
+
+    Args:
+      dest_path: The path to the file within the container.
+
+    Returns:
+      True if the file exists and is a regular file, False otherwise.
+    """
+    result = self._delegate.exec_run(['test', '-f', dest_path])
+    return result.exit_code == 0
+
+  def ReadFile(self, dest_path):
+    """Reads a file from the container.
+
+    Args:
+      dest_path: The path to the file within the container.
+
+    Returns:
+      The content of the file.
+    """
+    return self.Exec('cat', dest_path)
 
   def UploadFile(self, src_path, dest_path):
     """Upload a file to the container's local file server."""
@@ -225,6 +304,35 @@ class MttContainer(object):
         # Unexpected final state or out of time
         raise AssertionError('Wrong run state %s (expected %s)' %
                              (state, expected_state))
+      time.sleep(1)
+
+  def WaitForFinalState(self, test_run_id, timeout=60):
+    """Wait for a test run to be in one of the final states.
+
+    The final states are 'COMPLETED', 'CANCELED', or 'ERROR'.
+
+    Args:
+      test_run_id: The ID of the test run to wait for.
+      timeout: The maximum time in seconds to wait.
+
+    Returns:
+      The final state of the test run.
+
+    Raises:
+      AssertionError: If the test run does not reach a final state within the
+        timeout.
+    """
+    start_time = time.time()
+    final_states = ['COMPLETED', 'CANCELED', 'ERROR']
+    while True:
+      state = self.GetTestRun(test_run_id)['state']
+      if state in final_states:
+        return state
+      if time.time() >= start_time + timeout:
+        raise AssertionError(
+            f'Test run {test_run_id} did not reach a final state within'
+            f' {timeout} seconds. Current state: {state}'
+        )
       time.sleep(1)
 
   @retry.retry(**RETRY_PARAMS)
@@ -296,15 +404,15 @@ class DockerContainerTest(absltest.TestCase):
   has_failure = False
 
   @classmethod
-  def GetContainer(cls):
+  def GetContainer(cls, container_id=None):
     """Factory method to construct a container. Override to customize."""
-    return MttContainer()
+    return MttContainer(container_id=container_id)
 
   @classmethod
   def setUpClass(cls):
     """Start the container."""
     super(DockerContainerTest, cls).setUpClass()
-    cls.container = cls.GetContainer()
+    cls.container = cls.GetContainer(container_id=FLAGS.container_id)
     cls.container.Start()
 
   def run(self, result=None):

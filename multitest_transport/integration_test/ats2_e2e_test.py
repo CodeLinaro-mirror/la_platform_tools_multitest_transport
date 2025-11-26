@@ -63,9 +63,11 @@ class E2eIntegrationTest(integration_util.DockerContainerTest):
   """Tests that TF is running and can handle test run information from MTT."""
 
   @classmethod
-  def GetContainer(cls):
+  def GetContainer(cls, container_id=None):
     """Factory method to construct a container that supports virtualization."""
-    return integration_util.MttContainer(max_local_virtual_devices=1, ats2=True)
+    return integration_util.MttContainer(
+        max_local_virtual_devices=1, ats2=True, container_id=container_id
+    )
 
   @classmethod
   def setUpClass(cls):
