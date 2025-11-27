@@ -86,12 +86,15 @@ class E2eIntegrationTest(integration_util.DockerContainerTest):
     """Combines the host name and the device serial."""
     return socket.gethostname() + ':' + serial
 
-  def testRunCtsModuleWithConfig(self):
+  def testRunCtsAndMctsModules(self):
     """Tests executing a CTS module successfully."""
     test_run_id = self.container.ScheduleTestRun(
         FLAGS.serial_number,
         test_id='android.cts.15_0',
-        extra_args='-m CtsAccelerationTestCases',
+        extra_args=(
+            '--include-filter CtsUsbTests --include-filter'
+            ' CtsSdkExtensionsTestCases'
+        ),
         test_resource_objs=[{
             'name': 'android-cts.zip',
             'url': 'file:///data/local_file_store/android-cts.zip',
@@ -109,7 +112,22 @@ class E2eIntegrationTest(integration_util.DockerContainerTest):
     # Verify that the test output exists
     output_dir = self._GetOutputDir(test_run)
     self._AssertFileExists(output_dir + '*.zip')  # Test results zip file
-    self._AssertFileExists(output_dir + 'test_result.xml')
+    test_result_xml_path = output_dir + 'test_result.xml'
+    self._AssertFileExists(test_result_xml_path)
+    test_result_xml_content = self.container.ReadFile(test_result_xml_path)
+
+    # If the device supports armv7 and armv8, the modules count will be 4.
+    # Otherwise, the modules count will be 2.
+    self.assertTrue(
+        ('modules_done="2" modules_total="2"' in test_result_xml_content)
+        or ('modules_done="4" modules_total="4"' in test_result_xml_content),
+        'Neither "modules_done="2" modules_total="2"" nor "modules_done="4"'
+        ' modules_total="4"" found in test_result.xml',
+    )
+    self.assertIn('<Module name="CtsUsbTests"', test_result_xml_content)
+    self.assertIn(
+        '<Module name="CtsSdkExtensionsTestCases"', test_result_xml_content
+    )
     self._AssertFileExists(output_dir + 'test_result_failures_suite.html')
 
   def testWithRetryAttempt(self):
@@ -135,7 +153,6 @@ class E2eIntegrationTest(integration_util.DockerContainerTest):
     self.assertLen(attempts, 2)
     self.assertGreater(int(test_run['total_test_count']), 0)
     self.assertGreater(int(test_run['failed_test_count']), 0)
-    logging.info('test_run: %s', test_run)
     # Verify that the test output exists
     output_dir = self._GetOutputDir(test_run)
     self._AssertFileExists(output_dir + '*.zip')  # Test results zip file
