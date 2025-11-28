@@ -35,6 +35,10 @@ queue:
   rate: 20/s
   target: default
 
+- name: test-run-hook-queue
+  rate: 5/s
+  target: default
+
 - name: tfc-event-queue
   rate: 100/s
   target: default

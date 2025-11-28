@@ -52,6 +52,7 @@ APP = RegexDispatcher([
     ),
     (r'/_ah/queue/test-kicker-queue', test_kicker.APP),
     (r'/_ah/queue/test-plan-kicker-queue', test_plan_kicker.APP),
+    (r'/_ah/queue/test-run-hook-queue', task_scheduler.APP),
     (r'/_ah/queue/tfc-event-queue', tfc_event_handler.APP),
     # Cron handlers
     (r'/sidekicks(/.*)?', sidekicks.APP),

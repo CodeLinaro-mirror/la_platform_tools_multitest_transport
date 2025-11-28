@@ -202,6 +202,7 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
             self.mock_test_run.key.id(),
             ndb_models.TestRunPhase.AFTER_ATTEMPT,
             attempt_id='attempt_id',
+            _queue=tfc_event_handler._TEST_RUN_HOOK_QUEUE,
             _transactional=True,
         ),
     ])
@@ -288,6 +289,7 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
             self.mock_test_run.key.id(),
             ndb_models.TestRunPhase.AFTER_ATTEMPT,
             attempt_id='attempt_id',
+            _queue=tfc_event_handler._TEST_RUN_HOOK_QUEUE,
             _transactional=True,
         ),
     ])
@@ -345,6 +347,7 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
             self.mock_test_run.key.id(),
             ndb_models.TestRunPhase.AFTER_ATTEMPT,
             attempt_id='attempt_id2',
+            _queue=tfc_event_handler._TEST_RUN_HOOK_QUEUE,
             _transactional=True,
         ),
     ])
@@ -453,12 +456,21 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
 
     # test results stored and after attempt hooks executed
     mock_add_task.assert_has_calls([
-        mock.call(test_result_handler.StoreTestResults,
-                  self.mock_test_run.key.id(), 'attempt_id', 'test_results_url',
-                  _transactional=True),
-        mock.call(test_run_hook.ExecuteHooks, self.mock_test_run.key.id(),
-                  ndb_models.TestRunPhase.AFTER_ATTEMPT,
-                  attempt_id='attempt_id', _transactional=True),
+        mock.call(
+            test_result_handler.StoreTestResults,
+            self.mock_test_run.key.id(),
+            'attempt_id',
+            'test_results_url',
+            _transactional=True,
+        ),
+        mock.call(
+            test_run_hook.ExecuteHooks,
+            self.mock_test_run.key.id(),
+            ndb_models.TestRunPhase.AFTER_ATTEMPT,
+            attempt_id='attempt_id',
+            _queue=tfc_event_handler._TEST_RUN_HOOK_QUEUE,
+            _transactional=True,
+        ),
     ])
 
   @mock.patch.object(tfc_client, 'GetDeviceInfo')
@@ -540,6 +552,7 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
             test_run_hook.ExecuteHooks,
             self.mock_test_run.key.id(),
             ndb_models.TestRunPhase.AFTER_RUN,
+            _queue=tfc_event_handler._TEST_RUN_HOOK_QUEUE,
             _transactional=True,
         ),
         mock.call(

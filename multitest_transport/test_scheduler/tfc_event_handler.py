@@ -58,6 +58,8 @@ FAILED_TEST_COUNT_THRESHOLDS = [1, 10, 50, 100, 200, 500, 1000]
 LOCAL_ID_TAG = 'custom'
 APP = flask.Flask(__name__)
 
+_TEST_RUN_HOOK_QUEUE = 'test-run-hook-queue'
+
 _tls = threading.local()
 _lock = threading.Lock()
 _subscriptions = {}
@@ -164,14 +166,17 @@ def _AfterTestRunHandler(test_run_id):
     task_scheduler.AddCallableTask(test_run_hook.ExecuteHooks,
                                    test_run.key.id(),
                                    ndb_models.TestRunPhase.ON_SUCCESS,
+                                   _queue=_TEST_RUN_HOOK_QUEUE,
                                    _transactional=True)
   elif test_run.state == ndb_models.TestRunState.ERROR:
     task_scheduler.AddCallableTask(test_run_hook.ExecuteHooks,
                                    test_run.key.id(),
                                    ndb_models.TestRunPhase.ON_ERROR,
+                                   _queue=_TEST_RUN_HOOK_QUEUE,
                                    _transactional=True)
   task_scheduler.AddCallableTask(test_run_hook.ExecuteHooks, test_run.key.id(),
                                  ndb_models.TestRunPhase.AFTER_RUN,
+                                 _queue=_TEST_RUN_HOOK_QUEUE,
                                  _transactional=True)
 
   # Record metrics
@@ -377,6 +382,7 @@ def _InvokeAttemptHandler(test_run_id, test_run, attempt):
         test_run_id,
         ndb_models.TestRunPhase.AFTER_ATTEMPT,
         attempt_id=attempt.attempt_id,
+        _queue=_TEST_RUN_HOOK_QUEUE,
         _transactional=True,
     )
 
