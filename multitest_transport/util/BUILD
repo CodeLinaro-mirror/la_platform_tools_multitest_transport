@@ -225,8 +225,11 @@ py_test(
     ],
     tags = ["not_run:arm"],
     deps = [
+        ":olcs_lab_info_stub",
         ":tfc_client_lib",
+        "//third_party/py/apiclient",
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
+        "@tradefed_cluster//tradefed_cluster:api_messages_lib",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
         "@tradefed_cluster//tradefed_cluster/plugins:base_lib",
         third_party("absl/testing:absltest"),
@@ -440,12 +443,9 @@ py_test(
         ":olcs_lab_info_client_lib",
         ":olcs_lab_info_stub",
         "@com_google_deviceinfra//src/devtools/mobileharness/api/model/proto:device_py_pb2",
-        "@com_google_deviceinfra//src/devtools/mobileharness/infra/master/rpc/proto:lab_record_service_py_proto",
         "@com_google_deviceinfra//src/devtools/mobileharness/shared/labinfo/proto:lab_info_service_py_proto",
         "//third_party/py/absl/testing:absltest",
-        "//third_party/py/protorpc:protorpc_all",
         "@tradefed_cluster//tradefed_cluster:api_messages_lib",
-        "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
     ],
 )
 

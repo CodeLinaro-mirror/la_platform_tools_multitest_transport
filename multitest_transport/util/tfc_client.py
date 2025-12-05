@@ -303,6 +303,23 @@ def ListDevices() -> Optional[api_messages.DeviceInfoCollection]:
   Returns:
     A DeviceInfoCollection object.
   """
+  if os.environ.get('IS_OMNILAB_BASED') == 'true':
+    all_device_infos = []
+    cursor = None
+    while True:
+      options = olcs_lab_info_stub.ListDevicesOptions(count=1000, cursor=cursor)
+      response = _GetOlcsLabInfoStub().ListDevices(options)
+      all_device_infos.extend(response.device_infos)
+      if response.more:
+        cursor = response.next_cursor
+      else:
+        break
+    return api_messages.DeviceInfoCollection(
+        device_infos=all_device_infos,
+        more=False,
+        next_cursor='',
+        prev_cursor='',
+    )
   res = _GetAPIClient().devices().list().execute()
   return protojson.decode_message(  # pytype: disable=module-attr
       api_messages.DeviceInfoCollection, json.dumps(res)

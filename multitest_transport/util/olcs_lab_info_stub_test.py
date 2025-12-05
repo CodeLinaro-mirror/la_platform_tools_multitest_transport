@@ -115,6 +115,34 @@ class OlcsLabInfoStubTest(absltest.TestCase):
     dimension.name = 'type'
     dimension.value = 'panther_name'
 
+  def _create_list_devices_options(
+      self,
+      hostname=None,
+      hostnames=None,
+      device_serial=None,
+      cursor=None,
+      count=10,
+      host_groups=None,
+      device_states=None,
+      device_types=None,
+      test_harnesses=None,
+      run_targets=None,
+      pools=None,
+  ):
+    return olcs_lab_info_stub.ListDevicesOptions(
+        hostname=hostname,
+        hostnames=hostnames,
+        device_serial=device_serial,
+        cursor=cursor,
+        count=count,
+        host_groups=host_groups,
+        device_states=device_states,
+        device_types=device_types,
+        test_harnesses=test_harnesses,
+        run_targets=run_targets,
+        pools=pools,
+    )
+
   def testGetDevice(self):
     """Tests the GetDevice method."""
     device_info = self._olcs_lab_info_stub.GetDevice('device_uuid1')
@@ -185,6 +213,135 @@ class OlcsLabInfoStubTest(absltest.TestCase):
     device_info = self._olcs_lab_info_stub.GetDevice('device_uuid1')
 
     self.assertEqual(device_info.state, 'FAILED')
+
+  def testListDevices_match(self):
+    """Tests the ListDevices method."""
+    options = self._create_list_devices_options(
+        hostname='localhost',
+        host_groups=['presubmit'],
+        device_states=['Available'],
+        device_types=[api_messages.DeviceTypeMessage.PHYSICAL],
+        test_harnesses=['OMNILAB'],
+        run_targets=['panther'],
+        pools=['presubmit'],
+    )
+
+    device_info_collection = self._olcs_lab_info_stub.ListDevices(options)
+    self.assertLen(device_info_collection.device_infos, 1)
+    self.assertEqual(
+        device_info_collection.device_infos[0],
+        self._olcs_lab_info_stub.GetDevice('device_uuid1'),
+    )
+
+  def testListDevices_noHostGroupMatch(self):
+    options = self._create_list_devices_options(
+        hostname='localhost',
+        host_groups=['no_match'],
+    )
+    device_info_collection = self._olcs_lab_info_stub.ListDevices(options)
+    self.assertEmpty(device_info_collection.device_infos)
+
+  def testListDevices_noDeviceStateMatch(self):
+    options = self._create_list_devices_options(
+        hostname='localhost',
+        device_states=['Allocated'],
+    )
+    device_info_collection = self._olcs_lab_info_stub.ListDevices(options)
+    self.assertEmpty(device_info_collection.device_infos)
+
+  def testListDevices_noDeviceTypeMatch(self):
+    options = self._create_list_devices_options(
+        hostname='localhost',
+        device_types=[api_messages.DeviceTypeMessage.NULL],
+    )
+    device_info_collection = self._olcs_lab_info_stub.ListDevices(options)
+    self.assertEmpty(device_info_collection.device_infos)
+
+  def testListDevices_noTestHarnessMatch(self):
+    options = self._create_list_devices_options(
+        hostname='localhost',
+        test_harnesses=['OTHER'],
+    )
+    device_info_collection = self._olcs_lab_info_stub.ListDevices(options)
+    self.assertEmpty(device_info_collection.device_infos)
+
+  def testListDevices_noRunTargetMatch(self):
+    options = self._create_list_devices_options(
+        hostname='localhost',
+        run_targets=['no-match'],
+    )
+    device_info_collection = self._olcs_lab_info_stub.ListDevices(options)
+    self.assertEmpty(device_info_collection.device_infos)
+
+  def testListDevices_noPoolMatch(self):
+    options = self._create_list_devices_options(
+        hostname='localhost',
+        pools=['no-match'],
+    )
+    device_info_collection = self._olcs_lab_info_stub.ListDevices(options)
+    self.assertEmpty(device_info_collection.device_infos)
+
+  def testListDevices_withPagination(self):
+    get_lab_info_response = lab_info_service_pb2.GetLabInfoResponse()
+    get_lab_info_response.lab_query_result.timestamp.seconds = 60
+    device_info = (
+        get_lab_info_response.lab_query_result.device_view.grouped_devices.device_list.device_info.add()
+    )
+    self._init_device_info(device_info)
+    device_info_2 = (
+        get_lab_info_response.lab_query_result.device_view.grouped_devices.device_list.device_info.add()
+    )
+    self._init_device_info(device_info_2)
+    device_info_2.device_locator.id = 'device_uuid2'
+    self._olcs_lab_info_client.get_lab_info.return_value = get_lab_info_response
+    options = self._create_list_devices_options(count=1)
+
+    device_info_collection = self._olcs_lab_info_stub.ListDevices(options)
+    self.assertLen(device_info_collection.device_infos, 1)
+    self.assertEqual(device_info_collection.next_cursor, '1')
+    self.assertEqual(device_info_collection.prev_cursor, '')
+    self.assertTrue(device_info_collection.more)
+
+    options.cursor = '1'
+    device_info_collection = self._olcs_lab_info_stub.ListDevices(options)
+    self.assertLen(device_info_collection.device_infos, 1)
+    self.assertEqual(device_info_collection.next_cursor, '')
+    self.assertEqual(device_info_collection.prev_cursor, '1')
+    self.assertFalse(device_info_collection.more)
+
+  def testListDevices_withBackendPagination(self):
+    get_lab_info_response1 = lab_info_service_pb2.GetLabInfoResponse()
+    get_lab_info_response1.lab_query_result.timestamp.seconds = 60
+    for i in range(1000):
+      device_info = (
+          get_lab_info_response1.lab_query_result.device_view.grouped_devices.device_list.device_info.add()
+      )
+      self._init_device_info(device_info)
+      device_info.device_locator.id = f'device_uuid_{i}'
+
+    get_lab_info_response2 = lab_info_service_pb2.GetLabInfoResponse()
+    get_lab_info_response2.lab_query_result.timestamp.seconds = 60
+    device_info = (
+        get_lab_info_response2.lab_query_result.device_view.grouped_devices.device_list.device_info.add()
+    )
+    self._init_device_info(device_info)
+    device_info.device_locator.id = 'device_uuid_1000'
+
+    self._olcs_lab_info_client.get_lab_info.side_effect = [
+        get_lab_info_response1,
+        get_lab_info_response2,
+    ]
+    options = self._create_list_devices_options(count=1001)
+
+    device_info_collection = self._olcs_lab_info_stub.ListDevices(options)
+
+    self.assertLen(device_info_collection.device_infos, 1001)
+    self.assertEqual(self._olcs_lab_info_client.get_lab_info.call_count, 2)
+    # Check offsets in calls to get_lab_info
+    args0, _ = self._olcs_lab_info_client.get_lab_info.call_args_list[0]
+    args1, _ = self._olcs_lab_info_client.get_lab_info.call_args_list[1]
+    self.assertEqual(args0[0].page.offset, 0)
+    self.assertEqual(args1[0].page.offset, 1000)
 
 
 if __name__ == '__main__':

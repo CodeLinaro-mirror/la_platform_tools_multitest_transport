@@ -26,7 +26,6 @@ from protorpc import remote
 from tradefed_cluster import api_messages
 
 from com_google_deviceinfra.src.devtools.mobileharness.infra.master.rpc.proto import lab_record_service_pb2
-from com_google_deviceinfra.src.devtools.mobileharness.shared.labinfo.proto import lab_info_service_pb2
 
 
 @base.MTT_API.api_class(resource_name='device', path='devices')
@@ -85,7 +84,6 @@ class DeviceApi(remote.Service):
       elastic_query=messages.StringField(19),
   )
 
-  # TODO: Move business logic to olcs_lab_info_stub.py
   @base.ApiMethod(
       DEVICE_LIST_RESOURCE,
       api_messages.DeviceInfoCollection,
@@ -102,99 +100,26 @@ class DeviceApi(remote.Service):
     Returns:
       a DeviceInfoCollection object.
     """
-    offset = (
-        int(request.cursor)
-        if request.cursor and request.cursor.isdigit()
-        else 0
+    all_test_harnesses = []
+    if request.test_harnesses:
+      all_test_harnesses.extend(request.test_harnesses)
+    if request.test_harness:
+      all_test_harnesses.extend(request.test_harness)
+    # TODO: support all filter fields.
+    options = olcs_lab_info_stub.ListDevicesOptions(
+        hostname=request.hostname,
+        hostnames=request.hostnames,
+        device_serial=request.device_serial,
+        cursor=request.cursor,
+        count=request.count,
+        host_groups=request.host_groups,
+        device_states=request.device_states,
+        device_types=request.device_types,
+        test_harnesses=all_test_harnesses,
+        run_targets=request.run_targets,
+        pools=request.pools,
     )
-    page_size = request.count
-    get_lab_info_request = lab_info_service_pb2.GetLabInfoRequest()
-
-    get_lab_info_request.page.offset = 0
-    get_lab_info_request.page.limit = 1000
-    get_lab_info_request.lab_query.device_view_request.device_limit = 0
-
-    if request.hostname:
-      lab_match_condition = (
-          get_lab_info_request.lab_query.filter.lab_filter.lab_match_condition.add()
-      )
-      lab_match_condition.lab_host_name_match_condition.condition.include.expected.append(
-          request.hostname
-      )
-    if request.hostnames:
-      lab_match_condition = (
-          get_lab_info_request.lab_query.filter.lab_filter.lab_match_condition.add()
-      )
-      for hostname in request.hostnames:
-        lab_match_condition.lab_host_name_match_condition.condition.include.expected.append(
-            hostname
-        )
-    if request.device_serial:
-      device_match_condition = (
-          get_lab_info_request.lab_query.filter.device_filter.device_match_condition.add()
-      )
-      for device_serial in request.device_serial:
-        device_match_condition.device_uuid_match_condition.condition.include.expected.append(
-            device_serial
-        )
-
-    response = self._olcs_lab_info_client.get_lab_info(get_lab_info_request)
-    ats_device_infos = []
-    for (
-        device_info
-    ) in (
-        response.lab_query_result.device_view.grouped_devices.device_list.device_info
-    ):
-      ats_device_info = olcs_lab_info_stub.OlcsLabInfoStub.ConvertDeviceInfo(
-          device_info, response.lab_query_result.timestamp
-      )
-      if DeviceApi.DeviceInfoMatchFilter(ats_device_info, request):
-        ats_device_infos.append(ats_device_info)
-
-    total_device_count = len(ats_device_infos)
-    returned_ats_device_infos = ats_device_infos[offset : offset + page_size]
-    returned_device_count = len(returned_ats_device_infos)
-    return api_messages.DeviceInfoCollection(
-        device_infos=returned_ats_device_infos,
-        next_cursor=str(offset + returned_device_count)
-        if offset + returned_device_count < total_device_count
-        else '',
-        prev_cursor=str(offset) if offset > 0 else '',
-        more=True
-        if offset + returned_device_count < total_device_count
-        else False,
-    )
-
-  @staticmethod
-  def DeviceInfoMatchFilter(
-      device_info: api_messages.DeviceInfo, request
-  ) -> bool:
-    return (
-        (
-            not request.host_groups
-            or device_info.host_group in request.host_groups
-        )
-        and (
-            not request.device_states
-            or device_info.state in request.device_states
-        )
-        and (
-            not request.device_types
-            or device_info.device_type in request.device_types
-        )
-        and (
-            not request.test_harnesses
-            or device_info.test_harness in request.test_harnesses
-        )
-        and (
-            not request.run_targets
-            or device_info.run_target in request.run_targets
-        )
-        and (
-            not request.pools
-            or set(request.pools).intersection(device_info.pools) != set()
-        )
-    )
+    return self._olcs_lab_info_stub.ListDevices(options)
 
   DEVICE_GET_RESOURCE = endpoints.ResourceContainer(
       message_types.VoidMessage,

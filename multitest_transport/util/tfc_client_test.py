@@ -13,16 +13,18 @@
 # limitations under the License.
 
 """Tests for tfc_client."""
+import os
 import threading
 from unittest import mock
 
 from absl.testing import absltest
 import apiclient
+
+from multitest_transport.util import olcs_lab_info_stub
+from multitest_transport.util import tfc_client
+from tradefed_cluster import api_messages
 from tradefed_cluster import testbed_dependent_test
 from tradefed_cluster.plugins import base as tfc_plugins
-
-
-from multitest_transport.util import tfc_client
 
 
 class TfcClientTest(testbed_dependent_test.TestbedDependentTest):
@@ -43,6 +45,36 @@ class TfcClientTest(testbed_dependent_test.TestbedDependentTest):
         discoveryServiceUrl=tfc_client.API_DISCOVERY_URL_FORMAT % (
             'hostname', tfc_client.API_NAME, tfc_client.API_VERSION))
     self.assertEqual(mock_build(), api_client)
+
+  @mock.patch.object(tfc_client, '_GetOlcsLabInfoStub')
+  def testListDevices_omniLabPagination(self, mock_get_olcs_lab_info_stub):
+    os.environ['IS_OMNILAB_BASED'] = 'true'
+    mock_stub = mock.MagicMock()
+    mock_get_olcs_lab_info_stub.return_value = mock_stub
+    device_info1 = api_messages.DeviceInfo(device_serial='device1')
+    device_info2 = api_messages.DeviceInfo(device_serial='device2')
+    response1 = api_messages.DeviceInfoCollection(
+        device_infos=[device_info1], more=True, next_cursor='1'
+    )
+    response2 = api_messages.DeviceInfoCollection(
+        device_infos=[device_info2], more=False
+    )
+    mock_stub.ListDevices.side_effect = [response1, response2]
+
+    result = tfc_client.ListDevices()
+
+    self.assertLen(result.device_infos, 2)
+    self.assertEqual(result.device_infos[0], device_info1)
+    self.assertEqual(result.device_infos[1], device_info2)
+    mock_stub.ListDevices.assert_has_calls([
+        mock.call(
+            olcs_lab_info_stub.ListDevicesOptions(count=1000, cursor=None)
+        ),
+        mock.call(
+            olcs_lab_info_stub.ListDevicesOptions(count=1000, cursor='1')
+        ),
+    ])
+    del os.environ['IS_OMNILAB_BASED']
 
 
 if __name__ == '__main__':

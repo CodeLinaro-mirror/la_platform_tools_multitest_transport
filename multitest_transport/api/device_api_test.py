@@ -137,85 +137,34 @@ class DeviceApiTest(api_test_util.TestCase):
       dimension.value = 'panther_name'
 
   def setUp(self):
-    super(DeviceApiTest, self).setUp(DeviceApiTest.DeviceApiForTest)
+    super().setUp(DeviceApiTest.DeviceApiForTest)
 
-  def testListDevices(self):
-    res = self.app.get('/_ah/api/mtt/v1/devices')
-    res_msg = protojson.decode_message(
-        api_messages.DeviceInfoCollection, res.body
+  @mock.patch.object(
+      olcs_lab_info_stub.OlcsLabInfoStub, 'ListDevices', autospec=True
+  )
+  def testListDevices_CallsStub(self, mock_list_devices):
+    mock_list_devices.return_value = api_messages.DeviceInfoCollection()
+    self.app.get(
+        '/_ah/api/mtt/v1/devices?'
+        'hostname=host&host_groups=group&pools=pool&'
+        'test_harness=harness1&test_harnesses=harness2'
     )
-    self.assertEqual(
-        [
-            api_messages.DeviceInfo(
-                device_serial='device_uuid1',
-                lab_name='bej',
-                hostname='localhost',
-                run_target='panther',
-                build_id='aosp_arm64-userdebug',
-                product='panther',
-                product_variant='panther_variant',
-                sdk_version='34',
-                state='Available',
-                timestamp=datetime.datetime.utcfromtimestamp(60),
-                battery_level='90',
-                hidden=False,
-                notes=[],
-                history=[],
-                utilization=0.0,
-                cluster='presubmit',
-                host_group='presubmit',
-                pools=['presubmit'],
-                device_type=api_messages.DeviceTypeMessage.PHYSICAL,
-                mac_address='00:90:4c:d2:b1:9e',
-                group_name='',
-                sim_state='READY',
-                sim_operator='T-mobile',
-                extra_info=[
-                    api_messages.KeyValuePair(key='battery_level', value='90'),
-                    api_messages.KeyValuePair(key='sdk_version', value='34'),
-                    api_messages.KeyValuePair(
-                        key='build_id', value='aosp_arm64-userdebug'
-                    ),
-                    api_messages.KeyValuePair(key='product', value='panther'),
-                    api_messages.KeyValuePair(
-                        key='product_variant', value='panther_variant'
-                    ),
-                    api_messages.KeyValuePair(
-                        key='product_name', value='panther_name'
-                    ),
-                    api_messages.KeyValuePair(
-                        key='sim_operator', value='T-mobile'
-                    ),
-                    api_messages.KeyValuePair(key='sim_state', value='READY'),
-                ],
-                flated_extra_info=[],
-                test_harness='OMNILAB',
-                recovery_state='',
-                last_recovery_time=datetime.datetime.utcfromtimestamp(0),
-                is_stub_device=False,
-                display_serial='device1',
-                preconfigured_ip='127.0.0.1',
-                preconfigured_device_num_offset=0,
-            )
-        ],
-        res_msg.device_infos,
+    mock_list_devices.assert_called_once_with(
+        mock.ANY,  # self
+        olcs_lab_info_stub.ListDevicesOptions(
+            hostname='host',
+            hostnames=[],
+            device_serial=[],
+            cursor=None,
+            count=100,
+            host_groups=['group'],
+            device_states=[],
+            device_types=[],
+            test_harnesses=['harness2', 'harness1'],
+            run_targets=[],
+            pools=['pool'],
+        )
     )
-    self.assertEqual('', res_msg.next_cursor)
-    self.assertEqual('', res_msg.prev_cursor)
-    self.assertEqual(False, res_msg.more)
-
-  def testListDevices_NotMatchFilter(self):
-    res = self.app.get('/_ah/api/mtt/v1/devices?host_groups=xxx')
-    res_msg = protojson.decode_message(
-        api_messages.DeviceInfoCollection, res.body
-    )
-    self.assertEqual(
-        [],
-        res_msg.device_infos,
-    )
-    self.assertEqual('', res_msg.next_cursor)
-    self.assertEqual('', res_msg.prev_cursor)
-    self.assertEqual(False, res_msg.more)
 
   def testGetDevice(self):
     res = self.app.get('/_ah/api/mtt/v1/devices/%s' % 'device_uuid1')
