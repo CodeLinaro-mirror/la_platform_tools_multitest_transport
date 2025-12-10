@@ -17,13 +17,17 @@ import json
 from unittest import mock
 
 from absl.testing import absltest
+from tradefed_cluster import testbed_dependent_test
+from tradefed_cluster.util import ndb_shim as ndb
+
+
 from multitest_transport.models import ndb_models
 from multitest_transport.util import apfe_client
 from multitest_transport.util import constant
 from multitest_transport.util import file_util
 
 
-class ApfeClientTest(absltest.TestCase):
+class ApfeClientTest(testbed_dependent_test.TestbedDependentTest):
 
   def setUp(self):
     super(ApfeClientTest, self).setUp()
@@ -226,6 +230,25 @@ class ApfeClientTest(absltest.TestCase):
         {
             'name': 'device_names/*/product_names/*/build_fingerprints/google%2Fsunfish%2Fsunfish%3A13%2FTQ1A.221205.006%2F9206830%3Auser%2Frelease-keys'
         },
+    )
+
+  def testConvertRequiredReport(self):
+    """Tests required reports are converted correctly."""
+    msg = apfe_client.RequiredReport(
+        type=ndb_models.ReportType.CTS,
+        testPlans=['cts-retry', 'NA', 'cts ', ' '],
+        available=True,
+    )
+    build_key = ndb.Key(ndb_models.Build, 'build_id')
+    required_report = apfe_client.ConvertRequiredReport(msg, build_key)
+    self.assertEqual(
+        required_report,
+        ndb_models.RequiredReport(
+            build_key=build_key,
+            type=ndb_models.ReportType.CTS,
+            test_plans=['cts'],
+            available=True,
+        ),
     )
 
 

@@ -115,6 +115,8 @@ py_test(
     tags = ["not_run:arm"],
     deps = [
         ":apfe_client_lib",
+        "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
+        "@tradefed_cluster//tradefed_cluster/util:ndb_shim_lib",
         third_party("absl/testing:absltest"),
         third_party("google/protobuf:use_fast_cpp_protos"),
     ],

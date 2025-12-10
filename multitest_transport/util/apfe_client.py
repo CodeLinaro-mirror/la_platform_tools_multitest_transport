@@ -27,6 +27,11 @@ from multitest_transport.util import constant
 from multitest_transport.util import file_util
 from multitest_transport.util import oauth2_util
 
+_LEGACY_TEST_PLANS = [
+    'cts-retry',
+    'NA',
+]
+
 
 class ApfeClient(object):
   """Wrapper class to access APFE service."""
@@ -229,7 +234,9 @@ def ConvertRequiredReport(msg, build_key):
   if not isinstance(msg, RequiredReport):
     return None
   test_plans = [
-      test_plan.strip() for test_plan in msg.testPlans if test_plan.strip()
+      test_plan.strip()
+      for test_plan in msg.testPlans
+      if _IsTestPlanSupported(test_plan)
   ]
   return ndb_models.RequiredReport(
       build_key=build_key,
@@ -237,6 +244,12 @@ def ConvertRequiredReport(msg, build_key):
       test_plans=test_plans,
       available=msg.available,
   )
+
+
+def _IsTestPlanSupported(test_plan) -> bool:
+  """Returns true if the test plan is supported."""
+  stripped_test_plan = test_plan.strip()
+  return stripped_test_plan and stripped_test_plan not in _LEGACY_TEST_PLANS
 
 
 class RequiredReportInfo(messages.Message):
