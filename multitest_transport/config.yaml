@@ -715,10 +715,6 @@ tests:
     test_resource_type: TEST_PACKAGE
     decompress: true
     mount_zip: true
-  - name: dynamic_download.zip
-    default_download_url: https://dl.google.com/android/xts/mcts/tool/dynamic_download.zip
-    decompress: true
-    test_resource_type: UNKNOWN
   command: cts --enable-token-sharding --max-testcase-run-count 2 --retry-strategy RETRY_ANY_FAILURE
   env_vars:
   - name: JAVA_HOME
@@ -759,10 +755,6 @@ tests:
     test_resource_type: TEST_PACKAGE
     decompress: true
     mount_zip: true
-  - name: dynamic_download.zip
-    default_download_url: https://dl.google.com/android/xts/mcts/tool/dynamic_download.zip
-    decompress: true
-    test_resource_type: UNKNOWN
   command: cts --enable-token-sharding --max-testcase-run-count 2 --retry-strategy RETRY_ANY_FAILURE
   env_vars:
   - name: JAVA_HOME
