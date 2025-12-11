@@ -123,7 +123,7 @@ export class BuildDetail implements OnInit, AfterViewInit {
   getApfeBuildUrl(apfeBuildName: string): string {
     const apfeBuildUrlName = apfeBuildName.replace(new RegExp('/', 'g'), '-');
     const url = `${this.ANDROID_PARTNER_APPROVALS_URL_PREFIX}/builds/${
-        apfeBuildUrlName}/overview/build-meta?a=1`;
+        apfeBuildUrlName}/test-reductions`;
     return url;
   }
 
