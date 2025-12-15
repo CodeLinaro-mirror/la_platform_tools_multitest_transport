@@ -13,10 +13,10 @@ device_actions:
   tradefed_options:
   - name: wifi-network
     values:
-    - MI-HK
+    - wifi-name
   - name: wifi-psk
     values:
-    - nanjingcts
+    - abcd
   - name: wifi
     values:
     - 'ON'
