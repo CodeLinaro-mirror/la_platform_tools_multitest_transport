@@ -215,14 +215,6 @@ def monkeypatch_default_auth():
   auth.default = lambda **_: (AnonymousCredentials(), FLAGS.application_id)
 
 
-def monkeypatch_crypt_rsa():
-  """Use a pure-python RSA implementation which supports pickling."""
-  from google.auth import crypt  
-  from google.auth.crypt import _python_rsa  
-  crypt.RSASigner = _python_rsa.RSASigner
-  crypt.RSAVerifier = _python_rsa.RSAVerifier
-
-
 def monkeypatch_read_consistency():
   """Use eventually consistent NDB queries by default (b/203420251).
 
@@ -291,7 +283,6 @@ def main(_):
 
   # Apply monkey patches and configure environment
   monkeypatch_default_auth()
-  monkeypatch_crypt_rsa()
   monkeypatch_read_consistency()
   monkeypatch_grpc_message_length()
   set_env_variables()
