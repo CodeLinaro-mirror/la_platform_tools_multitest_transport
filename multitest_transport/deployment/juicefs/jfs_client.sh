@@ -90,6 +90,18 @@ check_juicefs_volume_status() {
 mount_fs() {
   check_juicefs_volume_status
 
+  if mountpoint -q "${HOST_MNT_PATH}"; then
+    MOUNT_TYPE=$(df -Th "${HOST_MNT_PATH}" | awk 'NR==2 {print $2}')
+    if [ "$MOUNT_TYPE" == "fuse.juicefs" ]; then
+      echo "INFO: ${HOST_MNT_PATH} is already mounted as a JuiceFS volume. Skipping mount."
+      return
+    else
+      echo "ERROR: ${HOST_MNT_PATH} is already mounted, but not as fuse.juicefs (type: $MOUNT_TYPE)."
+      echo "Please unmount it or choose a different --host-mnt-path."
+      exit 1
+    fi
+  fi
+
   echo "--> Creating mount point directory: ${HOST_MNT_PATH}"
   sudo mkdir -p "${HOST_MNT_PATH}"
 
