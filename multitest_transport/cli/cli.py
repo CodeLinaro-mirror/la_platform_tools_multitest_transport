@@ -579,10 +579,13 @@ def _StartMttNode(args, host):
     if network == _DOCKER_BRIDGE_NETWORK:
       for port in _GetMttServerPublicPorts(args.port):
         # The server binds to IPv4 addresses only.
-        docker_helper.AddPort('0.0.0.0:%d' % port, port)
+        docker_helper.AddPort(f'{args.bind_address}:{port}', port)
       if not control_server_url:
         # Public Netdata port
-        docker_helper.AddPort('0.0.0.0:%d' % (args.port + 8), args.port + 8)
+        netdata_port = args.port + 8
+        docker_helper.AddPort(
+            f'{args.bind_address}:{netdata_port}', netdata_port
+        )
   if host.config.lab_name:
     docker_helper.AddEnv('LAB_NAME', host.config.lab_name)
   if host.config.cluster_name:
@@ -743,12 +746,12 @@ def _StartMttNode(args, host):
     ):
       if control_server_url:
         # Public lab server port of the worker
-        docker_helper.AddPort('0.0.0.0:%d' % 9994, 9994)
+        docker_helper.AddPort(f'{args.bind_address}:9994', 9994)
       else:
         # Public OLC server port of the controller
-        docker_helper.AddPort('0.0.0.0:%d' % 7030, 7030)
+        docker_helper.AddPort(f'{args.bind_address}:7030', 7030)
         # Public worker grpc port of the controller
-        docker_helper.AddPort('0.0.0.0:%d' % 7031, 7031)
+        docker_helper.AddPort(f'{args.bind_address}:7031', 7031)
 
   docker_helper.Run(args.name)
 
@@ -1308,6 +1311,11 @@ def _CreateStartArgParser():
   parser = argparse.ArgumentParser(add_help=False)
   parser.add_argument('--force_update', action='store_true')
   parser.add_argument('--port', type=int, default=_MTT_CONTROL_SERVER_PORT)
+  parser.add_argument(
+      '--bind_address',
+      help='Address to bind to when publishing container ports in bridge mode, '
+      'or when starting server in host mode.',
+      default='0.0.0.0')
   parser.add_argument(
       '--server_log_level',
       help='Server Log level',
