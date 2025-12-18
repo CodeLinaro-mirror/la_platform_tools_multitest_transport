@@ -8,7 +8,7 @@ load("//tools/build_defs/packaging:pkg_library.bzl", "pkg_library")
 load("//tools/build_defs/testing:bzl_library.bzl", "bzl_library")
 
 package(
-    default_applicable_licenses = ["//multitest_transport:license"],
+    default_applicable_licenses = [":license"],
     default_visibility = [":multitest_transport"],
 )
 
