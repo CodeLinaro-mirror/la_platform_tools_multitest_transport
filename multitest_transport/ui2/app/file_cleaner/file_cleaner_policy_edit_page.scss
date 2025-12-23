@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+.actions button + button {
+  margin-left: 20px;
+}
+
 h2 {
   font-weight: normal;
 }

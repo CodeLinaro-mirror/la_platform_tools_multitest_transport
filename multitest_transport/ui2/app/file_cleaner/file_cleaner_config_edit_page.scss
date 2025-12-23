@@ -20,4 +20,8 @@ h2 {
 
 .button-group {
   margin-top: 20px;
+
+  button + button {
+    margin-left: 20px;
+  }
 }

@@ -37,7 +37,7 @@
         [autoUpdate]="true"
         [(deviceSpecs)]="data.testRunConfig.device_specs!">
     </test-run-target-picker>
-    <div>
+    <div class="actions">
       <button mat-button mat-flat-button (click)="goForward(stepper)"
         color="accent">Next step</button>
       <button mat-button matDialogClose color="accent">Cancel</button>
@@ -60,7 +60,7 @@
         [buildChannels]="buildChannels"
         [testResourceClassType]="TestResourceClassType.TEST_RESOURCE_OBJ">
       </test-resource-form>
-      <div>
+      <div class="actions">
         <button mat-button mat-stroked-button matStepperPrevious color="accent">
           Previous Step
         </button>

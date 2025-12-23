@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-h2 {
-  padding: 20px 20px 0;
+.actions button + button {
+  margin-left: 20px;
 }
 
-.mat-mdc-button {
-  margin-right: 20px;
+h2 {
+  padding: 20px 20px 0;
 }
 
 mat-horizontal-stepper ::ng-deep {

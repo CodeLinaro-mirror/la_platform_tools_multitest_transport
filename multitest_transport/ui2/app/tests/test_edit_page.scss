@@ -20,6 +20,10 @@
   min-width: 800px;
 }
 
+.actions button + button {
+  margin-left: 20px;
+}
+
 h2 {
   font-weight: normal;
 }

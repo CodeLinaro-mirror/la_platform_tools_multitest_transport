@@ -16,6 +16,10 @@
 
 @import 'third_party/py/multitest_transport/ui2/constants';
 
+.actions button + button {
+  margin-left: 20px;
+}
+
 mat-form-field {
   width: 400px;
   display: block;

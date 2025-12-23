@@ -95,7 +95,7 @@
   </test-resource-form>
 
   <!-- Update/Create Button and Cancel Button-->
-  <div *ngIf="canEdit()">
+  <div class="actions" *ngIf="canEdit()">
     <button mat-flat-button color="accent" type="button" (click)="onSubmit()">
       {{formMode === FormMode.EDIT ? 'Update' : 'Create'}}
     </button>
