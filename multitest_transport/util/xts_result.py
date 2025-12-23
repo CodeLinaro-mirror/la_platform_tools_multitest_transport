@@ -107,7 +107,7 @@ class Module(object):
     return Module(
         name=name,
         complete=element.attrib['done'] == 'true',
-        duration_ms=int(element.attrib['runtime']),
+        duration_ms=int(element.attrib.get('runtime') or 0),
         test_cases=test_cases,
         error_message=error_message)
 

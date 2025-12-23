@@ -505,6 +505,7 @@ py_test(
     ],
     data = [
         "test_data/test_result.xml",
+        "test_data/test_result_missing_runtime.xml",
     ],
     deps = [
         ":xts_result_lib",
