@@ -328,6 +328,12 @@ export class MttClient {
         {context});
   }
 
+  updateTestPlans(testPlanList: model.TestPlanList) {
+    const context = AnalyticsContext.create('test_plans', 'batch_update');
+    return this.http.post<model.TestPlanList>(
+        `${MTT_API_URL}/test_plans/batch_update`, testPlanList, {context});
+  }
+
   getTestPlan(id: string): Observable<model.TestPlan> {
     return this.http.get<model.TestPlan>(
         `${MTT_API_URL}/test_plans/${encodeURIComponent(id)}`);

@@ -359,4 +359,8 @@ export class TestRunDetail implements OnInit, AfterViewInit, OnDestroy {
                   });
         });
   }
+
+  editTestSuitesByLabel(label: string) {
+    this.router.navigate(['test_plans/edit'], {queryParams: {'label': label}});
+  }
 }

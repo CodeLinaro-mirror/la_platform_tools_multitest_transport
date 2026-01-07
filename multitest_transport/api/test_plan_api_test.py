@@ -144,6 +144,38 @@ class TestPlanApiTest(api_test_util.TestCase):
     self.assertEqual(HTTP_STATUS_404, res.status)
 
   @mock.patch.object(test_scheduler, 'ScheduleTestPlanCronJob', autospec=True)
+  def testBatchUpdate(self, mock_schedule_test_plan_cron_job):
+    """Tests test_plans.batch_update API."""
+    test_plan1 = _CreateMockTestPlan('foo')
+    test_plan2 = _CreateMockTestPlan('bar')
+    test_plan1_id = test_plan1.key.id()
+    test_plan2_id = test_plan2.key.id()
+
+    data = {
+        'test_plans': [
+            {'id': str(test_plan1_id), 'name': 'foo_updated'},
+            {'id': str(test_plan2_id), 'name': 'bar_updated'},
+        ]
+    }
+
+    res = self.app.post_json('/_ah/api/mtt/v1/test_plans/batch_update', data)
+
+    msg = protojson.decode_message(messages.TestPlanList, res.body)
+    self.assertLen(msg.test_plans, 2)
+    self.assertEqual(msg.test_plans[0].name, 'foo_updated')
+    self.assertEqual(msg.test_plans[1].name, 'bar_updated')
+
+    updated_test_plan1 = ndb_models.TestPlan.get_by_id(test_plan1_id)
+    updated_test_plan2 = ndb_models.TestPlan.get_by_id(test_plan2_id)
+    self.assertEqual(updated_test_plan1.name, 'foo_updated')
+    self.assertEqual(updated_test_plan2.name, 'bar_updated')
+
+    mock_schedule_test_plan_cron_job.assert_has_calls([
+        mock.call(test_plan1_id),
+        mock.call(test_plan2_id),
+    ], any_order=True)
+
+  @mock.patch.object(test_scheduler, 'ScheduleTestPlanCronJob', autospec=True)
   def testUpdate(self, mock_schedule_test_plan_cron_job):
     """Tests test_plans.update API with invalid data."""
     test_plan = _CreateMockTestPlan('foo')

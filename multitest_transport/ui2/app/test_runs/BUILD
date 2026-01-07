@@ -78,6 +78,7 @@ ng_module(
         third_party_js("angular_components:material_tabs"),
         third_party_js("moment:typings"),
         third_party_js("rxjs"),
+        "//third_party/javascript/moment",
         "//multitest_transport/ui2/app/build_channels",
         "//multitest_transport/ui2/app/device_actions",
         "//multitest_transport/ui2/app/devices",

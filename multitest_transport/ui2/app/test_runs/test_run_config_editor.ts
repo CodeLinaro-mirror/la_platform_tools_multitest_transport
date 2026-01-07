@@ -92,6 +92,9 @@ export class TestRunConfigEditor extends FormChangeTracker implements OnInit {
   }
 
   ngOnInit() {
+    if (!this.data.testRunConfig.device_specs) {
+      this.data.testRunConfig.device_specs = [];
+    }
     // Initialize step completion status map
     this.resetStepCompletion(0, this.stepCompletionStatusMap, this.totalSteps);
     this.load();

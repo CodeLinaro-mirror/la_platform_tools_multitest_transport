@@ -55,11 +55,15 @@ export class TestRunSequenceList implements OnInit {
 
   addSequence() {
     let testRunConfig: Partial<mttModels.TestRunConfig>;
-    if (this.sequenceList.length === 0) {
-      testRunConfig = deepCopy(this.configTemplate!);
-    } else {
+    if (this.sequenceList.length > 0 &&
+        this.sequenceList[this.sequenceList.length - 1].test_run_configs
+                .length > 0) {
+      const lastSequence = this.sequenceList[this.sequenceList.length - 1];
       testRunConfig = deepCopy(
-          this.sequenceList[this.sequenceList.length - 1].test_run_configs[0]);
+          lastSequence
+              .test_run_configs[lastSequence.test_run_configs.length - 1]);
+    } else {
+      testRunConfig = deepCopy(this.configTemplate!);
     }
     const testRunConfigEditorData: TestRunConfigEditorData = {
       editMode: false,
@@ -86,6 +90,9 @@ export class TestRunSequenceList implements OnInit {
 
   deleteConfig(sequenceIndex: number, configIndex: number) {
     this.sequenceList[sequenceIndex].test_run_configs.splice(configIndex, 1);
+    if (this.sequenceList[sequenceIndex].test_run_configs.length === 0) {
+      this.sequenceList.splice(sequenceIndex, 1);
+    }
     this.sequenceListChange.emit(this.sequenceList);
   }
 

@@ -39,7 +39,7 @@ export class TestRunSequenceEditor implements OnInit {
   @Input() title = 'Test Run Config';
   @Output()
   readonly configListChange = new EventEmitter<mttModels.TestRunConfig[]>();
-  @Output() readonly configDelete = new EventEmitter();
+  @Output() readonly configDelete = new EventEmitter<number>();
   @Output() readonly sequenceDelete = new EventEmitter();
 
   showRerunConfigs = false;
@@ -146,8 +146,8 @@ export class TestRunSequenceEditor implements OnInit {
         });
   }
 
-  deleteConfig() {
-    this.configDelete.emit();
+  deleteConfig(index: number) {
+    this.configDelete.emit(index);
   }
 
   deleteSequence() {

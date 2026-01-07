@@ -15,8 +15,9 @@
  */
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
-import {Component, Input, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {Component, Input, OnDestroy, OnInit, ViewChild, inject} from '@angular/core';
 import {MatTable, MatTableDataSource} from '@angular/material/table';
+import {Router} from '@angular/router';
 import {ReplaySubject} from 'rxjs';
 import {finalize, takeUntil} from 'rxjs/operators';
 
@@ -49,10 +50,10 @@ export class TestPlanList implements OnInit, OnDestroy {
 
   private readonly destroy = new ReplaySubject<void>();
 
-  constructor(
-      private readonly notifier: Notifier,
-      private readonly mttClient: MttClient,
-      private readonly liveAnnouncer: LiveAnnouncer) {}
+  private readonly notifier = inject(Notifier);
+  private readonly mttClient = inject(MttClient);
+  private readonly router = inject(Router);
+  private readonly liveAnnouncer = inject(LiveAnnouncer);
 
   ngOnInit() {
     this.load();
@@ -132,5 +133,10 @@ export class TestPlanList implements OnInit, OnDestroy {
                   `Failed to delete '${testPlan.name}'.`,
                   buildApiErrorMessage(error));
             });
+  }
+
+  navigateToSuites(label: string) {
+    this.router.navigate(
+        ['/test_plans/edit_test_suites'], {queryParams: {'label': label}});
   }
 }

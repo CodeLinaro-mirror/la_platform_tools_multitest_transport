@@ -168,11 +168,53 @@ class TestPlanApi(remote.Service):
     return mtt_messages.Convert(test_plan, mtt_messages.TestPlan)
 
   @base.ApiMethod(
+      mtt_messages.TestPlanList,
+      mtt_messages.TestPlanList,
+      path='batch_update', http_method='POST',
+      name='batch_update')
+  def BatchUpdate(self, request):
+    """Updates multiple test plans.
+
+    Body:
+      Test plan list data
+    """
+    updated_plans = []
+    for plan_msg in request.test_plans:
+      if not plan_msg.id:
+        raise endpoints.BadRequestException('Test plan ID is required')
+      test_plan_key = mtt_messages.ConvertToKey(
+          ndb_models.TestPlan, plan_msg.id
+      )
+      if not test_plan_key.get():
+        raise endpoints.NotFoundException(
+            'Test plan %s not found' % plan_msg.id
+        )
+
+      test_plan = mtt_messages.Convert(
+          plan_msg, ndb_models.TestPlan, from_cls=mtt_messages.TestPlan
+      )
+      _ValidateTestPlan(test_plan)
+      test_plan.key = test_plan_key
+      test_plan.put()
+      test_scheduler.ScheduleTestPlanCronJob(test_plan.key.id())
+      updated_plans.append(test_plan)
+
+    return mtt_messages.TestPlanList(
+        test_plans=mtt_messages.ConvertList(
+            updated_plans, mtt_messages.TestPlan
+        )
+    )
+
+  @base.ApiMethod(
       endpoints.ResourceContainer(
           message_types.VoidMessage,
-          test_plan_id=messages.StringField(1, required=True)),
-      message_types.VoidMessage, path='{test_plan_id}',
-      http_method='DELETE', name='delete')
+          test_plan_id=messages.StringField(1, required=True),
+      ),
+      message_types.VoidMessage,
+      path='{test_plan_id}',
+      http_method='DELETE',
+      name='delete',
+  )
   def Delete(self, request):
     """Deletes a test plan.
 

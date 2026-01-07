@@ -18,7 +18,7 @@
   <test-run-sequence-editor [configList]="sequence.test_run_configs"
                             [title]="configTitle + ' ' + (i + 1)"
                            (configListChange)="updateConfigList(i, $event)"
-                           (configDelete)="deleteConfig(i)">
+                           (configDelete)="deleteConfig(i, $event)">
   </test-run-sequence-editor>
 </ng-container>
 

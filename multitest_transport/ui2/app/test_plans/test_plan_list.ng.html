@@ -63,9 +63,13 @@
   <ng-container matColumnDef="labels">
     <mat-header-cell *matHeaderCellDef fxFlex="200px"> Labels </mat-header-cell>
     <mat-cell *matCellDef="let testPlan" fxFlex="200px">
-      <overflow-list [data]="testPlan.labels || []"
-      [overflowListType]="OverflowListType.CHIP">
-      </overflow-list>
+      <mat-chip-grid #chipGrid aria-label="Test plan labels">
+        <mat-chip-row *ngFor="let label of testPlan.labels"
+                      (click)="navigateToSuites(label)"
+                      style="cursor: pointer">
+          {{label}}
+        </mat-chip-row>
+      </mat-chip-grid>
     </mat-cell>
   </ng-container>
 

@@ -1,0 +1,71 @@
+<!--
+ Copyright 2025 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<div class="header">
+  <div class="back-button-label">Test plans</div>
+  <h1 class="subtitle">
+    <button mat-icon-button (click)="back()" aria-label="Return to test plans page" matTooltip="Return to test plans page">
+      <mat-icon class="back-button-icon">arrow_back</mat-icon>
+    </button>
+    Edit Test Suites {{ currentLabel ? '(' + currentLabel + ')' : '' }}
+  </h1>
+</div>
+
+<mat-horizontal-stepper linear="true" #stepper>
+  <mat-step [stepControl]="actionsFormGroup">
+    <ng-template matStepLabel>Edit Test Run Actions</ng-template>
+    <form [formGroup]="actionsFormGroup">
+      <div *ngFor="let action of referencedActions">
+        <div *ngIf="getActionGroup(action.id); else noOptions" 
+            [formGroup]="getActionGroup(action.id)"> <h4 class="action-header">{{action.name}}</h4>
+          <ng-container *ngIf="effectiveOptionDefs[action.id] as optionDefs">
+            <mat-form-field *ngFor="let optionDef of optionDefs" appearance="outline">
+              <mat-label>{{optionDef.name}}</mat-label>
+              <input matInput formControlName="{{optionDef.name}}"
+                      (change)="updateActionOption(action.id, optionDef.name, getActionGroup(action.id)?.get(optionDef.name)?.value || '')">
+            </mat-form-field>
+          </ng-container>
+        </div>
+        <ng-template #noOptions>
+          </ng-template>
+      </div>
+    </form>
+    <div>
+      <button mat-flat-button matStepperNext color="accent" type="button">Next</button>
+      <button mat-button (click)="back()" color="accent" type="button">Cancel</button>
+    </div>
+  </mat-step>
+  <mat-step [stepControl]="resourcesFormGroup">
+    <ng-template matStepLabel>Edit Test Resources</ng-template>
+    <div *ngFor="let group of testResourceGroups">
+      <h3 class="action-header">{{group.testName}}</h3>
+      <test-resource-form
+        [data]="group.resources"
+        [buildChannels]="buildChannels"
+        [testResourceClassType]="TestResourceClassType.TEST_RESOURCE_OBJ"
+        [canAdd]="false"
+        [canDelete]="false">
+      </test-resource-form>
+      <mat-divider></mat-divider>
+    </div>
+
+    <div>
+      <button mat-flat-button color="accent" type="button" (click)="update()" [disabled]="isLoading">Update</button>
+      <button mat-stroked-button matStepperPrevious color="accent" type="button">Back</button>
+      <button mat-button (click)="back()" color="accent" type="button">Cancel</button>
+    </div>
+  </mat-step>
+</mat-horizontal-stepper>

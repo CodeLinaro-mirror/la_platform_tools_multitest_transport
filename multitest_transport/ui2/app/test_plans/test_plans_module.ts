@@ -18,6 +18,8 @@
  * A module for test plan list page
  */
 import {NgModule} from '@angular/core';
+import {ReactiveFormsModule} from '@angular/forms';
+import {MatStepperModule} from '@angular/material/stepper';
 import {Title} from '@angular/platform-browser';
 import {RouterModule} from '@angular/router';
 
@@ -31,11 +33,13 @@ import {TestPlanEditPage} from './test_plan_edit_page';
 import {TestPlanList} from './test_plan_list';
 import {TestPlanListPage} from './test_plan_list_page';
 import {TestRunActionsModule} from '../test_run_actions/test_run_actions_module';
+import {EditTestSuitesPage} from './edit_test_suites_page';
 
 const COMPONENTS = [
   TestPlanEditPage,
   TestPlanList,
   TestPlanListPage,
+  EditTestSuitesPage,
 ];
 
 @NgModule({
@@ -45,6 +49,8 @@ const COMPONENTS = [
     BuildChannelsModule,
     DeviceActionsModule,
     DevicesModule,
+    MatStepperModule,
+    ReactiveFormsModule,
     RouterModule,
     SharedModule,
     TestRunActionsModule,

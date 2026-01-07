@@ -17,6 +17,7 @@ per_file_sass_binaries(
 ng_module(
     name = "test_plans",
     srcs = [
+        "edit_test_suites_page.ts",
         "test_plan_edit_page.ts",
         "test_plan_list.ts",
         "test_plan_list_page.ts",
@@ -24,6 +25,7 @@ ng_module(
     ],
     assets = [
         ":styles",
+        "edit_test_suites_page.ng.html",
         "test_plan_edit_page.ng.html",
         "test_plan_list_page.ng.html",
         "test_plan_list.ng.html",
@@ -32,6 +34,7 @@ ng_module(
     visibility = ["//multitest_transport"],
     deps = [
         third_party_js("angular2:core"),
+        third_party_js("angular2:forms"),
         third_party_js("angular2:platform_browser"),
         third_party_js("angular2:router"),
         third_party_js("angular_components:cdk_a11y"),
@@ -55,6 +58,7 @@ ng_module(
     name = "tests",
     testonly = True,
     srcs = [
+        "edit_test_suites_page_test.ts",
         "test_plan_edit_page_test.ts",
         "test_plan_list_test.ts",
     ],
@@ -68,6 +72,7 @@ ng_module(
         third_party_js("angular_components:cdk_a11y"),
         third_party_js("angular_components:material_chips"),
         third_party_js("rxjs"),
+        "//third_party/javascript/angular2:forms",
         "//multitest_transport/ui2/app/services",
         "//multitest_transport/ui2/app/testing:jasmine_util",
         "//multitest_transport/ui2/app/testing:test_util",

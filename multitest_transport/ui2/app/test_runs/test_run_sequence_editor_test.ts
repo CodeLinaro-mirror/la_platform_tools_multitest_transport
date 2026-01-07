@@ -16,8 +16,10 @@
 
 import {provideHttpClientTesting} from '@angular/common/http/testing';
 import {DebugElement} from '@angular/core';
-import {ComponentFixture, TestBed} from '@angular/core/testing';
+import {ComponentFixture, inject, TestBed} from '@angular/core/testing';
+import {MatDialog} from '@angular/material/dialog';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
+import {provideRouter} from '@angular/router';
 import {of as observableOf} from 'rxjs';
 
 import {APP_DATA} from '../services/app_data';
@@ -26,6 +28,7 @@ import {MttObjectMap, MttObjectMapService, newMttObjectMap} from '../services/mt
 import {getEl, getTextContent} from '../testing/jasmine_util';
 import {newMockDeviceAction, newMockTest, newMockTestRunConfig} from '../testing/mtt_mocks';
 
+import {TestRunConfigEditor, TestRunConfigEditorData} from './test_run_config_editor';
 import {TestRunSequenceEditor} from './test_run_sequence_editor';
 import {TestRunsModule} from './test_runs_module';
 
@@ -75,6 +78,7 @@ describe('TestRunSequenceEditor', () => {
       imports: [NoopAnimationsModule, TestRunsModule],
       providers: [
         provideHttpClientTesting(),
+        provideRouter([]),
         {provide: APP_DATA, useValue: {}},
         {provide: MttObjectMapService, useValue: mttObjectMapService},
       ],
@@ -127,4 +131,25 @@ describe('TestRunSequenceEditor', () => {
       expect(deleteButton.getAttribute('matTooltip')).toBe('Delete');
     });
   });
+
+  it('can delete sequence', () => {
+    spyOn(testRunSequenceEditor.sequenceDelete, 'emit');
+    testRunSequenceEditor.deleteSequence();
+    expect(testRunSequenceEditor.sequenceDelete.emit).toHaveBeenCalled();
+  });
+
+  it('can add rerun config', inject([MatDialog], (dialog: MatDialog) => {
+    spyOn(dialog, 'open').and.callThrough();
+    testRunSequenceEditor.addRerunConfig();
+    expect(dialog.open).toHaveBeenCalledTimes(1);
+
+    const testRunConfigEditorData: TestRunConfigEditorData = {
+      editMode: false,
+      testRunConfig: testRunConfig2,
+    };
+    expect(dialog.open).toHaveBeenCalledWith(TestRunConfigEditor, {
+      panelClass: 'test-run-config-editor-dialog',
+      data: testRunConfigEditorData,
+    });
+  }));
 });

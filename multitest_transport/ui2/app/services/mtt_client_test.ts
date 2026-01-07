@@ -552,6 +552,30 @@ describe('MttClient', () => {
     });
   });
 
+  describe('updateTestPlans', () => {
+    const testPlans: TestPlanList = {
+      test_plans: [
+        testUtil.newMockTestPlan('id1', 'plan1'),
+        testUtil.newMockTestPlan('id2', 'plan2')
+      ]
+    };
+    beforeEach(() => {
+      httpClientSpy.post.and.returnValue(observableOf(testPlans));
+    });
+
+    it('calls API and parses response correctly', () => {
+      const observable = mttClient.updateTestPlans(testPlans);
+      expect(httpClientSpy.post)
+          .toHaveBeenCalledWith(
+              `${MTT_API_URL}/test_plans/batch_update`, testPlans,
+              jasmine.any(Object));
+      expect(httpClientSpy.post).toHaveBeenCalledTimes(1);
+      observable.subscribe((response) => {
+        expect(response).toEqual(jasmine.objectContaining(testPlans));
+      });
+    });
+  });
+
   describe('getTestRun', () => {
     const testRun = testUtil.newMockTestRun(testUtil.newMockTest());
 

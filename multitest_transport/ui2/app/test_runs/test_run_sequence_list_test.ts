@@ -164,4 +164,21 @@ describe('TestRunSequenceList', () => {
           .toBe('Add test run configuration');
     });
   });
+
+  it('can delete sequence', () => {
+    spyOn(testRunSequenceList.sequenceListChange, 'emit');
+    testRunSequenceList.deleteSequence(0);
+    expect(testRunSequenceList.sequenceList.length).toBe(1);
+    expect(testRunSequenceList.sequenceListChange.emit).toHaveBeenCalledWith(
+        testRunSequenceList.sequenceList);
+  });
+
+  it('can update config list', () => {
+    spyOn(testRunSequenceList.sequenceListChange, 'emit');
+    const newConfigList = [config1, config2];
+    testRunSequenceList.updateConfigList(0, newConfigList);
+    expect(testRunSequenceList.sequenceList[0].test_run_configs).toBe(newConfigList);
+    expect(testRunSequenceList.sequenceListChange.emit).toHaveBeenCalledWith(
+        testRunSequenceList.sequenceList);
+  });
 });

@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+// tslint:disable:enforce-name-casing
+
 import {provideHttpClientTesting} from '@angular/common/http/testing';
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
@@ -157,6 +159,22 @@ describe('TestRunConfigEditor', () => {
     testRunConfigEditor.updateConfigDeviceActionIds();
     expect(testRunConfigEditor.data.testRunConfig.before_device_action_ids!)
         .toEqual(['action.id']);
+  });
+
+  it('can update the selected test run action ids', () => {
+    const actionId = 'action.id';
+    const action = {
+      id: actionId,
+      name: 'action',
+      hook_class_name: 'class',
+      options: [{name: 'opt', value: 'val'}],
+    };
+    testRunConfigEditor.selectedTestRunActions = [action];
+    testRunConfigEditor.updateConfigTestRunActionIds();
+
+    const refs = testRunConfigEditor.data.testRunConfig.test_run_action_refs;
+    expect(refs!.length).toBe(1);
+    expect(refs![0]).toEqual({action_id: actionId, options: action.options});
   });
 
   it('should update test run config correctly on submit', () => {

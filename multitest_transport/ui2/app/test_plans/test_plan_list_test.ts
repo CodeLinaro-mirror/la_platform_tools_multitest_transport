@@ -18,7 +18,7 @@ import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {provideRouter} from '@angular/router';
+import {Router, provideRouter} from '@angular/router';
 import {of as observableOf} from 'rxjs';
 
 import {MttClient} from '../services/mtt_client';
@@ -127,4 +127,11 @@ describe('TestPlanList', () => {
     });
   });
 
+  it('navigateToSuites should navigate to edit test suites page', () => {
+    const router = TestBed.inject(Router);
+    spyOn(router, 'navigate');
+    testPlanList.navigateToSuites('label');
+    expect(router.navigate).toHaveBeenCalledWith(
+        ['/test_plans/edit_test_suites'], {queryParams: {'label': 'label'}});
+  });
 });

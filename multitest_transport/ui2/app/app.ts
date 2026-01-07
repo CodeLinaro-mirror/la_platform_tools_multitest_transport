@@ -56,6 +56,7 @@ import {SetupWizardDialog} from './setup_wizard/setup_wizard_dialog';
 import {SetupWizardModule} from './setup_wizard/setup_wizard_module';
 import {UnsavedChangeGuard} from './shared/can_deactivate';
 import {SharedModule} from './shared/shared_module';
+import {EditTestSuitesPage} from './test_plans/edit_test_suites_page';
 import {TestPlanEditPage} from './test_plans/test_plan_edit_page';
 import {TestPlanListPage} from './test_plans/test_plan_list_page';
 import {TestRunActionEditPage} from './test_run_actions/test_run_action_edit_page';
@@ -157,6 +158,10 @@ export const routes: Routes = [
     path: 'test_plans/new',
     component: TestPlanEditPage,
     canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
+  },
+  {
+    path: 'test_plans/edit_test_suites',
+    component: EditTestSuitesPage,
   },
   {
     path: 'test_plans/:id',
