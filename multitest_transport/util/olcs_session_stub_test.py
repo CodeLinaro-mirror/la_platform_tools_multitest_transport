@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Tests for multitest_transport.util.olcs_session_stub."""
 import base64
 from concurrent import futures
 import os
@@ -295,7 +294,7 @@ class OlcsSessionStubTest(testbed_dependent_test.TestbedDependentTest):
     mock_exists.return_value = True
     mock_listdir.side_effect = [
         ['inv_1234567890', 'other_dir'],  # Top-level directory
-        ['XtsTradefedTest_test_TEST_ID1', 'unmatched_dir'],  # Inside inv_...
+        ['TradefedTest_test_TEST_ID1', 'unmatched_dir'],  # Inside inv_...
     ]
     client_response = session_service_pb2.GetSessionResponse()
     client_response.session_detail.session_output.session_plugin_output[
@@ -374,7 +373,7 @@ class OlcsSessionStubTest(testbed_dependent_test.TestbedDependentTest):
     )
     self.assertEqual(
         command_attempt_message.tf_log_paths[0].value,
-        'logs/inv_1234567890/XtsTradefedTest_test_TEST_ID1',
+        'logs/inv_1234567890/TradefedTest_test_TEST_ID1',
     )
     self.assertEqual(
         command_attempt_message.non_tradefed_log_dir_names,
@@ -396,7 +395,7 @@ class OlcsSessionStubTest(testbed_dependent_test.TestbedDependentTest):
     mock_exists.return_value = True
     mock_listdir.side_effect = [
         ['inv_1234567890', 'other_dir'],  # Top-level directory
-        ['XtsTradefedTest_test_TEST_ID1', 'unmatched_dir'],  # Inside inv_...
+        ['TradefedTest_test_TEST_ID1', 'unmatched_dir'],  # Inside inv_...
     ]
     client_response = session_service_pb2.GetSessionResponse()
     client_response.session_detail.session_output.session_plugin_output[
@@ -504,7 +503,7 @@ class OlcsSessionStubTest(testbed_dependent_test.TestbedDependentTest):
     )
     self.assertEqual(
         command_attempt_message.tf_log_paths[0].value,
-        'logs/inv_1234567890/XtsTradefedTest_test_TEST_ID1',
+        'logs/inv_1234567890/TradefedTest_test_TEST_ID1',
     )
     self.assertEqual(
         command_attempt_message.non_tradefed_log_dir_names,
