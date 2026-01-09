@@ -16,7 +16,7 @@
 
 import {provideHttpClientTesting} from '@angular/common/http/testing';
 import {DebugElement, LOCALE_ID, SimpleChange} from '@angular/core';
-import {ComponentFixture, inject, TestBed} from '@angular/core/testing';
+import {ComponentFixture, discardPeriodicTasks, fakeAsync, inject, TestBed, tick} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {ActivatedRoute, convertToParamMap, Router} from '@angular/router';
 import {of as observableOf} from 'rxjs';
@@ -789,6 +789,55 @@ describe('DeviceList', () => {
        deviceList.urlParams = convertToParamMap({});
        expect(deviceList.hasQueryStringParams()).toBeFalse();
      });
+
+  it('updates auto update subscription correctly', fakeAsync(() => {
+    deviceList.autoUpdate = false;
+    (deviceList as unknown as {updateAutoUpdateSubscription: () => void})
+        .updateAutoUpdateSubscription();
+
+    spyOn(deviceList, 'load');
+    deviceList.autoUpdate = true;
+    (deviceList as unknown as {updateAutoUpdateSubscription: () => void})
+        .updateAutoUpdateSubscription();
+    tick(0);
+
+    expect(deviceList.load).toHaveBeenCalledWith(0, true);
+    (deviceList.load as jasmine.Spy).calls.reset();
+
+    tick(30000);
+    expect(deviceList.load).toHaveBeenCalledWith(0, true);
+
+    deviceList.autoUpdate = false;
+    (deviceList as unknown as {updateAutoUpdateSubscription: () => void})
+        .updateAutoUpdateSubscription();
+    (deviceList.load as jasmine.Spy).calls.reset();
+
+    tick(30000);
+    expect(deviceList.load).not.toHaveBeenCalled();
+
+    discardPeriodicTasks();
+  }));
+
+  it('does not create duplicate subscriptions', fakeAsync(() => {
+    deviceList.autoUpdate = false;
+    (deviceList as unknown as {updateAutoUpdateSubscription: () => void})
+        .updateAutoUpdateSubscription();
+
+    spyOn(deviceList, 'load');
+    deviceList.autoUpdate = true;
+    (deviceList as unknown as {updateAutoUpdateSubscription: () => void})
+        .updateAutoUpdateSubscription();
+    tick(0);
+    (deviceList.load as jasmine.Spy).calls.reset();
+
+    (deviceList as unknown as {updateAutoUpdateSubscription: () => void})
+        .updateAutoUpdateSubscription();
+
+    tick(30000);
+    expect(deviceList.load).toHaveBeenCalledTimes(1);
+
+    discardPeriodicTasks();
+  }));
 });
 
 describe('DeviceList in ATS instance', () => {

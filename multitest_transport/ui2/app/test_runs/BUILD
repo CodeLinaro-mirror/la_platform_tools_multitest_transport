@@ -126,6 +126,7 @@ ng_module(
         third_party_js("moment:typings"),
         third_party_js("rxjs"),
         third_party_js("typings/jasmine"),
+        "//third_party/javascript/angular_components:material_stepper",
         "//multitest_transport/ui2/app/devices",
         "//multitest_transport/ui2/app/services",
         "//multitest_transport/ui2/app/shared",

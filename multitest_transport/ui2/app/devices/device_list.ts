@@ -21,7 +21,7 @@ import {UntypedFormControl, UntypedFormGroup} from '@angular/forms';
 import {MatAutocomplete, MatAutocompleteTrigger} from '@angular/material/autocomplete';
 import {MatTable} from '@angular/material/table';
 import {ActivatedRoute, convertToParamMap, ParamMap, Router} from '@angular/router';
-import {forkJoin, Observable, of as observableOf, ReplaySubject, throwError, timer} from 'rxjs';
+import {forkJoin, Observable, of as observableOf, ReplaySubject, Subscription, throwError, timer} from 'rxjs';
 import {catchError, concatMap, delay, filter, map, mergeMap, retryWhen, switchMap, take, takeUntil} from 'rxjs/operators';
 
 import {APP_DATA, AppData} from '../services';
@@ -213,6 +213,7 @@ export class DeviceList implements OnChanges, OnDestroy, OnInit {
   ];
   private readonly urlQueryParamObservable: Observable<ParamMap>;
   private readonly autoUpdateInterval = 30_000;
+  private autoUpdateSubscription?: Subscription;
 
   get inputValue(): string {
     return this.valueControl.value || '';
@@ -320,16 +321,13 @@ export class DeviceList implements OnChanges, OnDestroy, OnInit {
         });
     this.clearInput();
     this.tableRowsSelectManager.selectSelection([...this.initialSelection]);
-    if (this.autoUpdate) {
-      timer(0, this.autoUpdateInterval)
-          .pipe(takeUntil(this.destroy))
-          .subscribe(() => {
-            this.load(0, true);
-          });
-    }
+    this.updateAutoUpdateSubscription();
   }
 
   ngOnChanges(changes: SimpleChanges) {
+    if (changes['autoUpdate']) {
+      this.updateAutoUpdateSubscription();
+    }
     // Only process changes if initialSelection (input selection set) differs
     // from selectedSerials (internal selection set). This indicates that the
     // selection was modified outside of this component.
@@ -346,6 +344,27 @@ export class DeviceList implements OnChanges, OnDestroy, OnInit {
         !changes['validationEnabled'].isFirstChange() &&
         this.validationEnabled) {
       this.validateSelection();
+    }
+  }
+
+  /**
+   * Updates the auto update subscription based on the current value of
+   * autoUpdate.
+   */
+  private updateAutoUpdateSubscription() {
+    if (this.autoUpdate) {
+      if (!this.autoUpdateSubscription || this.autoUpdateSubscription.closed) {
+        this.autoUpdateSubscription =
+            timer(0, this.autoUpdateInterval)
+                .pipe(takeUntil(this.destroy))
+                .subscribe(() => {
+                  this.load(0, true);
+                });
+      }
+    } else {
+      if (this.autoUpdateSubscription) {
+        this.autoUpdateSubscription.unsubscribe();
+      }
     }
   }
 
