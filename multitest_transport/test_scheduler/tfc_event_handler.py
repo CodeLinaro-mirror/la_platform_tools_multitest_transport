@@ -434,6 +434,7 @@ def _ConvertToTestResourceObj(msg):
       url=msg.url,
       decompress=msg.decompress,
       decompress_dir=msg.decompress_dir,
+      password=msg.password,
       params=ndb_models.TestResourceParameters(
           decompress_files=msg.params.decompress_files) if msg.params else None)
 

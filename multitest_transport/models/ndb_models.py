@@ -194,14 +194,17 @@ class TestResourceDef(ndb.Model):
     test_resource_type: a test resource type.
     decompress: whether the host should decompress the downloaded file.
     decompress_dir: the directory where the host decompresses the file.
+    password: password for protected zip file.
     mount_zip: whether to mount zip file.
     params: test resource parameters.
   """
+
   name = ndb.StringProperty(required=True)
   default_download_url = ndb.StringProperty()
   test_resource_type = ndb.EnumProperty(TestResourceType)
   decompress = ndb.BooleanProperty()
   decompress_dir = ndb.StringProperty()
+  password = ndb.StringProperty()
   mount_zip = ndb.BooleanProperty()
   params = ndb.LocalStructuredProperty(TestResourceParameters)
 
@@ -213,8 +216,10 @@ class TestResourceDef(ndb.Model):
         test_resource_type=self.test_resource_type,
         decompress=self.decompress or False,
         decompress_dir=self.decompress_dir or '',
+        password=self.password or '',
         mount_zip=self.mount_zip or False,
-        params=TestResourceParameters.Clone(self.params))
+        params=TestResourceParameters.Clone(self.params),
+    )
 
 
 class TestRunParameter(ndb.Model):
@@ -403,6 +408,7 @@ class TestResourceObj(ndb.Model):
     test_resource_type: a test resource type.
     decompress: whether the host should decompress the downloaded file.
     decompress_dir: the directory where the host decompresses the file.
+    password: password for protected zip file.
     mount_zip: whether to mount a zip file.
     params: test resource parameters.
   """
@@ -412,6 +418,7 @@ class TestResourceObj(ndb.Model):
   test_resource_type = ndb.EnumProperty(TestResourceType)
   decompress = ndb.BooleanProperty()
   decompress_dir = ndb.StringProperty()
+  password = ndb.StringProperty()
   mount_zip = ndb.BooleanProperty()
   params = ndb.LocalStructuredProperty(TestResourceParameters)
 

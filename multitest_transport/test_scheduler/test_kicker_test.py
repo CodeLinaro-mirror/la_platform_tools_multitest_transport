@@ -213,13 +213,22 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
   @mock.patch.object(build, 'FindTestResources', autospec=True)
   def testCreateTestRun(self, mock_find_resources):
     test = ndb_models.Test(
-        name='test', command='command', test_resource_defs=[
+        name='test',
+        command='command',
+        test_resource_defs=[
             ndb_models.TestResourceDef(
-                name='foo', default_download_url='default_download_url'),
+                name='foo',
+                default_download_url='default_download_url',
+                password='password',
+            ),
             ndb_models.TestResourceDef(
-                name='bar', default_download_url='default_download_url',
-                decompress=True, decompress_dir='dir'),
-        ])
+                name='bar',
+                default_download_url='default_download_url',
+                decompress=True,
+                decompress_dir='dir',
+            ),
+        ],
+    )
     test.put()
     overwritten_obj = ndb_models.TestResourceObj(
                 name='foo', url='origin_url', cache_url='cache_url')
@@ -237,23 +246,30 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
     self.assertModelEqual(test, test_run.test)
     self.assertEqual(['label'], test_run.labels)
     self.assertModelEqual(test_run_config, test_run.test_run_config)
-    self.assertModelSetEqual([
-        ndb_models.TestResourceObj(
-            name='bar',
-            url='default_download_url',
-            decompress=True,
-            decompress_dir='dir',
-            mount_zip=False,
-            params=ndb_models.TestResourceParameters()),
-        ndb_models.TestResourceObj(
-            name='foo',
-            url='origin_url',
-            cache_url='cache_url',
-            decompress=False,
-            decompress_dir='',
-            mount_zip=False,
-            params=ndb_models.TestResourceParameters()),
-    ], test_run.test_resources)
+    self.assertModelSetEqual(
+        [
+            ndb_models.TestResourceObj(
+                name='bar',
+                url='default_download_url',
+                decompress=True,
+                decompress_dir='dir',
+                mount_zip=False,
+                password='',
+                params=ndb_models.TestResourceParameters(),
+            ),
+            ndb_models.TestResourceObj(
+                name='foo',
+                url='origin_url',
+                cache_url='cache_url',
+                password='password',
+                decompress=False,
+                decompress_dir='',
+                mount_zip=False,
+                params=ndb_models.TestResourceParameters(),
+            ),
+        ],
+        test_run.test_resources,
+    )
     self.assertEqual(ndb_models.TestRunState.PENDING, test_run.state)
     tasks = self.mock_task_scheduler.GetTasks(
         queue_names=[test_kicker.TEST_KICKER_QUEUE])
@@ -300,30 +316,39 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
     self.assertModelListEqual(node_config.env_vars, test_run.test.env_vars)
     self.assertEqual(['label'], test_run.labels)
     self.assertModelEqual(test_run_config, test_run.test_run_config)
-    self.assertModelSetEqual([
-        ndb_models.TestResourceObj(
-            name='abc',
-            url='default_download_url',
-            decompress=False,
-            decompress_dir='',
-            mount_zip=False,
-            params=ndb_models.TestResourceParameters()),
-        ndb_models.TestResourceObj(
-            name='def',
-            url='default_download_url2',
-            decompress=False,
-            decompress_dir='',
-            mount_zip=False,
-            params=ndb_models.TestResourceParameters()),
-        ndb_models.TestResourceObj(
-            name='xyz',
-            url='origin_url',
-            cache_url='cache_url',
-            decompress=False,
-            decompress_dir='',
-            mount_zip=False,
-            params=ndb_models.TestResourceParameters()),
-    ], test_run.test_resources)
+    self.assertModelSetEqual(
+        [
+            ndb_models.TestResourceObj(
+                name='abc',
+                url='default_download_url',
+                decompress=False,
+                decompress_dir='',
+                mount_zip=False,
+                password='',
+                params=ndb_models.TestResourceParameters(),
+            ),
+            ndb_models.TestResourceObj(
+                name='def',
+                url='default_download_url2',
+                decompress=False,
+                decompress_dir='',
+                mount_zip=False,
+                password='',
+                params=ndb_models.TestResourceParameters(),
+            ),
+            ndb_models.TestResourceObj(
+                name='xyz',
+                url='origin_url',
+                cache_url='cache_url',
+                decompress=False,
+                decompress_dir='',
+                mount_zip=False,
+                password='',
+                params=ndb_models.TestResourceParameters(),
+            ),
+        ],
+        test_run.test_resources,
+    )
     self.assertEqual(ndb_models.TestRunState.PENDING, test_run.state)
     tasks = self.mock_task_scheduler.GetTasks(
         queue_names=[test_kicker.TEST_KICKER_QUEUE])
@@ -412,24 +437,28 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
     ]
     objs = test_kicker._ConvertToTestResourceMap(test_resource_defs)
     self.assertDictEqual(
-        objs, {
-            'foo':
-                ndb_models.TestResourceObj(
-                    name='foo',
-                    decompress=True,
-                    decompress_dir='dir',
-                    mount_zip=False,
-                    params=ndb_models.TestResourceParameters(
-                        decompress_files=['a', 'b', 'c'])),
-            'bar':
-                ndb_models.TestResourceObj(
-                    name='bar',
-                    decompress=True,
-                    decompress_dir='',
-                    mount_zip=False,
-                    params=ndb_models.TestResourceParameters(
-                        decompress_files=[])),
-        })
+        objs,
+        {
+            'foo': ndb_models.TestResourceObj(
+                name='foo',
+                decompress=True,
+                decompress_dir='dir',
+                mount_zip=False,
+                password='',
+                params=ndb_models.TestResourceParameters(
+                    decompress_files=['a', 'b', 'c']
+                ),
+            ),
+            'bar': ndb_models.TestResourceObj(
+                name='bar',
+                decompress=True,
+                decompress_dir='',
+                mount_zip=False,
+                password='',
+                params=ndb_models.TestResourceParameters(decompress_files=[]),
+            ),
+        },
+    )
 
     # Assert that the input objects are unchanged.
     self.assertEqual(test_resource_defs[0].params.decompress_files, ['a', 'b'])
@@ -462,7 +491,15 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
       test_kicker._ConvertToTestResourceMap([
           ndb_models.TestResourceDef(name='bar', decompress=True),
           ndb_models.TestResourceDef(
-              name='bar', decompress=True, decompress_dir='dir'),
+              name='bar', decompress=True, decompress_dir='dir'
+          ),
+      ])
+
+    # Test password field.
+    with self.assertRaises(ValueError):
+      test_kicker._ConvertToTestResourceMap([
+          ndb_models.TestResourceDef(name='bar', password='password'),
+          ndb_models.TestResourceDef(name='bar', password='password2'),
       ])
 
   def testGetRerunInfo_empty(self):

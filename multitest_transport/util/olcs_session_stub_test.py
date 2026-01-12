@@ -174,6 +174,7 @@ class OlcsSessionStubTest(testbed_dependent_test.TestbedDependentTest):
     resource1 = test_context_proto.test_resource.add()
     resource1.url = 'http://example.com/resource1.zip'
     resource1.name = 'resource1.zip'
+    resource1.password = 'password'
 
     mock_get_request_detail.return_value = expected_request_detail
 
@@ -199,6 +200,9 @@ class OlcsSessionStubTest(testbed_dependent_test.TestbedDependentTest):
     self.assertEqual(actual_test_resource.url, expected_test_resource_proto.url)
     self.assertEqual(
         actual_test_resource.name, expected_test_resource_proto.name
+    )
+    self.assertEqual(
+        actual_test_resource.password, expected_test_resource_proto.password
     )
 
   @mock.patch.object(olcs_session_stub.OlcsSessionStub, '_GetRequestDetail')
@@ -518,6 +522,8 @@ class OlcsSessionStubTest(testbed_dependent_test.TestbedDependentTest):
           api_messages.NewMultiCommandRequestMessage, f.read()
       )
       new_request_msg.test_environment.setup_scripts.append('setup.sh')
+      new_request_msg.test_resources[0].password = 'password1'
+      new_request_msg.prev_test_context.test_resources[0].password = 'password2'
       create_session_request = (
           olcs_session_stub.OlcsSessionStub.GenerateRequestProto(
               new_request_msg
@@ -566,6 +572,9 @@ class OlcsSessionStubTest(testbed_dependent_test.TestbedDependentTest):
       test_resource_msg1 = new_request_msg.test_resources[0]
       self.assertEqual(test_resource_proto1.url, test_resource_msg1.url)
       self.assertEqual(test_resource_proto1.name, test_resource_msg1.name)
+      self.assertEqual(
+          test_resource_proto1.password, test_resource_msg1.password
+      )
       self.assertEqual(
           test_resource_proto1.decompress, test_resource_msg1.decompress
       )
@@ -697,6 +706,9 @@ class OlcsSessionStubTest(testbed_dependent_test.TestbedDependentTest):
       ):
         self.assertEqual(test_resource_proto.url, test_resource_msg.url)
         self.assertEqual(test_resource_proto.name, test_resource_msg.name)
+        self.assertEqual(
+            test_resource_proto.password, test_resource_msg.password
+        )
 
   def testSubscribeSession(self):
     subscribe_session_request = session_service_pb2.SubscribeSessionRequest()

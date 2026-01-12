@@ -243,7 +243,6 @@ py_test(
         ":tfc_event_handler_lib",
         "//third_party/py/absl/testing:absltest",
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
-        "//multitest_transport/build_manager:xts_requirements_detector_lib",
         "//multitest_transport/models:event_log_lib",
         "//multitest_transport/models:ndb_models_lib",
         "//multitest_transport/models:sql_models_lib",

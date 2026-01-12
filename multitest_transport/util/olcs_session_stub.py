@@ -206,7 +206,9 @@ class OlcsSessionStub:
         for test_resource in test_context_proto.test_resource:
           test_context.test_resources.append(
               api_messages.TestResource(
-                  url=test_resource.url, name=test_resource.name
+                  url=test_resource.url,
+                  name=test_resource.name,
+                  password=test_resource.password,
               )
           )
         return test_context
@@ -752,6 +754,8 @@ class OlcsSessionStub:
         test_resource_proto.decompress = test_resource.decompress
       if test_resource.decompress_dir:
         test_resource_proto.decompress_dir = test_resource.decompress_dir
+      if test_resource.password:
+        test_resource_proto.password = test_resource.password
       if test_resource.mount_zip:
         test_resource_proto.mount_zip = test_resource.mount_zip
       if test_resource.params and test_resource.params.decompress_files:
@@ -769,6 +773,8 @@ class OlcsSessionStub:
         )
         test_resource_proto.url = test_resource.url
         test_resource_proto.name = test_resource.name
+        if test_resource.password:
+          test_resource_proto.password = test_resource.password
 
     if request.test_environment:
       if request.test_environment.env_vars:

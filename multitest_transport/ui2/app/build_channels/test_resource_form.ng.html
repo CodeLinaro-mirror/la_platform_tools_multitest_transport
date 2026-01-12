@@ -64,7 +64,15 @@
           Download url is required
       </mat-error>
     </mat-form-field>
-
+   <!-- Password Field -->
+    <ng-container *ngIf="isDef(testResource) && testResource.name?.includes('zip')">
+      <mat-form-field class="small" appearance="outline" floatLabel="always" fxFlex>
+        <mat-label> Password </mat-label>
+        <input matInput type="password" [(ngModel)]="testResource.password"
+                name="file password">
+        <mat-hint>Optional. Enter if zip file has password.</mat-hint>
+      </mat-form-field>
+    </ng-container>
     <div fxLayout="row" *ngIf="isDef(testResource)" fxFlex>
       <!-- Decompress Field -->
       <mat-checkbox class="align-with-form-field" [(ngModel)]="testResource.decompress"

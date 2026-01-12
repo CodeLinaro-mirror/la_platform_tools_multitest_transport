@@ -257,6 +257,7 @@ class TestResourceDef(messages.Message):
   decompress_dir = messages.StringField(5)
   mount_zip = messages.BooleanField(6)
   params = messages.MessageField(TestResourceParameters, 7)
+  password = messages.StringField(8)
 
 
 @Converter(ndb_models.TestResourceDef, TestResourceDef)
@@ -268,7 +269,9 @@ def _TestResourceDefConverter(obj):
       decompress=obj.decompress,
       decompress_dir=obj.decompress_dir,
       mount_zip=obj.mount_zip,
-      params=Convert(obj.params, TestResourceParameters))
+      params=Convert(obj.params, TestResourceParameters),
+      password=obj.password,
+  )
 
 
 @Converter(TestResourceDef, ndb_models.TestResourceDef)
@@ -280,7 +283,9 @@ def _TestResourceDefMessageConverter(msg):
       decompress=msg.decompress,
       decompress_dir=msg.decompress_dir,
       mount_zip=msg.mount_zip,
-      params=Convert(msg.params, ndb_models.TestResourceParameters))
+      params=Convert(msg.params, ndb_models.TestResourceParameters),
+      password=msg.password,
+  )
 
 
 class TestRunParameter(messages.Message):

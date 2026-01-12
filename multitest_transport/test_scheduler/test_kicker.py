@@ -161,9 +161,12 @@ def _ConvertToTestResourceMap(test_resource_defs):
     if not existing_obj:
       test_resource_map[obj.name] = obj
       continue
-    if (existing_obj.decompress != obj.decompress or
-        existing_obj.decompress_dir != obj.decompress_dir or
-        existing_obj.test_resource_type != obj.test_resource_type):
+    if (
+        existing_obj.decompress != obj.decompress
+        or existing_obj.decompress_dir != obj.decompress_dir
+        or existing_obj.password != obj.password
+        or existing_obj.test_resource_type != obj.test_resource_type
+    ):
       raise ValueError('The test run has multiple test resources named %s and '
                        'having different attributes.' % obj.name)
     if obj.decompress:
@@ -455,6 +458,7 @@ def _ConvertToTFCTestResource(obj, url, set_original_download_url=False):
       url=file_util.GetWorkerAccessibleUrl(url),
       decompress=obj.decompress,
       decompress_dir=obj.decompress_dir,
+      password=obj.password,
       mount_zip=obj.mount_zip,
       params=params,
       original_download_url=obj.url if set_original_download_url else None,

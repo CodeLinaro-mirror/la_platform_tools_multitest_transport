@@ -597,6 +597,8 @@ export declare interface TestResourceDef {
   decompress?: boolean;
   /** the directory where the host decompresses the file */
   decompress_dir?: string;
+  /** password for protected zip file. */
+  password?: string;
   /** test resource parameters. */
   params?: TestResourceParameters;
 }
@@ -619,6 +621,8 @@ export declare interface TestResourceObj {
   decompress?: boolean;
   /** the directory where the host decompresses the file. */
   decompress_dir?: string;
+  /** password for protected zip file. */
+  password?: string;
   /** test resource parameters. */
   params?: TestResourceParameters;
 }
@@ -634,6 +638,7 @@ export function testResourceDefToObj(testResourceDef: TestResourceDef):
     test_resource_type: testResourceDef.test_resource_type,
     decompress: testResourceDef.decompress,
     decompress_dir: testResourceDef.decompress_dir,
+    password: testResourceDef.password,
     params: testResourceDef.params?.decompress_files ?
         {decompress_files: [...testResourceDef.params.decompress_files]} :
         undefined
