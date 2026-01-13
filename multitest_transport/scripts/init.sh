@@ -89,6 +89,8 @@ find "${MTT_STORAGE_PATH}/local_file_store" -xtype l -delete
 [[ -d /tmp/.mnt ]] && find /tmp/.mnt -mindepth 1 -maxdepth 1 \
   -exec ln -sf {} "${MTT_STORAGE_PATH}/local_file_store" \;
 
+ATS_LAB_SERVER_TYPE="on-prem"
+
 cd /mtt
 
 if [[ -f "${PRERUN_SCRIPT_PATH}" ]]; then
@@ -362,7 +364,10 @@ else
     fi
   fi
 
-  java "-Xmx${MAX_HEAP_MB}m" -XX:+HeapDumpOnOutOfMemoryError \
+  java \
+    "-Xmx${MAX_HEAP_MB}m" \
+    -XX:+HeapDumpOnOutOfMemoryError \
+    -Dcom.google.mobileharness.ats.lab_server_type="${ATS_LAB_SERVER_TYPE}" \
     -jar /deviceinfra/lab_server_oss_deploy.jar \
     --adb_dont_kill_server=true \
     --adb_max_no_device_detection_rounds=1200 \
