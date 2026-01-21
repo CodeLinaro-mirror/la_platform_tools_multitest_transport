@@ -27,6 +27,8 @@ import {Notifier} from '../services/notifier';
 import {OverflowListType} from '../shared/overflow_list';
 import {buildApiErrorMessage} from '../shared/util';
 
+const MAX_LABELS_TOTAL_LENGTH = 15;
+
 /**
  * A component for displaying a list of test plans.
  */
@@ -138,5 +140,33 @@ export class TestPlanList implements OnInit, OnDestroy {
   navigateToSuites(label: string) {
     this.router.navigate(
         ['/test_plans/edit_test_suites'], {queryParams: {'label': label}});
+  }
+
+  shouldShowExpand(labels?: string[]): boolean {
+    if (!labels) {
+      return false;
+    }
+    const totalLength = labels.reduce((acc, label) => acc + label.length, 0);
+    return labels.length > 3 ||
+        (labels.length > 0 && totalLength > MAX_LABELS_TOTAL_LENGTH);
+  }
+
+  getPreviewLabels(labels?: string[]): string[] {
+    if (!labels) {
+      return [];
+    }
+    const previewLabels: string[] = [];
+    let currentLength = 0;
+    for (const label of labels) {
+      if (currentLength + label.length > MAX_LABELS_TOTAL_LENGTH) {
+        break;
+      }
+      previewLabels.push(label);
+      currentLength += label.length;
+      if (previewLabels.length >= 2) {
+        break;
+      }
+    }
+    return previewLabels;
   }
 }

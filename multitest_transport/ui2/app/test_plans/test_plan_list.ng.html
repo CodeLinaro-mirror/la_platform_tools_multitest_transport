@@ -63,13 +63,39 @@
   <ng-container matColumnDef="labels">
     <mat-header-cell *matHeaderCellDef fxFlex="200px"> Labels </mat-header-cell>
     <mat-cell *matCellDef="let testPlan" fxFlex="200px">
-      <mat-chip-grid #chipGrid aria-label="Test plan labels">
-        <mat-chip-row *ngFor="let label of testPlan.labels"
-                      (click)="navigateToSuites(label)"
-                      style="cursor: pointer">
-          {{label}}
-        </mat-chip-row>
-      </mat-chip-grid>
+      <ng-container *ngIf="!shouldShowExpand(testPlan.labels)">
+        <mat-chip-grid #chipGrid aria-label="Test plan labels">
+          <mat-chip-row *ngFor="let label of testPlan.labels"
+                        (click)="navigateToSuites(label)"
+                        style="cursor: pointer">
+            {{label}}
+          </mat-chip-row>
+        </mat-chip-grid>
+      </ng-container>
+      <ng-container *ngIf="shouldShowExpand(testPlan.labels)">
+        <div class="labels-preview-container">
+          <mat-chip-grid #chipGrid aria-label="Test plan labels">
+            <mat-chip-row *ngFor="let label of getPreviewLabels(testPlan.labels)"
+                          (click)="navigateToSuites(label)"
+                          style="cursor: pointer">
+              {{label}}
+            </mat-chip-row>
+          </mat-chip-grid>
+          <button mat-icon-button
+                  [matMenuTriggerFor]="labelsMenu"
+                  (click)="$event.stopPropagation()"
+                  aria-label="Show all labels"
+                  matTooltip="Show all labels">
+            <mat-icon>expand_more</mat-icon>
+          </button>
+          <mat-menu #labelsMenu="matMenu">
+            <button mat-menu-item *ngFor="let label of testPlan.labels"
+                    (click)="navigateToSuites(label)">
+              {{label}}
+            </button>
+          </mat-menu>
+        </div>
+      </ng-container>
     </mat-cell>
   </ng-container>
 

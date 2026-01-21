@@ -18,7 +18,7 @@ import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {Router, provideRouter} from '@angular/router';
+import {provideRouter, Router} from '@angular/router';
 import {of as observableOf} from 'rxjs';
 
 import {MttClient} from '../services/mtt_client';
@@ -131,7 +131,59 @@ describe('TestPlanList', () => {
     const router = TestBed.inject(Router);
     spyOn(router, 'navigate');
     testPlanList.navigateToSuites('label');
-    expect(router.navigate).toHaveBeenCalledWith(
-        ['/test_plans/edit_test_suites'], {queryParams: {'label': 'label'}});
+    expect(router.navigate)
+        .toHaveBeenCalledWith(
+            ['/test_plans/edit_test_suites'],
+            {queryParams: {'label': 'label'}});
+  });
+
+  describe('label expansion', () => {
+    it('should return false for shouldShowExpand when labels are few', () => {
+      expect(testPlanList.shouldShowExpand(['l1', 'l2'])).toBe(false);
+    });
+
+    it('should return true for shouldShowExpand when labels are many', () => {
+      expect(testPlanList.shouldShowExpand([
+        'l1', 'l2', 'l3', 'l4'
+      ])).toBe(true);
+    });
+
+    it('should return true for shouldShowExpand when total length is long',
+       () => {
+         const longLabel = 'a'.repeat(16);
+         expect(testPlanList.shouldShowExpand(['l1', longLabel])).toBe(true);
+       });
+
+    it('should return false for shouldShowExpand when total length is short',
+       () => {
+         const shortLabel = 'a'.repeat(10);
+         expect(testPlanList.shouldShowExpand(['l1', shortLabel])).toBe(false);
+       });
+
+    it('should return false for shouldShowExpand when labels is undefined',
+       () => {
+         expect(testPlanList.shouldShowExpand(undefined)).toBe(false);
+       });
+
+    it('should return preview labels correctly', () => {
+      const labels = ['l1', 'l2', 'l3', 'l4'];
+      expect(testPlanList.getPreviewLabels(labels)).toEqual(['l1', 'l2']);
+    });
+
+    it('should return empty preview labels if first label is too long', () => {
+      const longLabel = 'a'.repeat(16);
+      expect(testPlanList.getPreviewLabels([longLabel, 'l2'])).toEqual([]);
+    });
+
+    it('should return partial preview labels if combined length is too long',
+       () => {
+         const l1 = 'a'.repeat(10);
+         const l2 = 'b'.repeat(10);
+         expect(testPlanList.getPreviewLabels([l1, l2])).toEqual([l1]);
+       });
+
+    it('should return empty preview labels when labels is undefined', () => {
+      expect(testPlanList.getPreviewLabels(undefined)).toEqual([]);
+    });
   });
 });
