@@ -178,7 +178,7 @@ export class TestRunConsole implements OnInit, OnChanges, OnDestroy {
                 this.selectedAttempt.working_job_id}/test_${
                 this.selectedAttempt.working_test_id}/xts_tf_output.log`;
           } else {
-            return `mh/xts-root-dir-${
+            return `mh/tradefed-root-dir-${
                 this.selectedAttempt.working_test_id}/logs/stdout.txt`;
           }
         }

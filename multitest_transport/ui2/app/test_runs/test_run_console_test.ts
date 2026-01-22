@@ -31,8 +31,8 @@ import {TestRunsModule} from './test_runs_module';
 
 /** Constructs an active or inactive command attempt. */
 function newCommandAttempt(
-    active: boolean, id = 'attempt_id',
-    tfLogPaths?: KeyValuePair[]): CommandAttempt {
+    active: boolean, id = 'attempt_id', tfLogPaths?: KeyValuePair[],
+    workingJobId?: string, workingTestId?: string): CommandAttempt {
   return {
     request_id: 'request_id',
     command_id: 'command_id',
@@ -40,6 +40,8 @@ function newCommandAttempt(
     state: active ? CommandState.RUNNING : CommandState.COMPLETED,
     hostname: 'hostname',
     tf_log_paths: tfLogPaths,
+    working_job_id: workingJobId,
+    working_test_id: workingTestId,
   };
 }
 
@@ -176,6 +178,42 @@ describe('TestRunConsole', () => {
 
        console.stopPolling();
      }));
+
+  describe('active omnilab console', () => {
+    beforeEach(() => {
+      console.isOmnilabBased = true;
+      console.selectedAttempt =
+          newCommandAttempt(true, 'attempt_id', undefined, 'job1', 'test1');
+      console.selectedSourceType = 'Tradefed';
+    });
+
+    const testCases: Array<{type: keyof typeof TF_LOG_TYPES; path: string}> = [
+      {
+        type: 'Driver log',
+        path: 'log/mh_lab_gen_files/job1/test_test1/local_test_log.txt'
+      },
+      {
+        type: 'Host log',
+        path: 'log/mh_lab_gen_files/job1/test_test1/xts_tf_output.log'
+      },
+      {type: 'Test log', path: 'mh/tradefed-root-dir-test1/logs/stdout.txt'}
+    ];
+
+    for (const testCase of testCases) {
+      it(`can load ${testCase.type}`, fakeAsync(() => {
+           console.selectedTfLogType = TF_LOG_TYPES[testCase.type];
+           console.resetPolling();
+           expect(mtt.getTestRunOutput)
+               .toHaveBeenCalledWith(
+                   'test_run_id', 'attempt_id', testCase.path, undefined);
+           expect(console.output).toEqual(['world']);  // First line skipped.
+           expect(console.offset).toEqual(output.offset + output.length - 1);
+           tick(POLL_INTERVAL);
+           expect(console.output).toEqual(['world', 'world']);  // Auto-updates.
+           console.stopPolling();
+         }));
+    }
+  });
 
   it('can change log type', () => {
     console.selectedAttempt = newCommandAttempt(false);
