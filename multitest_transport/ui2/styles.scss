@@ -82,6 +82,7 @@ $theme: map_merge(
 @include mat.core-theme($theme);
 @include mat.select-theme($theme);
 @include mat.chips-theme($theme);
+@include mat.slide-toggle-theme($theme);
 
 @include mat.checkbox-typography($typography);
 @include mat.radio-typography($typography);
@@ -92,6 +93,7 @@ $theme: map_merge(
 @include mat.progress-spinner-typography($typography);
 @include mat.progress-bar-typography($typography);
 @include mat.menu-typography($typography);
+@include mat.slide-toggle-typography($typography);
 
 $button-primary: mat.m2-define-palette(mat.$m2-grey-palette);
 $button-accent: mat.m2-define-palette(mat.$m2-blue-palette, 700);
@@ -530,6 +532,13 @@ mat-spinner.loading-spinner {
 
 .no-padding-container .mat-mdc-dialog-container {
   padding: 0 !important;
+}
+
+.lab-console-ui-toggle {
+  &.mat-mdc-slide-toggle-checked {
+    --mdc-switch-selected-handle-color: map.get(mat.$blue-palette, 600);
+    --mdc-switch-selected-track-color: map.get(mat.$blue-palette, 600);
+  }
 }
 
 .page {

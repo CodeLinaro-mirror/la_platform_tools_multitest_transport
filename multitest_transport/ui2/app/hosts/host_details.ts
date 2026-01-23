@@ -16,16 +16,20 @@
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {Location} from '@angular/common';
-import {AfterViewChecked, ChangeDetectorRef, Component, Inject, Input, OnChanges, OnDestroy, OnInit, SimpleChanges, ViewChild} from '@angular/core';
+import {AfterViewChecked, ChangeDetectorRef, Component, ElementRef, inject, Input, OnChanges, OnDestroy, OnInit, SimpleChanges, ViewChild} from '@angular/core';
 import {MAT_DIALOG_DATA} from '@angular/material/dialog';
 import {MatTabChangeEvent} from '@angular/material/tabs';
 import {Router} from '@angular/router';
 import {ReplaySubject} from 'rxjs';
 import {filter, finalize, switchMap, takeUntil} from 'rxjs/operators';
+import {trustedResourceUrl} from 'safevalues';
+import {IframeIntent, setIframeSrcWithIntent} from 'safevalues/dom';
 
+import {APP_DATA} from '../services/app_data';
 import {FeedbackService} from '../services/feedback_service';
 import {LabHostInfo, NoteType, SurveyTrigger} from '../services/mtt_lab_models';
 import {Notifier} from '../services/notifier';
+import {PreferenceService} from '../services/preference_service';
 import {StorageService} from '../services/storage_service';
 import {TfcClient} from '../services/tfc_client';
 import {TestHarness} from '../services/tfc_models';
@@ -56,6 +60,7 @@ export class HostDetails implements AfterViewChecked, OnChanges, OnDestroy,
   @Input() id = '';
   @ViewChild(HostDetailsSummary, {static: true})
   hostDetailsSummary!: HostDetailsSummary;
+  @ViewChild('iframe') iframe?: ElementRef;
   newWindow = false;
   readonly noteType = NoteType.HOST;
   isLoading = false;
@@ -68,23 +73,26 @@ export class HostDetails implements AfterViewChecked, OnChanges, OnDestroy,
   hostnames: string[] = [];
   hostnamesStorageKey = '';
 
-  constructor(
-      private readonly cdRef: ChangeDetectorRef,
-      private readonly feedbackService: FeedbackService,
-      private readonly liveAnnouncer: LiveAnnouncer,
-      private readonly location: Location,
-      private readonly notifier: Notifier,
-      private readonly router: Router,
-      private readonly storageService: StorageService,
-      private readonly tfcClient: TfcClient,
-      readonly userService: UserService,
-      @Inject(MAT_DIALOG_DATA) readonly params?: HostDetailsDialogParams,
-  ) {}
+  private readonly cdRef = inject(ChangeDetectorRef);
+  private readonly feedbackService = inject(FeedbackService);
+  private readonly liveAnnouncer = inject(LiveAnnouncer);
+  private readonly location = inject(Location);
+  private readonly notifier = inject(Notifier);
+  private readonly router = inject(Router);
+  private readonly storageService = inject(StorageService);
+  private readonly tfcClient = inject(TfcClient);
+  readonly userService = inject(UserService);
+  readonly appData = inject(APP_DATA);
+  readonly preferenceService = inject(PreferenceService);
+  readonly params: HostDetailsDialogParams|null =
+      inject(MAT_DIALOG_DATA, {optional: true});
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['id'] && !changes['id'].firstChange) {
       this.load(changes['id'].currentValue);
       this.appendDefaultOption();
+      // Load the iframe after the id to display changed
+      this.loadIframe();
     }
   }
 
@@ -101,14 +109,38 @@ export class HostDetails implements AfterViewChecked, OnChanges, OnDestroy,
         this.hostDetailsSummary, 'hostDetailsSummary', 'hostDetails');
     this.load(this.id);
     this.appendDefaultOption();
+    if (this.appData?.enableLabConsoleUI) {
+      this.preferenceService.useLabConsoleUISubject$
+          .pipe(takeUntil(this.destroy))
+          .subscribe((useLabConsoleUI) => {
+            if (useLabConsoleUI) {
+              setTimeout(() => {
+                this.loadIframe();
+              }, 0);
+            }
+          });
+    }
   }
 
   ngOnDestroy() {
     this.destroy.next();
+    this.destroy.complete();
   }
 
   ngAfterViewChecked() {
     this.cdRef.detectChanges();
+  }
+
+  loadIframe() {
+    if (this.iframe && this.id) {
+      const url =
+          trustedResourceUrl`/newUI/hosts/${this.id}?is_embedded_mode=true`;
+      setIframeSrcWithIntent(
+          this.iframe.nativeElement,
+          IframeIntent.EMBEDDED_INTERNAL_CONTENT,
+          url,
+      );
+    }
   }
 
   appendDefaultOption() {

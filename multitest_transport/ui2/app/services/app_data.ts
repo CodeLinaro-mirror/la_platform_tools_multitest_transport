@@ -17,7 +17,7 @@
 import {InjectionToken} from '@angular/core';
 
 /** Injects the application data loaded from index.html. */
-export const APP_DATA = new InjectionToken<string>('APP_DATA');
+export const APP_DATA = new InjectionToken<AppData>('APP_DATA');
 
 /** General application data. */
 export declare interface AppData {
@@ -53,6 +53,8 @@ export declare interface AppData {
   readonly logUrl?: string;
   /** True if running in OmniLab Infra. */
   readonly isOmniLabBased?: boolean;
+  /** True if Lab Console UI is enabled. */
+  readonly enableLabConsoleUI?: boolean;
 }
 
 /** Converts local url to real url. */

@@ -1,0 +1,12 @@
+{
+  "name": "lab-ui-express-server",
+  "version": "1.0.0",
+  "description": "Express server for Lab UI",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}

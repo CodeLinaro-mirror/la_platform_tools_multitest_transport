@@ -16,6 +16,7 @@
 
 import {NgModule} from '@angular/core';
 import {ReactiveFormsModule} from '@angular/forms';
+import {MatSlideToggleModule} from '@angular/material/slide-toggle';
 import {RouterModule} from '@angular/router';
 import {ServicesModule} from 'google3/third_party/py/multitest_transport/ui2/app/services';
 import {SharedModule as MttSharedModule} from 'google3/third_party/py/multitest_transport/ui2/app/shared';
@@ -78,6 +79,7 @@ const COMPONENTS = [
   declarations: COMPONENTS,
   imports: [
     DevicesModule,
+    MatSlideToggleModule,
     MttSharedModule,
     NotesModule,
     RouterModule,

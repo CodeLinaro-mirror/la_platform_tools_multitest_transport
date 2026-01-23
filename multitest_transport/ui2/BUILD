@@ -1,5 +1,6 @@
 # Frontend application for MTT
 
+load("//third_party/bazel_rules/rules_shell/shell:sh_binary.bzl", "sh_binary")
 load("//multitest_transport:adapter.bzl", "COMPILER_FLAGS", "js_binary", "karma_web_test_suite", "ng_module", "sass_binary", "sass_library", "third_party_js", "ts_config", "ts_development_sources")
 load("@tradefed_cluster//tradefed_cluster:adapter.bzl", "Fileset", "FilesetEntry", "pytype_strict_library", "third_party")
 
@@ -153,6 +154,19 @@ pytype_strict_library(
         "//multitest_transport/util",
         third_party("flask"),
     ],
+)
+
+# New target for watching and syncing UI files to Docker
+sh_binary(
+    name = "sync_ui_to_docker",
+    srcs = ["sync_ui.sh"],
+    data = [
+        "index.html",
+        ":static_files",
+    ] + select({
+        ":dev_mode": [":dev_sources.concat.js"],
+        "//conditions:default": ["app.js"],
+    }),
 )
 
 ts_development_sources(

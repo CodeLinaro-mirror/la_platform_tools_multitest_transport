@@ -19,6 +19,7 @@
  */
 import {NgModule} from '@angular/core';
 import {ReactiveFormsModule} from '@angular/forms';
+import {MatSlideToggleModule} from '@angular/material/slide-toggle';
 import {Title} from '@angular/platform-browser';
 import {RouterModule} from '@angular/router';
 
@@ -52,6 +53,7 @@ const COMPONENTS = [
   declarations: COMPONENTS,
   providers: [Title],
   imports: [
+    MatSlideToggleModule,
     NotesModule,
     ReactiveFormsModule,
     RouterModule,
@@ -59,6 +61,6 @@ const COMPONENTS = [
     SharedModule,
   ],
   exports: COMPONENTS,
-  })
+})
 export class DevicesModule {
 }

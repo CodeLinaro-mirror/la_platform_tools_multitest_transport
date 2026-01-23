@@ -704,6 +704,35 @@ def _StartMttNode(args, host):
       docker_helper.AddPort(
           '127.0.0.1:%d' % args.adb_server_port, _ADB_SERVER_PORT)
 
+  # Labconsole ports
+  labconsole_grpc_port = args.labconsole_grpc_port
+  labconsole_rest_port = args.labconsole_rest_port
+  lab_console_port = args.lab_console_port
+  if args.enable_lab_console_ui:
+    if network == _DOCKER_BRIDGE_NETWORK:
+      docker_helper.AddPort(
+          '0.0.0.0:%d' % labconsole_grpc_port, labconsole_grpc_port
+      )
+      docker_helper.AddPort(
+          '0.0.0.0:%d' % labconsole_rest_port, labconsole_rest_port
+      )
+      docker_helper.AddPort('0.0.0.0:%d' % lab_console_port, lab_console_port)
+    docker_helper.AddEnv(
+        'MTT_ENABLE_LAB_CONSOLE_UI',
+        'true',
+    )
+    docker_helper.AddEnv(
+        'LABCONSOLE_SERVER_GRPC_PORT', str(labconsole_grpc_port)
+    )
+    docker_helper.AddEnv(
+        'LABCONSOLE_SERVER_REST_PORT', str(labconsole_rest_port)
+    )
+    docker_helper.AddEnv('LAB_CONSOLE_PORT', str(lab_console_port))
+    logger.debug('labconsole grpc port=%d, rest port=%d, ui port=%d',
+                 labconsole_grpc_port, labconsole_rest_port, lab_console_port)
+  else:
+    logger.debug('enable_lab_console_ui is false.')
+
   custom_sdk_dir = None
   if args.custom_adb_path:
     # Create temp directory for custom SDK tools, will be copied over to ensure
@@ -1316,6 +1345,31 @@ def _CreateStartArgParser():
       help='Address to bind to when publishing container ports in bridge mode, '
       'or when starting server in host mode.',
       default='0.0.0.0')
+  parser.add_argument(
+      '--labconsole_grpc_port',
+      type=int,
+      default=8080,
+      help='Labconsole gRPC port exposed by the container',
+  )
+  parser.add_argument(
+      '--labconsole_rest_port',
+      type=int,
+      default=9000,
+      help='Labconsole REST port exposed by the container',
+  )
+  parser.add_argument(
+      '--lab_console_port',
+      type=int,
+      default=4200,
+      help='Lab console UI port exposed by the container',
+  )
+  parser.add_argument(
+      '--enable_lab_console_ui',
+      dest='enable_lab_console_ui',
+      action=argparse.BooleanOptionalAction,
+      default=False,
+      help='Enable Lab Console UI and backend services. Default is false.',
+  )
   parser.add_argument(
       '--server_log_level',
       help='Server Log level',

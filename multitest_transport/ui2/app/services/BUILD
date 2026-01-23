@@ -31,6 +31,7 @@ ng_module(
         "mtt_object_map.ts",
         "notifier.ts",
         "notifier_dialog.ts",
+        "preference_service.ts",
         "services_module.ts",
         "storage_service.ts",
         "strict_params.ts",

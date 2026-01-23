@@ -51,6 +51,14 @@ config_setting(
     },
 )
 
+filegroup(
+    name = "lab_ui_files",
+    srcs = [
+        "lab_ui_runner/package.json",
+        "lab_ui_runner/server.js",
+    ],
+)
+
 py_appengine_binary(
     name = "main",
     configs = [
@@ -62,6 +70,7 @@ py_appengine_binary(
         ":dev_mode": [],
         "//conditions:default": ["Dockerfile"],
     }) + [
+        ":lab_ui_files",
         ":prebuilts",
         ":serve.sh",
         "//multitest_transport/file_cleaner:file_cleaner_lib",

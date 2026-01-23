@@ -43,9 +43,16 @@
       </mat-select>
     </mat-form-field>
   </h1>
+  <div class="action-buttons" *ngIf="appData?.enableLabConsoleUI">
+    <div class="lab-console-ui-switch-button">
+      <mat-slide-toggle *ngIf="appData?.enableLabConsoleUI" class="lab-console-ui-toggle" [checked]="preferenceService?.useLabConsoleUISubject$ | async" (change)="preferenceService?.useLabConsoleUISubject$.next($event.checked)" color="accent">
+        Lab Console UI
+      </mat-slide-toggle>
+    </div>
+  </div>
 </div>
 
-<div [class.loading-mask]="isLoading">
+<div [class.loading-mask]="isLoading" [style.display]="(preferenceService?.useLabConsoleUISubject$ | async) ? 'none' : null">
   <div class="page">
     <device-details-summary
       [id]="id"
@@ -65,3 +72,7 @@
     </mat-tab>
   </mat-tab-group>
 </div>
+
+@if (preferenceService?.useLabConsoleUISubject$ | async) {
+  <iframe #iframe srcdoc="" style="width: 100%; height: calc(100% - 120px); border: none;"></iframe>
+}

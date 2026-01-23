@@ -117,6 +117,9 @@ then
   (cat /var/log/rabbitmq/startup_*; false)
 
   MTT_CONTROL_SERVER_PORT="${MTT_CONTROL_SERVER_PORT:-8000}"
+  LABCONSOLE_SERVER_GRPC_PORT="${LABCONSOLE_SERVER_GRPC_PORT:-8080}"
+  LABCONSOLE_SERVER_REST_PORT="${LABCONSOLE_SERVER_REST_PORT:-9000}"
+  LAB_CONSOLE_PORT="${LAB_CONSOLE_PORT:-4200}"
   MTT_CONTROL_SERVER_LOG_DIR="${MTT_LOG_DIR}/server"
   mkdir -p "${MTT_CONTROL_SERVER_LOG_DIR}"
 
@@ -213,6 +216,9 @@ then
       --storage_path "${MTT_STORAGE_PATH}" \
       --bind_address "${BIND_ADDRESS}" \
       --port "${MTT_CONTROL_SERVER_PORT}" \
+      --labconsole_grpc_port "${LABCONSOLE_SERVER_GRPC_PORT}" \
+      --labconsole_rest_port "${LABCONSOLE_SERVER_REST_PORT}" \
+      --lab_console_port "${LAB_CONSOLE_PORT}" \
       --log_level "${MTT_SERVER_LOG_LEVEL}" \
       --file_service_only "${FILE_SERVICE_ONLY}" \
       --sql_database_uri "${SQL_DATABASE_URI}" \
@@ -221,6 +227,7 @@ then
       --olcs_credential_type "${OLCS_CREDENTIAL_TYPE}" \
       --report_generator_jar "${MTT_REPORT_GENERATOR_JAR}" \
       --is_omnilab_based "${IS_OMNILAB_BASED}" \
+      --enable_lab_console_ui "${MTT_ENABLE_LAB_CONSOLE_UI}" \
       2>&1 | multilog s10485760 n10 "${MTT_CONTROL_SERVER_LOG_DIR}" &
 fi
 

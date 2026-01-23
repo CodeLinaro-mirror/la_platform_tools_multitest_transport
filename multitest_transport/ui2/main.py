@@ -44,6 +44,31 @@ def App():
   return flask.send_from_directory(ROOT_PATH, script, conditional=False)
 
 
+@APP.route('/newUI/', defaults={'path': ''})
+@APP.route('/newUI/<path:path>')
+def NewUI(path):
+  """Redirects requests for /newUI/* to the Node.js Lab Console UI server.
+
+  The new Lab Console UI is embedded in an iframe within the host/device
+  details pages. To avoid specifying the port number in the frontend client
+  code, which could be a security risk.
+  The iframe's 'src' is set to a path like '/newUI/devices/123'. This
+  request hits the main MTT server, which then redirects the browser to the
+  actual location of the new UI server
+  (e.g., http://localhost:4200/devices/123), running on env.LAB_CONSOLE_PORT.
+
+  Args:
+    path: subpath to redirect to on new UI server.
+  """
+  hostname = flask.request.host.split(':')[0]
+  port = env.LAB_CONSOLE_PORT or '4200'
+  query_string = flask.request.query_string.decode('utf-8')
+  new_url = f'{flask.request.scheme}://{hostname}:{port}/{path}'
+  if query_string:
+    new_url = f'{new_url}?{query_string}'
+  return flask.redirect(new_url)
+
+
 @APP.route('/', defaults={'_': ''})
 @APP.route('/<path:_>')
 def Root(_):

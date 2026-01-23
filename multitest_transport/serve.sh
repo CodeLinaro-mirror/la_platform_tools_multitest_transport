@@ -45,10 +45,14 @@ REPORT_GENERATOR_JAR=""
 IS_OMNILAB_BASED="false"
 OLCS_SERVER_ADDRESS="localhost:7030"
 OLCS_CREDENTIAL_TYPE="no_credential"
+ENABLE_LAB_CONSOLE_UI="false"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --bind_address) MTT_HOST="$2";;
     --port) MTT_CONTROL_SERVER_PORT="$2";;
+    --labconsole_grpc_port) LABCONSOLE_SERVER_GRPC_PORT="$2";;
+    --labconsole_rest_port) LABCONSOLE_SERVER_REST_PORT="$2";;
+    --lab_console_port) LAB_CONSOLE_PORT="$2";;
     --storage_path) STORAGE_PATH="$2";;
     --working_dir) WORKING_DIR="$2";;
     --live_reload) LIVE_RELOAD="$2";;
@@ -61,6 +65,7 @@ while [[ $# -gt 0 ]]; do
     --sql_database_uri) SQL_DATABASE_URI="$2";;
     --control_server_url) MTT_CONTROL_SERVER_URL="$2";;
     --report_generator_jar) REPORT_GENERATOR_JAR="$2";;
+    --enable_lab_console_ui) ENABLE_LAB_CONSOLE_UI="$2";;
     *) echo "Unknown argument $1"; exit 1; # fail-fast on unknown key
   esac
   shift # skip key
@@ -79,6 +84,9 @@ MTT_TFC_PORT="$((${MTT_CONTROL_SERVER_PORT}+2))"
 FILE_SERVER_PORT="$((${MTT_CONTROL_SERVER_PORT}+6))"
 DATASTORE_EMULATOR_PORT="$((${MTT_CONTROL_SERVER_PORT}+7))"
 NETDATA_PORT="$((${MTT_CONTROL_SERVER_PORT}+8))"
+LABCONSOLE_SERVER_GRPC_PORT="${LABCONSOLE_SERVER_GRPC_PORT:-8080}"
+LABCONSOLE_SERVER_REST_PORT="${LABCONSOLE_SERVER_REST_PORT:-9000}"
+LAB_CONSOLE_PORT="${LAB_CONSOLE_PORT:-4200}"
 
 # Create storage directory if it doesn't exist
 if [[ ! -d "$STORAGE_PATH" ]]; then
@@ -184,6 +192,10 @@ function start_main_server {
   MTT_FILE_SERVER_URL="http://localhost:$FILE_SERVER_PORT/" \
   MTT_FILE_SERVER_PORT="$FILE_SERVER_PORT" \
   MTT_NETDATA_URL="http://localhost:$NETDATA_PORT/" \
+  LABCONSOLE_SERVER_GRPC_PORT="$LABCONSOLE_SERVER_GRPC_PORT" \
+  LABCONSOLE_SERVER_REST_PORT="$LABCONSOLE_SERVER_REST_PORT" \
+  LAB_CONSOLE_PORT="$LAB_CONSOLE_PORT" \
+  MTT_ENABLE_LAB_CONSOLE_UI="$ENABLE_LAB_CONSOLE_UI" \
   MTT_GOOGLE_OAUTH2_CLIENT_ID="$MTT_GOOGLE_OAUTH2_CLIENT_ID" \
   MTT_GOOGLE_OAUTH2_CLIENT_SECRET="$MTT_GOOGLE_OAUTH2_CLIENT_SECRET" \
   MTT_VERSION="$MTT_VERSION" \
@@ -206,6 +218,31 @@ function start_main_server {
       --module "tfc=tradefed_cluster.server:TFC" \
       --init "core:/init" \
       &
+}
+
+function start_labconsole_ui {
+  // Labconsole UI is served by a nodejs express server, think about the
+  // main.py of the python server.
+  echo "Starting Labconsole UI on port ${LAB_CONSOLE_PORT}..."
+  cd /mtt/lab_ui_runner
+  # No need to pass any arguments to npm start
+  # as this express node server will read the arguments from the env automatically.
+  npm start &
+  echo "Labconsole UI started on port ${LAB_CONSOLE_PORT}."
+}
+
+function start_oss_fe_server {
+  echo "Starting OSS FE server on port ${LABCONSOLE_SERVER_GRPC_PORT}..."
+  # OSS FE server listens to gRPC port for backend requests, and talk to the olc server on a different port.
+  java -jar /deviceinfra/oss_fe_server_deploy.jar --fe_grpc_port=${LABCONSOLE_SERVER_GRPC_PORT} --olc_server_port=${OLC_SERVER_PORT} &
+  echo "OSS FE server started on port ${LABCONSOLE_SERVER_GRPC_PORT}..."
+  echo "Starting Envoy proxy on port ${LABCONSOLE_SERVER_REST_PORT}..."
+  # Envoy proxy listens to REST port for receiving request from frontend,
+  # and forwards to the OSS FE backend that listen to gRPC port.
+  sed -e "s/{{LABCONSOLE_SERVER_REST_PORT}}/${LABCONSOLE_SERVER_REST_PORT}/g" -e "s/{{LABCONSOLE_SERVER_GRPC_PORT}}/${LABCONSOLE_SERVER_GRPC_PORT}/g" /etc/envoy/envoy.yaml > /tmp/envoy.yaml
+  /usr/bin/envoy -c /tmp/envoy.yaml &
+  echo "Envoy proxy started on port ${LABCONSOLE_SERVER_REST_PORT}..."
+  start_labconsole_ui
 }
 
 function start_file_cleaner {
@@ -272,6 +309,9 @@ then
   start_local_file_server
   start_mysql_database "${STORAGE_PATH}"
   start_rabbitmq_puller
+  if [[ "${ENABLE_LAB_CONSOLE_UI}" == "true" ]]; then
+    start_oss_fe_server
+  fi
   start_main_server
   start_file_cleaner
   start_netdata

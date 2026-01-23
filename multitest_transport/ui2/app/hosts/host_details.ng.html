@@ -44,6 +44,11 @@
     </h1>
   </div>
   <div class="action-buttons">
+    <div class="lab-console-ui-switch-button" *ngIf="appData.enableLabConsoleUI">
+      <mat-slide-toggle *ngIf="appData.enableLabConsoleUI" class="lab-console-ui-toggle" [checked]="preferenceService.useLabConsoleUISubject$ | async" (change)="preferenceService.useLabConsoleUISubject$.next($event.checked)" color="accent">
+        Lab Console UI
+      </mat-slide-toggle>
+    </div>
     <div class="loading-spinner-overlay" *ngIf="isLoading">
       <mat-spinner color="accent"></mat-spinner>
     </div>
@@ -75,7 +80,7 @@
   </div>
 </div>
 
-<div>
+<div [style.display]="(preferenceService.useLabConsoleUISubject$ | async) ? 'none' : null">
   <div class="page">
     <host-details-summary [id]="id"></host-details-summary>
   </div>
@@ -105,3 +110,7 @@
     </mat-tab>
   </mat-tab-group>
 </div>
+
+@if (preferenceService.useLabConsoleUISubject$ | async) {
+  <iframe #iframe srcdoc="" style="width: 100%; height: calc(100% - 120px); border: none;"></iframe>
+}

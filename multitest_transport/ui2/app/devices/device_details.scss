@@ -16,6 +16,16 @@
 
 @import 'third_party/py/multitest_transport/ui2/constants';
 
+.action-buttons {
+  position: absolute;
+  right: 20px;
+  top: 0;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 .back-button-icon {
   line-height: 44px;
 }

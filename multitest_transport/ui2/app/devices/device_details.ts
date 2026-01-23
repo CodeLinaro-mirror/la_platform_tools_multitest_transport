@@ -15,16 +15,20 @@
  */
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
-import {Component, Inject, Input, OnChanges, OnDestroy, OnInit, SimpleChanges} from '@angular/core';
+import {Component, ElementRef, inject, Input, OnChanges, OnDestroy, OnInit, SimpleChanges, ViewChild} from '@angular/core';
 import {MAT_DIALOG_DATA} from '@angular/material/dialog';
 import {MatTabChangeEvent} from '@angular/material/tabs';
 import {Router} from '@angular/router';
 import {ReplaySubject} from 'rxjs';
 import {takeUntil} from 'rxjs/operators';
+import {trustedResourceUrl} from 'safevalues';
+import {IframeIntent, setIframeSrcWithIntent} from 'safevalues/dom';
 
+import {APP_DATA, AppData} from '../services/app_data';
 import {FeedbackService} from '../services/feedback_service';
 import {LabDeviceInfo, NoteType, SurveyTrigger} from '../services/mtt_lab_models';
 import {Notifier} from '../services/notifier';
+import {PreferenceService} from '../services/preference_service';
 import {DeviceSerialWithDisplay, StorageService} from '../services/storage_service';
 import {TfcClient} from '../services/tfc_client';
 import {buildApiErrorMessage} from '../shared/util';
@@ -47,6 +51,7 @@ export interface DeviceDetailsDialogParams {
   templateUrl: './device_details.ng.html',
 })
 export class DeviceDetails implements OnChanges, OnDestroy, OnInit {
+  @ViewChild('iframe') iframe?: ElementRef;
   @Input() id = '';
   @Input() newWindow = false;
   readonly noteType = NoteType.DEVICE;
@@ -59,21 +64,24 @@ export class DeviceDetails implements OnChanges, OnDestroy, OnInit {
   deviceSerialsWithDisplay: DeviceSerialWithDisplay[] = [];
   data?: LabDeviceInfo;
 
-  constructor(
-      private readonly feedbackService: FeedbackService,
-      private readonly liveAnnouncer: LiveAnnouncer,
-      private readonly notifier: Notifier,
-      private readonly router: Router,
-      private readonly storageService: StorageService,
-      private readonly tfcClient: TfcClient,
-      @Inject(MAT_DIALOG_DATA) readonly params?:
-          DeviceDetailsDialogParams,
-  ) {}
+  private readonly feedbackService = inject(FeedbackService);
+  private readonly liveAnnouncer = inject(LiveAnnouncer);
+  private readonly notifier = inject(Notifier);
+  private readonly router = inject(Router);
+  private readonly storageService = inject(StorageService);
+  private readonly tfcClient = inject(TfcClient);
+  readonly params: DeviceDetailsDialogParams|null =
+      inject(MAT_DIALOG_DATA, {optional: true});
+  readonly appData: AppData|null = inject(APP_DATA, {optional: true});
+  preferenceService: PreferenceService|null =
+      inject(PreferenceService, {optional: true});
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['id'] && !changes['id'].firstChange) {
       this.load(changes['id'].currentValue);
       this.appendDefaultOption();
+      // Load the iframe after the id to display changed
+      this.loadIframe();
     }
   }
 
@@ -86,10 +94,22 @@ export class DeviceDetails implements OnChanges, OnDestroy, OnInit {
     this.deviceSerialsWithDisplay = this.storageService.deviceList;
     this.load(this.id);
     this.appendDefaultOption();
+    if (this.appData?.enableLabConsoleUI) {
+      this.preferenceService!.useLabConsoleUISubject$
+          .pipe(takeUntil(this.destroy))
+          .subscribe((useLabConsoleUI) => {
+            if (useLabConsoleUI) {
+              setTimeout(() => {
+                this.loadIframe();
+              }, 0);
+            }
+          });
+    }
   }
 
   ngOnDestroy() {
     this.destroy.next();
+    this.destroy.complete();
   }
 
   get deviceSerials() {
@@ -156,5 +176,17 @@ export class DeviceDetails implements OnChanges, OnDestroy, OnInit {
     const url = this.router.serializeUrl(
         this.router.createUrlTree(['/devices', deviceSerial]));
     this.router.navigate([url], {replaceUrl: true});
+  }
+
+  loadIframe() {
+    if (this.iframe && this.id) {
+      const url =
+          trustedResourceUrl`/newUI/devices/${this.id}?is_embedded_mode=true`;
+      setIframeSrcWithIntent(
+          this.iframe.nativeElement,
+          IframeIntent.EMBEDDED_INTERNAL_CONTENT,
+          url,
+      );
+    }
   }
 }
