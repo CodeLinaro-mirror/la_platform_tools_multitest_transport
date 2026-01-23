@@ -35,6 +35,7 @@ import {
   testResourceDefToObj,
 } from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
+import {getPeriodicType} from '../shared/schedule_time_form';
 import {buildApiErrorMessage} from '../shared/util';
 
 interface TestResourceGroup {
@@ -67,6 +68,13 @@ export class EditTestSuitesPage implements OnInit {
   testResourceGroups: TestResourceGroup[] = [];
   readonly TestResourceClassType = TestResourceClassType;
   currentLabel = '';
+
+  customScheduleTestPlans: TestPlan[] = [];
+  batchCronExp = '';
+  batchTimezone = '';
+  originalCronExps = new Map<string, string>();
+  originalTimezones = new Map<string, string>();
+  timezoneOptions: string[] = [];
 
   private readonly route = inject(ActivatedRoute);
   private readonly mttClient = inject(MttClient);
@@ -126,6 +134,27 @@ export class EditTestSuitesPage implements OnInit {
                                .filter(
                                    (tp: TestPlan) => tp.labels &&
                                        tp.labels.includes(label));
+          this.customScheduleTestPlans = this.testPlans.filter(
+              (tp) => tp.cron_exp && !getPeriodicType(tp.cron_exp));
+
+          const localTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+          const timezones = new Set(['UTC', localTz]);
+
+          for (const plan of this.customScheduleTestPlans) {
+            if (plan.id) {
+              this.originalCronExps.set(plan.id, plan.cron_exp || '');
+              this.originalTimezones.set(
+                  plan.id, plan.cron_exp_timezone || '');
+            }
+            if (plan.cron_exp_timezone) {
+              timezones.add(plan.cron_exp_timezone);
+            }
+          }
+          this.timezoneOptions = Array.from(timezones).sort();
+
+          this.batchCronExp = '';
+          this.batchTimezone = '';
+
           this.initActionSettings();
           this.initResourceSettings();
         },
@@ -211,6 +240,23 @@ export class EditTestSuitesPage implements OnInit {
         testName: test.name,
         resources: this.combineResources(test, sampleConfig),
       });
+    }
+  }
+
+  updateBatchSchedule() {
+    for (const plan of this.customScheduleTestPlans) {
+      if (!plan.id) continue;
+      if (this.batchCronExp) {
+        plan.cron_exp = this.batchCronExp;
+      } else {
+        plan.cron_exp = this.originalCronExps.get(plan.id) || '';
+      }
+
+      if (this.batchTimezone) {
+        plan.cron_exp_timezone = this.batchTimezone;
+      } else {
+        plan.cron_exp_timezone = this.originalTimezones.get(plan.id) || '';
+      }
     }
   }
 

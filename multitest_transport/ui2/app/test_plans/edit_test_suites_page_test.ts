@@ -26,6 +26,7 @@ import {Observable, of as observableOf} from 'rxjs';
 import {MttClient} from '../services/mtt_client';
 import {NameValuePair, Test, TestPlan, TestRunAction} from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
+
 import {EditTestSuitesPage} from './edit_test_suites_page';
 import {TestPlansModule} from './test_plans_module';
 
@@ -37,43 +38,47 @@ describe('EditTestSuitesPage', () => {
   let location: jasmine.SpyObj<Location>;
 
   beforeEach(async () => {
-    const mttClientSpy = jasmine.createSpyObj('MttClient', ['getTests', 'getBuildChannels', 'getTestPlans', 'updateTestPlan', 'updateTestPlans']);
-    const testRunActionsSpy = jasmine.createSpyObj('TestRunActions', ['list', 'listTestRunHooks']);
+    const mttClientSpy = jasmine.createSpyObj('MttClient', [
+      'getTests', 'getBuildChannels', 'getTestPlans', 'updateTestPlan',
+      'updateTestPlans'
+    ]);
+    const testRunActionsSpy =
+        jasmine.createSpyObj('TestRunActions', ['list', 'listTestRunHooks']);
 
-    mttClient = {
-      ...mttClientSpy,
-      testRunActions: testRunActionsSpy
-    } as unknown as jasmine.SpyObj<MttClient>;
+    mttClient = {...mttClientSpy, testRunActions: testRunActionsSpy} as
+        unknown as jasmine.SpyObj<MttClient>;
 
     // Mock return values for observables
     mttClient.getTests.and.returnValue(observableOf({tests: []}));
-    (mttClient.testRunActions.list as jasmine.Spy).and.returnValue(observableOf([]));
-    (mttClient.testRunActions.listTestRunHooks as jasmine.Spy).and.returnValue(observableOf({test_run_hooks: []}));
-    mttClient.getBuildChannels.and.returnValue(observableOf({build_channels: []}));
+    (mttClient.testRunActions.list as jasmine.Spy)
+        .and.returnValue(observableOf([]));
+    (mttClient.testRunActions.listTestRunHooks as jasmine.Spy)
+        .and.returnValue(observableOf({test_run_hooks: []}));
+    mttClient.getBuildChannels.and.returnValue(
+        observableOf({build_channels: []}));
     mttClient.getTestPlans.and.returnValue(observableOf({test_plans: []}));
 
     notifier = jasmine.createSpyObj('Notifier', ['showError', 'showMessage']);
     location = jasmine.createSpyObj('Location', ['back']);
 
-    await TestBed.configureTestingModule({
-      imports: [
-        NoopAnimationsModule,
-        TestPlansModule,
-      ],
-      providers: [
-        {provide: MttClient, useValue: mttClient},
-        {provide: Notifier, useValue: notifier},
-        {provide: Location, useValue: location},
-        {
-          provide: ActivatedRoute,
-          useValue: {
-            queryParams: observableOf({}),
-            snapshot: {queryParams: {}}
-          }
-        },
-      ]
-    })
-    .compileComponents();
+    await TestBed
+        .configureTestingModule({
+          imports: [
+            NoopAnimationsModule,
+            TestPlansModule,
+          ],
+          providers: [
+            {provide: MttClient, useValue: mttClient},
+            {provide: Notifier, useValue: notifier},
+            {provide: Location, useValue: location},
+            {
+              provide: ActivatedRoute,
+              useValue:
+                  {queryParams: observableOf({}), snapshot: {queryParams: {}}}
+            },
+          ]
+        })
+        .compileComponents();
   });
 
   beforeEach(() => {
@@ -124,20 +129,22 @@ describe('EditTestSuitesPage', () => {
     expect(mttClient.updateTestPlans).toHaveBeenCalledWith({
       test_plans: component.testPlans,
     });
-    expect(notifier.showMessage).toHaveBeenCalledWith(
-      'Test plans updated successfully.',
-    );
+    expect(notifier.showMessage)
+        .toHaveBeenCalledWith(
+            'Test plans updated successfully.',
+        );
     expect(location.back).toHaveBeenCalled();
     expect(component.isLoading).toBe(false);
   });
 
   it('update should handle error', () => {
     component.testPlans = [{id: '1', name: 'plan1'} as unknown as TestPlan];
-    (mttClient.updateTestPlans as jasmine.Spy).and.returnValue(
-      new Observable((observer) => {
-        observer.error('error');
-      }),
-    );
+    (mttClient.updateTestPlans as jasmine.Spy)
+        .and.returnValue(
+            new Observable((observer) => {
+              observer.error('error');
+            }),
+        );
 
     component.update();
 
@@ -176,7 +183,8 @@ describe('EditTestSuitesPage', () => {
     component.initActionSettings();
 
     expect(component.referencedActions.length).toBe(1);
-    expect(component.referencedActions[0]).toBe(action as unknown as TestRunAction);
+    expect(component.referencedActions[0])
+        .toBe(action as unknown as TestRunAction);
     expect(component.actionRefsMap.get(actionId)!.length).toBe(1);
     expect(component.effectiveOptionDefs[actionId].length).toBe(1);
     expect(component.actionsFormGroup.contains(actionId)).toBe(true);
@@ -242,5 +250,98 @@ describe('EditTestSuitesPage', () => {
 
     component.initResourceSettings();
     expect(component.testResourceGroups.length).toBe(1);
+  });
+
+  it('loadTestPlans should filter custom schedules and initialize properties',
+     () => {
+       const label = 'label1';
+       const testPlans = [
+         {
+           id: '1',
+           name: 'plan1',
+           labels: [label],
+           cron_exp: '0 0 1 1 *',
+           cron_exp_timezone: 'UTC',
+         },
+         {
+           id: '2',
+           name: 'plan2',
+           labels: [label],
+           cron_exp: '0 * * * *',
+         },
+         {
+           id: '3',
+           name: 'plan3',
+           labels: [label],
+           cron_exp: '',
+         },
+       ] as unknown as TestPlan[];
+       (mttClient.getTestPlans as jasmine.Spy).and.returnValue(observableOf({
+         test_plans: testPlans
+       }));
+
+       component.loadTestPlans(label);
+
+       expect(component.testPlans.length).toBe(3);
+       expect(component.customScheduleTestPlans.length).toBe(1);
+       expect(component.customScheduleTestPlans[0].id).toBe('1');
+       expect(component.originalCronExps.get('1')).toBe('0 0 1 1 *');
+       expect(component.originalTimezones.get('1')).toBe('UTC');
+       expect(component.batchCronExp).toBe('');
+       expect(component.batchTimezone).toBe('');
+       expect(component.timezoneOptions).toContain('UTC');
+     });
+
+  it('updateBatchSchedule should update custom schedule test plans', () => {
+    const plan1 = {
+      id: '1',
+      cron_exp: 'old_cron',
+      cron_exp_timezone: 'old_tz',
+    } as unknown as TestPlan;
+    component.customScheduleTestPlans = [plan1];
+    component.originalCronExps.set('1', 'old_cron');
+    component.originalTimezones.set('1', 'old_tz');
+
+    component.batchCronExp = 'new_cron';
+    component.batchTimezone = 'new_tz';
+    component.updateBatchSchedule();
+
+    expect(plan1.cron_exp).toBe('new_cron');
+    expect(plan1.cron_exp_timezone).toBe('new_tz');
+  });
+
+  it('updateBatchSchedule should restore original values when batch inputs are empty',
+     () => {
+       const plan1 = {
+         id: '1',
+         cron_exp: 'new_cron',
+         cron_exp_timezone: 'new_tz',
+       } as unknown as TestPlan;
+       component.customScheduleTestPlans = [plan1];
+       component.originalCronExps.set('1', 'old_cron');
+       component.originalTimezones.set('1', 'old_tz');
+
+       component.batchCronExp = '';
+       component.batchTimezone = '';
+       component.updateBatchSchedule();
+
+       expect(plan1.cron_exp).toBe('old_cron');
+       expect(plan1.cron_exp_timezone).toBe('old_tz');
+     });
+
+  it('loadTestPlans should reset batch inputs when reloading', () => {
+    const label1 = 'label1';
+    (mttClient.getTestPlans as jasmine.Spy)
+        .and.returnValue(observableOf({test_plans: []}));
+    component.loadTestPlans(label1);
+
+    component.batchCronExp = '0 * * * *';
+    component.batchTimezone = 'UTC';
+
+    const label2 = 'label2';
+    component.loadTestPlans(label2);
+
+    expect(component.batchCronExp).toBe('');
+    expect(component.batchTimezone).toBe('');
   });
 });

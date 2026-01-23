@@ -25,6 +25,46 @@
 </div>
 
 <mat-horizontal-stepper linear="true" #stepper>
+  <mat-step>
+    <ng-template matStepLabel>Edit Custom Schedules</ng-template>
+    <div *ngIf="customScheduleTestPlans.length > 0; else noCustomSchedules">
+      <div class="summary-text">
+        Editing {{customScheduleTestPlans.length}} test plans with custom schedules.
+      </div>
+
+      <div fxLayout="row" fxLayoutAlign="start baseline" fxLayoutGap="15px">
+        <mat-form-field appearance="outline" floatLabel="always" fxFlex>
+          <mat-label>Cron Expression</mat-label>
+          <input matInput type="text" [(ngModel)]="batchCronExp"
+                 (ngModelChange)="updateBatchSchedule()"
+                 placeholder="Leave empty to keep original values"/>
+        </mat-form-field>
+        <a href="https://en.wikipedia.org/wiki/Cron" target="_blank" aria-label="Help">
+          <mat-icon>help</mat-icon>
+        </a>
+      </div>
+
+      <div fxLayout="row" fxLayoutAlign="start baseline" fxLayoutGap="15px">
+        <mat-form-field appearance="outline" floatLabel="always">
+          <mat-label>Time Zone</mat-label>
+          <mat-select [(ngModel)]="batchTimezone" (selectionChange)="updateBatchSchedule()"
+                      placeholder="Leave empty to keep original values">
+            <mat-option value="">-- Keep Original --</mat-option>
+            <mat-option *ngFor="let option of timezoneOptions" [value]="option">
+              {{ option }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </div>
+    <ng-template #noCustomSchedules>
+      <div>No test plans with custom schedules found for this label.</div>
+    </ng-template>
+    <div>
+      <button mat-flat-button matStepperNext color="accent" type="button">Next</button>
+      <button mat-button (click)="back()" color="accent" type="button">Cancel</button>
+    </div>
+  </mat-step>
   <mat-step [stepControl]="actionsFormGroup">
     <ng-template matStepLabel>Edit Test Run Actions</ng-template>
     <form [formGroup]="actionsFormGroup">
@@ -45,6 +85,7 @@
     </form>
     <div>
       <button mat-flat-button matStepperNext color="accent" type="button">Next</button>
+      <button mat-stroked-button matStepperPrevious color="accent" type="button">Back</button>
       <button mat-button (click)="back()" color="accent" type="button">Cancel</button>
     </div>
   </mat-step>
