@@ -15,7 +15,6 @@
 """A OLCS lab info service stub that fetches device and lab info from OLCS."""
 
 import datetime
-import logging
 import re
 from typing import List, Optional
 
@@ -268,7 +267,6 @@ class OlcsLabInfoStub:
         preconfigured_ip = remote_match.group(1)
         device_type = api_messages.DeviceTypeMessage.REMOTE_VIRTUAL
         preconfigured_device_num_offset = int(remote_match.group(2))
-    logging.info('device_type: %s', device_info.device_feature)
     state = common.DeviceState.UNKNOWN
     if device_info.device_status == device_pb2.DeviceStatus.IDLE:
       if 'FailedDevice' in device_info.device_feature.type:
