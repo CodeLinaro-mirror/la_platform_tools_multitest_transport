@@ -280,6 +280,12 @@ export class EditTestSuitesPage implements OnInit {
       }
     }
 
+    for (const name in updatedObjsMap) {
+      if (updatedObjsMap.hasOwnProperty(name)) {
+        updatedObjsMap[name].url = '';
+      }
+    }
+
     return Object.values(updatedObjsMap);
   }
 
@@ -310,7 +316,12 @@ export class EditTestSuitesPage implements OnInit {
     );
 
     for (const res of newResources) {
-      existingResourcesMap.set(res.name!, {...res});
+      const existing = existingResourcesMap.get(res.name!);
+      if (existing && !res.url) {
+        existingResourcesMap.set(res.name!, {...res, url: existing.url});
+      } else {
+        existingResourcesMap.set(res.name!, {...res});
+      }
     }
 
     config.test_resource_objs = Array.from(existingResourcesMap.values());

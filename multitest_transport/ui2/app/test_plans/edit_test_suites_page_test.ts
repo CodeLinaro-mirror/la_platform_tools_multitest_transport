@@ -24,7 +24,7 @@ import {ActivatedRoute} from '@angular/router';
 import {Observable, of as observableOf} from 'rxjs';
 
 import {MttClient} from '../services/mtt_client';
-import {NameValuePair, Test, TestPlan, TestRunAction} from '../services/mtt_models';
+import {NameValuePair, Test, TestPlan, TestResourceType, TestRunAction, TestRunConfig, } from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
 
 import {EditTestSuitesPage} from './edit_test_suites_page';
@@ -137,6 +137,53 @@ describe('EditTestSuitesPage', () => {
     expect(component.isLoading).toBe(false);
   });
 
+  it('update should preserve existing URL if new URL is empty', () => {
+    const testId = 'test1';
+    const config = {
+      test_id: testId,
+      test_resource_objs: [{name: 'res1', url: 'http://original'}]
+    };
+    component.testPlans =
+        [{id: '1', test_run_sequences: [{test_run_configs: [config]}]} as
+         unknown as TestPlan];
+
+    component.testResourceGroups =
+        [{testId, testName: 'Test 1', resources: [{name: 'res1', url: ''}]}];
+
+    (mttClient.updateTestPlans as jasmine.Spy)
+        .and.returnValue(observableOf({}));
+
+    component.update();
+
+    expect(config.test_resource_objs[0].url).toBe('http://original');
+    expect(mttClient.updateTestPlans).toHaveBeenCalled();
+  });
+
+  it('update should update URL if new URL is provided', () => {
+    const testId = 'test1';
+    const config = {
+      test_id: testId,
+      test_resource_objs: [{name: 'res1', url: 'http://original'}]
+    };
+    component.testPlans =
+        [{id: '1', test_run_sequences: [{test_run_configs: [config]}]} as
+         unknown as TestPlan];
+
+    component.testResourceGroups = [{
+      testId,
+      testName: 'Test 1',
+      resources: [{name: 'res1', url: 'http://new'}]
+    }];
+
+    (mttClient.updateTestPlans as jasmine.Spy)
+        .and.returnValue(observableOf({}));
+
+    component.update();
+
+    expect(config.test_resource_objs[0].url).toBe('http://new');
+    expect(mttClient.updateTestPlans).toHaveBeenCalled();
+  });
+
   it('update should handle error', () => {
     component.testPlans = [{id: '1', name: 'plan1'} as unknown as TestPlan];
     (mttClient.updateTestPlans as jasmine.Spy)
@@ -190,27 +237,34 @@ describe('EditTestSuitesPage', () => {
     expect(component.actionsFormGroup.contains(actionId)).toBe(true);
   });
 
-  it('initResourceSettings should populate testResourceGroups', () => {
-    const testId = 'test1';
-    component.testPlans = [
-      {
-        test_run_sequences: [
-          {
-            test_run_configs: [{test_id: testId}],
-          },
-        ],
-      } as unknown as TestPlan,
-    ];
-    component.tests = {
-      [testId]: {name: 'Test 1', test_resource_defs: []} as unknown as Test,
-    };
+  it('initResourceSettings should populate testResourceGroups and clear URLs',
+     () => {
+       const testId = 'test1';
+       component.testPlans = [
+         {
+           test_run_sequences: [
+             {
+               test_run_configs: [{
+                 test_id: testId,
+                 test_resource_objs: [{name: 'res1', url: 'http://existing'}]
+               }],
+             },
+           ],
+         } as unknown as TestPlan,
+       ];
+       component.tests = {
+         [testId]: {name: 'Test 1', test_resource_defs: []} as unknown as Test,
+       };
 
-    component.initResourceSettings();
+       component.initResourceSettings();
 
-    expect(component.testResourceGroups.length).toBe(1);
-    expect(component.testResourceGroups[0].testId).toBe(testId);
-    expect(component.testResourceGroups[0].testName).toBe('Test 1');
-  });
+       expect(component.testResourceGroups.length).toBe(1);
+       expect(component.testResourceGroups[0].testId).toBe(testId);
+       expect(component.testResourceGroups[0].testName).toBe('Test 1');
+       expect(component.testResourceGroups[0].resources.length).toBe(1);
+       expect(component.testResourceGroups[0].resources[0].name).toBe('res1');
+       expect(component.testResourceGroups[0].resources[0].url).toBe('');
+     });
 
   it('initResourceSettings should skip if test not found', () => {
     const testId = 'test1';
@@ -331,8 +385,9 @@ describe('EditTestSuitesPage', () => {
 
   it('loadTestPlans should reset batch inputs when reloading', () => {
     const label1 = 'label1';
-    (mttClient.getTestPlans as jasmine.Spy)
-        .and.returnValue(observableOf({test_plans: []}));
+    (mttClient.getTestPlans as jasmine.Spy).and.returnValue(observableOf({
+      test_plans: []
+    }));
     component.loadTestPlans(label1);
 
     component.batchCronExp = '0 * * * *';
@@ -344,4 +399,58 @@ describe('EditTestSuitesPage', () => {
     expect(component.batchCronExp).toBe('');
     expect(component.batchTimezone).toBe('');
   });
+
+  it('combineResources should preserve properties from sampleConfig', () => {
+    const test: Test = {
+      name: 'Test 1',
+      test_resource_defs: [{
+        name: 'res1',
+        test_resource_type: TestResourceType.DEVICE_IMAGE,
+        decompress: false,
+      }],
+    };
+    const sampleConfig: TestRunConfig = {
+      test_id: 'test1',
+      test_resource_objs: [{
+        name: 'res1',
+        url: 'http://old',
+        decompress: true,
+      }],
+    } as unknown as TestRunConfig;
+
+    const result = component.combineResources(test, sampleConfig);
+
+    expect(result.length).toBe(1);
+    expect(result[0].name).toBe('res1');
+    expect(result[0].url).toBe('');
+    expect(result[0].decompress).toBe(true);
+  });
+
+  it('update should update other properties but preserve URL if new URL is empty',
+     () => {
+       const testId = 'test1';
+       const config = {
+         test_id: testId,
+         test_resource_objs:
+             [{name: 'res1', url: 'http://original', decompress: false}]
+       };
+       component.testPlans =
+           [{id: '1', test_run_sequences: [{test_run_configs: [config]}]} as
+            unknown as TestPlan];
+
+       component.testResourceGroups = [{
+         testId,
+         testName: 'Test 1',
+         resources: [{name: 'res1', url: '', decompress: true}]
+       }];
+
+       (mttClient.updateTestPlans as jasmine.Spy)
+           .and.returnValue(observableOf({}));
+
+       component.update();
+
+       expect(config.test_resource_objs[0].url).toBe('http://original');
+       expect(config.test_resource_objs[0].decompress).toBe(true);
+       expect(mttClient.updateTestPlans).toHaveBeenCalled();
+     });
 });
