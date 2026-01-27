@@ -48,6 +48,13 @@ ENV GOOGLE_APPLICATION_CREDENTIALS /tmp/keyfile/key.json
 COPY /usr/ /usr/
 
 COPY /mtt/ /mtt/
+
+RUN mkdir -p /etc/envoy \
+    && mv /mtt/envoy/envoy.yaml /etc/envoy/envoy.yaml \
+    && mv /mtt/envoy/api_descriptor.pb /etc/envoy/api_descriptor.pb \
+    && mv /mtt/envoy/envoy /usr/bin/envoy \
+    && rm -rf /mtt/envoy
+
 # Compile and remove all python source files. Explicitly don't compile
 # flask/scipy/babel/colour/sqlalchemy_utils/sqlalchemy because google3's source
 # code is only compatible with python 3.12+ and MTT still uses python 3.9. They

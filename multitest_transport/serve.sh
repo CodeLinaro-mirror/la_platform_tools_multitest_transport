@@ -221,8 +221,8 @@ function start_main_server {
 }
 
 function start_labconsole_ui {
-  // Labconsole UI is served by a nodejs express server, think about the
-  // main.py of the python server.
+  # Labconsole UI is served by a nodejs express server, think about the
+  # main.py of the python server.
   echo "Starting Labconsole UI on port ${LAB_CONSOLE_PORT}..."
   cd /mtt/lab_ui_runner
   # No need to pass any arguments to npm start
