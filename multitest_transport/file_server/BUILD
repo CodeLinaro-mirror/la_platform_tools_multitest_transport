@@ -14,6 +14,7 @@ py_library(
         "file_server.py",
         "gunicorn_config.py",
     ],
+    strict_deps = False,
     visibility = ["//multitest_transport"],
     deps = [
         third_party("absl:app"),

@@ -15,6 +15,7 @@ py_library(
     data = [
         "//multitest_transport/cli:seccomp.json",
     ],
+    strict_deps = False,
     deps = [
         third_party("absl/testing:absltest"),
         third_party("docker"),

@@ -22,6 +22,7 @@ pytype_strict_library(
 py_library(
     name = "cron_lib",
     srcs = glob(["cron/*.py"]),
+    strict_deps = False,
     deps = [
         third_party("antlr3:v3_1_1"),
     ],

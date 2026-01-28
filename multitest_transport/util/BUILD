@@ -177,6 +177,7 @@ py_test(
 py_library(
     name = "sql_util_lib",
     srcs = ["sql_util.py"],
+    strict_deps = False,
     deps = [
         third_party("protorpc"),
         third_party("sqlalchemy"),

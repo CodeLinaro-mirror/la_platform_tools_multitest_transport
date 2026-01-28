@@ -23,6 +23,7 @@ py_library(
     data = [
         "seccomp.json",
     ],
+    strict_deps = False,
     deps = [
         ":cli_util_lib",
         ":command_util_lib",
@@ -44,6 +45,7 @@ py_library(
     srcs = [
         "cli_util.py",
     ],
+    strict_deps = False,
     deps = [
         ":command_util_lib",
         ":gcs_file_util_lib",
@@ -60,6 +62,7 @@ py_library(
     srcs = [
         "cluster.py",
     ],
+    strict_deps = False,
     deps = [
         ":command_util_lib",
     ],
@@ -70,6 +73,7 @@ py_library(
     srcs = [
         "command_util.py",
     ],
+    strict_deps = False,
     deps = [
         ":common",
         ":google_auth_util_lib",
@@ -83,6 +87,7 @@ py_library(
     srcs = [
         "common.py",
     ],
+    strict_deps = False,
 )
 
 py_library(
@@ -90,6 +95,7 @@ py_library(
     srcs = [
         "gcs_file_util.py",
     ],
+    strict_deps = False,
     deps = [
         third_party("google/cloud/storage"),
     ],
@@ -100,6 +106,7 @@ py_library(
     srcs = [
         "google_auth_util.py",
     ],
+    strict_deps = False,
     deps = [
         third_party("apiclient"),
         third_party("google/auth:transport/requests"),
@@ -124,6 +131,7 @@ py_library(
     srcs = [
         "lab_cli.py",
     ],
+    strict_deps = False,
     deps = [
         ":cli_util_lib",
         ":command_util_lib",
@@ -137,6 +145,7 @@ py_library(
     srcs = [
         "host_util.py",
     ],
+    strict_deps = False,
     deps = [
         ":command_util_lib",
         ":control_server_util_lib",
@@ -152,6 +161,7 @@ py_library(
     srcs = [
         "control_server_util.py",
     ],
+    strict_deps = False,
     deps = [
         ":google_auth_util_lib",
         "@tradefed_cluster//tradefed_cluster/configs:lab_config_lib",
@@ -165,6 +175,7 @@ py_library(
     srcs = [
         "ssh_util.py",
     ],
+    strict_deps = False,
     deps = [
         ":common",
         third_party("attr"),
@@ -177,6 +188,7 @@ py_library(
     srcs = [
         "unittest_util.py",
     ],
+    strict_deps = False,
     deps = [
         third_party("six"),
     ],
@@ -187,6 +199,7 @@ py_library(
     srcs = [
         "version.py",
     ],
+    strict_deps = False,
 )
 
 # Test

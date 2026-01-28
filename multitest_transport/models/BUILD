@@ -150,6 +150,7 @@ py_test(
 
 py_library(
     name = "models",
+    strict_deps = False,
     deps = [
         ":build_lib",
         ":config_encoder_lib",
@@ -181,6 +182,7 @@ pytype_strict_library(
 py_library(
     name = "sql_models_lib",
     srcs = ["sql_models.py"],
+    strict_deps = False,
     deps = [
         "//multitest_transport/util",
         third_party("sqlalchemy"),
