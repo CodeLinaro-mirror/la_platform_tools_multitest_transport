@@ -181,7 +181,7 @@ export class DeviceDetails implements OnChanges, OnDestroy, OnInit {
   loadIframe() {
     if (this.iframe && this.id) {
       const url =
-          trustedResourceUrl`/newUI/devices/${this.id}?is_embedded_mode=true`;
+          trustedResourceUrl`/labui/devices/${this.id}?is_embedded_mode=true`;
       setIframeSrcWithIntent(
           this.iframe.nativeElement,
           IframeIntent.EMBEDDED_INTERNAL_CONTENT,

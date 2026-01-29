@@ -3,7 +3,6 @@ const path = require('path');
 const fs = require('fs');
 const app = express();
 const port = process.env.LAB_CONSOLE_PORT || 4200;
-const restPort = process.env.LABCONSOLE_SERVER_REST_PORT || 9000;
 
 const indexHtmlPath = path.join(__dirname, 'public', 'index.html');
 let indexHtml = '';
@@ -17,12 +16,16 @@ try {
 app.use(express.static(path.join(__dirname, 'public')));
 
 
-app.get('/*', function(req,res) {
+app.get('/*', function(req, res) {
+  // we are NOT change the domain/host there, but just append the /labapi
+  // path to the url, so that it will be proxy to the ${restPort} by the
+  // main server.
+
   // append the init data
   const script = `
 <script type="application/json" id="app-data">
   {
-    "overrideLabConsoleServerUrl": "${req.protocol}://${req.hostname}:${restPort}"
+    "overrideLabConsoleServerUrl": "/labapi"
   }
 </script>
 `;

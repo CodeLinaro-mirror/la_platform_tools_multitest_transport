@@ -134,7 +134,7 @@ export class HostDetails implements AfterViewChecked, OnChanges, OnDestroy,
   loadIframe() {
     if (this.iframe && this.id) {
       const url =
-          trustedResourceUrl`/newUI/hosts/${this.id}?is_embedded_mode=true`;
+          trustedResourceUrl`/labui/hosts/${this.id}?is_embedded_mode=true`;
       setIframeSrcWithIntent(
           this.iframe.nativeElement,
           IframeIntent.EMBEDDED_INTERNAL_CONTENT,

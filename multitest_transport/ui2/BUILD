@@ -153,6 +153,7 @@ pytype_strict_library(
         "//multitest_transport/models",
         "//multitest_transport/util",
         third_party("flask"),
+        third_party("requests"),
     ],
 )
 
