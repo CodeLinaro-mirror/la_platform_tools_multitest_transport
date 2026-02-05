@@ -973,8 +973,8 @@ export function newDateTimeIsoString(
 /** Create a new mock app data. */
 export function newMockAppData(
     isDevMode = IS_DEV_MODE, userNickname = USER, email = EMAIL,
-    isAtsLabInstance = true): AppData {
-  return {isDevMode, userNickname, email, isAtsLabInstance};
+    isAtsLabInstance = true, isOmniLabBased = false): AppData {
+  return {isDevMode, userNickname, email, isAtsLabInstance, isOmniLabBased};
 }
 
 /** Creates a new lab info. */

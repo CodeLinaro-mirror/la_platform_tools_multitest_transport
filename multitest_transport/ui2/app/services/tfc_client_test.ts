@@ -92,11 +92,29 @@ describe('TfcClient', () => {
 
     beforeEach(() => {
       httpClientSpy = jasmine.createSpyObj('HttpClient', ['get']);
-      tfcClient = new TfcClient(appData, httpClientSpy);
       httpClientSpy.get.and.returnValue(observableOf(request));
     });
 
     it('calls API and parses response correctly', () => {
+      const appData =
+          mocks.newMockAppData(undefined, undefined, undefined, true, true);
+      tfcClient = new TfcClient(appData, httpClientSpy);
+      const observable = tfcClient.getRequest(request.id);
+      observable.subscribe((response) => {
+        expect(response).toEqual(request);
+      });
+
+      const params = new HttpParams().set('force', 'true');
+      expect(httpClientSpy.get)
+          .toHaveBeenCalledWith(
+              `${tfcClient.apiUrl}/requests/${request.id}`, {params});
+      expect(httpClientSpy.get).toHaveBeenCalledTimes(1);
+    });
+
+    it('calls API without force param when not isOmniLabBased', () => {
+      const appData =
+          mocks.newMockAppData(undefined, undefined, undefined, true, false);
+      tfcClient = new TfcClient(appData, httpClientSpy);
       const observable = tfcClient.getRequest(request.id);
       observable.subscribe((response) => {
         expect(response).toEqual(request);

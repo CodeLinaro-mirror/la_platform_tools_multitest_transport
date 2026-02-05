@@ -24,8 +24,10 @@ from google3.testing.pybase import googletest
 class RequestApiTest(api_test_util.TestCase):
 
   class RequestApiForTest(request_api.TestRequestApi):
+    instance = None
 
     def __init__(self):
+      RequestApiTest.RequestApiForTest.instance = self
       self._olcs_session_stub = mock.create_autospec(
           olcs_session_stub.OlcsSessionStub, spec_set=True
       )
@@ -55,9 +57,11 @@ class RequestApiTest(api_test_util.TestCase):
       retry_command_attempt.task_id = "task_id"
       response.command_attempts.append(retry_command_attempt)
 
-      self._olcs_session_stub.GetRequest.side_effect = {
-          "request_id": response,
-      }.get
+      self._olcs_session_stub.GetRequest.side_effect = (
+          lambda request_id, **kwargs: {
+              "request_id": response,
+          }.get(request_id)
+      )
 
   def setUp(self):
     super(RequestApiTest, self).setUp(RequestApiTest.RequestApiForTest)
@@ -66,6 +70,19 @@ class RequestApiTest(api_test_util.TestCase):
     res = self.app.get("/_ah/api/mtt/v1/requests/%s" % "request_id")
     res_msg = protojson.decode_message(api_messages.RequestMessage, res.body)
     self.assertEqual(res_msg.id, "request_id")
+    # Verify that GetRequest is called with notify_subscribers=False by default
+    self.RequestApiForTest.instance._olcs_session_stub.GetRequest.assert_called_with(
+        "request_id", notify_subscribers=False
+    )
+
+  def testGetRequest_force(self):
+    res = self.app.get("/_ah/api/mtt/v1/requests/%s?force=true" % "request_id")
+    res_msg = protojson.decode_message(api_messages.RequestMessage, res.body)
+    self.assertEqual(res_msg.id, "request_id")
+    # Verify that GetRequest is called with notify_subscribers=True
+    self.RequestApiForTest.instance._olcs_session_stub.GetRequest.assert_called_with(
+        "request_id", notify_subscribers=True
+    )
 
   def testListCommandAttempts(self):
     res = self.app.get(

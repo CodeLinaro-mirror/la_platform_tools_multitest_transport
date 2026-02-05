@@ -71,8 +71,12 @@ export class TfcClient {
   }
 
   getRequest(requestId: string): Observable<Request> {
-    return this.http.get<Request>(
-        `${this.apiUrl}/requests/${encodeURIComponent(requestId)}`);
+    const url = `${this.apiUrl}/requests/${encodeURIComponent(requestId)}`;
+    if (this.appData.isOmniLabBased) {
+      const params = new HttpParams().set('force', 'true');
+      return this.http.get<Request>(url, {params});
+    }
+    return this.http.get<Request>(url);
   }
 
   listCommands(

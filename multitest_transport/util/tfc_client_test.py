@@ -13,16 +13,17 @@
 # limitations under the License.
 
 """Tests for tfc_client."""
+
 import os
 import threading
 from unittest import mock
 
 from absl.testing import absltest
 import apiclient
-
 from multitest_transport.util import olcs_lab_info_stub
 from multitest_transport.util import tfc_client
 from tradefed_cluster import api_messages
+from tradefed_cluster import common
 from tradefed_cluster import testbed_dependent_test
 from tradefed_cluster.plugins import base as tfc_plugins
 
@@ -75,6 +76,32 @@ class TfcClientTest(testbed_dependent_test.TestbedDependentTest):
         ),
     ])
     del os.environ['IS_OMNILAB_BASED']
+
+  def testProcessSubscribedSessionResponse(self):
+    mock_handler = mock.Mock()
+    tfc_client.request_event_message_handler = mock_handler
+    request_message = api_messages.RequestMessage(
+        id='req_1', state=api_messages.RequestState.RUNNING
+    )
+
+    tfc_client._ProcessSubscribedSessionResponse(request_message)
+
+    mock_handler.assert_called_once()
+    event_message = mock_handler.call_args[0][0]
+    self.assertEqual(
+        event_message.type, common.ObjectEventType.REQUEST_STATE_CHANGED
+    )
+    self.assertEqual(event_message.request_id, 'req_1')
+    self.assertEqual(event_message.new_state, api_messages.RequestState.RUNNING)
+    self.assertEqual(event_message.request, request_message)
+
+  def testProcessSubscribedSessionResponse_noneRequest(self):
+    mock_handler = mock.Mock()
+    tfc_client.request_event_message_handler = mock_handler
+
+    tfc_client._ProcessSubscribedSessionResponse(None)
+
+    mock_handler.assert_not_called()
 
 
 if __name__ == '__main__':

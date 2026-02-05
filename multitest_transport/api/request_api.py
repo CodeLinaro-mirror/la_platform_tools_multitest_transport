@@ -47,6 +47,7 @@ class TestRequestApi(remote.Service):
       endpoints.ResourceContainer(
           message_types.VoidMessage,
           request_id=messages.StringField(1, required=True),
+          force=messages.BooleanField(2, default=False),
       ),
       api_messages.RequestMessage,
       path='{request_id}',
@@ -54,7 +55,9 @@ class TestRequestApi(remote.Service):
       name='get',
   )
   def GetRequest(self, request):
-    test_request = self._olcs_session_stub.GetRequest(request.request_id)
+    test_request = self._olcs_session_stub.GetRequest(
+        request.request_id, notify_subscribers=request.force
+    )
     return test_request
 
   @base.ApiMethod(

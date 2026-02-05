@@ -14,23 +14,25 @@
 
 """A OLCS session service stub that is providing similar functionality as tfc_client."""
 import base64
+import collections
 from concurrent import futures
+import functools
 import logging
 import os
-import queue
+import random
 import re
 import threading
 import time
-import traceback
-from typing import Callable, Iterator, List, Optional
+from typing import Callable, List, Optional
 import uuid
 
-import grpc
+from google.cloud import ndb
 from multitest_transport.models import ndb_models
 from multitest_transport.util import file_util
 from multitest_transport.util import olcs_session_client
 from tradefed_cluster import api_messages
 from tradefed_cluster import common
+from tradefed_cluster.util import ndb_shim
 
 from google3.google.protobuf import duration_pb2
 from com_google_deviceinfra.src.devtools.mobileharness.infra.ats.common.proto import xts_common_pb2
@@ -112,17 +114,26 @@ _DEVICE_ACTION_TYPE_MAP = {
     ),
 }
 
+_active_subscriptions = {}
+_subscribers = collections.defaultdict(dict)
+_subscriber_lock = threading.Lock()
+_executor = futures.ThreadPoolExecutor(max_workers=100)
+
+
+@functools.lru_cache(maxsize=None)
+def _GetSharedClient():
+  """Returns a shared OlcsSessionClient instance."""
+  return olcs_session_client.OlcsSessionClient.create()
+
 
 class OlcsSessionStub:
   """The OLCS session service stub to send ats server specific request to OLCS."""
 
   def __init__(self, client: None):
-    if client is None:
-      self._client = olcs_session_client.OlcsSessionClient.create()
-    else:
+    if client:
       self._client = client
-    self._subscribe_session_queues = {}
-    self._executor = futures.ThreadPoolExecutor(max_workers=10)
+    else:
+      self._client = _GetSharedClient()
 
   def CancelRequest(self, request_id: str):
     """Cancel a request.
@@ -232,14 +243,20 @@ class OlcsSessionStub:
     request.session_id.id = request_id
     response = self._client.get_session(request)
     request_detail = service_pb2.RequestDetail()
-    response.session_detail.session_output.session_plugin_output[
+    if (
         SESSION_PLUGIN_LABEL
-    ].output.Unpack(request_detail)
-    logging.info("Calling stack:\n%s", traceback.format_stack())
+        in response.session_detail.session_output.session_plugin_output
+    ):
+      response.session_detail.session_output.session_plugin_output[
+          SESSION_PLUGIN_LABEL
+      ].output.Unpack(request_detail)
     logging.info(
-        "Fetched %s status request detail proto from OLCS: %s",
-        response.session_detail.session_status,
-        request_detail.__str__(),
+        "Fetched request %s with session status %s, request state %s. request"
+        " update time: %s",
+        request_id,
+        session_pb2.SessionStatus.Name(response.session_detail.session_status),
+        service_pb2.RequestDetail.RequestState.Name(request_detail.state),
+        request_detail.update_time.ToDatetime(),
     )
     # In case the test request hasn't started and proto is empty, fill in the
     # request id manually.
@@ -250,7 +267,7 @@ class OlcsSessionStub:
         request_detail,
     )
 
-  def _GenerateRequestMessage(
+  def GenerateRequestMessage(
       self, request_detail: service_pb2.RequestDetail
   ) -> api_messages.RequestMessage:
     """Generate request message from request detail proto.
@@ -383,21 +400,60 @@ class OlcsSessionStub:
     return request_detail
 
   def GetRequest(
-      self, request_id: str
+      self,
+      request_id: str,
+      notify_subscribers: bool = False,
   ) -> Optional[api_messages.RequestMessage]:
     """Get request from OLCS or from Database.
 
     Args:
       request_id: The request id of the request.
+      notify_subscribers: If True, notify subscribers if request is not
+        finished.
 
     Returns:
       The request message defined by TFC.
     """
     request_detail = self._GetRequestDetail(request_id)
     if request_detail:
-      return self._GenerateRequestMessage(request_detail)
+      request_message = self.GenerateRequestMessage(request_detail)
+      if notify_subscribers:
+        self._NotifySubscribers(request_message)
+      return request_message
     return None
 
+  def _NotifySubscribers(self, request_message: api_messages.RequestMessage):
+    """Notify subscribers about the request update.
+
+    This is best effort as the subscribers may be from another process.
+
+    Args:
+      request_message: The request message to notify subscribers with.
+    """
+    if common.IsFinalRequestState(request_message.state):
+      return
+
+    request_id = request_message.id
+    callbacks = []
+    with _subscriber_lock:
+      for sub_id, callback in _subscribers[request_id].items():
+        if sub_id in _active_subscriptions:
+          callbacks.append(callback)
+    logging.info(
+        "Notify %d subscribers for request %s in pid %s",
+        len(callbacks),
+        request_id,
+        os.getpid(),
+    )
+    for callback in callbacks:
+      try:
+        callback(request_message)
+      except Exception:  
+        logging.exception(
+            "Failed to invoke callback for request %s", request_id
+        )
+
+  @ndb_shim.with_ndb_context
   def _LoadRequestDetailFromDatabase(
       self, request_id: str
   ) -> Optional[service_pb2.RequestDetail]:
@@ -411,10 +467,12 @@ class OlcsSessionStub:
         return request_detail
       return None
 
+  @ndb_shim.with_ndb_context
+  @ndb_shim.transactional(propagation=ndb.TransactionOptions.INDEPENDENT)
   def _SaveRequestDetailToDatabase(
       self, request_id: str, request_detail: service_pb2.RequestDetail
   ) -> None:
-    """Save request detail to database."""
+    """Save request detail to database independently of the caller's transaction."""
     with _lock:
       request_detail_str = request_detail.SerializeToString()
       base64_string = base64.b64encode(request_detail_str).decode("utf-8")
@@ -461,7 +519,7 @@ class OlcsSessionStub:
       self,
       request_id: str,
       session_response_subscriber: Callable[
-          [session_service_pb2.SubscribeSessionResponse], None
+          [api_messages.RequestMessage], None
       ],
   ):
     """Start to subscribe session to OLCS.
@@ -469,70 +527,68 @@ class OlcsSessionStub:
     Args:
       request_id: The request id of the request.
       session_response_subscriber: The callback method to be called when there's
-        subscribed response.
+        a new request message.
 
     Returns:
       The subscribe id.
     """
     subscribe_id = str(uuid.uuid4())
-    subscribe_session_request = session_service_pb2.SubscribeSessionRequest()
-    subscribe_session_request.get_session_request.session_id.id = request_id
-    subscribe_session_queue = queue.SimpleQueue()
-    self._subscribe_session_queues[subscribe_id] = subscribe_session_queue
-    subscribe_session_queue.put(subscribe_session_request)
-    subscribe_session_responses = self._client.subscribe_session(
-        iter(subscribe_session_queue.get, None)
-    )
-    self._executor.submit(
-        self._ProcessSubscribeSessionResponses,
+    with _subscriber_lock:
+      _active_subscriptions[subscribe_id] = request_id
+      _subscribers[request_id][subscribe_id] = session_response_subscriber
+    _executor.submit(
+        self._PollSessionUntilFinished,
         subscribe_id,
         request_id,
         session_response_subscriber,
-        subscribe_session_responses,
+    )
+    logging.info(
+        "Started subscription %s for request %s in pid %s",
+        subscribe_id,
+        request_id,
+        os.getpid(),
     )
     return subscribe_id
 
-  def _ProcessSubscribeSessionResponses(
+  def _PollSessionUntilFinished(
       self,
       subscribe_id: str,
       request_id: str,
       session_response_subscriber: Callable[
-          [session_service_pb2.SubscribeSessionResponse], None
-      ],
-      subscribe_session_responses: Iterator[
-          session_service_pb2.SubscribeSessionResponse
+          [api_messages.RequestMessage], None
       ],
   ):
-    """Process subscribe session responses.
+    """Periodically pull session status using GetRequest for caching."""
+    while True:
+      with _subscriber_lock:
+        if subscribe_id not in _active_subscriptions:
+          break
+      try:
+        # GetRequest uses caching: DB first, then RPC if not in DB.
+        # TODO: Use getAllSessions() to replace multiple getSession()
+        # calls to reduce rpc calls.
+        finished, request_detail = self._FetchRequestDetail(request_id)
+        request_message = self.GenerateRequestMessage(request_detail)
+        session_response_subscriber(request_message)
+        if finished:
+          logging.info(
+              "Request %s reached final state %s, stopping polling.",
+              request_id,
+              request_message.state,
+          )
+          break
 
-    Args:
-      subscribe_id: The id of the subscribe.
-      request_id: The id of the request it subscribes to.
-      session_response_subscriber: The callback method to be called when there's
-        subscribed response.
-      subscribe_session_responses: The subscribe session responses.
-    """
-    try:
-      for subscribe_session_response in subscribe_session_responses:
-        logging.info(
-            "subscribe_session_response: %s", subscribe_session_response
+      except Exception:  
+        logging.exception(
+            "Unexpected error in polling thread for %s, will retry.", request_id
         )
-        logging.info("Calling stack:\n%s", traceback.format_stack())
-        session_response_subscriber(subscribe_session_response)
-    except grpc.RpcError as e:  
-      logging.exception(
-          "Failed to process subscribe session %s responses", request_id
-      )
-      if e.code() in [grpc.StatusCode.UNAVAILABLE, grpc.StatusCode.INTERNAL]:  # pytype: disable=attribute-error
-        # Sleep 60 seconds to wait for the server to be back.
-        time.sleep(60)
-        self.StartSubscribeSession(request_id, session_response_subscriber)
-    except Exception:  
-      logging.exception(
-          "Failed to process subscribe session %s responses", request_id
-      )
-    finally:
-      self._subscribe_session_queues.pop(subscribe_id)
+
+      # Wait 1 minute before checking status
+      # Adding jitter (+/- 15s) to avoid thundering herd
+      time.sleep(random.uniform(45, 75))
+
+    # Final cleanup of the queue map
+    self.StopSubscribeSession(subscribe_id)
 
   def StopSubscribeSession(self, subscribe_id: str):
     """Stop subscribing session to OLCS.
@@ -540,9 +596,12 @@ class OlcsSessionStub:
     Args:
       subscribe_id: The request id of the subscribe.
     """
-    subscribe_session_queue = self._subscribe_session_queues.get(subscribe_id)
-    if subscribe_session_queue:
-      subscribe_session_queue.put(None)
+    with _subscriber_lock:
+      request_id = _active_subscriptions.pop(subscribe_id, None)
+      if request_id and request_id in _subscribers:
+        _subscribers[request_id].pop(subscribe_id, None)
+        if not _subscribers[request_id]:
+          _subscribers.pop(request_id)
 
   def _ConvertProtoToCommandInfo(
       self, proto: service_pb2.CommandInfo

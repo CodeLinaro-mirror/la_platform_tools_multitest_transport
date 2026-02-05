@@ -105,19 +105,17 @@ def _GetOlcsLabInfoStub() -> olcs_lab_info_stub.OlcsLabInfoStub:
   return _tls.olcs_lab_info_stub
 
 
-def _ProcessSubscribedSessionResponse(response):
+def _ProcessSubscribedSessionResponse(
+    test_request: api_messages.RequestMessage,
+):
   """Session response subscriber."""
   try:
-    request_id = response.get_session_response.session_detail.session_id.id
-    test_request = _GetOlcsSessionStub().GetRequest(request_id)
     if not test_request:
-      logging.info(
-          'Skipping processing subscribed session response %s, request %s is'
-          ' not found',
-          response,
-          request_id,
+      logging.warning(
+          'Skipping processing subscribed session response: request is None'
       )
       return
+    request_id = test_request.id
     request_event = api_messages.RequestEventMessage(
         type=ObjectEventType.REQUEST_STATE_CHANGED,
         request_id=request_id,
@@ -127,7 +125,10 @@ def _ProcessSubscribedSessionResponse(response):
     )
     logging.info('Calling stack:\n%s', traceback.format_stack())
     logging.info(
-        'request_event from subscribe session in tfc client: %s', request_event
+        'Subscribed session event: request_id=%s, state=%s, update_time=%s',
+        request_event.request_id,
+        request_event.new_state,
+        request_event.request.update_time,
     )
     if request_event_message_handler:
       request_event_message_handler(request_event)

@@ -91,25 +91,30 @@ def _GetOlcsSessionStub() -> olcs_session_stub.OlcsSessionStub:
   return _tls.olcs_session_stub
 
 
-def _ProcessSubscribedSessionResponse(response):
+def _ProcessSubscribedSessionResponse(
+    test_request: api_messages.RequestMessage,
+):
   """Session response subscriber."""
   try:
-    request_id = response.get_session_response.session_detail.session_id.id
-    test_request = _GetOlcsSessionStub().GetRequest(request_id)
     if not test_request:
-      logging.info(
-          'Skipping processing subscribed session response %s, request %s is'
-          ' not found',
-          response,
-          request_id,
+      logging.warning(
+          'Skipping processing subscribed session response: request is None'
       )
       return
+    request_id = test_request.id
     request_event = api_messages.RequestEventMessage(
         type=common.ObjectEventType.REQUEST_STATE_CHANGED,
         request_id=request_id,
         new_state=test_request.state,
         request=test_request,
         event_time=datetime.datetime.now(),
+    )
+    logging.info('Calling stack:\n%s', traceback.format_stack())
+    logging.info(
+        'Subscribed session event: request_id=%s, state=%s, update_time=%s',
+        request_event.request_id,
+        request_event.new_state,
+        request_event.request.update_time,
     )
     ProcessRequestEvent(request_event)
   except Exception as e:  
@@ -119,7 +124,7 @@ def _ProcessSubscribedSessionResponse(response):
 
 
 @ndb.transactional()
-def _AfterTestRunHandler(test_run_id):
+def _AfterTestRunHandler(test_run_id, test_context=None):
   """Performs after test run tasks.
 
   After a test run is in one of the final states, MTT needs to do the following:
@@ -130,6 +135,7 @@ def _AfterTestRunHandler(test_run_id):
 
   Args:
     test_run_id: id for the test run.
+    test_context: optional pre-fetched test context.
   """
   test_run = ndb_models.TestRun.get_by_id(test_run_id)
   if not test_run:
@@ -137,22 +143,24 @@ def _AfterTestRunHandler(test_run_id):
 
   test_run.is_finalized = True  # Mark post-run handlers as completed
 
-  # Query and store next test context
-  if test_run.request_id:
-    tfc_test_context = _GetTestContext(test_run.request_id)
-    if tfc_test_context:
-      test_run.next_test_context = ndb_models.TestContextObj(
-          command_line=tfc_test_context.command_line,
-          env_vars=[
-              ndb_models.NameValuePair(name=p.key, value=p.value)
-              for p in tfc_test_context.env_vars
-          ],
-          test_resources=[
-              _ConvertToTestResourceObj(r)
-              for r in tfc_test_context.test_resources
-          ])
-      logging.debug(
-          'Setting the next_test_context = %s', test_run.next_test_context)
+  # Query and store next test context if not already provided
+  if not test_context and test_run.request_id:
+    test_context = _GetTestContext(test_run.request_id)
+
+  if test_context:
+    test_run.next_test_context = ndb_models.TestContextObj(
+        command_line=test_context.command_line,
+        env_vars=[
+            ndb_models.NameValuePair(name=p.key, value=p.value)
+            for p in test_context.env_vars
+        ],
+        test_resources=[
+            _ConvertToTestResourceObj(r) for r in test_context.test_resources
+        ],
+    )
+    logging.debug(
+        'Setting the next_test_context = %s', test_run.next_test_context
+    )
   test_run.put()
 
   # Schedule the report merging, it happens before plugin execution as some
@@ -229,8 +237,11 @@ def ProcessRequestEvent(message: api_messages.RequestEventMessage):
   with _lock:
     if _request_cache.get(requets_hash) is not None:
       logging.info(
-          'Skipping processing request event %s, already processed',
-          message.request,
+          'Skipping processing request event request_id=%s, update_time=%s,'
+          ' state=%s, already processed.',
+          message.request.id,
+          message.request.update_time,
+          message.request.state,
       )
       return
     _request_cache.put(requets_hash, '')
@@ -247,7 +258,14 @@ def ProcessRequestEvent(message: api_messages.RequestEventMessage):
     if test_run.test.result_file:
       test_result_handler.UpdateTestRunSummary(test_run.key.id())
     if not test_run.is_finalized:
-      _AfterTestRunHandler(test_run.key.id())
+      # PRE-FETCH: Call _GetTestContext OUTSIDE the transaction.
+      # This performs the RPCs and stub database updates non-transactionally.
+      test_context = None
+      if test_run.request_id:
+        test_context = _GetTestContext(test_run.request_id)
+
+      # Pass the context into the transactional handler
+      _AfterTestRunHandler(test_run.key.id(), test_context=test_context)
   elif (
       os.environ.get('IS_OMNILAB_BASED') == 'true'
       and test_run.request_id

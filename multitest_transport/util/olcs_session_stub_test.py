@@ -14,6 +14,8 @@
 import base64
 from concurrent import futures
 import os
+import queue
+import threading
 import time
 from unittest import mock
 
@@ -57,6 +59,46 @@ class OlcsSessionStubTest(testbed_dependent_test.TestbedDependentTest):
   def tearDown(self):
     self._executor.shutdown(wait=True)
     super().tearDown()
+
+  def testGetSharedClient(self):
+    client1 = olcs_session_stub._GetSharedClient()
+    client2 = olcs_session_stub._GetSharedClient()
+    self.assertIs(client1, client2)
+
+  def testNotifySubscribers(self):
+    request_id = 'test_request_id'
+    request_message = api_messages.RequestMessage(id=request_id)
+    callback1 = mock.Mock()
+    callback2 = mock.Mock()
+    # Mock exception in callback2 to verify it doesn't block other callbacks
+    callback2.side_effect = Exception('callback error')
+    callback3 = mock.Mock()
+
+    # Manually register subscribers
+    sub_id1 = 'sub1'
+    sub_id2 = 'sub2'
+    sub_id3 = 'sub3'
+    olcs_session_stub._active_subscriptions[sub_id1] = request_id
+    olcs_session_stub._active_subscriptions[sub_id2] = request_id
+    olcs_session_stub._active_subscriptions[sub_id3] = request_id
+    olcs_session_stub._subscribers[request_id][sub_id1] = callback1
+    olcs_session_stub._subscribers[request_id][sub_id2] = callback2
+    olcs_session_stub._subscribers[request_id][sub_id3] = callback3
+
+    try:
+      self.session_stub._NotifySubscribers(request_message)
+
+      callback1.assert_called_once_with(request_message)
+      callback2.assert_called_once_with(request_message)
+      callback3.assert_called_once_with(request_message)
+    finally:
+      # Clean up global state
+      del olcs_session_stub._active_subscriptions[sub_id1]
+      del olcs_session_stub._active_subscriptions[sub_id2]
+      del olcs_session_stub._active_subscriptions[sub_id3]
+      del olcs_session_stub._subscribers[request_id][sub_id1]
+      del olcs_session_stub._subscribers[request_id][sub_id2]
+      del olcs_session_stub._subscribers[request_id][sub_id3]
 
   def testCancelRequest(self):
     client_response = session_service_pb2.NotifySessionResponse(successful=True)
@@ -242,7 +284,7 @@ class OlcsSessionStubTest(testbed_dependent_test.TestbedDependentTest):
       )
 
     # All attempts are finished, command should have latest end time
-    request_message = self.session_stub._GenerateRequestMessage(request_detail)
+    request_message = self.session_stub.GenerateRequestMessage(request_detail)
     self.assertLen(request_message.commands, 1)
     command = request_message.commands[0]
     self.assertEqual(
@@ -264,7 +306,7 @@ class OlcsSessionStubTest(testbed_dependent_test.TestbedDependentTest):
     list(request_detail.command_details.values())[
         0
     ].state = service_pb2.CommandState.RUNNING
-    request_message = self.session_stub._GenerateRequestMessage(request_detail)
+    request_message = self.session_stub.GenerateRequestMessage(request_detail)
     self.assertIsNone(request_message.commands[0].end_time)
 
   def GetRequestWrapper(self, request_id):
@@ -710,55 +752,161 @@ class OlcsSessionStubTest(testbed_dependent_test.TestbedDependentTest):
             test_resource_proto.password, test_resource_msg.password
         )
 
-  def testSubscribeSession(self):
-    subscribe_session_request = session_service_pb2.SubscribeSessionRequest()
-    subscribe_session_request.get_session_request.session_id.id = (
-        'test_session_id'
+
+class MockGrpcError(grpc.RpcError):
+  """A mock grpc.RpcError for testing."""
+
+  def __init__(self, code, details='Mock error details'):
+    self._code = code
+    self._details = details
+
+  def code(self):
+    return self._code
+
+  def details(self):
+    return self._details
+
+  def __str__(self):
+    return self._details
+
+
+def _create_get_session_response(session_id, finished=False):
+  """Helper to create GetSessionResponse."""
+  response = session_service_pb2.GetSessionResponse()
+  response.session_detail.session_status = (
+      session_pb2.SessionStatus.SESSION_FINISHED
+      if finished
+      else session_pb2.SessionStatus.SESSION_RUNNING
+  )
+  request_detail = service_pb2.RequestDetail(id=session_id)
+  response.session_detail.session_output.session_plugin_output[
+      olcs_session_stub.SESSION_PLUGIN_LABEL
+  ].output.Pack(request_detail)
+  return response
+
+
+class OlcsSessionStubPollingTest(absltest.TestCase):
+  """Tests for OlcsSessionStub polling logic."""
+
+  def setUp(self):
+    super().setUp()
+    self.mock_sleep = self.enter_context(
+        mock.patch('time.sleep', return_value=None)
     )
-    subscribe_session_response_1 = (
-        session_service_pb2.SubscribeSessionResponse()
+    self.mock_random = self.enter_context(
+        mock.patch('random.random', return_value=0.5)
     )
-    subscribe_session_response_1.get_session_response.session_detail.session_id.id = (
-        'test_session_id'
+    self.mock_client = mock.MagicMock(
+        spec=olcs_session_client.OlcsSessionClient
     )
-    subscribe_session_response_1.get_session_response.session_detail.session_status = (
-        session_pb2.SessionStatus.SESSION_RUNNING
-    )
-    subscribe_session_response_2 = (
-        session_service_pb2.SubscribeSessionResponse()
-    )
-    subscribe_session_response_2.get_session_response.session_detail.session_id.id = (
-        'test_session_id'
-    )
-    subscribe_session_response_2.get_session_response.session_detail.session_status = (
-        session_pb2.SessionStatus.SESSION_FINISHED
+    self.stub = olcs_session_stub.OlcsSessionStub(self.mock_client)
+    self.request_id = 'sub_req_id_123'
+    self.callback_queue = queue.Queue()
+
+  def tearDown(self):
+    # Stop any running subscriptions
+    for sub_id in list(olcs_session_stub._active_subscriptions.keys()):
+      self.stub.StopSubscribeSession(sub_id)
+    time.sleep(0.1)  # Give threads time to stop
+    super().tearDown()
+
+  def _subscriber_callback(self, response):
+    self.callback_queue.put(response)
+
+  def _wait_for_thread_to_finish(self, subscribe_id, timeout=5):
+    """Wait until subscribe_id is removed from queues or timeout."""
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+      if subscribe_id not in olcs_session_stub._active_subscriptions:
+        return True
+      time.sleep(0.01)
+    return False
+
+  def test_polling_until_finished(self):
+    """Test polling calls get_session until session is finished."""
+    self.mock_client.get_session.side_effect = [
+        _create_get_session_response(self.request_id, finished=False),
+        _create_get_session_response(self.request_id, finished=False),
+        _create_get_session_response(self.request_id, finished=True),
+    ]
+
+    subscribe_id = self.stub.StartSubscribeSession(
+        self.request_id, self._subscriber_callback
     )
 
-    mock_method = mock.Mock()
+    self.assertTrue(
+        self._wait_for_thread_to_finish(subscribe_id),
+        'Subscription thread did not terminate.',
+    )
+    # 3 get_session calls -> 3 callbacks
+    self.assertEqual(3, self.callback_queue.qsize())
+    # 2 sleeps between 3 calls
+    polling_sleep_calls = [
+        c for c in self.mock_sleep.call_args_list if c[0][0] > 1
+    ]
+    self.assertLen(polling_sleep_calls, 2)
+    self.assertEqual(3, self.mock_client.get_session.call_count)
+    self.mock_client.subscribe_session.assert_not_called()
 
-    future = self._executor.submit(
-        self.session_stub.StartSubscribeSession,
-        'test_session_id',
-        mock_method,
+  def test_stop_terminates_polling(self):
+    """Test StopSubscribeSession terminates polling."""
+    self.mock_client.get_session.return_value = _create_get_session_response(
+        self.request_id, finished=False
     )
-    subscribe_id = future.result()
-    _, rpc = self._channel.take_stream_stream(
-        self._descriptor.methods_by_name['SubscribeSession']
+    # block thread in sleep until we stop it
+    block_sleep = threading.Event()
+    sleep_called = threading.Event()
+
+    def _sleep_and_block(t):
+      if t > 1:
+        sleep_called.set()
+        block_sleep.wait()
+
+    self.mock_sleep.side_effect = _sleep_and_block
+
+    subscribe_id = self.stub.StartSubscribeSession(
+        self.request_id, self._subscriber_callback
     )
-    rpc.send_initial_metadata(())
-    rpc.take_request()
-    rpc.send_response(subscribe_session_response_1)
-    rpc.send_response(subscribe_session_response_2)
-    time.sleep(5)
-    self.session_stub.StopSubscribeSession(subscribe_id)
-    rpc.requests_closed()
-    rpc.terminate(
-        self._trailing_metadata,
-        grpc.StatusCode.OK,
-        self._detailed_message,
+    self.assertTrue(sleep_called.wait(5), 'Polling thread did not call sleep.')
+    self.stub.StopSubscribeSession(subscribe_id)
+    block_sleep.set()
+
+    self.assertTrue(
+        self._wait_for_thread_to_finish(subscribe_id),
+        'Subscription thread did not terminate.',
     )
-    mock_method.assert_any_call(subscribe_session_response_1)
-    mock_method.assert_any_call(subscribe_session_response_2)
+    self.assertEqual(1, self.callback_queue.qsize())
+    polling_sleep_calls = [
+        c for c in self.mock_sleep.call_args_list if c[0][0] > 1
+    ]
+    self.assertLen(polling_sleep_calls, 1)
+    self.mock_client.get_session.assert_called_once()
+    self.assertNotIn(subscribe_id, olcs_session_stub._active_subscriptions)
+
+  def test_polling_with_exception(self):
+    """Test polling retries after get_session exception."""
+    self.mock_client.get_session.side_effect = [
+        MockGrpcError(grpc.StatusCode.UNAVAILABLE),
+        _create_get_session_response(self.request_id, finished=True),
+    ]
+
+    subscribe_id = self.stub.StartSubscribeSession(
+        self.request_id, self._subscriber_callback
+    )
+
+    self.assertTrue(
+        self._wait_for_thread_to_finish(subscribe_id),
+        'Subscription thread did not terminate.',
+    )
+    # 1 exception, 1 success -> 1 callback
+    self.assertEqual(1, self.callback_queue.qsize())
+    # 1 sleep after exception, 0 sleeps after finished=True
+    polling_sleep_calls = [
+        c for c in self.mock_sleep.call_args_list if c[0][0] > 1
+    ]
+    self.assertLen(polling_sleep_calls, 1)
+    self.assertEqual(2, self.mock_client.get_session.call_count)
+    self.mock_client.subscribe_session.assert_not_called()
 
 
 if __name__ == '__main__':

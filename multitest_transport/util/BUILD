@@ -346,12 +346,15 @@ pytype_strict_library(
         ":olcs_session_client_lib",
         "//google/protobuf:duration_py_pb2",
         "//net/grpc/python:grpc",
+        "@com_google_deviceinfra//src/devtools/mobileharness/infra/ats/common/proto:xts_common_py_proto",
         "@com_google_deviceinfra//src/devtools/mobileharness/infra/ats/server/proto:service_py_proto",
         "@com_google_deviceinfra//src/devtools/mobileharness/infra/client/longrunningservice/proto:session_py_proto",
         "@com_google_deviceinfra//src/devtools/mobileharness/infra/client/longrunningservice/proto:session_service_py_proto",
+        "//third_party/py/google/cloud/ndb",
         "//multitest_transport/models:ndb_models_lib",
         "@tradefed_cluster//tradefed_cluster:api_messages_lib",
         "@tradefed_cluster//tradefed_cluster:common_lib",
+        "@tradefed_cluster//tradefed_cluster/util:ndb_shim_lib",
     ],
 )
 

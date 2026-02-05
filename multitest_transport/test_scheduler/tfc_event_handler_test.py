@@ -93,6 +93,31 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
             state=state or common.CommandState.UNKNOWN),
         event_time=self.mock_test_run.update_time + timedelta)
 
+  @mock.patch.object(tfc_event_handler, 'ProcessRequestEvent')
+  def testProcessSubscribedSessionResponse(self, mock_process_request_event):
+    test_request = api_messages.RequestMessage(
+        id='req_1', state=api_messages.RequestState.RUNNING
+    )
+
+    tfc_event_handler._ProcessSubscribedSessionResponse(test_request)
+
+    mock_process_request_event.assert_called_once()
+    event_message = mock_process_request_event.call_args[0][0]
+    self.assertEqual(
+        event_message.type, common.ObjectEventType.REQUEST_STATE_CHANGED
+    )
+    self.assertEqual(event_message.request_id, 'req_1')
+    self.assertEqual(event_message.new_state, api_messages.RequestState.RUNNING)
+    self.assertEqual(event_message.request, test_request)
+
+  @mock.patch.object(tfc_event_handler, 'ProcessRequestEvent')
+  def testProcessSubscribedSessionResponse_noneRequest(
+      self, mock_process_request_event
+  ):
+    tfc_event_handler._ProcessSubscribedSessionResponse(None)
+
+    mock_process_request_event.assert_not_called()
+
   @mock.patch.object(tfc_event_handler, '_AfterTestRunHandler')
   def testProcessRequestEvent(self, mock_after_test):
     # state changed to RUNNING one hour after last update
@@ -125,11 +150,14 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
 
   @mock.patch.object(tfc_event_handler, '_AfterTestRunHandler')
   @mock.patch.object(test_result_handler, 'UpdateTestRunSummary')
+  @mock.patch.object(tfc_event_handler, '_GetTestContext')
   def testProcessRequestEvent_completed(
-      self, mock_update_summary, mock_after_test):
+      self, mock_get_test_context, mock_update_summary, mock_after_test
+  ):
     # state changed to COMPLETED from UNKNOWN
     mock_event = self.CreateMockRequestEvent(
         datetime.timedelta(hours=1), state=api_messages.RequestState.COMPLETED)
+    mock_get_test_context.return_value = None
 
     tfc_event_handler.ProcessRequestEvent(mock_event)
     self.mock_test_run = self.mock_test_run.key.get()
@@ -139,18 +167,22 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
     self.assertEqual(ndb_models.TestRunState.COMPLETED,
                      self.mock_test_run.state)
     mock_update_summary.assert_called_once_with(self.mock_test_run.key.id())
-    mock_after_test.assert_called_with(self.mock_test_run.key.id())
+    mock_after_test.assert_called_with(
+        self.mock_test_run.key.id(), test_context=None
+    )
 
   @mock.patch.object(sql_models, 'GetTestModuleResults')
   @mock.patch.object(file_util, 'GetResultUrl')
   @mock.patch.object(task_scheduler, 'AddCallableTask')
   @mock.patch.object(tfc_event_handler, '_AfterTestRunHandler')
   @mock.patch.object(test_result_handler, 'UpdateTestRunSummary')
+  @mock.patch.object(tfc_event_handler, '_GetTestContext')
   @mock.patch.object(tfc_client, 'GetDeviceInfo')
   @mock.patch.dict(os.environ, {'IS_OMNILAB_BASED': 'true'}, clear=True)
   def testProcessRequestEventWithOmnilabEnabled_completed_loadResultToDB(
       self,
       mock_get_device_info,
+      mock_get_test_context,
       mock_update_summary,
       mock_after_test,
       mock_add_task,
@@ -163,6 +195,7 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
     mock_get_device_info.return_value = api_messages.DeviceInfo(
         device_serial='SERIAL', build_id='TEST'
     )
+    mock_get_test_context.return_value = None
     mock_event = self.CreateMockRequestEvent(
         datetime.timedelta(hours=1),
         state=api_messages.RequestState.COMPLETED,
@@ -186,7 +219,9 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
     )
     mock_get_test_module_results.assert_called_once_with(['attempt_id'])
     mock_update_summary.assert_called_once_with(self.mock_test_run.key.id())
-    mock_after_test.assert_called_with(self.mock_test_run.key.id())
+    mock_after_test.assert_called_with(
+        self.mock_test_run.key.id(), test_context=None
+    )
 
     # test results stored and after attempt hooks executed
     mock_add_task.assert_has_calls([
@@ -248,9 +283,11 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
   @mock.patch.object(task_scheduler, 'AddCallableTask')
   @mock.patch.object(tfc_event_handler, '_AfterTestRunHandler')
   @mock.patch.object(test_result_handler, 'UpdateTestRunSummary')
+  @mock.patch.object(tfc_event_handler, '_GetTestContext')
   @mock.patch.dict(os.environ, {'IS_OMNILAB_BASED': 'true'}, clear=True)
   def testProcessRequestEventWithOmnilabEnabled_sameRequest_SkipProcessing(
       self,
+      mock_get_test_context,
       mock_update_summary,
       mock_after_test,
       mock_add_task,
@@ -260,6 +297,7 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
     # state changed to COMPLETED from UNKNOWN
     mock_get_result_url.return_value = 'test_results_url'
     mock_get_test_module_results.return_value = []
+    mock_get_test_context.return_value = None
     mock_event = self.CreateMockRequestEvent(
         datetime.timedelta(hours=1), state=api_messages.RequestState.COMPLETED
     )
@@ -274,7 +312,9 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
     )
     mock_get_test_module_results.assert_called_once_with(['attempt_id'])
     mock_update_summary.assert_called_once_with(self.mock_test_run.key.id())
-    mock_after_test.assert_called_with(self.mock_test_run.key.id())
+    mock_after_test.assert_called_with(
+        self.mock_test_run.key.id(), test_context=None
+    )
     # test results stored and after attempt hooks executed
     mock_add_task.assert_has_calls([
         mock.call(
@@ -333,7 +373,9 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
     tfc_event_handler.ProcessRequestEvent(mock_event)
     mock_get_test_module_results.assert_called_once_with(['attempt_id2'])
     mock_update_summary.assert_called_once_with(self.mock_test_run.key.id())
-    mock_after_test.assert_called_with(self.mock_test_run.key.id())
+    mock_after_test.assert_called_with(
+        self.mock_test_run.key.id(), test_context=None
+    )
     mock_add_task.assert_has_calls([
         mock.call(
             test_result_handler.StoreTestResults,
@@ -357,9 +399,11 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
   @mock.patch.object(task_scheduler, 'AddCallableTask')
   @mock.patch.object(tfc_event_handler, '_AfterTestRunHandler')
   @mock.patch.object(test_result_handler, 'UpdateTestRunSummary')
+  @mock.patch.object(tfc_event_handler, '_GetTestContext')
   @mock.patch.dict(os.environ, {'IS_OMNILAB_BASED': 'true'}, clear=True)
   def testProcessRequestEventWithOmnilabEnabled_ResultAlreadyInDB_skipLoading(
       self,
+      mock_get_test_context,
       mock_update_summary,
       mock_after_test,
       mock_add_task,
@@ -369,6 +413,7 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
     # state changed to COMPLETED from UNKNOWN
     mock_get_result_url.return_value = 'test_results_url'
     mock_get_test_module_results.return_value = ['results']
+    mock_get_test_context.return_value = None
     mock_event = self.CreateMockRequestEvent(
         datetime.timedelta(hours=1), state=api_messages.RequestState.COMPLETED
     )
@@ -383,7 +428,9 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
     )
     mock_get_test_module_results.assert_called_once_with(['attempt_id'])
     mock_update_summary.assert_called_once_with(self.mock_test_run.key.id())
-    mock_after_test.assert_called_with(self.mock_test_run.key.id())
+    mock_after_test.assert_called_with(
+        self.mock_test_run.key.id(), test_context=None
+    )
     mock_add_task.assert_not_called()
 
   @mock.patch.object(tfc_event_handler, '_AfterTestRunHandler')
