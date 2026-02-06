@@ -24,7 +24,7 @@ import {ActivatedRoute} from '@angular/router';
 import {Observable, of as observableOf} from 'rxjs';
 
 import {MttClient} from '../services/mtt_client';
-import {NameValuePair, Test, TestPlan, TestResourceType, TestRunAction, TestRunConfig, } from '../services/mtt_models';
+import {NameValuePair, Test, TestPlan, TestResourceObj, TestResourceType, TestRunAction, TestRunConfig} from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
 
 import {EditTestSuitesPage} from './edit_test_suites_page';
@@ -452,5 +452,52 @@ describe('EditTestSuitesPage', () => {
        expect(config.test_resource_objs[0].url).toBe('http://original');
        expect(config.test_resource_objs[0].decompress).toBe(true);
        expect(mttClient.updateTestPlans).toHaveBeenCalled();
+     });
+
+  it('update should not add resource if it does not exist in target config',
+     () => {
+       const testId = 'test1';
+       const config = {
+         test_id: testId,
+         test_resource_objs: [] as TestResourceObj[],
+       } as unknown as TestRunConfig;
+       component.testPlans =
+           [{id: '1', test_run_sequences: [{test_run_configs: [config]}]}] as
+           unknown as TestPlan[];
+
+       component.testResourceGroups = [{
+         testId,
+         testName: 'Test 1',
+         resources: [{name: 'res1', url: 'http://new'}]
+       }];
+
+       (mttClient.updateTestPlans as jasmine.Spy)
+           .and.returnValue(observableOf({}));
+
+       component.update();
+
+       expect(config.test_resource_objs!.length).toBe(0);
+       expect(mttClient.updateTestPlans).toHaveBeenCalled();
+     });
+
+  it('mergeConfigResources should update existing resources but not add new ones',
+     () => {
+       const config = {
+         test_id: 'test1',
+         test_resource_objs: [
+           {name: 'res1', url: 'http://old'},
+         ]
+       } as unknown as TestRunConfig;
+
+       const newResources = [
+         {name: 'res1', url: 'http://new'},
+         {name: 'res2', url: 'http://new'},
+       ];
+
+       component.mergeConfigResources(config, newResources);
+
+       expect(config.test_resource_objs!.length).toBe(1);
+       expect(config.test_resource_objs![0].name).toBe('res1');
+       expect(config.test_resource_objs![0].url).toBe('http://new');
      });
 });

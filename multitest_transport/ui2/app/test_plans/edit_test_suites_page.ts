@@ -317,10 +317,12 @@ export class EditTestSuitesPage implements OnInit {
 
     for (const res of newResources) {
       const existing = existingResourcesMap.get(res.name!);
-      if (existing && !res.url) {
-        existingResourcesMap.set(res.name!, {...res, url: existing.url});
-      } else {
-        existingResourcesMap.set(res.name!, {...res});
+      if (existing) {
+        if (!res.url) {
+          existingResourcesMap.set(res.name!, {...res, url: existing.url});
+        } else {
+          existingResourcesMap.set(res.name!, {...res});
+        }
       }
     }
 
@@ -340,13 +342,17 @@ export class EditTestSuitesPage implements OnInit {
 
     this.isLoading = true;
 
+    const resourcesByTestId = new Map<string, TestResourceObj[]>();
     for (const group of this.testResourceGroups) {
-      for (const plan of this.testPlans) {
-        for (const sequence of plan.test_run_sequences || []) {
-          for (const config of sequence.test_run_configs) {
-            if (config.test_id === group.testId) {
-              this.mergeConfigResources(config, group.resources);
-            }
+      resourcesByTestId.set(group.testId, group.resources);
+    }
+
+    for (const plan of this.testPlans) {
+      for (const sequence of plan.test_run_sequences || []) {
+        for (const config of sequence.test_run_configs) {
+          const newResources = resourcesByTestId.get(config.test_id);
+          if (newResources) {
+            this.mergeConfigResources(config, newResources);
           }
         }
       }
