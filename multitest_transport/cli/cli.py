@@ -810,8 +810,21 @@ def _StartMttNode(args, host):
   if _IsOmnilabBased(args, host.config):
     logger.info(
         'Currently running ATS 2.0 (Omnilab based). You can override this by'
-        ' setting --force_ats_version 1 to override this.'
+        ' setting --force_ats_version 1.'
     )
+  else:
+    print('\n' + '=' * 80)
+    print('INFO: ATS 2.0 is now available!')
+    print(
+        'Enhance your testing experience with the new Omnilab-based '
+        'infrastructure.'
+    )
+    print("Add '--force_ats_version 2' to your start command to try it out.")
+    print(
+        'Learn more at https://source.android.com/docs/core/tests/development/'
+        'android-test-station/ats-user-guide'
+    )
+    print('=' * 80 + '\n')
 
 
 def _StartMttDaemon(args, host):
