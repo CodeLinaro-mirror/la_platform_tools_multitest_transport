@@ -26,6 +26,7 @@ py_test(
     srcs = [
         "build_test.py",
     ],
+    strict_deps = False,
     tags = ["not_run:arm"],
     deps = [
         ":build_lib",
@@ -52,6 +53,7 @@ py_test(
     srcs = [
         "config_encoder_test.py",
     ],
+    strict_deps = False,
     tags = ["not_run:arm"],
     deps = [
         ":config_encoder_lib",
@@ -81,6 +83,7 @@ py_test(
     srcs = [
         "config_set_helper_test.py",
     ],
+    strict_deps = False,
     tags = ["not_run:arm"],
     deps = [
         ":build_lib",
@@ -106,6 +109,7 @@ py_test(
     srcs = [
         "event_log_test.py",
     ],
+    strict_deps = False,
     tags = ["not_run:arm"],
     deps = [
         ":event_log_lib",
@@ -140,6 +144,7 @@ py_test(
     srcs = [
         "messages_test.py",
     ],
+    strict_deps = False,
     tags = ["not_run:arm"],
     deps = [
         ":messages_lib",
@@ -194,6 +199,7 @@ py_test(
     srcs = [
         "sql_models_test.py",
     ],
+    strict_deps = False,
     deps = [
         ":sql_models_lib",
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
@@ -224,6 +230,7 @@ py_test(
     srcs = [
         "test_run_hook_test.py",
     ],
+    strict_deps = False,
     tags = ["not_run:arm"],
     deps = [
         ":test_run_hook_lib",

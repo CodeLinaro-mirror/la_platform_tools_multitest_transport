@@ -209,6 +209,7 @@ py_test(
     srcs = [
         "cli_test.py",
     ],
+    strict_deps = False,
     deps = [
         ":cli_lib",
         ":cli_util_lib",
@@ -230,6 +231,7 @@ py_test(
     srcs = [
         "cli_util_test.py",
     ],
+    strict_deps = False,
     deps = [
         ":cli_util_lib",
         ":unittest_util_lib",
@@ -244,6 +246,7 @@ py_test(
     srcs = [
         "command_util_test.py",
     ],
+    strict_deps = False,
     deps = [
         ":command_util_lib",
         ":ssh_util_lib",
@@ -257,6 +260,7 @@ py_test(
     srcs = [
         "gcs_file_util_test.py",
     ],
+    strict_deps = False,
     deps = [
         ":gcs_file_util_lib",
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
@@ -270,6 +274,7 @@ py_test(
     srcs = [
         "google_auth_util_test.py",
     ],
+    strict_deps = False,
     deps = [
         ":google_auth_util_lib",
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
@@ -282,6 +287,7 @@ py_test(
     srcs = [
         "host_util_test.py",
     ],
+    strict_deps = False,
     deps = [
         ":host_util_lib",
         ":ssh_util_lib",
@@ -296,6 +302,7 @@ py_test(
     srcs = [
         "control_server_util_test.py",
     ],
+    strict_deps = False,
     deps = [
         ":control_server_util_lib",
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
@@ -309,6 +316,7 @@ py_test(
     srcs = [
         "lab_cli_test.py",
     ],
+    strict_deps = False,
     deps = [
         ":lab_cli_lib",
         ":unittest_util_lib",
@@ -324,6 +332,7 @@ py_test(
     srcs = [
         "ssh_util_test.py",
     ],
+    strict_deps = False,
     deps = [
         ":ssh_util_lib",
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
@@ -339,6 +348,7 @@ py_test(
         "integration_test.py",
     ],
     features = ["-enable_relr"],
+    strict_deps = False,
     tags = ["local"],
     deps = [
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip

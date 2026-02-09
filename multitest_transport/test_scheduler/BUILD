@@ -28,6 +28,7 @@ py_test(
     srcs = [
         "download_util_test.py",
     ],
+    strict_deps = False,
     tags = ["not_run:arm"],
     deps = [
         ":download_util_lib",
@@ -55,6 +56,7 @@ py_test(
     srcs = [
         "sharding_strategies_test.py",
     ],
+    strict_deps = False,
     deps = [
         ":sharding_strategies_lib",
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
@@ -93,6 +95,7 @@ py_test(
     data = [
         "//multitest_transport/gae_configs",
     ],
+    strict_deps = False,
     tags = ["not_run:arm"],
     deps = [
         ":download_util_lib",
@@ -142,6 +145,7 @@ py_test(
     data = [
         "//multitest_transport/gae_configs",
     ],
+    strict_deps = False,
     tags = ["not_run:arm"],
     deps = [
         ":test_plan_kicker_lib",
@@ -169,6 +173,7 @@ py_test(
     srcs = [
         "test_result_handler_test.py",
     ],
+    strict_deps = False,
     tags = ["not_run:arm"],
     deps = [
         ":test_result_handler_lib",
@@ -199,6 +204,7 @@ py_test(
     srcs = [
         "test_scheduler_test.py",
     ],
+    strict_deps = False,
     tags = ["not_run:arm"],
     deps = [
         ":test_scheduler_lib",
@@ -237,6 +243,7 @@ py_test(
     srcs = [
         "tfc_event_handler_test.py",
     ],
+    strict_deps = False,
     tags = ["not_run:arm"],
     deps = [
         ":test_result_handler_lib",
@@ -275,6 +282,7 @@ py_test(
     srcs = [
         "test_run_manager_test.py",
     ],
+    strict_deps = False,
     tags = ["not_run:arm"],
     deps = [
         ":test_run_manager_lib",

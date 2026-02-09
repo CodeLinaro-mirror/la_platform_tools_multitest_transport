@@ -33,6 +33,7 @@ py_test(
     ],
     features = ["-enable_relr"],
     linking_mode = "static",
+    strict_deps = False,
     tags = ["local"],
     deps = [
         ":integration_util",
@@ -53,6 +54,7 @@ py_test(
     ],
     features = ["-enable_relr"],
     linking_mode = "static",
+    strict_deps = False,
     tags = ["local"],
     deps = [
         ":integration_util",
@@ -72,6 +74,7 @@ py_test(
     ],
     features = ["-enable_relr"],
     linking_mode = "static",
+    strict_deps = False,
     tags = ["local"],
     deps = [
         ":integration_util",
@@ -98,6 +101,7 @@ py_test(
     ],
     features = ["-enable_relr"],
     linking_mode = "static",
+    strict_deps = False,
     tags = ["local"],
     deps = [
         ":integration_util",
@@ -115,6 +119,7 @@ py_test(
     features = ["-enable_relr"],
     linking_mode = "static",
     shard_count = 2,
+    strict_deps = False,
     tags = ["local"],
     deps = [
         ":integration_util",
@@ -134,6 +139,7 @@ py_test(
     ],
     features = ["-enable_relr"],
     linking_mode = "static",
+    strict_deps = False,
     tags = ["local"],
     deps = [
         ":integration_util",
@@ -148,6 +154,7 @@ py_test(
     ],
     features = ["-enable_relr"],
     linking_mode = "static",
+    strict_deps = False,
     tags = ["local"],
     deps = [
         ":integration_util",

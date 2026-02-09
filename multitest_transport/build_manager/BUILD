@@ -35,6 +35,7 @@ py_test(
     srcs = [
         "xts_requirements_detector_test.py",
     ],
+    strict_deps = False,
     tags = ["not_run:arm"],
     deps = [
         ":xts_requirements_detector_lib",

@@ -21,6 +21,7 @@ pytype_strict_library(
 py_test(
     name = "criterion_test",
     srcs = ["criterion_test.py"],
+    strict_deps = False,
     deps = [
         ":criterion_lib",
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
@@ -45,6 +46,7 @@ pytype_strict_library(
 py_test(
     name = "file_cleaner_test",
     srcs = ["file_cleaner_test.py"],
+    strict_deps = False,
     deps = [
         ":file_cleaner_lib",
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
@@ -68,6 +70,7 @@ pytype_strict_library(
 py_test(
     name = "operation_test",
     srcs = ["operation_test.py"],
+    strict_deps = False,
     deps = [
         ":operation_lib",
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
@@ -91,6 +94,7 @@ pytype_strict_library(
 py_test(
     name = "policy_test",
     srcs = ["policy_test.py"],
+    strict_deps = False,
     deps = [
         ":policy_lib",
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip

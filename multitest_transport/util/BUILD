@@ -29,6 +29,7 @@ py_test(
     srcs = [
         "util_test.py",
     ],
+    strict_deps = False,
     deps = [
         ":util_lib",
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
@@ -54,6 +55,7 @@ py_test(
     srcs = [
         "analytics_test.py",
     ],
+    strict_deps = False,
     deps = [
         ":analytics_lib",
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
@@ -79,6 +81,7 @@ py_test(
     srcs = [
         "analytics_uploader_test.py",
     ],
+    strict_deps = False,
     tags = ["not_run:arm"],
     deps = [
         ":analytics_uploader_lib",
@@ -112,6 +115,7 @@ py_test(
     srcs = [
         "apfe_client_test.py",
     ],
+    strict_deps = False,
     tags = ["not_run:arm"],
     deps = [
         ":apfe_client_lib",
@@ -164,6 +168,7 @@ py_test(
     srcs = [
         "oauth2_util_test.py",
     ],
+    strict_deps = False,
     tags = ["not_run:arm"],
     deps = [
         ":oauth2_util_lib",
@@ -190,6 +195,7 @@ py_test(
     srcs = [
         "sql_util_test.py",
     ],
+    strict_deps = False,
     deps = [
         ":sql_util_lib",
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
@@ -226,6 +232,7 @@ py_test(
     srcs = [
         "tfc_client_test.py",
     ],
+    strict_deps = False,
     tags = ["not_run:arm"],
     deps = [
         ":olcs_lab_info_stub",
@@ -278,6 +285,7 @@ py_test(
         "test_data/test_package-invalid.zip",
         "test_data/test_result.xml",
     ],
+    strict_deps = False,
     deps = [
         ":env_lib",
         ":file_util_lib",
@@ -308,6 +316,7 @@ py_test(
         "test_data/request_detail.textproto",
         "test_data/test_new_request_msg.json",
     ],
+    strict_deps = False,
     deps = [
         ":olcs_session_client_lib",
         third_party("absl/testing:absltest"),
@@ -375,6 +384,7 @@ py_test(
     srcs = [
         "olcs_session_client_test.py",
     ],
+    strict_deps = False,
     deps = [
         ":olcs_session_client_lib",
         "//net/grpc/python:grpc",
@@ -403,6 +413,7 @@ py_test(
     srcs = [
         "olcs_lab_info_client_test.py",
     ],
+    strict_deps = False,
     deps = [
         ":olcs_lab_info_client_lib",
         "@com_google_deviceinfra//src/devtools/mobileharness/shared/labinfo/proto:lab_info_service_py_grpc",
@@ -445,6 +456,7 @@ pytype_strict_library(
 py_test(
     name = "olcs_lab_info_stub_test",
     srcs = ["olcs_lab_info_stub_test.py"],
+    strict_deps = False,
     deps = [
         ":olcs_lab_info_client_lib",
         ":olcs_lab_info_stub",
@@ -458,6 +470,7 @@ py_test(
 py_test(
     name = "lru_cache_test",
     srcs = ["lru_cache_test.py"],
+    strict_deps = False,
     deps = [
         ":lru_cache",
         third_party("absl/testing:absltest"),
@@ -469,6 +482,7 @@ py_test(
     srcs = [
         "olcs_lab_record_client_test.py",
     ],
+    strict_deps = False,
     deps = [
         ":olcs_lab_record_client_lib",
         "@com_google_deviceinfra//src/devtools/mobileharness/infra/master/rpc/proto:lab_record_service_py_grpc",
@@ -492,6 +506,7 @@ pytype_strict_library(
 py_test(
     name = "worker_lab_health_client_test",
     srcs = ["worker_lab_health_client_test.py"],
+    strict_deps = False,
     deps = [
         ":channel_util_lib",
         ":worker_lab_health_client",
@@ -511,6 +526,7 @@ py_test(
         "test_data/test_result.xml",
         "test_data/test_result_missing_runtime.xml",
     ],
+    strict_deps = False,
     deps = [
         ":xts_result_lib",
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip

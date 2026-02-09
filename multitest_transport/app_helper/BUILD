@@ -34,6 +34,7 @@ py_test(
     srcs = [
         "launcher_test.py",
     ],
+    strict_deps = False,
     deps = [
         ":launcher_lib",
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
@@ -58,6 +59,7 @@ py_test(
     srcs = [
         "rabbitmq_plugin_test.py",
     ],
+    strict_deps = False,
     deps = [
         ":rabbitmq_plugin_lib",
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
@@ -83,6 +85,7 @@ py_test(
     srcs = [
         "rabbitmq_puller_test.py",
     ],
+    strict_deps = False,
     deps = [
         ":rabbitmq_puller_lib",
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip

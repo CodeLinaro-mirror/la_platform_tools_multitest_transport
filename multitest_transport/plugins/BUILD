@@ -27,6 +27,7 @@ py_test(
     srcs = [
         "android_test.py",
     ],
+    strict_deps = False,
     deps = [
         ":android_lib",
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
@@ -56,6 +57,7 @@ py_test(
     srcs = [
         "apfe_test.py",
     ],
+    strict_deps = False,
     deps = [
         ":apfe_lib",
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
@@ -81,6 +83,7 @@ py_test(
     srcs = [
         "http_test.py",
     ],
+    strict_deps = False,
     deps = [
         ":http_lib",
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
@@ -105,6 +108,7 @@ py_test(
     srcs = [
         "file_upload_hook_test.py",
     ],
+    strict_deps = False,
     deps = [
         ":file_upload_hook_lib",
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
@@ -132,6 +136,7 @@ py_test(
     srcs = [
         "gcs_test.py",
     ],
+    strict_deps = False,
     deps = [
         ":gcs_lib",
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
@@ -161,6 +166,7 @@ py_test(
     srcs = [
         "google_drive_test.py",
     ],
+    strict_deps = False,
     deps = [
         ":google_drive_lib",
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
@@ -214,6 +220,7 @@ py_test(
     srcs = [
         "registry_test.py",
     ],
+    strict_deps = False,
     deps = [
         ":registry_lib",
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
@@ -237,6 +244,7 @@ py_test(
     srcs = [
         "web_hook_test.py",
     ],
+    strict_deps = False,
     tags = ["not_run:arm"],
     deps = [
         ":web_hook_lib",

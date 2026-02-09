@@ -54,6 +54,7 @@ py_test(
     data = [
         "//multitest_transport/gae_configs",
     ],
+    strict_deps = False,
     tags = ["not_run:arm"],
     deps = [
         ":cron_kicker_lib",
@@ -79,6 +80,7 @@ py_test(
     srcs = [
         "ndb_upgrader_test.py",
     ],
+    strict_deps = False,
     tags = ["not_run:arm"],
     deps = [
         ":ndb_upgrader_lib",
@@ -126,6 +128,7 @@ py_test(
     srcs = [
         "service_checker_test.py",
     ],
+    strict_deps = False,
     tags = ["not_run:arm"],
     deps = [
         ":service_checker_lib",

@@ -76,6 +76,7 @@ py_test(
     srcs = [
         "proxy_test.py",
     ],
+    strict_deps = False,
     deps = [
         ":proxy_lib",
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
