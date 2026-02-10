@@ -56,10 +56,10 @@ RUN mkdir -p /etc/envoy \
     && rm -rf /mtt/envoy
 
 # Compile and remove all python source files. Explicitly don't compile
-# flask/scipy/babel/colour/sqlalchemy_utils/sqlalchemy because google3's source
-# code is only compatible with python 3.12+ and MTT still uses python 3.9. They
-# are installed via pip.
-RUN python3 -m compileall -bq -x "/mtt/google3/third_party/py/(colour|flask|scipy|sqlalchemy_utils|sqlalchemy)" /mtt/google3 \
+# flask/scipy/babel/colour/sqlalchemy_utils/sqlalchemy/numpy because google3's
+# source code is only compatible with python 3.12+ and MTT still uses python
+# 3.9. They are installed via pip.
+RUN python3 -m compileall -bq -x "/mtt/google3/third_party/py/(colour|flask|scipy|sqlalchemy_utils|sqlalchemy|numpy)" /mtt/google3 \
     && find /mtt/google3 -type f -iname "*.py" ! -iname "gunicorn_config.py" -exec rm -rf {} \;
 # Unzip the selected prebuilt TF runner
 RUN unzip -q /mtt/prebuilts/tradefed/${MTT_TRADEFED_PREBUILT} -d /tradefed
