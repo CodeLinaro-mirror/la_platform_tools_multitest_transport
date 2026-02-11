@@ -47,6 +47,10 @@ export const MOBLY_LOG_TYPES = {
   'Mobly Log': 'mobly_logs/test_log.INFO',
   'Driver log': 'test_output.txt'
 };
+/** Log types and filenames for Slate jobs */
+export const SLATE_LOG_TYPES = {
+  'Driver log': 'test_output.txt'
+};
 /** Maximum lines to keep. */
 export const MAX_CONSOLE_LENGTH = 200;
 /** Auto-update polling interval (ms). */
@@ -75,6 +79,8 @@ export class TestRunConsole implements OnInit, OnChanges, OnDestroy {
   TF_LOG_TYPES = TF_LOG_TYPES;
   selectedTfLogType = TF_LOG_TYPES['Host log'];
   MOBLY_LOG_TYPES = MOBLY_LOG_TYPES;
+  SLATE_LOG_TYPES = SLATE_LOG_TYPES;
+  selectedSlateLogType = SLATE_LOG_TYPES['Driver log'];
   selectedMoblyLogType = Object.values(MOBLY_LOG_TYPES)[0];
   nonTradefedLogDirNames: string[] = [];
   selectedNonTradefedLogDirName = '';
@@ -103,6 +109,15 @@ export class TestRunConsole implements OnInit, OnChanges, OnDestroy {
 
   ngOnInit() {
     assertRequiredInput(this.testRun, 'testRun', 'test-run-console');
+    if (this.isOmnilabBased) {
+      if (this.testRun.test?.command?.startsWith('slate')) {
+        this.selectedSourceType = 'Slate';
+        this.SOURCE_TYPE = ['Slate', 'OLC Server'];
+      } else {
+        this.selectedSourceType = 'Tradefed';
+        this.SOURCE_TYPE = ['Tradefed', 'OLC Server', 'Mobly'];
+      }
+    }
     this.update();
   }
 
@@ -167,6 +182,14 @@ export class TestRunConsole implements OnInit, OnChanges, OnDestroy {
       } else if (this.selectedSourceType === 'Mobly') {
         return `logs/non-tradefed_logs/${this.selectedNonTradefedLogDirName}/${
             this.selectedMoblyLogType}`;
+      } else if (this.selectedSourceType === 'Slate') {
+        if (isActive) {
+          return `log/mh_lab_gen_files/${
+              this.selectedAttempt.working_job_id}/test_${
+              this.selectedAttempt.working_test_id}/local_test_log.txt`;
+        }
+        return `logs/test_${this.selectedAttempt.working_test_id}/${
+            this.selectedSlateLogType}`;
       } else {  // Tradefed Logs
         if (isActive) {
           if (this.selectedTfLogType === 'test_output.txt') {

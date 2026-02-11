@@ -83,6 +83,15 @@
         </mat-option>
       </mat-select>
     </mat-form-field>
+    <mat-form-field appearance="outline" *ngIf="selectedSourceType === 'Slate'">
+      <mat-label>Slate Log Type</mat-label>
+      <mat-select [(ngModel)]="selectedSlateLogType"
+                  (selectionChange)="clearConsole(); resetPolling()">
+        <mat-option *ngFor="let type of SLATE_LOG_TYPES | keyvalue" [value]="type.value">
+          {{type.key}}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
   </div>
   <span fxFlex></span>
 
