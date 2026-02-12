@@ -72,6 +72,30 @@ while [[ $# -gt 0 ]]; do
   shift # skip value
 done
 
+# If it is OMNILAB based run, transform MTT_VERSION if needed.
+if [[ $IS_OMNILAB_BASED == "true" ]]; then
+  current_mtt_version="${MTT_VERSION}"
+  if [[ $current_mtt_version =~ prod_1\.([0-9]+)\.([0-9]+) ]]; then
+    minor_version=${BASH_REMATCH[1]}
+    patch_version=${BASH_REMATCH[2]}
+    if [[ $minor_version -ge 52 ]]; then
+      new_minor_version=$(($minor_version - 52 + 1))
+      MTT_VERSION="prod_2.${new_minor_version}.${patch_version}"
+      echo "Setting MTT_VERSION to ${MTT_VERSION} for OmniLab based run " \
+           "(originally ${current_mtt_version})."
+    else
+      echo "OmniLab based run, but version ${current_mtt_version} has minor " \
+           "version < 52. MTT_VERSION not set by this custom logic."
+    fi
+  else
+    echo "OmniLab based run, but version ${current_mtt_version} doesn't " \
+         "match expected pattern for MTT_VERSION transformation. " \
+         "MTT_VERSION not set by this custom logic."
+  fi
+else
+  echo "Not an OmniLab based run. MTT_VERSION not set by this custom logic."
+fi
+
 # Change working directory
 cd "${WORKING_DIR}"
 MTT_PYTHON_PATH="$(pwd):${PYTHONPATH}"
