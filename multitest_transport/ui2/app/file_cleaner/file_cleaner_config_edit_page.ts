@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {Component, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
+import {Component, OnInit, QueryList, ViewChild, ViewChildren, ChangeDetectionStrategy} from '@angular/core';
 import {MatButton} from '@angular/material/button';
 import {ActivatedRoute, Params, Router} from '@angular/router';
 
@@ -26,7 +26,7 @@ import {buildApiErrorMessage} from '../shared/util';
 
 /** Edit page for file cleaner config. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'file-cleaner-config-edit-page',
   styleUrls: ['file_cleaner_config_edit_page.css'],
   templateUrl: './file_cleaner_config_edit_page.ng.html',

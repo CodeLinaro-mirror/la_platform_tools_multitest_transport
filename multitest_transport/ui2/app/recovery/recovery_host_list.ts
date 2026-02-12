@@ -16,7 +16,7 @@
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {SelectionModel} from '@angular/cdk/collections';
-import {AfterViewInit, Component, ElementRef, EventEmitter, HostListener, Input, OnChanges, OnDestroy, Output, SimpleChanges, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, EventEmitter, HostListener, Input, OnChanges, OnDestroy, Output, SimpleChanges, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {MatDialog} from '@angular/material/dialog';
 import {MatTable} from '@angular/material/table';
 import {Notifier} from 'google3/third_party/py/multitest_transport/ui2/app/services/notifier';
@@ -34,7 +34,7 @@ import {buildApiErrorMessage} from '../shared/util';
 
 /** Display a list of host that are recovering by the current user. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'recovery-host-list',
   styleUrls: ['recovery_host_list.css'],
   templateUrl: './recovery_host_list.ng.html',

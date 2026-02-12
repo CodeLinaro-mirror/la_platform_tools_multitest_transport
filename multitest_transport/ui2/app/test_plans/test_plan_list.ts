@@ -15,7 +15,7 @@
  */
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
-import {Component, Input, OnDestroy, OnInit, ViewChild, inject} from '@angular/core';
+import {Component, Input, OnDestroy, OnInit, ViewChild, inject, ChangeDetectionStrategy} from '@angular/core';
 import {MatTable, MatTableDataSource} from '@angular/material/table';
 import {Router} from '@angular/router';
 import {ReplaySubject} from 'rxjs';
@@ -33,7 +33,7 @@ const MAX_LABELS_TOTAL_LENGTH = 15;
  * A component for displaying a list of test plans.
  */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'test-plan-list',
   styleUrls: ['test_plan_list.css'],
   templateUrl: './test_plan_list.ng.html',

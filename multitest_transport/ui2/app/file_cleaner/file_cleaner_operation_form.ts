@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {Component, ElementRef, Input, OnInit, QueryList, ViewChildren} from '@angular/core';
+import {Component, ElementRef, Input, OnInit, QueryList, ViewChildren, ChangeDetectionStrategy} from '@angular/core';
 
 import {FileCleanerOperation, FileCleanerOperationType} from '../services/mtt_models';
 import {FormChangeTracker} from '../shared/can_deactivate';
@@ -22,7 +22,7 @@ import {assertRequiredInput} from '../shared/util';
 
 /** Form for file cleaner operation. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'file-cleaner-operation-form',
   styleUrls: ['file_cleaner_operation_form.css'],
   templateUrl: './file_cleaner_operation_form.ng.html',

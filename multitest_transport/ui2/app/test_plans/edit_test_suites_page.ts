@@ -15,7 +15,7 @@
  */
 
 import {Location} from '@angular/common';
-import {Component, inject, OnInit} from '@angular/core';
+import {Component, inject, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {UntypedFormBuilder, UntypedFormGroup} from '@angular/forms';
 import {ActivatedRoute} from '@angular/router';
 import {zip} from 'rxjs';
@@ -46,7 +46,7 @@ interface TestResourceGroup {
 
 /** A page for editing test suites. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'app-edit-test-suites-page',
   templateUrl: './edit_test_suites_page.ng.html',
   styleUrls: ['./edit_test_suites_page.scss']

@@ -16,7 +16,7 @@
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {Location} from '@angular/common';
-import {AfterViewInit, Component, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, OnDestroy, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {MatButton} from '@angular/material/button';
 import {ActivatedRoute, Params, Router} from '@angular/router';
 import {forkJoin, of as observableOf, ReplaySubject} from 'rxjs';
@@ -32,7 +32,7 @@ import {buildApiErrorMessage} from '../shared/util';
  * Build Channel Edit Page
  */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'build-channel-edit-page',
   styleUrls: ['build_channel_edit_page.css'],
   templateUrl: './build_channel_edit_page.ng.html',

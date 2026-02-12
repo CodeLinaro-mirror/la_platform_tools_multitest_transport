@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {assertRequiredInput} from 'google3/third_party/py/multitest_transport/ui2/app/shared/util';
 
 import {HostState} from '../services/tfc_models';
 
 /** Component for display host status in chip in recovery host list. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'recovery-host-status',
   styleUrls: ['recovery_host_status.css'],
   templateUrl: './recovery_host_status.ng.html',

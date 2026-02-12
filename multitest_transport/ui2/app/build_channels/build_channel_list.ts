@@ -15,7 +15,7 @@
  */
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {ReplaySubject} from 'rxjs';
 import {finalize, first, takeUntil} from 'rxjs/operators';
 
@@ -26,7 +26,7 @@ import {buildApiErrorMessage} from '../shared/util';
 
 /** A component for displaying a list of build channels. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'build-channel-list',
   styleUrls: ['build_channel_list.css'],
   templateUrl: './build_channel_list.ng.html',

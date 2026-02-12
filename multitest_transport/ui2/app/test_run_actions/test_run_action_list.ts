@@ -15,7 +15,7 @@
  */
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {ReplaySubject} from 'rxjs';
 import {delay, finalize, takeUntil} from 'rxjs/operators';
 
@@ -26,7 +26,7 @@ import {buildApiErrorMessage} from '../shared/util';
 
 /** Displays a list of test run actions. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'test-run-action-list',
   styleUrls: ['test_run_action_list.css'],
   templateUrl: './test_run_action_list.ng.html',

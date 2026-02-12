@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {Component, EventEmitter, Inject, Output} from '@angular/core';
+import {Component, EventEmitter, Inject, Output, ChangeDetectionStrategy} from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 
 import {TestRunAction, TestRunActionRef} from '../services/mtt_models';
@@ -34,7 +34,7 @@ export interface TestRunActionPickerDialogData {
  * The dialog component to select test run actions .
  */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'test-run-action-picker-dialog',
   styleUrls: ['test_run_action_picker_dialog.css'],
   templateUrl: './test_run_action_picker_dialog.ng.html',

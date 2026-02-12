@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {Title} from '@angular/platform-browser';
 
 import {LAB_APPLICATION_NAME} from '../shared/shared_module';
 
 /** A component for display settings */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'recovery-setting-page',
   styleUrls: ['recovery_setting_page.css'],
   templateUrl: './recovery_setting_page.ng.html',

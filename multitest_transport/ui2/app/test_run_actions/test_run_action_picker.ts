@@ -16,7 +16,7 @@
 
 import {SelectionModel} from '@angular/cdk/collections';
 import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output, ChangeDetectionStrategy} from '@angular/core';
 
 import {TestRunAction} from '../services/mtt_models';
 import {FormChangeTracker} from '../shared/can_deactivate';
@@ -27,7 +27,7 @@ import {assertRequiredInput, deepCopy} from '../shared/util';
  * rearrange them.
  */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'test-run-action-picker',
   styleUrls: ['test_run_action_picker.css'],
   templateUrl: './test_run_action_picker.ng.html',

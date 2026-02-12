@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output, ChangeDetectionStrategy} from '@angular/core';
 import {MatDialog} from '@angular/material/dialog';
 import {Observable, of} from 'rxjs';
 import {takeUntil} from 'rxjs/operators';
@@ -36,7 +36,7 @@ export enum TestResourceClassType {
  * Form for Test Resource Definition
  */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'test-resource-form',
   styleUrls: ['test_resource_form.css'],
   templateUrl: './test_resource_form.ng.html',

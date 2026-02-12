@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output, ChangeDetectionStrategy} from '@angular/core';
 
 import {MttClient} from '../services/mtt_client';
 import {AuthorizationMethod, AuthorizationState, BuildChannel, isDefaultBuildChannel} from '../services/mtt_models';
@@ -23,7 +23,7 @@ import {assertRequiredInput, buildApiErrorMessage, delay} from '../shared/util';
 
 /** A component for displaying a list of build channels. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'build-channel-item',
   styleUrls: ['build_channel_item.css'],
   templateUrl: './build_channel_item.ng.html',

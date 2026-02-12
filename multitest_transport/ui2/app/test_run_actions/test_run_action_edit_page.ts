@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {AfterViewInit, Component, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
+import {AfterViewInit, Component, OnInit, QueryList, ViewChild, ViewChildren, ChangeDetectionStrategy} from '@angular/core';
 import {MatButton} from '@angular/material/button';
 import {ActivatedRoute, Router} from '@angular/router';
 import {forkJoin, of as observableOf} from 'rxjs';
@@ -30,7 +30,7 @@ import {buildApiErrorMessage} from '../shared/util';
  * Form for creating a test run action
  */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'test-run-action-edit-page',
   styleUrls: ['test_run_action_edit_page.css'],
   templateUrl: './test_run_action_edit_page.ng.html',

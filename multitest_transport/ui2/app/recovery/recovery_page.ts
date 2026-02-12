@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {ActivatedRoute, ParamMap, Router} from '@angular/router';
 import {ReplaySubject} from 'rxjs';
 import {take, takeUntil} from 'rxjs/operators';
@@ -23,7 +23,7 @@ import {OfflineHostFilterParams} from '../services/mtt_lab_models';
 
 /** Page for recovery bad host and bad device. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'recovery-page',
   styleUrls: ['recovery_page.css'],
   templateUrl: './recovery_page.ng.html',

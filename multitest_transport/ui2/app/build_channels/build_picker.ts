@@ -16,7 +16,7 @@
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {SelectionModel} from '@angular/cdk/collections';
-import {Component, EventEmitter, Inject, OnDestroy, OnInit, Output, ViewChild} from '@angular/core';
+import {Component, EventEmitter, Inject, OnDestroy, OnInit, Output, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 import {MatTabChangeEvent} from '@angular/material/tabs';
 import {MatTable} from '@angular/material/table';
@@ -71,7 +71,7 @@ export interface BuildPickerTabState {
  * This component is used to select resource urls from build channels
  */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'build-picker',
   styleUrls: ['build_picker.css'],
   templateUrl: './build_picker.ng.html',
