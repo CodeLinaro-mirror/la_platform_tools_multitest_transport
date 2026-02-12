@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {Component, DebugElement} from '@angular/core';
+import {Component, DebugElement, ChangeDetectionStrategy} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 
@@ -67,7 +67,7 @@ describe('ForbiddenValuesValidator', () => {
 });
 
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   template: `<mat-form-field>
                <input matInput mttForbiddenValues [forbiddenValues]="values"
                       [(ngModel)]="data.value" #value="ngModel" />

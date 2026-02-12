@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-import {Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges} from '@angular/core';
+import {Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges, ChangeDetectionStrategy} from '@angular/core';
 import {assertRequiredInput} from './util';
 
 /**
  * Breadcrumb component
  */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'breadcrumb',
   styleUrls: ['breadcrumb.css'],
   templateUrl: './breadcrumb.ng.html',

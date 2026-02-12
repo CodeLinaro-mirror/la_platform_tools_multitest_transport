@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 
 import {assertRequiredInput} from './util';
 
@@ -26,7 +26,7 @@ export enum OverflowListType {
 
 /** A component for collapsing and displaying a list of objects. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'overflow-list',
   styleUrls: ['overflow_list.css'],
   templateUrl: './overflow_list.ng.html',

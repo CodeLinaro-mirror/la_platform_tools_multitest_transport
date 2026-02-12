@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {Component, ElementRef, Input} from '@angular/core';
+import {Component, ElementRef, Input, ChangeDetectionStrategy} from '@angular/core';
 
 import {navigateToFirstElement} from './util';
 
@@ -23,7 +23,7 @@ import {navigateToFirstElement} from './util';
  * or warning. It also displays a link for user to navigate to the first error.
  */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'form-error-info',
   styleUrls: ['form_error_info.css'],
   templateUrl: './form_error_info.ng.html',

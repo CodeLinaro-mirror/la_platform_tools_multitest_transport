@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {Component, EventEmitter, Input, Output} from '@angular/core';
+import {Component, EventEmitter, Input, Output, ChangeDetectionStrategy} from '@angular/core';
 
 /** Default page size. */
 export const DEFAULT_PAGE_SIZE = 10;
@@ -27,7 +27,7 @@ export const DEFAULT_PAGE_SIZE = 10;
  * disable buttons and explicitly listen for previous or next page events.
  */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'paginator',
   styles: [`
     :host {

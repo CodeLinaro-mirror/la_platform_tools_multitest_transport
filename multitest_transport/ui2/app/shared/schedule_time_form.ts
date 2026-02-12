@@ -15,7 +15,7 @@
  */
 
 import {WeekDay} from '@angular/common';
-import {Component, EventEmitter, forwardRef, Input, OnChanges, Output} from '@angular/core';
+import {Component, EventEmitter, forwardRef, Input, OnChanges, Output, ChangeDetectionStrategy} from '@angular/core';
 import {ControlValueAccessor, NG_VALUE_ACCESSOR} from '@angular/forms';
 
 /** Schedule types. */
@@ -62,7 +62,7 @@ const LOCAL_TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 /** Manages scheduling times using simple fields or cron expressions. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'schedule-time-form',
   styleUrls: ['schedule_time_form.css'],
   templateUrl: './schedule_time_form.ng.html',

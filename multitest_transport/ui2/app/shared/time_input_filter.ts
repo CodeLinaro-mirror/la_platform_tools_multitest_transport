@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {Component, EventEmitter, Input, Output} from '@angular/core';
+import {Component, EventEmitter, Input, Output, ChangeDetectionStrategy} from '@angular/core';
 
 /**
  * Canonical representation of a filter operator containing all properties
@@ -67,7 +67,7 @@ export interface TimeFilterEvent {
  * filter.
  */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'time-input-filter',
   styleUrls: ['time_input_filter.css'],
   templateUrl: './time_input_filter.ng.html',

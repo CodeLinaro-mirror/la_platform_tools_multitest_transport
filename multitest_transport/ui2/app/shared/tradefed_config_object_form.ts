@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {Component, ElementRef, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
+import {Component, ElementRef, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren, ChangeDetectionStrategy} from '@angular/core';
 
 import {TradefedConfigObject} from '../services/mtt_models';
 import {FormChangeTracker} from '../shared/can_deactivate';
@@ -26,7 +26,7 @@ import {assertRequiredInput} from './util';
  * Form for Tradefed Config Object
  */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'tradefed-config-object-form',
   styleUrls: ['tradefed_config_object_form.css'],
   templateUrl: './tradefed_config_object_form.ng.html',

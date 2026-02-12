@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output, ChangeDetectionStrategy} from '@angular/core';
 import {NameValuePair} from '../services/mtt_models';
 import {FormChangeTracker} from '../shared/can_deactivate';
 import {assertRequiredInput} from './util';
@@ -24,7 +24,7 @@ import {assertRequiredInput} from './util';
  * object
  */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'name-value-pair-list-form',
   styleUrls: ['name_value_pair_list_form.css'],
   templateUrl: './name_value_pair_list_form.ng.html',

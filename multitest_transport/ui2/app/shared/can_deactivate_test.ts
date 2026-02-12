@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {Component, DebugElement} from '@angular/core';
+import {Component, DebugElement, ChangeDetectionStrategy} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {Observable, of as observableOf} from 'rxjs';
@@ -73,7 +73,7 @@ describe('UnsavedChangeGuard', () => {
 });
 
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'test-component-child',
   providers: [{provide: FormChangeTracker, useExisting: TestComponentChild}],
   template: `
@@ -89,7 +89,7 @@ class TestComponentChild extends FormChangeTracker {
 }
 
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   template: `
       <div>
         <input matInput type="text" [(ngModel)]="value" name="value">

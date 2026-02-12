@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output, ChangeDetectionStrategy} from '@angular/core';
 
 import {FormChangeTracker} from '../shared/can_deactivate';
 
@@ -24,7 +24,7 @@ import {assertRequiredInput} from './util';
  * Form for managing a list of strings
  */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'list-form',
   styleUrls: ['list_form.css'],
   templateUrl: './list_form.ng.html',

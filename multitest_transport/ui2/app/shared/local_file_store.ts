@@ -15,7 +15,7 @@
  */
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
-import {Component, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild} from '@angular/core';
+import {Component, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {MatTable} from '@angular/material/table';
 import {ReplaySubject, Subject} from 'rxjs';
 import {filter, finalize, mergeMap, takeUntil} from 'rxjs/operators';
@@ -31,7 +31,7 @@ const ROOT_DIRECTORY_RE = new RegExp(`^${ROOT_DIRECTORY}/`);
 
 /** Displays and manages user-uploaded local files. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'local-file-store',
   styleUrls: ['local_file_store.css'],
   templateUrl: './local_file_store.ng.html',

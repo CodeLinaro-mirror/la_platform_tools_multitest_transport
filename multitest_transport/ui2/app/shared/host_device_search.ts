@@ -15,7 +15,7 @@
  */
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
-import {Component} from '@angular/core';
+import {Component, ChangeDetectionStrategy} from '@angular/core';
 import {Router} from '@angular/router';
 import {ReplaySubject} from 'rxjs';
 import {finalize, takeUntil} from 'rxjs/operators';
@@ -27,7 +27,7 @@ import {TfcClient} from '../services/tfc_client';
 
 /** Search a host or a device then navigate to its page. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'host-device-search',
   styleUrls: ['host_device_search.css'],
   templateUrl: './host_device_search.ng.html',
