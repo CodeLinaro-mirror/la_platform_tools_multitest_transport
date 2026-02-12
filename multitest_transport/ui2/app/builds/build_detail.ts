@@ -15,7 +15,7 @@
  */
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
-import {AfterViewInit, Component, Input, OnInit, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, Input, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {MatButton} from '@angular/material/button';
 import {MatDialog} from '@angular/material/dialog';
 import {Router} from '@angular/router';
@@ -32,7 +32,7 @@ import {XtsRequirementDetect, XtsRequirementDetectData} from './xts_requirement_
 
 /** A component for displaying the details of a build. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'build-detail',
   styleUrls: ['build_detail.css'],
   templateUrl: './build_detail.ng.html',

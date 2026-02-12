@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {first} from 'rxjs/operators';
 
 import {MttClient} from '../services/mtt_client';
@@ -25,7 +25,7 @@ const GOOGLE_DRIVE_ID = 'google_drive';
 
 /** Allows users to authenticate their Google Drive build channel. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'build-channel-setup',
   styleUrls: ['build_channel_setup.css'],
   templateUrl: './build_channel_setup.ng.html',

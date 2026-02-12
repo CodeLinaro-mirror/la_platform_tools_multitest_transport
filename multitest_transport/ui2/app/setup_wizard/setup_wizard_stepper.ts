@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {Component, ViewChild} from '@angular/core';
+import {Component, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {MatStepper} from '@angular/material/stepper';
 import {forkJoin, Observable} from 'rxjs';
 import {first} from 'rxjs/operators';
@@ -30,7 +30,7 @@ import {WifiSetup} from './wifi_setup';
  * A component for the stepper section of the setup wizard
  */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'setup-wizard-stepper',
   styleUrls: ['setup_wizard_stepper.css'],
   templateUrl: './setup_wizard_stepper.ng.html',

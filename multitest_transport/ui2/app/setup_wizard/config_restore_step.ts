@@ -15,7 +15,7 @@
  */
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
-import {Component} from '@angular/core';
+import {Component, ChangeDetectionStrategy} from '@angular/core';
 
 import {MttClient} from '../services/mtt_client';
 import {Notifier} from '../services/notifier';
@@ -23,7 +23,7 @@ import {buildApiErrorMessage} from '../shared/util';
 
 /** A component for restore a backup config exported from an MTT instance. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'config-restore-step',
   styleUrls: ['config_restore_step.css'],
   templateUrl: './config_restore_step.ng.html',

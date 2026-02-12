@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {Component, EventEmitter, Input, OnDestroy, Output} from '@angular/core';
+import {Component, EventEmitter, Input, OnDestroy, Output, ChangeDetectionStrategy} from '@angular/core';
 import {MatDialog, MatDialogRef} from '@angular/material/dialog';
 import {ReplaySubject} from 'rxjs';
 import {takeUntil} from 'rxjs/operators';
@@ -24,7 +24,7 @@ import {NoteType} from '../services/mtt_lab_models';
 
 /** Opens a notes dialog for hosts or devices. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'add-notes-button',
   templateUrl: './add_notes_button.ng.html',
 })

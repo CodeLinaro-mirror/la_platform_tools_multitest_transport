@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {Component, Inject} from '@angular/core';
+import {Component, Inject, ChangeDetectionStrategy} from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 import {Notifier} from 'google3/third_party/py/multitest_transport/ui2/app/services/notifier';
 
@@ -56,7 +56,7 @@ export interface NoteDialogParams {
 
 /** Component that displays note list or note editor. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'notes-dialog',
   styleUrls: ['notes_dialog.css'],
   templateUrl: './notes_dialog.ng.html',

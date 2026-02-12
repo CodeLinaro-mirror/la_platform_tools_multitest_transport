@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {Component, Inject} from '@angular/core';
+import {Component, Inject, ChangeDetectionStrategy} from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 
 /**
@@ -29,7 +29,7 @@ export interface BuildFileSelectorData {
  * Component to select a resource file for a build.
  */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'build-file-selector',
   styleUrls: ['build_file_selector.css'],
   templateUrl: './build_file_selector.ng.html',

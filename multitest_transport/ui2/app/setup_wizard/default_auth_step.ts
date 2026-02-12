@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {first} from 'rxjs/operators';
 
 import {MttClient} from '../services/mtt_client';
@@ -24,7 +24,7 @@ import {buildApiErrorMessage, delay} from '../shared/util';
 
 /** A component for restore a backup config exported from an MTT instance. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'default-auth-step',
   styleUrls: ['default_auth_step.css'],
   templateUrl: './default_auth_step.ng.html',

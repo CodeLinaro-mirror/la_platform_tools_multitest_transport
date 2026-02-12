@@ -16,7 +16,7 @@
  */
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {SelectionModel} from '@angular/cdk/collections';
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {MatTableDataSource} from '@angular/material/table';
 import {ReplaySubject} from 'rxjs';
 import {finalize, takeUntil} from 'rxjs/operators';
@@ -31,7 +31,7 @@ import {buildApiErrorMessage} from '../shared/util';
  * A component for displaying a list of builds.
  */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'build-list',
   styleUrls: ['build_list.css'],
   templateUrl: './build_list.ng.html',

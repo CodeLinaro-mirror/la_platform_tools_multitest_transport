@@ -15,7 +15,7 @@
  */
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
-import {Component, EventEmitter, Inject, OnDestroy, OnInit, Output, ViewChild} from '@angular/core';
+import {Component, EventEmitter, Inject, OnDestroy, OnInit, Output, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 import {MatStepper} from '@angular/material/stepper';
 import {forkJoin, ReplaySubject} from 'rxjs';
@@ -46,7 +46,7 @@ const TOTAL_STEPS = 2;
  * This component is used to set up xTS requirement detection config.
  */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'xts-requirement-detect',
   styleUrls: ['xts_requirement_detect.css'],
   templateUrl: './xts_requirement_detect.ng.html',

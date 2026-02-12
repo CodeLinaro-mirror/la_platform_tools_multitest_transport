@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {Observable} from 'rxjs';
 import {first} from 'rxjs/operators';
 
@@ -28,7 +28,7 @@ import {buildApiErrorMessage} from '../shared/util';
  * setup action.
  */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'wifi-setup',
   templateUrl: './wifi_setup.ng.html',
 })

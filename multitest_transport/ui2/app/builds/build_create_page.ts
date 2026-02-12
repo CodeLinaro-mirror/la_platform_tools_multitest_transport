@@ -15,7 +15,7 @@
  */
 
 import {COMMA, ENTER} from '@angular/cdk/keycodes';
-import {AfterViewInit, Component, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {MatButton} from '@angular/material/button';
 import {MatChipInputEvent} from '@angular/material/chips';
 import {MatDialog} from '@angular/material/dialog';
@@ -35,7 +35,7 @@ import {BuildFileSelector, BuildFileSelectorData} from './build_file_selector';
  * Component for creating a build.
  */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'build-create-page',
   styleUrls: ['build_create_page.css'],
   templateUrl: './build_create_page.ng.html',

@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {Title} from '@angular/platform-browser';
 
 import {APPLICATION_NAME} from '../shared/shared_module';
 
 /** A component for a build list page. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'build-list-page',
   templateUrl: './build_list_page.ng.html',
 })

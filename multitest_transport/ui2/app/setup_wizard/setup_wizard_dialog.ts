@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {Component} from '@angular/core';
+import {Component, ChangeDetectionStrategy} from '@angular/core';
 import {MatDialog, MatDialogRef} from '@angular/material/dialog';
 import {first, mergeMap} from 'rxjs/operators';
 
@@ -29,7 +29,7 @@ import {SetupWizardStepper} from './setup_wizard_stepper';
  * A component for the setup wizard overlay
  */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'setup-wizard-dialog',
   styleUrls: ['setup_wizard_dialog.css'],
   templateUrl: './setup_wizard_dialog.ng.html',

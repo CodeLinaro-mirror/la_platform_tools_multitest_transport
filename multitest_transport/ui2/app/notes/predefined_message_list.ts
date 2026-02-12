@@ -15,7 +15,7 @@
  */
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
-import {Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {MatDialog} from '@angular/material/dialog';
 import {MatTable, MatTableDataSource} from '@angular/material/table';
 import {MatSort, Sort} from '@angular/material/sort';
@@ -45,7 +45,7 @@ export type SingleValueField = 'lab'|'messageCategory'|'messageType';
 
 /** Display list of predefined message. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'predefined-message-list',
   styleUrls: ['predefined_message_list.css'],
   templateUrl: './predefined_message_list.ng.html',

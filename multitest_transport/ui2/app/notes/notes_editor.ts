@@ -15,7 +15,7 @@
  */
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
-import {Component, EventEmitter, Input, OnDestroy, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, Input, OnDestroy, OnInit, Output, ChangeDetectionStrategy} from '@angular/core';
 import {AbstractControl, UntypedFormControl, UntypedFormGroup, ValidationErrors, ValidatorFn} from '@angular/forms';
 import {Notifier} from 'google3/third_party/py/multitest_transport/ui2/app/services/notifier';
 import {OverflowListType} from 'google3/third_party/py/multitest_transport/ui2/app/shared/overflow_list';
@@ -68,7 +68,7 @@ export const dateTimeValidator: ValidatorFn =
 
 /** Adds or Edit notes for hosts or devices. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'notes-editor',
   styleUrls: ['notes_editor.css'],
   templateUrl: './notes_editor.ng.html',

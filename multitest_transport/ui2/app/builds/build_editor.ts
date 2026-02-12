@@ -15,7 +15,7 @@
  */
 
 import {COMMA, ENTER} from '@angular/cdk/keycodes';
-import {Component, EventEmitter, Inject, Output} from '@angular/core';
+import {Component, EventEmitter, Inject, Output, ChangeDetectionStrategy} from '@angular/core';
 import {MatChipInputEvent} from '@angular/material/chips';
 import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 
@@ -34,7 +34,7 @@ export interface BuildEditorData {
  * Component for updating a build.
  */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'build-editor',
   styleUrls: ['build_editor.css'],
   templateUrl: './build_editor.ng.html',

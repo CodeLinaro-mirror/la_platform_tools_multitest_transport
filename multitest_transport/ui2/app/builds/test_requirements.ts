@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {Component, EventEmitter, Input, OnDestroy, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, Input, OnDestroy, OnInit, Output, ChangeDetectionStrategy} from '@angular/core';
 import {MatDialog} from '@angular/material/dialog';
 import {MatTableDataSource} from '@angular/material/table';
 import {ReplaySubject} from 'rxjs';
@@ -35,7 +35,7 @@ interface TestRequirementData {
  * A component for displaying a list of test requirements for a build.
  */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'test-requirements',
   styleUrls: ['test_requirements.css'],
   templateUrl: './test_requirements.ng.html',

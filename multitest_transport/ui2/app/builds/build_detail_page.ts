@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {Title} from '@angular/platform-browser';
 import {ActivatedRoute} from '@angular/router';
 
@@ -22,7 +22,7 @@ import {APPLICATION_NAME} from '../shared/shared_module';
 
 /** A component for a build detail page. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'build-detail-page',
   templateUrl: './build_detail_page.ng.html',
 })

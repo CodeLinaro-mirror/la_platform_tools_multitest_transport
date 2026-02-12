@@ -15,7 +15,7 @@
  */
 
 import {HttpErrorResponse} from '@angular/common/http';
-import {Component, Inject, OnDestroy, OnInit} from '@angular/core';
+import {Component, Inject, OnDestroy, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {UntypedFormControl, UntypedFormGroup, ValidationErrors, ValidatorFn} from '@angular/forms';
 import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 import {Notifier} from 'google3/third_party/py/multitest_transport/ui2/app/services/notifier';
@@ -56,7 +56,7 @@ export interface PredefinedMessagesEditorDialogParams {
 
 /** Creates or edit predefined message. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'predefined-messages-editor',
   styleUrls: ['predefined_messages_editor.css'],
   templateUrl: './predefined_messages_editor.ng.html',
