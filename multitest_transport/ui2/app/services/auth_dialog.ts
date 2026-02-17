@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-import {Component} from '@angular/core';
+import {Component, ChangeDetectionStrategy} from '@angular/core';
 
 /** Component that displays a authentication dialog box */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'auth-dialog',
   templateUrl: './auth_dialog.ng.html',
   styleUrls: ['./auth_dialog.css'],

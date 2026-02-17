@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {first} from 'rxjs/operators';
 
 import {MttClient} from '../services/mtt_client';
@@ -24,7 +24,7 @@ import {buildApiErrorMessage, delay, reloadPage} from '../shared/util';
 
 /** A component for displaying the login button. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'login-button',
   styleUrls: ['login_button.css'],
   templateUrl: './login_button.ng.html',

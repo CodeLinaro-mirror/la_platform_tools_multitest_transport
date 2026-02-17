@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {Component, Inject} from '@angular/core';
+import {Component, Inject, ChangeDetectionStrategy} from '@angular/core';
 import {MAT_DIALOG_DATA} from '@angular/material/dialog';
 
 /** Detailed error object */
@@ -38,7 +38,7 @@ export interface ErrorDialogData {
 
 /** Component that displays an error popup dialog box */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'error-dialog',
   templateUrl: './error_dialog.ng.html',
   styleUrls: ['./error_dialog.css'],

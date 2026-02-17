@@ -17,7 +17,7 @@
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {SelectionModel} from '@angular/cdk/collections';
 import {Location} from '@angular/common';
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {forkJoin} from 'rxjs';
 import {delay, finalize, first, mergeMap} from 'rxjs/operators';
 
@@ -28,7 +28,7 @@ import {buildApiErrorMessage} from '../shared/util';
 
 /** A component for selecting remote config sets to import. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'config-set-picker',
   styleUrls: ['config_set_picker.css'],
   templateUrl: './config_set_picker.ng.html',

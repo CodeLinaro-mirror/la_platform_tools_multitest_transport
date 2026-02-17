@@ -15,7 +15,7 @@
  */
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
-import {Component, Input, OnDestroy, OnInit} from '@angular/core';
+import {Component, Input, OnDestroy, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {ReplaySubject} from 'rxjs';
 import {delay, finalize, first, takeUntil} from 'rxjs/operators';
 
@@ -26,7 +26,7 @@ import {buildApiErrorMessage} from '../shared/util';
 
 /** A component for displaying a list of imported config sets. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'config-set-list',
   styleUrls: ['config_set_list.css'],
   templateUrl: './config_set_list.ng.html',

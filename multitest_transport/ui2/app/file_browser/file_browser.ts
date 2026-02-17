@@ -15,7 +15,7 @@
  */
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
-import {Component, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {Component, OnDestroy, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {MatTable} from '@angular/material/table';
 import {ActivatedRoute, Router, UrlSegment} from '@angular/router';
 import {combineLatest, ReplaySubject, Subject} from 'rxjs';
@@ -27,7 +27,7 @@ import {buildApiErrorMessage, noAwait} from '../shared/util';
 
 /** A component for file browsing */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'file-browser',
   styleUrls: ['file_browser.css'],
   templateUrl: './file_browser.ng.html',

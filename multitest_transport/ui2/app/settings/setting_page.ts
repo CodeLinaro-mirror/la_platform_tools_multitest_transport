@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {Title} from '@angular/platform-browser';
 import {MttClient} from '../services/mtt_client';
 import {Notifier} from '../services/notifier';
@@ -22,7 +22,7 @@ import {APPLICATION_NAME} from '../shared/shared_module';
 import {buildApiErrorMessage, reloadPage} from '../shared/util';
 /** A component for display settings */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'setting-page',
   styleUrls: ['setting_page.css'],
   templateUrl: './setting_page.ng.html',

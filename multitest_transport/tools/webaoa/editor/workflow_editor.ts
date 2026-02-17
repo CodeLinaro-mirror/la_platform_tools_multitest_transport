@@ -17,7 +17,7 @@
 
 import {Clipboard} from '@angular/cdk/clipboard';
 import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
-import {Component, ElementRef, HostListener, Input, OnChanges, OnDestroy, SimpleChanges, ViewChild} from '@angular/core';
+import {Component, ElementRef, HostListener, Input, OnChanges, OnDestroy, SimpleChanges, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {MatDialog} from '@angular/material/dialog';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {firstValueFrom, Observable, Subject} from 'rxjs';
@@ -57,7 +57,7 @@ export const MAX_KEY_COMBINATION_MILLIS = 2000;
  * on the selected device.
  */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'workflow-editor',
   templateUrl: './workflow_editor.ng.html',
   styleUrls: ['./workflow_editor.css'],

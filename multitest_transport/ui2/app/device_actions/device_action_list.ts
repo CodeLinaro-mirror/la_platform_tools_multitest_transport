@@ -15,7 +15,7 @@
  */
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {ReplaySubject} from 'rxjs';
 import {finalize, takeUntil} from 'rxjs/operators';
 
@@ -27,7 +27,7 @@ import {buildApiErrorMessage} from '../shared/util';
 
 /** A component for displaying a list of device actions. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'device-action-list',
   styleUrls: ['device_action_list.css'],
   templateUrl: './device_action_list.ng.html',

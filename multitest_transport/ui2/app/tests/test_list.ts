@@ -15,7 +15,7 @@
  */
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
-import {Component, Input, OnDestroy, OnInit} from '@angular/core';
+import {Component, Input, OnDestroy, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {ReplaySubject} from 'rxjs';
 import {delay, finalize, takeUntil} from 'rxjs/operators';
 
@@ -27,7 +27,7 @@ import {buildApiErrorMessage} from '../shared/util';
 
 /** A component for displaying a list of test runs. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'test-list',
   styleUrls: ['test_list.css'],
   templateUrl: './test_list.ng.html',

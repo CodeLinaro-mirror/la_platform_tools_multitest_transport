@@ -16,7 +16,7 @@
 
 import {SelectionModel} from '@angular/cdk/collections';
 import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output, ChangeDetectionStrategy} from '@angular/core';
 
 import {DeviceAction} from '../services/mtt_models';
 import {FormChangeTracker} from '../shared/can_deactivate';
@@ -30,7 +30,7 @@ import {assertRequiredInput} from '../shared/util';
  * select device actions such as flush, and reboot before a test can be run.
  */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'device-action-picker',
   styleUrls: ['device_action_picker.css'],
   templateUrl: './device_action_picker.ng.html',

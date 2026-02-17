@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {Title} from '@angular/platform-browser';
 import {APPLICATION_NAME} from '../shared/shared_module';
 
 /** A component for file browser page  */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'file-browser-page',
   templateUrl: './file_browser_page.ng.html',
 })

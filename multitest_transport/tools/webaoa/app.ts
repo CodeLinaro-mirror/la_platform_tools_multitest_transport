@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import {Component} from '@angular/core';
+import {Component, ChangeDetectionStrategy} from '@angular/core';
 
 import {AoaDevice} from './device/device';
 
@@ -24,7 +24,7 @@ declare var analyticsEnabled: boolean;
 
 /** Main application {@link Component}. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'aoa-app',
   templateUrl: './app.ng.html',
   styleUrls: ['./app.css'],

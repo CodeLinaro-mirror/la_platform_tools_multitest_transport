@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {Component, Inject} from '@angular/core';
+import {Component, Inject, ChangeDetectionStrategy} from '@angular/core';
 import {MAT_DIALOG_DATA} from '@angular/material/dialog';
 
 /** Data to be displayed in a popup dialog box */
@@ -29,7 +29,7 @@ export interface NotifierDialogData {
 
 /** Component that displays a popup dialog box */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'notifier-dialog',
   templateUrl: './notifier_dialog.ng.html',
   styleUrls: ['./notifier_dialog.css'],

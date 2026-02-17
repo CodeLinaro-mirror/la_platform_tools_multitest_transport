@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import {Component, EventEmitter, Output} from '@angular/core';
+import {Component, EventEmitter, Output, ChangeDetectionStrategy} from '@angular/core';
 
 import {Point} from '../device/device';
 import {AoaAction, ClickAction, SwipeAction} from './action';
@@ -25,7 +25,7 @@ const MAX_CLICK_MILLIS = 100;
 
 /** A device's touchscreen, capable of handling clicks and gestures. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'touch-screen',
   templateUrl: './touch_screen.ng.html',
   styleUrls: ['./touch_screen.css'],

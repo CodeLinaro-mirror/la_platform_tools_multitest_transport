@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 /**
  * A component for displaying an auth return page.
  *
@@ -22,7 +22,7 @@ import {Component, OnInit} from '@angular/core';
  * localhost/127.0.0.1, and accidently closed its parent window
  */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'auth-return-page',
   template: '<div>{{message}}</div>',
 })

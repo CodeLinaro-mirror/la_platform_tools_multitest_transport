@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import {Component, Inject} from '@angular/core';
+import {Component, Inject, ChangeDetectionStrategy} from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 
 import {DeviceManager} from './device_manager';
@@ -25,7 +25,7 @@ import {DeviceManager} from './device_manager';
  * user to reconnect the device.
  */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   template: `
     <h1 matDialogTitle>Device connection lost</h1>
     <div matDialogContent>

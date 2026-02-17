@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import {Component, EventEmitter, OnDestroy, Output} from '@angular/core';
+import {Component, EventEmitter, OnDestroy, Output, ChangeDetectionStrategy} from '@angular/core';
 import {ReplaySubject} from 'rxjs';
 import {takeUntil} from 'rxjs/operators';
 
@@ -24,7 +24,7 @@ import {DeviceManager} from './device_manager';
 
 /** Displays a list of connected AOA-compatible devices to select from. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'device-list',
   templateUrl: './device_list.ng.html',
   styleUrls: ['./device_list.css'],

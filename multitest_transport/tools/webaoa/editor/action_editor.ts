@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import {Component, Inject} from '@angular/core';
+import {Component, Inject, ChangeDetectionStrategy} from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 
 import {AoaAction, AoaActionCommand, COMMANDS} from './action';
@@ -28,7 +28,7 @@ export interface AoaActionEditorResult {
 
 /** Dialog used to edit AOA actions. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'action-editor',
   templateUrl: './action_editor.ng.html',
   styleUrls: ['./action_editor.css'],

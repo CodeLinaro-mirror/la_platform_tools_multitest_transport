@@ -15,7 +15,7 @@
  */
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
-import {Component, OnDestroy, OnInit, QueryList, ViewChildren} from '@angular/core';
+import {Component, OnDestroy, OnInit, QueryList, ViewChildren, ChangeDetectionStrategy} from '@angular/core';
 import {forkJoin, ReplaySubject} from 'rxjs';
 import {finalize, first, takeUntil} from 'rxjs/operators';
 
@@ -28,7 +28,7 @@ import {buildApiErrorMessage} from '../shared/util';
 
 /** A component for displaying setting form */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'setting-form',
   styleUrls: ['setting_form.css'],
   templateUrl: './setting_form.ng.html',
