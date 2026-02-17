@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-import {Component, Input} from '@angular/core';
+import {Component, Input, ChangeDetectionStrategy} from '@angular/core';
 
 import {DeviceInfo} from '../services/tfc_models';
 
 /** A component for displaying a given list of devices. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'simple-device-list',
   styleUrls: ['simple_device_list.css'],
   templateUrl: './simple_device_list.ng.html',

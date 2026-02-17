@@ -15,7 +15,7 @@
  */
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
-import {Component, EventEmitter, Inject, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges} from '@angular/core';
+import {Component, EventEmitter, Inject, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges, ChangeDetectionStrategy} from '@angular/core';
 import {Notifier} from 'google3/third_party/py/multitest_transport/ui2/app/services/notifier';
 import {assertRequiredInput} from 'google3/third_party/py/multitest_transport/ui2/app/shared/util';
 import {of as observableOf, ReplaySubject, throwError} from 'rxjs';
@@ -30,7 +30,7 @@ import {buildApiErrorMessage} from '../shared/util';
 
 /** Readonly form for device summary. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'device-details-summary',
   styleUrls: ['./device_details_summary.css'],
   templateUrl: './device_details_summary.ng.html',

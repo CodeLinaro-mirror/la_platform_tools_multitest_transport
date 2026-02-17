@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {Title} from '@angular/platform-browser';
 import {ActivatedRoute} from '@angular/router';
 
@@ -22,7 +22,7 @@ import {LAB_APPLICATION_NAME} from 'google3/third_party/py/multitest_transport/u
 
 /** A component for displaying the details of a device. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'device-details-page',
   templateUrl: './device_details_page.ng.html',
 })
