@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 
 import {FileService} from '../services/file_service';
 import {TestRun} from '../services/mtt_models';
@@ -24,7 +24,7 @@ import {assertRequiredInput} from '../shared/util';
 
 /** A component for displaying a test job status info. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'attempt-status',
   styleUrls: ['attempt_status.css'],
   templateUrl: './attempt_status.ng.html',

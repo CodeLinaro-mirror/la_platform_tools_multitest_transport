@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output, ChangeDetectionStrategy} from '@angular/core';
 import {MatDialog} from '@angular/material/dialog';
 
 import * as mttModels from '../services/mtt_models';
@@ -27,7 +27,7 @@ import {TestRunConfigEditor, TestRunConfigEditorData} from './test_run_config_ed
  * A list to display test run config information with create and edit buttons.
  */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'test-run-config-summary',
   styleUrls: ['test_run_config_summary.css'],
   templateUrl: './test_run_config_summary.ng.html',

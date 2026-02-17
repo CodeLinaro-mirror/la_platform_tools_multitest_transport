@@ -15,7 +15,7 @@
  */
 
 import {KeyValue} from '@angular/common';
-import {Component, Inject, Input, OnChanges, OnInit, SimpleChanges} from '@angular/core';
+import {Component, Inject, Input, OnChanges, OnInit, SimpleChanges, ChangeDetectionStrategy} from '@angular/core';
 import * as moment from 'moment';
 import {finalize} from 'rxjs/operators';
 
@@ -70,7 +70,7 @@ interface CommandStateStatNode {
 
 /** Displays the test run progress entities (log entries and attempts). */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'test-run-progress',
   styleUrls: ['test_run_progress.css'],
   templateUrl: './test_run_progress.ng.html',

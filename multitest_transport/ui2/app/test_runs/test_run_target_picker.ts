@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {Component, EventEmitter, Input, OnDestroy, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, Input, OnDestroy, OnInit, Output, ChangeDetectionStrategy} from '@angular/core';
 import {MatAutocompleteTrigger} from '@angular/material/autocomplete';
 import {MatOptionSelectionChange} from '@angular/material/core';
 import {ConnectableObservable, Observable, of as observableOf, ReplaySubject, Subject} from 'rxjs';
@@ -35,7 +35,7 @@ declare interface AutocompleteOption {
  * A component for selecting run targets.
  */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'test-run-target-picker',
   styleUrls: ['test_run_target_picker.css'],
   templateUrl: './test_run_target_picker.ng.html',

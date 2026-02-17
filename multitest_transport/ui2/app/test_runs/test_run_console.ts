@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {Component, ElementRef, Inject, Input, OnChanges, OnDestroy, OnInit, SimpleChanges, ViewChild} from '@angular/core';
+import {Component, ElementRef, Inject, Input, OnChanges, OnDestroy, OnInit, SimpleChanges, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {defer, EMPTY, iif, of, ReplaySubject, Subscription, timer} from 'rxjs';
 import {catchError, filter, repeat, switchMapTo, take, takeUntil} from 'rxjs/operators';
 
@@ -58,7 +58,7 @@ export const POLL_INTERVAL = 4_000;
 
 /** A component for displaying the console output from a test run. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'test-run-console',
   styleUrls: ['test_run_console.css'],
   templateUrl: './test_run_console.ng.html',

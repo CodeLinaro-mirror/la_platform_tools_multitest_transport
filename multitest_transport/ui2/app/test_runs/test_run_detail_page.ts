@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {Title} from '@angular/platform-browser';
 import {ActivatedRoute} from '@angular/router';
 
@@ -23,7 +23,7 @@ import {APPLICATION_NAME} from '../shared/shared_module';
 
 /** A component for displaying the details of a test run. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'test-run-detail-page',
   templateUrl: './test_run_detail_page.ng.html',
 })

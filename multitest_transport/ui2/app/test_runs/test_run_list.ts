@@ -17,7 +17,7 @@
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {SelectionModel} from '@angular/cdk/collections';
 import {COMMA, ENTER} from '@angular/cdk/keycodes';
-import {AfterViewInit, Component, ElementRef, HostListener, OnDestroy, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, HostListener, OnDestroy, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {MatChipInputEvent} from '@angular/material/chips';
 import {MatTableDataSource} from '@angular/material/table';
 import {ActivatedRoute, Router} from '@angular/router';
@@ -36,7 +36,7 @@ const COLUMN_DISPLAY_STORAGE_KEY = 'TEST_RUN_LIST_COLUMN_DISPLAY';
 
 /** A component for displaying a list of test runs. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'test-run-list',
   styleUrls: ['test_run_list.css'],
   templateUrl: './test_run_list.ng.html',

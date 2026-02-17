@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {Component, Input, OnChanges, OnInit, SimpleChanges} from '@angular/core';
+import {Component, Input, OnChanges, OnInit, SimpleChanges, ChangeDetectionStrategy} from '@angular/core';
 import {isFinalTestRunState, TestRunState} from '../services/mtt_models';
 import {assertRequiredInput} from '../shared/util';
 /**
@@ -37,7 +37,7 @@ export enum DisplayMode {
  * A component for displaying a test run results (tests failed / tests run).
  */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'test-run-failures',
   styleUrls: ['test_run_failures.css'],
   templateUrl: './test_run_failures.ng.html',

@@ -15,7 +15,7 @@
  */
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
-import {AfterViewInit, Component, inject, Input, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, inject, Input, OnDestroy, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {MatButton} from '@angular/material/button';
 import {MatDialog} from '@angular/material/dialog';
 import {MatTabChangeEvent, MatTabGroup} from '@angular/material/tabs';
@@ -37,7 +37,7 @@ import {TestRunActionPickerDialog, TestRunActionPickerDialogData} from '../test_
 
 /** A component for displaying the details of a test run. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'test-run-detail',
   styleUrls: ['test_run_detail.css'],
   templateUrl: './test_run_detail.ng.html',

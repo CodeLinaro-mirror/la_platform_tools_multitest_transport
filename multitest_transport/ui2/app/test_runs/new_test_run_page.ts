@@ -16,7 +16,7 @@
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {COMMA, ENTER} from '@angular/cdk/keycodes';
-import {AfterViewInit, Component, Inject, OnInit, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, Inject, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {MatButton} from '@angular/material/button';
 import {MatChipInputEvent} from '@angular/material/chips';
 import {MatStepper} from '@angular/material/stepper';
@@ -53,7 +53,7 @@ const DISK_SPACE_USAGE_ALARMS = ['disk_space._data.disk_space_usage'];
  * Form for running a new test
  */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'new-test-run-page',
   styleUrls: ['new_test_run_page.css'],
   templateUrl: './new_test_run_page.ng.html',

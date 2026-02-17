@@ -15,7 +15,7 @@
  */
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
-import {Component, DebugElement} from '@angular/core';
+import {Component, DebugElement, ChangeDetectionStrategy} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {MatChipInput} from '@angular/material/chips';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
@@ -35,7 +35,7 @@ import {NewTestRunPage} from './new_test_run_page';
 import {TestRunsModule} from './test_runs_module';
 
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'device-list',
   template: '',
   jit: true,

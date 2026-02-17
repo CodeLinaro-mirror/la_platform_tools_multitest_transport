@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {Title} from '@angular/platform-browser';
 import {APPLICATION_NAME} from '../shared/shared_module';
 
 
 /** A component for displaying a list of test runs. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'test-run-list-page',
   templateUrl: './test_run_list_page.ng.html',
 })

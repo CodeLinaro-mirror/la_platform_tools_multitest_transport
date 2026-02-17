@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {Component, EventEmitter, Inject, OnInit, Output, ViewChild} from '@angular/core';
+import {Component, EventEmitter, Inject, OnInit, Output, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 import {MatStepper} from '@angular/material/stepper';
 
@@ -50,7 +50,7 @@ const TOTAL_STEPS = 4;
  * This component is used to create or update a test run config.
  */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'test-run-config-editor',
   styleUrls: ['test_run_config_editor.css'],
   templateUrl: './test_run_config_editor.ng.html',

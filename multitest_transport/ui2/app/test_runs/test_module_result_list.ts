@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {finalize} from 'rxjs/operators';
 
 import {MttClient} from '../services/mtt_client';
@@ -38,7 +38,7 @@ interface ModuleResultNode {
  * Displays a list of test suite modules from the test results.
  */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'test-module-result-list',
   styleUrls: ['test_module_result_list.css'],
   templateUrl: './test_module_result_list.ng.html',
