@@ -15,7 +15,7 @@
  */
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
-import {Component, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges} from '@angular/core';
+import {Component, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges, ChangeDetectionStrategy} from '@angular/core';
 import {UntypedFormControl} from '@angular/forms';
 import {ReplaySubject} from 'rxjs';
 import {startWith, takeUntil} from 'rxjs/operators';
@@ -28,7 +28,7 @@ import {Notifier} from '../services/notifier';
  * owners from the menu or input username to assign hosts to specified user.
  */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'assign-to-filter',
   styleUrls: ['assign_to_filter.css'],
   templateUrl: './assign_to_filter.ng.html',

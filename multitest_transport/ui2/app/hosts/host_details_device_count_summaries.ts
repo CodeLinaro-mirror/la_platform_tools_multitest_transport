@@ -15,7 +15,7 @@
  */
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
-import {Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges} from '@angular/core';
+import {Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges, ChangeDetectionStrategy} from '@angular/core';
 import {ReplaySubject} from 'rxjs';
 import {takeUntil} from 'rxjs/operators';
 
@@ -26,7 +26,7 @@ import {assertRequiredInput} from '../shared/util';
 
 /** Display a list of devices count summaries from a host. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'host-details-device-count-summaries',
   styleUrls: ['host_details_device_count_summaries.css'],
   templateUrl: './host_details_device_count_summaries.ng.html',

@@ -16,7 +16,7 @@
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {DOCUMENT, Location} from '@angular/common';
-import {AfterViewInit, Component, ElementRef, HostListener, Inject, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, HostListener, Inject, OnDestroy, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {Title} from '@angular/platform-browser';
 import {ActivatedRoute, Router, UrlSerializer} from '@angular/router';
 import {forkJoin, Observable, of as observableOf, Subject} from 'rxjs';
@@ -46,7 +46,7 @@ import {UnassignedOfflineHostList} from './unassigned_offline_host_list';
  * offline devices.
  */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'offline-host-assignments-page',
   styleUrls: ['offline_host_assignments_page.css'],
   templateUrl: './offline_host_assignments_page.ng.html',

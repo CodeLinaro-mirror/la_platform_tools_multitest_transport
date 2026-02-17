@@ -15,7 +15,7 @@
  */
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
-import {Component, EventEmitter, Input, OnDestroy, Output} from '@angular/core';
+import {Component, EventEmitter, Input, OnDestroy, Output, ChangeDetectionStrategy} from '@angular/core';
 import {ReplaySubject} from 'rxjs';
 import {takeUntil} from 'rxjs/operators';
 
@@ -25,7 +25,7 @@ import {HostRecoveryStateRequest, RecoveryState} from '../services/tfc_models';
 
 /** A button for users to mark hosts recovery state as 'VERIFIED'. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'hosts-mark-as-verified-button',
   styleUrls: ['hosts_mark_as_verified_button.css'],
   templateUrl: './hosts_mark_as_verified_button.ng.html',

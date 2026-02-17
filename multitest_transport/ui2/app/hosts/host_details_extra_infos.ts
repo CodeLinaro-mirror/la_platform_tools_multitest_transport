@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-import {Component, Input, OnChanges, OnInit, SimpleChanges} from '@angular/core';
+import {Component, Input, OnChanges, OnInit, SimpleChanges, ChangeDetectionStrategy} from '@angular/core';
 import {assertRequiredInput} from '../shared/util';
 import {LabHostExtraInfo} from '../services/mtt_lab_models';
 
 
 /** Displaying extra info list of a host. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'host-details-extra-infos',
   styleUrls: ['host_details_extra_infos.css'],
   templateUrl: 'host_details_extra_infos.ng.html',

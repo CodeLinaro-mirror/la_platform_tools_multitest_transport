@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {Component, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {Sort} from '@angular/material/sort';
 
 import {HostAssignInfo, LabHostInfo} from '../services/mtt_lab_models';
@@ -25,7 +25,7 @@ import {HostListTable} from './host_list_table';
 
 /** Displays assigned to others offline hosts or hosts with offline devices. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'assigned-others-offline-host-list',
   styleUrls: ['assigned_others_offline_host_list.css'],
   templateUrl: './assigned_others_offline_host_list.ng.html',

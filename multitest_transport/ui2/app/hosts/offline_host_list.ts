@@ -16,7 +16,7 @@
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {Location} from '@angular/common';
-import {Component, Inject, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {Component, Inject, OnDestroy, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {ActivatedRoute, Router, UrlSerializer} from '@angular/router';
 import {finalize, takeUntil} from 'rxjs/operators';
 
@@ -35,7 +35,7 @@ import {filterHostListDataSource} from './offline_host_filter';
 
 /** Displays offline hosts or hosts with offline devices. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'offline-host-list',
   styleUrls: ['offline_host_list.css'],
   templateUrl: './offline_host_list.ng.html',

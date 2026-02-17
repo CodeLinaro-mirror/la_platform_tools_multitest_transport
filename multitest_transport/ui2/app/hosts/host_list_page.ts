@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {Component, Inject, OnInit} from '@angular/core';
+import {Component, Inject, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {Title} from '@angular/platform-browser';
 
 import {APP_DATA, AppData} from '../services';
@@ -22,7 +22,7 @@ import {APPLICATION_NAME, LAB_APPLICATION_NAME} from '../shared/shared_module';
 
 /** Displaying a list of hosts. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'host-list-page',
   templateUrl: './host_list_page.ng.html',
 })

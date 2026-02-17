@@ -15,7 +15,7 @@
  */
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
-import {Component, ElementRef, HostListener, Input, OnChanges, OnDestroy, OnInit, SimpleChanges, ViewChild} from '@angular/core';
+import {Component, ElementRef, HostListener, Input, OnChanges, OnDestroy, OnInit, SimpleChanges, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {Router} from '@angular/router';
 import {ReplaySubject} from 'rxjs';
 import {finalize, mergeMap, takeUntil} from 'rxjs/operators';
@@ -31,7 +31,7 @@ import {assertRequiredInput} from '../shared/util';
 
 /** Display a list of devices from a host. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'host-details-device-list',
   styleUrls: ['host_details_device_list.css'],
   templateUrl: './host_details_device_list.ng.html',

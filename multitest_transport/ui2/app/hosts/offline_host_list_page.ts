@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {Title} from '@angular/platform-browser';
 
 import {LAB_APPLICATION_NAME} from '../shared/shared_module';
@@ -24,7 +24,7 @@ import {LAB_APPLICATION_NAME} from '../shared/shared_module';
  * devices.
  */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'offline-host-list-page',
   styleUrls: ['offline_host_list_page.css'],
   templateUrl: './offline_host_list_page.ng.html',

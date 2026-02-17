@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {Component, Inject, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {Component, Inject, OnDestroy, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 import {MatPaginator} from '@angular/material/paginator';
 import {MatRadioChange} from '@angular/material/radio';
@@ -67,7 +67,7 @@ interface HostCountByHarnessVersionElement {
 
 /** Component that manages host updates in a lab. */
 @Component({
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
   selector: 'host-update-dialog',
   styleUrls: ['host_update_dialog.css'],
   templateUrl: './host_update_dialog.ng.html',
