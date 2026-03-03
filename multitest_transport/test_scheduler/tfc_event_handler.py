@@ -84,13 +84,6 @@ def _GenerateHashOfProtorpcObject(message):
   return hex_digest
 
 
-def _GetOlcsSessionStub() -> olcs_session_stub.OlcsSessionStub:
-  """Returns a OlcsSessionStub for TFC."""
-  if not hasattr(_tls, 'olcs_session_stub'):
-    _tls.olcs_session_stub = olcs_session_stub.OlcsSessionStub(None)
-  return _tls.olcs_session_stub
-
-
 def _ProcessSubscribedSessionResponse(
     test_request: api_messages.RequestMessage,
 ):
@@ -211,7 +204,7 @@ def _StartSubscribeSession(test_run_id, request_id):
       request_id,
       test_run_id,
   )
-  subscription_id = _GetOlcsSessionStub().StartSubscribeSession(
+  subscription_id = olcs_session_stub.GetSharedStub().StartSubscribeSession(
       request_id,
       ndb.with_ndb_context(_ProcessSubscribedSessionResponse),
   )
@@ -227,7 +220,9 @@ def _StopSubscribeSession(test_run_id, request_id):
       request_id,
       test_run_id,
   )
-  _GetOlcsSessionStub().StopSubscribeSession(_subscriptions[request_id])
+  olcs_session_stub.GetSharedStub().StopSubscribeSession(
+      _subscriptions[request_id]
+  )
   del _subscriptions[request_id]
 
 

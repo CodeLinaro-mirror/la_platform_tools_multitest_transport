@@ -91,20 +91,6 @@ def _GetAPIClient():
   return _tls.api_client
 
 
-def _GetOlcsSessionStub() -> olcs_session_stub.OlcsSessionStub:
-  """Returns a OlcsSessionStub for TFC."""
-  if not hasattr(_tls, 'olcs_session_stub'):
-    _tls.olcs_session_stub = olcs_session_stub.OlcsSessionStub(None)
-  return _tls.olcs_session_stub
-
-
-def _GetOlcsLabInfoStub() -> olcs_lab_info_stub.OlcsLabInfoStub:
-  """Returns a OlcsLabInfoStub for TFC."""
-  if not hasattr(_tls, 'olcs_lab_info_stub'):
-    _tls.olcs_lab_info_stub = olcs_lab_info_stub.OlcsLabInfoStub(None)
-  return _tls.olcs_lab_info_stub
-
-
 def _ProcessSubscribedSessionResponse(
     test_request: api_messages.RequestMessage,
 ):
@@ -165,8 +151,9 @@ def NewRequest(
     A api_messages.Request object.
   """
   if os.environ.get('IS_OMNILAB_BASED') == 'true':
-    request_id = _GetOlcsSessionStub().CreateNewRequest(new_request_msg)
-    _GetOlcsSessionStub().StartSubscribeSession(
+    stub = olcs_session_stub.GetSharedStub()
+    request_id = stub.CreateNewRequest(new_request_msg)
+    stub.StartSubscribeSession(
         request_id, ndb.with_ndb_context(_ProcessSubscribedSessionResponse)
     )
     return api_messages.RequestMessage(id=request_id)
@@ -189,7 +176,7 @@ def ResumeRequest(request_id: str):
     request_id: The request ID to be resumed.
   """
   if os.environ.get('IS_OMNILAB_BASED') == 'true':
-    _GetOlcsSessionStub().StartSubscribeSession(
+    olcs_session_stub.GetSharedStub().StartSubscribeSession(
         request_id, ndb.with_ndb_context(_ProcessSubscribedSessionResponse)
     )
 
@@ -205,7 +192,7 @@ def GetRequest(request_id: str) -> api_messages.RequestMessage:
   """
   if os.environ.get('IS_OMNILAB_BASED') == 'true':
     return (
-        _GetOlcsSessionStub().GetRequest(request_id)
+        olcs_session_stub.GetSharedStub().GetRequest(request_id)
         or api_messages.RequestMessage()
     )
   else:
@@ -225,7 +212,7 @@ def CancelRequest(request_id: str):
     request_id: a request ID.
   """
   if os.environ.get('IS_OMNILAB_BASED') == 'true':
-    _GetOlcsSessionStub().CancelRequest(request_id)
+    olcs_session_stub.GetSharedStub().CancelRequest(request_id)
   else:
     request_id = int(request_id)
     _GetAPIClient().requests().cancel(request_id=request_id).execute()
@@ -244,7 +231,9 @@ def GetTestContext(
     A TFC TestContext object.
   """
   if os.environ.get('IS_OMNILAB_BASED') == 'true':
-    return _GetOlcsSessionStub().GetTestContext(request_id, command_id)
+    return olcs_session_stub.GetSharedStub().GetTestContext(
+        request_id, command_id
+    )
   req = (
       _GetAPIClient()
       .requests()
@@ -268,7 +257,7 @@ def GetAttempt(
     TFC command attempt, or None if not found
   """
   if os.environ.get('IS_OMNILAB_BASED') == 'true':
-    return _GetOlcsSessionStub().GetAttempt(request_id, attempt_id)
+    return olcs_session_stub.GetSharedStub().GetAttempt(request_id, attempt_id)
   else:
     request = GetRequest(request_id)
     attempts = request.command_attempts or []
@@ -287,7 +276,9 @@ def GetLatestFinishedAttempts(
     A list of finished TFC command attempts
   """
   if os.environ.get('IS_OMNILAB_BASED') == 'true':
-    return _GetOlcsSessionStub().GetLatestFinishedAttempts(request_id)
+    return olcs_session_stub.GetSharedStub().GetLatestFinishedAttempts(
+        request_id
+    )
   else:
     request = GetRequest(request_id)
     attempt_map = {}
@@ -309,7 +300,7 @@ def ListDevices() -> Optional[api_messages.DeviceInfoCollection]:
     cursor = None
     while True:
       options = olcs_lab_info_stub.ListDevicesOptions(count=1000, cursor=cursor)
-      response = _GetOlcsLabInfoStub().ListDevices(options)
+      response = olcs_lab_info_stub.GetSharedStub().ListDevices(options)
       all_device_infos.extend(response.device_infos)
       if response.more:
         cursor = response.next_cursor
@@ -337,7 +328,7 @@ def GetDeviceInfo(serial_num: str) -> Optional[api_messages.DeviceInfo]:
     A device info object or None if not found.
   """
   if os.environ.get('IS_OMNILAB_BASED') == 'true':
-    return _GetOlcsLabInfoStub().GetDevice(serial_num)
+    return olcs_lab_info_stub.GetSharedStub().GetDevice(serial_num)
   try:
     res = _GetAPIClient().devices().get(device_serial=serial_num).execute()
     return protojson.decode_message(api_messages.DeviceInfo, json.dumps(res))  # pytype: disable=module-attr
@@ -352,7 +343,9 @@ def GetRequestInvocationStatus(
 ) -> api_messages.InvocationStatus:
   """Fetches the invocation status for a request."""
   if os.environ.get('IS_OMNILAB_BASED') == 'true':
-    return _GetOlcsSessionStub().GetRequestInvocationStatus(request_id)
+    return olcs_session_stub.GetSharedStub().GetRequestInvocationStatus(
+        request_id
+    )
   else:
     request_id = int(request_id)
     res = (

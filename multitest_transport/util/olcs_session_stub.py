@@ -126,6 +126,12 @@ def _GetSharedClient():
   return olcs_session_client.OlcsSessionClient.create()
 
 
+@functools.lru_cache(maxsize=None)
+def GetSharedStub():
+  """Returns a shared OlcsSessionStub instance."""
+  return OlcsSessionStub(None)
+
+
 class OlcsSessionStub:
   """The OLCS session service stub to send ats server specific request to OLCS."""
 

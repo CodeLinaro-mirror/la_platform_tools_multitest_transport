@@ -47,7 +47,7 @@ class TfcClientTest(testbed_dependent_test.TestbedDependentTest):
             'hostname', tfc_client.API_NAME, tfc_client.API_VERSION))
     self.assertEqual(mock_build(), api_client)
 
-  @mock.patch.object(tfc_client, '_GetOlcsLabInfoStub')
+  @mock.patch.object(olcs_lab_info_stub, 'GetSharedStub')
   def testListDevices_omniLabPagination(self, mock_get_olcs_lab_info_stub):
     os.environ['IS_OMNILAB_BASED'] = 'true'
     mock_stub = mock.MagicMock()

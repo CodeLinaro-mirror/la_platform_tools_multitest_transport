@@ -15,6 +15,7 @@
 """A OLCS lab info service stub that fetches device and lab info from OLCS."""
 
 import datetime
+import functools
 import re
 from typing import List, Optional
 
@@ -69,6 +70,12 @@ class ListDevicesOptions:
     if not isinstance(other, ListDevicesOptions):
       return NotImplemented
     return self.__dict__ == other.__dict__
+
+
+@functools.lru_cache(maxsize=None)
+def GetSharedStub():
+  """Returns a shared OlcsLabInfoStub instance."""
+  return OlcsLabInfoStub(None)
 
 
 class OlcsLabInfoStub:
