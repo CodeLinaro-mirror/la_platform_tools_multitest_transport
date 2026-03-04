@@ -218,6 +218,7 @@ then
       --port "${MTT_CONTROL_SERVER_PORT}" \
       --labconsole_grpc_port "${LABCONSOLE_SERVER_GRPC_PORT}" \
       --labconsole_rest_port "${LABCONSOLE_SERVER_REST_PORT}" \
+      --olc_server_port "${OLC_SERVER_PORT}" \
       --lab_console_port "${LAB_CONSOLE_PORT}" \
       --log_level "${MTT_SERVER_LOG_LEVEL}" \
       --file_service_only "${FILE_SERVICE_ONLY}" \

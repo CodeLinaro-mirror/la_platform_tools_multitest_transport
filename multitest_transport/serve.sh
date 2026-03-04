@@ -53,6 +53,7 @@ while [[ $# -gt 0 ]]; do
     --labconsole_grpc_port) LABCONSOLE_SERVER_GRPC_PORT="$2";;
     --labconsole_rest_port) LABCONSOLE_SERVER_REST_PORT="$2";;
     --lab_console_port) LAB_CONSOLE_PORT="$2";;
+    --olc_server_port) OLC_SERVER_PORT="$2";;
     --storage_path) STORAGE_PATH="$2";;
     --working_dir) WORKING_DIR="$2";;
     --live_reload) LIVE_RELOAD="$2";;
@@ -256,7 +257,7 @@ function start_labconsole_ui {
 }
 
 function start_oss_fe_server {
-  echo "Starting OSS FE server on port ${LABCONSOLE_SERVER_GRPC_PORT}..."
+  echo "Starting OSS FE server on port ${LABCONSOLE_SERVER_GRPC_PORT}, connecting to OLC Server on port ${OLC_SERVER_PORT}..."
   # OSS FE server listens to gRPC port for backend requests, and talk to the olc server on a different port.
   java -jar /deviceinfra/oss_fe_server_deploy.jar --fe_grpc_port=${LABCONSOLE_SERVER_GRPC_PORT} --olc_server_port=${OLC_SERVER_PORT} &
   echo "OSS FE server started on port ${LABCONSOLE_SERVER_GRPC_PORT}..."
