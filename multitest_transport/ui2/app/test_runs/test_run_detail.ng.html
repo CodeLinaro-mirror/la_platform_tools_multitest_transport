@@ -133,8 +133,7 @@
               <td>
                 <mat-chip-set [tabIndex]="-1">
                   <mat-chip *ngFor="let label of testRun.labels"
-                            class="clickable-chip"
-                            (click)="editTestSuitesByLabel(label)">
+                            [matTooltip]="label">
                     {{label}}
                   </mat-chip>
                 </mat-chip-set>

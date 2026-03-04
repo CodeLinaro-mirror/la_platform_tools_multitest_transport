@@ -19,7 +19,7 @@ import {DebugElement} from '@angular/core';
 import {ComponentFixture, inject, TestBed} from '@angular/core/testing';
 import {MatDialog} from '@angular/material/dialog';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {Router, provideRouter} from '@angular/router';
+import {provideRouter} from '@angular/router';
 import {of as observableOf} from 'rxjs';
 
 import {AnalyticsService} from '../services/analytics_service';
@@ -269,11 +269,4 @@ describe('TestRunDetail', () => {
     });
   });
 
-  it('editTestSuitesByLabel should navigate to edit test suites page', () => {
-    const router = TestBed.inject(Router);
-    spyOn(router, 'navigate');
-    testRunDetail.editTestSuitesByLabel('label');
-    expect(router.navigate).toHaveBeenCalledWith(
-        ['test_plans/edit'], {queryParams: {'label': 'label'}});
-  });
 });
