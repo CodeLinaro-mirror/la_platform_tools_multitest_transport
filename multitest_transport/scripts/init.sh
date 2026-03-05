@@ -120,6 +120,7 @@ then
   LABCONSOLE_SERVER_GRPC_PORT="${LABCONSOLE_SERVER_GRPC_PORT:-8080}"
   LABCONSOLE_SERVER_REST_PORT="${LABCONSOLE_SERVER_REST_PORT:-9000}"
   LAB_CONSOLE_PORT="${LAB_CONSOLE_PORT:-4200}"
+  OLC_SERVER_PORT="${OLC_SERVER_PORT:-7030}"
   MTT_CONTROL_SERVER_LOG_DIR="${MTT_LOG_DIR}/server"
   mkdir -p "${MTT_CONTROL_SERVER_LOG_DIR}"
 
@@ -137,7 +138,6 @@ then
   SQL_DATABASE_URI=""
   if [[ ! -z "${IS_OMNILAB_BASED}" ]]
   then
-    OLC_SERVER_PORT="${OLC_SERVER_PORT:-7030}"
     ATS_WORKER_GRPC_PORT="${ATS_WORKER_GRPC_PORT:-7031}"
     OLC_SERVER_GRPC_TARGET="$(echo ${MTT_CONTROL_SERVER_URL} | sed 's,^\([^:/]\+://\)\?\([^:/]\+\)\(:\([0-9]\{1\,5\}\)\)\?\+.*$,\2,g'):${ATS_WORKER_GRPC_PORT}"
     ATS_FILE_SERVER_PORT="$((${MTT_CONTROL_SERVER_PORT}+6))"
@@ -218,6 +218,7 @@ then
       --port "${MTT_CONTROL_SERVER_PORT}" \
       --labconsole_grpc_port "${LABCONSOLE_SERVER_GRPC_PORT}" \
       --labconsole_rest_port "${LABCONSOLE_SERVER_REST_PORT}" \
+      --olc_server_port "${OLC_SERVER_PORT}" \
       --lab_console_port "${LAB_CONSOLE_PORT}" \
       --log_level "${MTT_SERVER_LOG_LEVEL}" \
       --file_service_only "${FILE_SERVICE_ONLY}" \

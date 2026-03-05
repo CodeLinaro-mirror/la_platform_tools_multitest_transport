@@ -709,14 +709,6 @@ def _StartMttNode(args, host):
   labconsole_rest_port = args.labconsole_rest_port
   lab_console_port = args.lab_console_port
   if args.enable_lab_console_ui:
-    if network == _DOCKER_BRIDGE_NETWORK:
-      docker_helper.AddPort(
-          '0.0.0.0:%d' % labconsole_grpc_port, labconsole_grpc_port
-      )
-      docker_helper.AddPort(
-          '0.0.0.0:%d' % labconsole_rest_port, labconsole_rest_port
-      )
-      docker_helper.AddPort('0.0.0.0:%d' % lab_console_port, lab_console_port)
     docker_helper.AddEnv(
         'MTT_ENABLE_LAB_CONSOLE_UI',
         'true',
