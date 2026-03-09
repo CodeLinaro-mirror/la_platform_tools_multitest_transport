@@ -17,5 +17,17 @@ import sys
 
 import google3  
 
+from grpc._cython import cygrpc  
+
+from google3.google.protobuf import field_mask_pb2
+from google3.google.protobuf import timestamp_pb2
+import google3.google.type
+
+
 # Search installed packages first (necessary to use host-side grpc package).
 sys.path.sort(key=lambda p: p.endswith('google3/third_party/py'))
+
+# Protos used by android.ci.build.v4.
+sys.modules['google.type'] = google3.google.type
+sys.modules['google.protobuf.field_mask_pb2'] = field_mask_pb2
+sys.modules['google.protobuf.timestamp_pb2'] = timestamp_pb2

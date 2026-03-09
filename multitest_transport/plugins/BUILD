@@ -1,11 +1,12 @@
 # MTT default plugins.
-load("@tradefed_cluster//tradefed_cluster:adapter.bzl", "py_test", "pytype_strict_library", "third_party")
+load("@tradefed_cluster//tradefed_cluster:adapter.bzl", "py_library", "py_test", "pytype_strict_library", "third_party")
 
 package(default_applicable_licenses = ["//multitest_transport:license"])
 
 licenses(["notice"])
 
-pytype_strict_library(
+# Use py_library as Android Build v4 APIs are included in the docker image.
+py_library(
     name = "android_lib",
     srcs = [
         "android.py",
@@ -17,21 +18,10 @@ pytype_strict_library(
         "//multitest_transport/util:errors_lib",
         "//multitest_transport/util:file_util_lib",
         "//multitest_transport/util:oauth2_util_lib",
-        third_party("apiclient"),
+        third_party("google/api_core"),
+        third_party("grpc"),
         third_party("httplib2"),
-    ],
-)
-
-py_test(
-    name = "android_test",
-    srcs = [
-        "android_test.py",
-    ],
-    strict_deps = False,
-    deps = [
-        ":android_lib",
-        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
-        third_party("absl/testing:absltest"),
+        third_party("requests"),
     ],
 )
 
