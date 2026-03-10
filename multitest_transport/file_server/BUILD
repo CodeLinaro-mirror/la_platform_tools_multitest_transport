@@ -23,6 +23,7 @@ py_library(
         third_party("flask"),
         third_party("werkzeug"),
         "//third_party/py/flask:flask_without_jinja",
+        "//third_party/py/magic",
         "//multitest_transport/models:ndb_models_lib",
         "@tradefed_cluster//tradefed_cluster/util:ndb_shim_lib",
     ],

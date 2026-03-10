@@ -100,6 +100,54 @@ class FileServerTest(ndb_test_lib.NdbWithContextTest, absltest.TestCase):
       data = json.loads(response.data)
       self.assertEqual('File \'foo\' not found', data['message'])
 
+  def testDownloadFile_mimetypeForPreview(self):
+    """Tests that common log files have forced text/plain mimetype."""
+    with self.app.test_client() as client:
+      for filename in ['test.log', 'test.info', 'test.txt']:
+        with open(os.path.join(self.app.root_path, filename), 'wb') as f:
+          f.write(b'log content')
+        response = client.get('/file/%s' % filename)
+        self.assertEqual(200, response.status_code)
+        self.assertEqual('text/plain', response.mimetype)
+
+      # Test magic detection for a file without extension
+      with open(os.path.join(self.app.root_path, 'no_extension'), 'wb') as f:
+        f.write(b'this is a text file')
+      response = client.get('/file/no_extension')
+      self.assertEqual(200, response.status_code)
+      self.assertEqual('text/plain', response.mimetype)
+
+      # Test magic detection for a PNG file
+      # Valid PNG header + IHDR chunk for a 1x1 image
+      png_data = (
+          b'\x89PNG\r\n\x1a\n'
+          b'\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00'
+          b'\x00\x1f\x15\xc4\x89'
+      )
+      with open(os.path.join(self.app.root_path, 'test.png'), 'wb') as f:
+        f.write(png_data)
+      response = client.get('/file/test.png')
+      self.assertEqual(200, response.status_code)
+      self.assertEqual('image/png', response.mimetype)
+
+      # Test magic detection for a binary file
+      with open(os.path.join(self.app.root_path, 'test.bin'), 'wb') as f:
+        f.write(b'\x00\x01\x02\x03\x04\x05')
+      response = client.get('/file/test.bin')
+      self.assertEqual(200, response.status_code)
+      self.assertEqual('application/octet-stream', response.mimetype)
+
+  def testDownloadFile_mimetypeForDownload(self):
+    """Tests that mimetype is not forced when downloading."""
+    with self.app.test_client() as client:
+      with open(self.app.root_path + '/test.log', 'wb') as f:
+        f.write(b'log content')
+      # Verify that when download=true, send_file uses default behavior
+      response = client.get('/file/test.log?download=true')
+      self.assertEqual(200, response.status_code)
+      self.assertEqual('attachment; filename=test.log',
+                       response.headers.get('Content-Disposition'))
+
   def testUploadFile_postMethod(self):
     """Tests that new files can be uploaded by post method."""
     with self.app.test_client() as client:

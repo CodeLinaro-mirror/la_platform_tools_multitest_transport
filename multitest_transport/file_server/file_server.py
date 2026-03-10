@@ -31,6 +31,7 @@ from absl import app as absl_app
 from absl import flags
 import attr
 import flask
+import magic
 from tradefed_cluster.util import ndb_shim as ndb
 from werkzeug import security
 
@@ -94,8 +95,23 @@ def DownloadFile(path: str) -> flask.Response:
     flask.abort(http.HTTPStatus.NOT_FOUND, 'File \'%s\' not found' % path)
   # Treat as attachment if the 'download' query parameter is set.
   as_attachment = flask.request.args.get('download', default=False, type=bool)
+
+  mimetype = None
+  # Use magic to determine the mime type for preview
+  if not as_attachment:
+    try:
+      mimetype = magic.from_file(resolved_path, mime=True)
+    except magic.MagicException as e:
+      flask_app.logger.warning(
+          'Failed to determine mimetype for %s: %s', path, e
+      )
+
   return flask.send_file(
-      resolved_path, conditional=True, as_attachment=as_attachment)
+      resolved_path,
+      conditional=True,
+      as_attachment=as_attachment,
+      mimetype=mimetype,
+  )
 
 
 def _GetContentRange():
