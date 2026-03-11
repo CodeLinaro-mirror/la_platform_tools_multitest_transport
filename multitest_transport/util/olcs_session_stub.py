@@ -385,6 +385,18 @@ class OlcsSessionStub:
           single_command.end_time = None
       request_message.commands = [single_command]
 
+    for test_module_result in request_detail.test_module_results:
+      request_message.test_module_results.append(
+          api_messages.TestModuleResult(
+              name=test_module_result.name,
+              complete=test_module_result.complete,
+              duration_ms=test_module_result.duration_ms,
+              passed_tests=test_module_result.passed_tests,
+              failed_tests=test_module_result.failed_tests,
+              total_tests=test_module_result.total_tests,
+          )
+      )
+
     return request_message
 
   def _GetRequestDetail(

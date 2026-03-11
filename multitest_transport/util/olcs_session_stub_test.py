@@ -426,6 +426,24 @@ class OlcsSessionStubTest(testbed_dependent_test.TestbedDependentTest):
         ['MoblyAospTest_test_TEST_ID2'],
     )
 
+  def testGenerateRequestMessage_TestModuleResults(self):
+    detail = service_pb2.RequestDetail(id='test')
+    res = detail.test_module_results.add()
+    res.name = 'm1'
+    res.complete = True
+    res.duration_ms = 1000
+    res.passed_tests = 5
+    res.failed_tests = 1
+    res.total_tests = 6
+    msg = self.session_stub.GenerateRequestMessage(detail)
+    self.assertLen(msg.test_module_results, 1)
+    self.assertEqual(msg.test_module_results[0].name, 'm1')
+    self.assertTrue(msg.test_module_results[0].complete)
+    self.assertEqual(msg.test_module_results[0].duration_ms, 1000)
+    self.assertEqual(msg.test_module_results[0].passed_tests, 5)
+    self.assertEqual(msg.test_module_results[0].failed_tests, 1)
+    self.assertEqual(msg.test_module_results[0].total_tests, 6)
+
   @mock.patch('os.path.exists')
   @mock.patch('os.listdir')
   def testGetRequest(self, mock_listdir, mock_exists):

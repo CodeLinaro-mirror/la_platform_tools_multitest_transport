@@ -482,11 +482,13 @@ pytype_strict_library(
     ],
     deps = [
         ":base_lib",
+        "@com_google_deviceinfra//src/devtools/mobileharness/infra/client/longrunningservice/proto:session_service_py_proto",
         "//multitest_transport/models",
         "//multitest_transport/util",
         third_party("google-endpoints"),
         third_party("protorpc"),
         "//multitest_transport/util:olcs_session_stub",
+        "@tradefed_cluster//tradefed_cluster:common_lib",
     ],
 )
 
@@ -500,10 +502,13 @@ py_test(
     deps = [
         ":api_test_util_lib",
         ":test_result_api_lib",
+        "//third_party/py/absl/testing:absltest",
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         "//multitest_transport/models",
         "//multitest_transport/util",
         third_party("sqlite3"),
+        "//third_party/py/protorpc:protorpc_all",
+        "@tradefed_cluster//tradefed_cluster:api_messages_lib",
     ],
 )
 

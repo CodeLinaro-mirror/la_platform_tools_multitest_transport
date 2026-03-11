@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """Test results APIs."""
+import os
 import typing
 
 # Non-standard docstrings are used to generate the API documentation.
@@ -27,8 +28,10 @@ from multitest_transport.api import base
 from multitest_transport.models import messages as mtt_messages
 from multitest_transport.models import ndb_models
 from multitest_transport.models import sql_models
+from multitest_transport.util import olcs_session_stub
 from multitest_transport.util import tfc_client
 from multitest_transport.util import xts_result
+from tradefed_cluster import common
 
 
 @base.MTT_API.api_class(resource_name='test_result', path='test_results')
@@ -70,6 +73,31 @@ class TestResultApi(remote.Service):
     if not test_run.request_id:
       return mtt_messages.TestModuleResultList(
           extra_info='Test run %s not started' % test_run_id)
+
+    # For ATS 2.0 (OmniLab based), return the currently running attempt's
+    # results if present.
+    if os.environ.get('IS_OMNILAB_BASED') == 'true':
+      stub = olcs_session_stub.GetSharedStub()
+      request_message = stub.GetRequest(test_run.request_id)
+      if request_message:
+        attempts = request_message.command_attempts or []
+        running_attempt = next(
+            (a for a in attempts if a.state == common.CommandState.RUNNING),
+            None,
+        )
+        if running_attempt:
+          results = [
+              mtt_messages.TestModuleResult(
+                  name=r.name,
+                  complete=r.complete,
+                  duration_ms=r.duration_ms,
+                  passed_tests=r.passed_tests,
+                  failed_tests=r.failed_tests,
+                  total_tests=r.total_tests,
+              )
+              for r in request_message.test_module_results
+          ]
+          return mtt_messages.TestModuleResultList(results=results)
 
     attempts = tfc_client.GetLatestFinishedAttempts(test_run.request_id)
     result_list = mtt_messages.TestModuleResultList()

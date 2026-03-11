@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """Tests for test_result_api."""
+import os
 from unittest import mock
 
 from absl.testing import absltest
@@ -182,6 +183,67 @@ class TestResultApiTest(api_test_util.TestCase):
             passed_tests=0, failed_tests=0, total_tests=0),
     ]
     self.assertEqual(result_list.results, expected_results)
+
+  @mock.patch.dict(os.environ, {'IS_OMNILAB_BASED': 'true'})
+  @mock.patch.object(test_result_api.olcs_session_stub, 'GetSharedStub')
+  def testListTestModuleResults_omnilab(self, mock_get_stub):
+    """Tests that module results can be fetched from OmniLab."""
+    ndb_models.TestRun(id='test_run_id', request_id='request_id').put()
+    mock_stub = mock_get_stub.return_value
+    module_result = mock.MagicMock()
+    module_result.name = 'module_1'
+    module_result.complete = True
+    module_result.duration_ms = 123
+    module_result.passed_tests = 1
+    module_result.failed_tests = 0
+    module_result.total_tests = 1
+
+    mock_request_message = mock.MagicMock()
+    mock_request_message.test_module_results = [module_result]
+    mock_request_message.command_attempts = [
+        mock.MagicMock(state=api_messages.CommandState.RUNNING)
+    ]
+    mock_stub.GetRequest.return_value = mock_request_message
+
+    path = 'modules?test_run_id=test_run_id'
+    response = self.app.get('/_ah/api/mtt/v1/test_results/' + path)
+    self.assertEqual('200 OK', response.status)
+    result_list = protojson.decode_message(
+        messages.TestModuleResultList, response.body
+    )
+    expected_results = [
+        messages.TestModuleResult(
+            name='module_1',
+            complete=True,
+            duration_ms=123,
+            passed_tests=1,
+            failed_tests=0,
+            total_tests=1,
+        ),
+    ]
+    self.assertEqual(result_list.results, expected_results)
+    mock_stub.GetRequest.assert_called_with('request_id')
+
+  @mock.patch.dict(os.environ, {'IS_OMNILAB_BASED': 'true'})
+  @mock.patch.object(test_result_api.olcs_session_stub, 'GetSharedStub')
+  @mock.patch.object(tfc_client, 'GetLatestFinishedAttempts')
+  def testListTestModuleResults_omnilabNoRunningAttempt(
+      self, mock_get_finished, mock_get_stub
+  ):
+    """Tests that it falls back if no running attempt found in OmniLab."""
+    ndb_models.TestRun(id='test_run_id', request_id='request_id').put()
+    mock_stub = mock_get_stub.return_value
+    mock_stub.GetRequest.return_value = mock.MagicMock(command_attempts=[])
+    mock_get_finished.return_value = [mock.MagicMock(attempt_id='attempt_id')]
+
+    path = 'modules?test_run_id=test_run_id'
+    response = self.app.get('/_ah/api/mtt/v1/test_results/' + path)
+    self.assertEqual('200 OK', response.status)
+    # Should fall back to DB results for 'attempt_id'
+    result_list = protojson.decode_message(
+        messages.TestModuleResultList, response.body
+    )
+    self.assertLen(result_list.results, 3)
 
   def testListTestCaseResults(self):
     """Tests that test case results can be fetched."""
