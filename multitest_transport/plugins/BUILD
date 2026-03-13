@@ -11,6 +11,7 @@ py_library(
     srcs = [
         "android.py",
     ],
+    strict_deps = False,
     deps = [
         ":plugin_base",
         "//multitest_transport/util:constant_lib",
