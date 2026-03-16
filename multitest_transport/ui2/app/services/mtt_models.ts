@@ -44,10 +44,8 @@ const DEFAULT_CLUSTER = 'default';
 
 // LINT.IfChange(xts_requirements_detection_test_id)
 const XTS_REQUIREMENTS_DETECTION_TEST_ID =
-    'gs://android-test-catalog/prod/gms.yaml::android.gts.latest_release.xts_requirements_detection';
-// LINT.ThenChange(
-//   //depot/google3/third_party/py/multitest_transport/build_manager/xts_requirements_detector.py:xts_requirements_detection_test_key,
-// )
+  'gs://android-test-catalog/prod/gms.yaml::android.gts.latest_release.xts_requirements_detection';
+// LINT.ThenChange(//depot/google3/third_party/py/multitest_transport/build_manager/xts_requirements_detector.py:xts_requirements_detection_test_key)
 
 /** OAuth2 authorization information. */
 export declare interface AuthorizationInfo {

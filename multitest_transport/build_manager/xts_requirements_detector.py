@@ -41,9 +41,7 @@ XTS_REQUIREMENTS_DETECTION_EVENT_QUEUE = (
 
 # LINT.IfChange(xts_requirements_detection_test_key)
 XTS_REQUIREMENTS_DETECTION_TEST_KEY = 'gs://android-test-catalog/prod/gms.yaml::android.gts.latest_release.xts_requirements_detection'
-# LINT.ThenChange(
-#     //depot/google3/third_party/py/multitest_transport/ui2/app/services/mtt_models.ts:xts_requirements_detection_test_id,
-# )
+# LINT.ThenChange(//depot/google3/third_party/py/multitest_transport/ui2/app/services/mtt_models.ts:xts_requirements_detection_test_id)
 
 # LINT.IfChange(report_upload_hook_class_name)
 REPORT_UPLOAD_HOOK_CLASS_NAME = 'APFEReportUploadHook'
