@@ -15,7 +15,7 @@
  */
 
 import {HTTP_INTERCEPTORS, HttpClientModule} from '@angular/common/http';
-import {Component, Inject, NgModule, OnDestroy, provideZoneChangeDetection} from '@angular/core';
+import {ChangeDetectionStrategy, Component, Inject, NgModule, OnDestroy, provideZoneChangeDetection} from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialog, MatDialogRef} from '@angular/material/dialog';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {BrowserModule} from '@angular/platform-browser';
@@ -215,7 +215,7 @@ export const routes: Routes = [
 
 /** Homepage */
 @Component(
-    {standalone: false,
+    {standalone: false, changeDetection: ChangeDetectionStrategy.Eager,
      selector: 'mtt', styleUrls: ['./app.css'], templateUrl: './app.ng.html'})
 export class Mtt implements OnDestroy {
   sideNavExpanded = false;
