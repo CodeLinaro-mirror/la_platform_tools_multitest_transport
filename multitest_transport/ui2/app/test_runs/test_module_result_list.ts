@@ -20,7 +20,7 @@ import {finalize} from 'rxjs/operators';
 import {MttClient} from '../services/mtt_client';
 import * as mttModels from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
-import {assertRequiredInput, buildApiErrorMessage} from '../shared/util';
+import {assertRequiredInput, buildApiErrorMessage, millisToDuration} from '../shared/util';
 
 /**
  * Information for displaying the module results and its corresponding testcases
@@ -53,7 +53,9 @@ export class TestModuleResultList implements OnInit {
   showOldView = false;
 
   displayColumns =
-      ['expand', 'name', 'counts', 'failure_message', 'stack_trace'];
+      ['expand', 'name', 'counts', 'duration', 'failure_message', 'stack_trace'];
+
+  readonly millisToDuration = millisToDuration;
 
   constructor(
       private readonly notifier: Notifier,

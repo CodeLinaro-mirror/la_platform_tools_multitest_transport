@@ -952,6 +952,7 @@ export declare interface TestModuleResult {
   id?: string;  // Legacy test results will not have an ID
   name: string;
   complete: boolean;
+  duration_ms: number;
   passed_tests: number;
   failed_tests: number;
   total_tests: number;

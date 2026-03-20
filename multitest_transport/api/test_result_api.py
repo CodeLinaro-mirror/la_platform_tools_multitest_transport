@@ -97,6 +97,7 @@ class TestResultApi(remote.Service):
               )
               for r in request_message.test_module_results
           ]
+          results.sort(key=lambda r: r.complete)
           return mtt_messages.TestModuleResultList(results=results)
 
     attempts = tfc_client.GetLatestFinishedAttempts(test_run.request_id)

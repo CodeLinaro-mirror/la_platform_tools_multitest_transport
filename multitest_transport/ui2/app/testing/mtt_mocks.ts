@@ -441,12 +441,15 @@ export function newMockTestModuleResult(
     failedTests = 0,
     totalTests = 0,
     errorMessage?: string,
+    durationMs = 0,
+    complete?: boolean,
     ): mttModels.TestModuleResult {
   return {
     id,
     attempt_id: 'attempt_id',
     name,
-    complete: !!errorMessage,
+    complete: complete !== undefined ? complete : !!errorMessage,
+    duration_ms: durationMs,
     passed_tests: passedTests,
     failed_tests: failedTests,
     total_tests: totalTests,

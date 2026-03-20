@@ -226,6 +226,45 @@ class TestResultApiTest(api_test_util.TestCase):
 
   @mock.patch.dict(os.environ, {'IS_OMNILAB_BASED': 'true'})
   @mock.patch.object(test_result_api.olcs_session_stub, 'GetSharedStub')
+  def testListTestModuleResults_omnilab_sorting(self, mock_get_stub):
+    """Tests that OmniLab module results are sorted by complete status."""
+    ndb_models.TestRun(id='test_run_id', request_id='request_id').put()
+    mock_stub = mock_get_stub.return_value
+
+    m1 = mock.MagicMock(
+        complete=True,
+        duration_ms=0,
+        passed_tests=0,
+        failed_tests=0,
+        total_tests=0,
+    )
+    m1.name = 'm1'
+    m2 = mock.MagicMock(
+        complete=False,
+        duration_ms=0,
+        passed_tests=0,
+        failed_tests=0,
+        total_tests=0,
+    )
+    m2.name = 'm2'
+
+    mock_request_message = mock.MagicMock()
+    mock_request_message.test_module_results = [m1, m2]
+    mock_request_message.command_attempts = [
+        mock.MagicMock(state=api_messages.CommandState.RUNNING)
+    ]
+    mock_stub.GetRequest.return_value = mock_request_message
+
+    path = 'modules?test_run_id=test_run_id'
+    response = self.app.get('/_ah/api/mtt/v1/test_results/' + path)
+    result_list = protojson.decode_message(
+        messages.TestModuleResultList, response.body
+    )
+    # m2 (False) should be first
+    self.assertEqual(['m2', 'm1'], [r.name for r in result_list.results])
+
+  @mock.patch.dict(os.environ, {'IS_OMNILAB_BASED': 'true'})
+  @mock.patch.object(test_result_api.olcs_session_stub, 'GetSharedStub')
   @mock.patch.object(tfc_client, 'GetLatestFinishedAttempts')
   def testListTestModuleResults_omnilabNoRunningAttempt(
       self, mock_get_finished, mock_get_stub

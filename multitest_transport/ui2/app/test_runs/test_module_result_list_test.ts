@@ -22,7 +22,7 @@ import {of as observableOf} from 'rxjs';
 import {MttClient, TestResultClient} from '../services/mtt_client';
 import {TestCaseResult, TestModuleResult, TestStatus} from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
-import {getEl, getTextContent} from '../testing/jasmine_util';
+import {getEl, getEls, getTextContent} from '../testing/jasmine_util';
 import {newMockTestCaseResult, newMockTestModuleResult} from '../testing/mtt_mocks';
 
 import {TestModuleResultList} from './test_module_result_list';
@@ -91,7 +91,52 @@ describe('TestModuleResultList', () => {
 
     expect(textContent).toContain('warning 456/789');  // Module 1 failed/total
     expect(textContent).toContain('0/0');
+    expect(textContent).toContain('00:00:00'); // Default duration
     expect(textContent).not.toContain('null');
+  });
+
+  it('displays modules in the order received from backend', () => {
+    // Backend sorts: incomplete first, then default order
+    const m3 = newMockTestModuleResult(
+      'm3',
+      'C Module',
+      0,
+      0,
+      1,
+      undefined,
+      0,
+      false,
+    );
+    const m1 = newMockTestModuleResult(
+      'm1',
+      'B Module',
+      1,
+      0,
+      1,
+      undefined,
+      0,
+      true,
+    );
+    const m2 = newMockTestModuleResult(
+      'm2',
+      'A Module',
+      1,
+      0,
+      1,
+      undefined,
+      0,
+      true,
+    );
+
+    client.listModules.and.returnValue(observableOf({results: [m3, m1, m2]}));
+    testResultModuleList.moduleResultNodes = [];
+    testResultModuleList.loadModules();
+    testResultModuleListFixture.detectChanges();
+
+    const moduleNames = getEls(el, '.module-name').map((e) =>
+      e.textContent!.trim(),
+    );
+    expect(moduleNames).toEqual(['C Module', 'B Module', 'A Module']);
   });
 
   it('displays the test case results', () => {
