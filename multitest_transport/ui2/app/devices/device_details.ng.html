@@ -45,8 +45,8 @@
   </h1>
   <div class="action-buttons" *ngIf="appData?.enableLabConsoleUI">
     <div class="lab-console-ui-switch-button">
-      <mat-slide-toggle *ngIf="appData?.enableLabConsoleUI" class="lab-console-ui-toggle" [checked]="preferenceService?.useLabConsoleUISubject$ | async" (change)="preferenceService?.useLabConsoleUISubject$.next($event.checked)" color="accent">
-        Lab Console UI
+      <mat-slide-toggle *ngIf="appData?.enableLabConsoleUI" class="lab-console-ui-toggle" [checked]="!(preferenceService?.useLabConsoleUISubject$ | async)" (change)="preferenceService?.useLabConsoleUISubject$.next(!$event.checked)" color="accent">
+        Back to Legacy UI
       </mat-slide-toggle>
     </div>
   </div>
