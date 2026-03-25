@@ -352,6 +352,7 @@ pytype_strict_library(
     srcs = ["olcs_session_stub.py"],
     deps = [
         ":file_util_lib",
+        ":lru_cache",
         ":olcs_session_client_lib",
         "//google/protobuf:duration_py_pb2",
         "//net/grpc/python:grpc",

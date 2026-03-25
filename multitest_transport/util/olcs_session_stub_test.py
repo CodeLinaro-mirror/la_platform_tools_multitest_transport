@@ -55,6 +55,7 @@ class OlcsSessionStubTest(testbed_dependent_test.TestbedDependentTest):
     self._trailing_metadata = ()
     self._detailed_message = ''
     self.session_stub = olcs_session_stub.OlcsSessionStub(self._stubby_client)
+    olcs_session_stub._request_detail_cache.cache.clear()
 
   def tearDown(self):
     self._executor.shutdown(wait=True)
@@ -273,6 +274,79 @@ class OlcsSessionStubTest(testbed_dependent_test.TestbedDependentTest):
     self.mock_request_info.put()
     request_message = self.session_stub.GetRequest('test_request_id')
     self.assertEqual(request_message.id, expected_request_detail.id)
+
+  @mock.patch.object(
+      olcs_session_stub.OlcsSessionStub, '_LoadRequestDetailFromDatabase'
+  )
+  @mock.patch.object(olcs_session_stub.OlcsSessionStub, '_FetchRequestDetail')
+  def testGetRequest_CacheHit(self, mock_fetch, mock_load_db):
+    request_id = 'test_cache_id'
+    request_detail = service_pb2.RequestDetail(id=request_id)
+    # Mock DB hit
+    mock_load_db.return_value = request_detail
+
+    # First call: should hit DB
+    res1 = self.session_stub.GetRequest(request_id)
+    self.assertEqual(res1.id, request_id)
+    mock_load_db.assert_called_once_with(request_id)
+
+    # Second call: should hit Cache
+    mock_load_db.reset_mock()
+    res2 = self.session_stub.GetRequest(request_id)
+    self.assertEqual(res2.id, request_id)
+    mock_load_db.assert_not_called()
+    mock_fetch.assert_not_called()
+
+  @mock.patch.object(
+      olcs_session_stub.OlcsSessionStub, '_LoadRequestDetailFromDatabase'
+  )
+  @mock.patch.object(olcs_session_stub.OlcsSessionStub, '_FetchRequestDetail')
+  @mock.patch.object(
+      olcs_session_stub.OlcsSessionStub, '_SaveRequestDetailToDatabase'
+  )
+  def testGetRequest_CacheFromOlcs(
+      self, mock_save_db, mock_fetch, mock_load_db
+  ):
+    request_id = 'test_olcs_cache_id'
+    request_detail = service_pb2.RequestDetail(id=request_id)
+    # Mock DB miss
+    mock_load_db.return_value = None
+    # Mock OLCS hit (finished)
+    mock_fetch.return_value = (True, request_detail)
+
+    # First call: should hit OLCS and save to DB/cache
+    res1 = self.session_stub.GetRequest(request_id)
+    self.assertEqual(res1.id, request_id)
+    mock_fetch.assert_called_once_with(request_id)
+    mock_save_db.assert_called_once_with(request_id, request_detail)
+
+    # Second call: should hit Cache
+    mock_load_db.reset_mock()
+    mock_fetch.reset_mock()
+    res2 = self.session_stub.GetRequest(request_id)
+    self.assertEqual(res2.id, request_id)
+    mock_load_db.assert_not_called()
+    mock_fetch.assert_not_called()
+
+  @mock.patch.object(
+      olcs_session_stub.OlcsSessionStub, '_LoadRequestDetailFromDatabase'
+  )
+  @mock.patch.object(olcs_session_stub.OlcsSessionStub, '_FetchRequestDetail')
+  def testGetRequest_NoCacheIfUnfinished(self, mock_fetch, mock_load_db):
+    request_id = 'test_unfinished_id'
+    request_detail = service_pb2.RequestDetail(id=request_id)
+    # Mock DB miss
+    mock_load_db.return_value = None
+    # Mock OLCS hit (NOT finished)
+    mock_fetch.return_value = (False, request_detail)
+
+    # First call: fetch from OLCS
+    self.session_stub.GetRequest(request_id)
+
+    # Second call: should fetch from OLCS again
+    mock_fetch.reset_mock()
+    self.session_stub.GetRequest(request_id)
+    mock_fetch.assert_called_once_with(request_id)
 
   def testGetRequest_commandTimes(self):
     """Test that command start/end times are set from attempts."""

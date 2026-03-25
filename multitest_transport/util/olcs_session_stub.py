@@ -29,6 +29,7 @@ import uuid
 from google.cloud import ndb
 from multitest_transport.models import ndb_models
 from multitest_transport.util import file_util
+from multitest_transport.util import lru_cache
 from multitest_transport.util import olcs_session_client
 from tradefed_cluster import api_messages
 from tradefed_cluster import common
@@ -46,10 +47,9 @@ SESSION_PLUGIN_LABEL = "AtsServerSessionPlugin"
 NANOS_PER_MILLISECOND = 1000000
 MILLIS_PER_SECOND = 1000
 
-# TODO: The database operation should not be single threaded.
-# Remove this lock after finding better solution to address database data race
-# issue. Potential solution is to use sql database.
-_lock = threading.Lock()
+# Initialize a cache for 100 requests and a lock to protect it
+_cache_lock = threading.Lock()
+_request_detail_cache = lru_cache.LRUCache(100)
 
 _REQUEST_STATE_MAP = {
     service_pb2.RequestDetail.RequestState.UNKNOWN: common.RequestState.UNKNOWN,
@@ -403,17 +403,27 @@ class OlcsSessionStub:
       self, request_id: str
   ) -> Optional[service_pb2.RequestDetail]:
     """Get request detail from DB or fetch from OLCS."""
-    # First, try to load from the database
-    request_detail = self._LoadRequestDetailFromDatabase(request_id)
+    # 1. Check memory cache (Thread-safe)
+    with _cache_lock:
+      request_detail = _request_detail_cache.get(request_id)
     if request_detail:
       return request_detail
 
-    # If not in the database, fetch from the OLCS server
+    # 2. Try read from database.
+    request_detail = self._LoadRequestDetailFromDatabase(request_id)
+    if request_detail:
+      with _cache_lock:
+        _request_detail_cache.put(request_id, request_detail)
+      return request_detail
+
+    # 3. Fetch from OLC server.
     request_finished, request_detail = self._FetchRequestDetail(request_id)
 
-    # If the request is finished, save the details to the database for caching
+    # 4. Save and Cache if finished
     if request_detail and request_finished:
       self._SaveRequestDetailToDatabase(request_id, request_detail)
+      with _cache_lock:
+        _request_detail_cache.put(request_id, request_detail)
 
     return request_detail
 
@@ -476,14 +486,13 @@ class OlcsSessionStub:
       self, request_id: str
   ) -> Optional[service_pb2.RequestDetail]:
     """Load request detail from database."""
-    with _lock:
-      test_request = ndb_models.RequestInfo.get_by_id(request_id, retries=5)
-      if test_request:
-        request_detail = service_pb2.RequestDetail()
-        decoded_bytes = base64.b64decode(test_request.request_detail_proto_str)
-        request_detail.ParseFromString(decoded_bytes)
-        return request_detail
-      return None
+    test_request = ndb_models.RequestInfo.get_by_id(request_id, retries=5)
+    if test_request:
+      request_detail = service_pb2.RequestDetail()
+      decoded_bytes = base64.b64decode(test_request.request_detail_proto_str)
+      request_detail.ParseFromString(decoded_bytes)
+      return request_detail
+    return None
 
   @ndb_shim.with_ndb_context
   @ndb_shim.transactional(propagation=ndb.TransactionOptions.INDEPENDENT)
@@ -491,14 +500,13 @@ class OlcsSessionStub:
       self, request_id: str, request_detail: service_pb2.RequestDetail
   ) -> None:
     """Save request detail to database independently of the caller's transaction."""
-    with _lock:
-      request_detail_str = request_detail.SerializeToString()
-      base64_string = base64.b64encode(request_detail_str).decode("utf-8")
-      request_info = ndb_models.RequestInfo(
-          id=request_id,
-          request_detail_proto_str=base64_string,
-      )
-      request_info.put()
+    request_detail_str = request_detail.SerializeToString()
+    base64_string = base64.b64encode(request_detail_str).decode("utf-8")
+    request_info = ndb_models.RequestInfo(
+        id=request_id,
+        request_detail_proto_str=base64_string,
+    )
+    request_info.put()
 
   def GetAttempt(
       self, request_id: str, attempt_id: str
