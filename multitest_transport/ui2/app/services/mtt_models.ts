@@ -379,6 +379,18 @@ export declare interface NodeConfig {
   test_resource_default_download_urls?: NameValuePair[];
 }
 
+/** Notification config. */
+export declare interface NotificationConfig {
+  /** sender email address. */
+  sender_address?: string;
+  /** sender email password. */
+  sender_password?: string;
+  /** receiver email addresses. */
+  receiver_addresses?: string[];
+  /** list of events to notify on. */
+  events?: string[];
+}
+
 /**
  * A plugin option definition.
  */
@@ -403,6 +415,8 @@ export declare interface PrivateNodeConfig {
   setup_wizard_completed?: boolean;
   /** default service account credentials */
   default_credentials?: CredentialsInfo;
+  /** notification settings. */
+  notification_config?: NotificationConfig;
 }
 
 /**

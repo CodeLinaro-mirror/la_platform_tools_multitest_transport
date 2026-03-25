@@ -1316,6 +1316,34 @@ class NewTestRunRequest(messages.Message):
   required_report_id = messages.StringField(5)
 
 
+class NotificationConfig(messages.Message):
+  """Notification configuration settings."""
+  sender_address = messages.StringField(1)
+  sender_password = messages.StringField(2)
+  receiver_addresses = messages.StringField(3, repeated=True)
+  events = messages.EnumField(ndb_models.NotificationEvent, 4, repeated=True)
+
+
+@Converter(ndb_models.NotificationConfig, NotificationConfig)
+def _NotificationConfigConverter(obj):
+  return NotificationConfig(
+      sender_address=obj.sender_address,
+      sender_password=obj.sender_password,
+      receiver_addresses=obj.receiver_addresses,
+      events=obj.events,
+  )
+
+
+@Converter(NotificationConfig, ndb_models.NotificationConfig)
+def _NotificationConfigMessageConverter(msg):
+  return ndb_models.NotificationConfig(
+      sender_address=msg.sender_address,
+      sender_password=msg.sender_password,
+      receiver_addresses=msg.receiver_addresses,
+      events=msg.events,
+  )
+
+
 class NodeConfig(messages.Message):
   """Node config."""
   env_vars = messages.MessageField(NameValuePair, 1, repeated=True)
@@ -1348,6 +1376,7 @@ class PrivateNodeConfig(messages.Message):
   gms_client_id = messages.StringField(3)
   setup_wizard_completed = messages.BooleanField(4)
   default_credentials = messages.MessageField(CredentialsInfo, 5)
+  notification_config = messages.MessageField(NotificationConfig, 6)
 
 
 @Converter(ndb_models.PrivateNodeConfig, PrivateNodeConfig)
@@ -1357,7 +1386,8 @@ def _PrivateNodeConfigConverter(obj):
       metrics_enabled=obj.metrics_enabled,
       gms_client_id=obj.gms_client_id,
       setup_wizard_completed=obj.setup_wizard_completed,
-      default_credentials=Convert(obj.default_credentials, CredentialsInfo))
+      default_credentials=Convert(obj.default_credentials, CredentialsInfo),
+      notification_config=Convert(obj.notification_config, NotificationConfig))
 
 
 @Converter(PrivateNodeConfig, ndb_models.PrivateNodeConfig)
@@ -1368,6 +1398,9 @@ def _PrivateNodeConfigMessageConverter(msg):
   private_node_config.metrics_enabled = msg.metrics_enabled
   private_node_config.gms_client_id = msg.gms_client_id
   private_node_config.setup_wizard_completed = msg.setup_wizard_completed
+  if msg.notification_config is not None:
+    private_node_config.notification_config = Convert(
+        msg.notification_config, ndb_models.NotificationConfig)
   return private_node_config
 
 

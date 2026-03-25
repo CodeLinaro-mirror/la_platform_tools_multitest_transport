@@ -1,0 +1,89 @@
+<!--
+ Copyright 2026 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<mat-spinner class="loading-spinner" color="accent" *ngIf="isLoading"></mat-spinner>
+
+<div [class.loading-mask]="isLoading" class="page">
+  <ng-container *ngIf="privateNodeConfig && privateNodeConfig.notification_config">
+    <!-- Email Settings -->
+    <h2>Email Settings</h2>
+
+    <h3 class="mat-h3">Sender info</h3>
+    <div>
+      <mat-form-field appearance="outline" class="email-input">
+        <mat-label>Sender Email Address</mat-label>
+        <input matInput [(ngModel)]="privateNodeConfig.notification_config!.sender_address"
+               placeholder="sender@gmail.com">
+        <mat-hint>Currently only Gmail is supported as the sender.</mat-hint>
+      </mat-form-field>
+    </div>
+
+    <div>
+      <mat-form-field appearance="outline" class="email-input">
+        <mat-label>Sender Email Password</mat-label>
+        <input matInput [(ngModel)]="privateNodeConfig.notification_config!.sender_password"
+               placeholder="Password">
+        <mat-hint>
+          Please use an <a href="https://support.google.com/accounts/answer/185833?hl=en" target="_blank" rel="noopener noreferrer">App Password</a> generated for the sender Google Account <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener noreferrer">here</a>.
+        </mat-hint>
+      </mat-form-field>
+    </div>
+
+    <br />
+
+    <h3 class="mat-h3">Receivers</h3>
+    <div>
+      <mat-form-field appearance="outline" class="email-input">
+        <mat-label>Receiver Email Addresses</mat-label>
+        <mat-chip-grid #chipGrid aria-label="Receiver selection">
+          <mat-chip-row *ngFor="let receiver of privateNodeConfig.notification_config!.receiver_addresses"
+                    (removed)="removeReceiver(receiver)">
+            {{receiver}}
+            <button matChipRemove [attr.aria-label]="'remove ' + receiver">
+              <mat-icon>cancel</mat-icon>
+            </button>
+          </mat-chip-row>
+          <input placeholder="New receiver email... (press enter to add)"
+                 [matChipInputFor]="chipGrid"
+                 [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+                 [matChipInputAddOnBlur]="true"
+                 (matChipInputTokenEnd)="addReceiver($event)">
+        </mat-chip-grid>
+      </mat-form-field>
+    </div>
+
+    <mat-divider></mat-divider>
+
+    <!-- Alert Events -->
+    <h2>Alert Events</h2>
+    <div class="metrics tag-description">
+      Select which events should trigger an alert.
+    </div>
+
+    <div class="metrics">
+      <mat-checkbox [(ngModel)]="notifyTestRunAttemptCompleted">
+        Test run attempt completed
+      </mat-checkbox>
+    </div>
+
+    <mat-divider></mat-divider>
+
+    <!-- Submit Button -->
+    <button mat-flat-button color="accent" type="button" (click)="onSubmit()">
+      Update
+    </button>
+  </ng-container>
+</div>

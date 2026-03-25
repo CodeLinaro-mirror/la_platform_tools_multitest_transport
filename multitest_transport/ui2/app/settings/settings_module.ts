@@ -27,10 +27,11 @@ import {SharedModule} from '../shared/shared_module';
 import {TestRunActionsModule} from '../test_run_actions/test_run_actions_module';
 import {FileCleanerModule} from '../file_cleaner/file_cleaner_module';
 
+import {NotificationsForm} from './notifications_form';
 import {SettingForm} from './setting_form';
 import {SettingPage} from './setting_page';
 
-const COMPONENTS = [SettingPage, SettingForm];
+const COMPONENTS = [SettingPage, SettingForm, NotificationsForm];
 
 @NgModule({
   declarations: COMPONENTS,

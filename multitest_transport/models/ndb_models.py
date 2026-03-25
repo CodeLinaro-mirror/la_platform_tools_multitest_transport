@@ -913,6 +913,27 @@ class ApfeReport(ndb.Model):
   process_state = ndb.EnumProperty(ReportProcessState)
 
 
+class NotificationEvent(messages.Enum):
+  """Notification events."""
+
+  TEST_RUN_ATTEMPT_COMPLETED = 1
+
+
+class NotificationConfig(ndb.Model):
+  """Notification configuration settings.
+
+  Attributes:
+    sender_address: sender email address.
+    sender_password: sender email password.
+    receiver_addresses: receiver email addresses.
+    events: list of events to notify on.
+  """
+  sender_address = ndb.StringProperty()
+  sender_password = ndb.StringProperty()
+  receiver_addresses = ndb.StringProperty(repeated=True)
+  events = ndb.EnumProperty(NotificationEvent, repeated=True)
+
+
 class NodeConfig(ndb.Model):
   """A MTT node configuration.
 
@@ -949,6 +970,7 @@ class PrivateNodeConfig(ndb.Model):
     gms_client_id: Optional user-provided label to identify their company
     setup_wizard_completed: If false, trigger the setup wizard on startup
     server_uuid: node's unique identifier.
+    notification_config: local notification settings.
   """
   ndb_version = ndb.IntegerProperty()
   default_credentials = oauth2_util.CredentialsProperty()
@@ -956,6 +978,7 @@ class PrivateNodeConfig(ndb.Model):
   gms_client_id = ndb.StringProperty()
   setup_wizard_completed = ndb.BooleanProperty()
   server_uuid = ndb.StringProperty(required=True, default=str(uuid.uuid4()))
+  notification_config = ndb.LocalStructuredProperty(NotificationConfig)
 
 
 def GetPrivateNodeConfig():

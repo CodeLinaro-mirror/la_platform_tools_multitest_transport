@@ -50,6 +50,7 @@ import {FILE_BROWSER_PATH} from './services/file_service';
 import {ServicesModule} from './services/services_module';
 import {StrictParamsInterceptor} from './services/strict_params';
 import {UserService} from './services/user_service';
+import {NotificationsForm} from './settings/notifications_form';
 import {SettingForm} from './settings/setting_form';
 import {SettingPage} from './settings/setting_page';
 import {SetupWizardDialog} from './setup_wizard/setup_wizard_dialog';
@@ -147,6 +148,11 @@ export const routes: Routes = [
       {
         path: 'general',
         component: SettingForm,
+        canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
+      },
+      {
+        path: 'notifications',
+        component: NotificationsForm,
         canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
       },
       {path: 'test_run_actions', component: TestRunActionList},

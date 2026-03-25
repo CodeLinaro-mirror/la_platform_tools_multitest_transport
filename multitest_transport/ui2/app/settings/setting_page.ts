@@ -37,6 +37,7 @@ export class SettingPage implements OnInit {
     {path: './device_actions', label: 'Device Actions'},
     {path: './test_run_actions', label: 'Test Run Actions'},
     {path: './file_cleaner', label: 'File Cleaner'},
+    {path: './notifications', label: 'Notifications'},
   ];
 
   constructor(

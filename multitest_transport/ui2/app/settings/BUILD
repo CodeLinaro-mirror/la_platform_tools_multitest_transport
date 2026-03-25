@@ -13,12 +13,14 @@ per_file_sass_binaries(
 ng_module(
     name = "settings",
     srcs = [
+        "notifications_form.ts",
         "setting_form.ts",
         "setting_page.ts",
         "settings_module.ts",
     ],
     assets = [
         ":styles",
+        "notifications_form.ng.html",
         "setting_form.ng.html",
         "setting_page.ng.html",
     ],
@@ -30,6 +32,8 @@ ng_module(
         third_party_js("angular2:router"),
         third_party_js("angular_components:cdk_a11y"),
         third_party_js("angular_components:cdk_collections"),
+        third_party_js("angular_components:cdk_keycodes"),
+        third_party_js("angular_components:material_chips"),
         third_party_js("rxjs"),
         "//multitest_transport/ui2/app/build_channels",
         "//multitest_transport/ui2/app/config_sets",
