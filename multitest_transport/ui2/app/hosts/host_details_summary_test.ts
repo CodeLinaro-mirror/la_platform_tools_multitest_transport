@@ -20,9 +20,10 @@ import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {ActivatedRoute, RouterModule} from '@angular/router';
 import {of as observableOf} from 'rxjs';
 
+import {APP_DATA} from '../services/app_data';
 import {TfcClient} from '../services/tfc_client';
 import {getTextContent} from '../testing/jasmine_util';
-import {newMockLabHostInfo} from '../testing/mtt_lab_mocks';
+import {newMockAppData, newMockLabHostInfo} from '../testing/mtt_lab_mocks';
 
 import {HostDetailsSummary} from './host_details_summary';
 import {HostsModule} from './hosts_module';
@@ -40,15 +41,13 @@ describe('HostDetailsSummary', () => {
   beforeEach(() => {
     tfcClient = jasmine.createSpyObj('tfcClient', ['getHostInfo']);
     hostInfoSpy = tfcClient.getHostInfo.and.returnValue(
-        observableOf(newMockLabHostInfo(hostname)));
+      observableOf(newMockLabHostInfo(hostname)),
+    );
 
     TestBed.configureTestingModule({
-      imports: [
-        HostsModule,
-        NoopAnimationsModule,
-        RouterModule,
-      ],
+      imports: [HostsModule, NoopAnimationsModule, RouterModule],
       providers: [
+        {provide: APP_DATA, useValue: newMockAppData()},
         {provide: TfcClient, useValue: tfcClient},
         {
           provide: ActivatedRoute,
@@ -74,9 +73,8 @@ describe('HostDetailsSummary', () => {
     expect(textContent).toContain('Test Harness Version');
   });
 
-  it('should call the tfc client api method getHostInfo correctly',
-     async () => {
-       await hostDetailsSummaryFixture.whenStable();
-       expect(tfcClient.getHostInfo).toHaveBeenCalledTimes(1);
-     });
+  it('should call the tfc client api method getHostInfo correctly', async () => {
+    await hostDetailsSummaryFixture.whenStable();
+    expect(tfcClient.getHostInfo).toHaveBeenCalledTimes(1);
+  });
 });

@@ -17,10 +17,11 @@
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-
+import {APP_DATA} from '../services/app_data';
+import {PreferenceService} from '../services/preference_service';
 import {DeviceInfo} from '../services/tfc_models';
 import {getTextContent} from '../testing/jasmine_util';
-import {newMockDeviceInfo} from '../testing/mtt_lab_mocks';
+import {newMockAppData, newMockDeviceInfo} from '../testing/mtt_lab_mocks';
 
 import {SharedModule} from './shared_module';
 import {StatusButton} from './status_button';
@@ -36,10 +37,8 @@ describe('DeviceState', () => {
     deviceInfo = newMockDeviceInfo();
 
     TestBed.configureTestingModule({
-      imports: [
-        NoopAnimationsModule,
-        SharedModule,
-      ],
+      imports: [NoopAnimationsModule, SharedModule],
+      providers: [{provide: APP_DATA, useValue: newMockAppData()}],
     });
 
     statusButtonixture = TestBed.createComponent(StatusButton);
@@ -51,7 +50,38 @@ describe('DeviceState', () => {
   });
 
   it('displays the state', () => {
-    expect(getTextContent(el).toLowerCase())
-        .toContain(deviceInfo.state.toLowerCase());
+    expect(getTextContent(el).toLowerCase()).toContain(
+      deviceInfo.state.toLowerCase(),
+    );
+  });
+
+  it('maps states when Lab Console UI is enabled', () => {
+    const preferenceService = TestBed.inject(PreferenceService);
+    preferenceService.useLabConsoleUISubject$.next(true);
+
+    statusButton.state = 'Available';
+    statusButtonixture.detectChanges();
+    expect(getTextContent(el).toLowerCase()).toContain('idle');
+
+    statusButton.state = 'Allocated';
+    statusButtonixture.detectChanges();
+    expect(getTextContent(el).toLowerCase()).toContain('busy');
+
+    statusButton.state = 'Gone';
+    statusButtonixture.detectChanges();
+    expect(getTextContent(el).toLowerCase()).toContain('missing');
+
+    statusButton.state = 'Init';
+    statusButtonixture.detectChanges();
+    expect(getTextContent(el).toLowerCase()).toContain('init');
+  });
+
+  it('does not map states when Lab Console UI is disabled', () => {
+    const preferenceService = TestBed.inject(PreferenceService);
+    preferenceService.useLabConsoleUISubject$.next(false);
+
+    statusButton.state = 'Available';
+    statusButtonixture.detectChanges();
+    expect(getTextContent(el).toLowerCase()).toContain('available');
   });
 });

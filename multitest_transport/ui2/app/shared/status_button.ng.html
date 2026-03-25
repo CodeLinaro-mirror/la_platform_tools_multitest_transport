@@ -16,5 +16,7 @@
 
 <button tabindex="-1" mat-flat-button class="status-button"
   ngClass="status-button-{{state.replace(' ', '-').toLowerCase()}}">
-  <span class="status-button-content">{{state | titlecase}}</span>
+  <span class="status-button-content">
+    {{ ((preferenceService.useLabConsoleUISubject$ | async) ? getOmniLabState(state) : state) | titlecase }}
+  </span>
 </button>

@@ -1,8 +1,23 @@
+/**
+ * Copyright 2026 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 import {inject, Injectable} from '@angular/core';
 import {BehaviorSubject} from 'rxjs';
 
-import {APP_DATA, AppData} from './app_data';
+import {APP_DATA} from './app_data';
 
 const USE_LAB_CONSOLE_UI_KEY = 'useLabConsoleUI';
 
@@ -11,24 +26,24 @@ const USE_LAB_CONSOLE_UI_KEY = 'useLabConsoleUI';
 export class PreferenceService {
   readonly useLabConsoleUISubject$: BehaviorSubject<boolean>;
 
-  private readonly appData: AppData = inject(APP_DATA);
+  private readonly appData = inject(APP_DATA, {optional: true});
 
   constructor() {
-    // true by default if new UI enabled.
+    this.useLabConsoleUISubject$ = new BehaviorSubject<boolean>(
+      this.getInitialUseLabConsoleUiValue(),
+    );
 
-    // when feature flag is disabled, no need to read from local storage.
-    if (this.appData.enableLabConsoleUI) {
-      const useLabConsoleUI =
-          window.localStorage.getItem(USE_LAB_CONSOLE_UI_KEY) !== 'false' ?
-          true :
-          false;
-      this.useLabConsoleUISubject$ =
-          new BehaviorSubject<boolean>(useLabConsoleUI);
+    if (this.appData?.enableLabConsoleUI) {
       this.useLabConsoleUISubject$.subscribe((value) => {
         window.localStorage.setItem(USE_LAB_CONSOLE_UI_KEY, String(value));
       });
-    } else {
-      this.useLabConsoleUISubject$ = new BehaviorSubject<boolean>(false);
     }
+  }
+
+  private getInitialUseLabConsoleUiValue(): boolean {
+    if (!this.appData?.enableLabConsoleUI) {
+      return false;
+    }
+    return window.localStorage.getItem(USE_LAB_CONSOLE_UI_KEY) !== 'false';
   }
 }

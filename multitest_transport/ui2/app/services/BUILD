@@ -72,6 +72,7 @@ ng_module(
         "mtt_lab_models_test.ts",
         "mtt_models_test.ts",
         "mtt_object_map_test.ts",
+        "preference_service_test.ts",
         "storage_service_test.ts",
         "strict_params_test.ts",
         "tfc_client_test.ts",

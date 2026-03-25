@@ -14,14 +14,23 @@
  * limitations under the License.
  */
 
-import {Component, Input, OnChanges, OnInit, SimpleChanges, ChangeDetectionStrategy} from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  Input,
+  OnChanges,
+  OnInit,
+  SimpleChanges,
+} from '@angular/core';
+import {PreferenceService} from '../services/preference_service';
 import {assertRequiredInput} from '../shared/util';
 
 /**
  * A component for displaying status.
  */
 @Component({
-  changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,
+  standalone: false,
   selector: 'status-button',
   styleUrls: ['status_button.css'],
   templateUrl: './status_button.ng.html',
@@ -29,11 +38,26 @@ import {assertRequiredInput} from '../shared/util';
 export class StatusButton implements OnInit, OnChanges {
   @Input() state!: string;
 
+  constructor(readonly preferenceService: PreferenceService) {}
+
   ngOnInit() {
     assertRequiredInput(this.state, 'state', 'status-button');
   }
 
   ngOnChanges(changes: SimpleChanges) {
     this.state = this.state.replace('_', ' ');
+  }
+
+  getOmniLabState(state: string): string {
+    switch (state.toLowerCase()) {
+      case 'available':
+        return 'idle';
+      case 'allocated':
+        return 'busy';
+      case 'gone':
+        return 'missing';
+      default:
+        return state;
+    }
   }
 }
