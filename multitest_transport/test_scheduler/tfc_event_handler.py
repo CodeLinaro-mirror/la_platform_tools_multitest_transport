@@ -43,6 +43,8 @@ from multitest_transport.util import file_util
 from multitest_transport.util import tfc_client
 from multitest_transport.util import olcs_session_stub
 from multitest_transport.util import lru_cache
+from multitest_transport.util import email_formatter
+from multitest_transport.util import mailer
 
 IsFinalRequestState = common.IsFinalRequestState
 TEST_RUN_STATE_MAP = {
@@ -377,6 +379,12 @@ def _ProcessCommandAttemptResult(test_run_id, test_run, request):
     if not results and common.IsFinalCommandState(attempt.state):
       _StoreTestResults(test_run_id, test_run, attempt)
       _InvokeAttemptHandler(test_run_id, test_run, attempt)
+      task_scheduler.AddCallableTask(
+          _SendNotification,
+          test_run_id,
+          protojson.encode_message(attempt),  # pytype: disable=module-attr
+          _transactional=True,
+      )
 
 
 def _StoreTestResults(test_run_id, test_run, attempt):
@@ -406,6 +414,46 @@ def _InvokeAttemptHandler(test_run_id, test_run, attempt):
         _queue=_TEST_RUN_HOOK_QUEUE,
         _transactional=True,
     )
+
+
+def _SendNotification(test_run_id, attempt_json):
+  """Sends notification for a test run event (if configured)."""
+  private_node_config = ndb_models.GetPrivateNodeConfig()
+  notification_config = private_node_config.notification_config
+  if not notification_config:
+    return
+
+  # check events
+  if (
+      ndb_models.NotificationEvent.TEST_RUN_ATTEMPT_COMPLETED
+      not in notification_config.events
+  ):
+    return
+
+  # check credentials
+  if (
+      not notification_config.sender_address
+      or not notification_config.sender_password
+  ):
+    logging.warning('Sender email address or password not configured.')
+    return
+
+  attempt = protojson.decode_message(  # pytype: disable=module-attr
+      api_messages.CommandAttemptMessage, attempt_json
+  )
+
+  # gather email content
+  subject, body = email_formatter.EmailFormatter.FormatTestRunAttemptEvent(
+      test_run_id, attempt
+  )
+
+  mailer.SendEmail(
+      notification_config.sender_address,
+      notification_config.sender_password,
+      notification_config.receiver_addresses,
+      subject,
+      body,
+  )
 
 
 def ProcessCommandAttemptEvent(

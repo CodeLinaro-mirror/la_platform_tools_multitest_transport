@@ -60,6 +60,7 @@ py_test(
         ":analytics_lib",
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         third_party("absl/testing:absltest"),
+        "@tradefed_cluster//tradefed_cluster/services:task_scheduler_lib",
     ],
 )
 
@@ -119,6 +120,9 @@ py_test(
     tags = ["not_run:arm"],
     deps = [
         ":apfe_client_lib",
+        ":constant_lib",
+        ":file_util_lib",
+        "//multitest_transport/models:ndb_models_lib",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
         "@tradefed_cluster//tradefed_cluster/util:ndb_shim_lib",
         third_party("absl/testing:absltest"),
@@ -139,6 +143,43 @@ pytype_strict_library(
         "env.py",
     ],
     deps = ["//third_party/py/google/appengine/api:full_app_id"],
+)
+
+pytype_strict_library(
+    name = "mailer_lib",
+    srcs = [
+        "mailer.py",
+    ],
+)
+
+py_test(
+    name = "mailer_test",
+    srcs = ["mailer_test.py"],
+    deps = [
+        ":mailer_lib",
+        "//testing/pybase",
+        "//third_party/py/absl/testing:absltest",
+    ],
+)
+
+pytype_strict_library(
+    name = "email_formatter_lib",
+    srcs = [
+        "email_formatter.py",
+    ],
+    deps = [
+        "@tradefed_cluster//tradefed_cluster:api_messages_lib",
+    ],
+)
+
+py_test(
+    name = "email_formatter_test",
+    srcs = ["email_formatter_test.py"],
+    deps = [
+        ":email_formatter_lib",
+        "//third_party/py/absl/testing:absltest",
+        "@tradefed_cluster//tradefed_cluster:api_messages_lib",
+    ],
 )
 
 pytype_strict_library(
@@ -172,8 +213,11 @@ py_test(
     tags = ["not_run:arm"],
     deps = [
         ":oauth2_util_lib",
+        "//third_party/py/absl/testing:absltest",
+        "//third_party/py/google/oauth2:credentials",
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
+        "@tradefed_cluster//tradefed_cluster/util:ndb_shim_lib",
         third_party("google/oauth2:service_account"),
     ],
 )
@@ -240,6 +284,7 @@ py_test(
         "//third_party/py/apiclient",
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         "@tradefed_cluster//tradefed_cluster:api_messages_lib",
+        "@tradefed_cluster//tradefed_cluster:common_lib",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
         "@tradefed_cluster//tradefed_cluster/plugins:base_lib",
         third_party("absl/testing:absltest"),
@@ -252,9 +297,11 @@ pytype_strict_library(
     deps = [
         ":analytics_lib",
         ":constant_lib",
+        ":email_formatter_lib",
         ":env_lib",
         ":errors_lib",
         ":file_util_lib",
+        ":mailer_lib",
         ":oauth2_util_lib",
         ":sql_util_lib",
         ":tfc_client_lib",

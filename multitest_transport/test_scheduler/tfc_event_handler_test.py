@@ -18,6 +18,7 @@ import os
 from unittest import mock
 
 from absl.testing import absltest
+from protorpc import protojson
 from tradefed_cluster import api_messages
 from tradefed_cluster import common
 from tradefed_cluster import testbed_dependent_test
@@ -33,8 +34,9 @@ from multitest_transport.test_scheduler import tfc_event_handler
 from multitest_transport.test_scheduler import test_result_handler
 from multitest_transport.util import analytics
 from multitest_transport.util import file_util
-from multitest_transport.util import tfc_client
 from multitest_transport.util import lru_cache
+from multitest_transport.util import mailer
+from multitest_transport.util import tfc_client
 
 
 class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
@@ -88,10 +90,14 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
         type=common.ObjectEventType.COMMAND_ATTEMPT_STATE_CHANGED,
         attempt=api_messages.CommandAttemptMessage(
             attempt_id='attempt_id',
+            command_id='command_id',
+            task_id='task_id',
             request_id=self.mock_test_run.request_id,
             device_serials=serials or [],
-            state=state or common.CommandState.UNKNOWN),
-        event_time=self.mock_test_run.update_time + timedelta)
+            state=state or common.CommandState.UNKNOWN,
+        ),
+        event_time=self.mock_test_run.update_time + timedelta,
+    )
 
   @mock.patch.object(tfc_event_handler, 'ProcessRequestEvent')
   def testProcessSubscribedSessionResponse(self, mock_process_request_event):
@@ -1001,6 +1007,51 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
         prev_failed_test_count=8,
         missing_previous_run=True,
         is_sequence_run=False)
+
+  @mock.patch.object(ndb_models, 'GetPrivateNodeConfig')
+  @mock.patch.dict(
+      os.environ, {'DEFAULT_VERSION_HOSTNAME': 'host-name'}, clear=True
+  )
+  @mock.patch.object(mailer, 'SendEmail')
+  def testSendNotification(self, mock_send_email, mock_get_config):
+    mock_config = ndb_models.PrivateNodeConfig()
+    mock_config.notification_config = ndb_models.NotificationConfig(
+        events=[ndb_models.NotificationEvent.TEST_RUN_ATTEMPT_COMPLETED],
+        sender_address='sender@test.com',
+        sender_password='password',
+        receiver_addresses=['receiver@test.com'],
+    )
+    mock_get_config.return_value = mock_config
+
+    attempt = api_messages.CommandAttemptMessage(
+        attempt_id='attempt_id',
+        command_id='command_id',
+        task_id='task_id',
+        request_id='request_id',
+        state=common.CommandState.ERROR,
+        error='Test error',
+        error_reason='Some reason',
+    )
+    attempt_json = protojson.encode_message(attempt)  # pytype: disable=module-attr
+
+    tfc_event_handler._SendNotification('run_id', attempt_json)
+
+    expected_body = (
+        'Test run attempt finished.<br><br><b>Test Run ID</b>:'
+        ' run_id<br><b>Attempt ID</b> (ATS Request ID/OLC Session ID):'
+        ' request_id<br><b>Results</b>: <a'
+        ' href="http://host-name/test_runs/run_id">http://host-name/test_runs/run_id</a><br><b>State</b>:'
+        ' ERROR<br><b>Error Reason</b>: Some reason<br><b>Error Detail</b>:'
+        ' Test error<br>'
+    )
+
+    mock_send_email.assert_called_once_with(
+        'sender@test.com',
+        'password',
+        ['receiver@test.com'],
+        'Test Run Attempt ERROR: run_id',
+        expected_body,
+    )
 
 
 if __name__ == '__main__':
