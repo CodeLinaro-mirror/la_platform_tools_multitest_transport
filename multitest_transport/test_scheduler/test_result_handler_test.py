@@ -93,6 +93,36 @@ class TestResultHandlerTest(testbed_dependent_test.TestbedDependentTest):
     self.assertEqual(5, self.test_run.failed_test_count)
     self.assertEqual(1, self.test_run.failed_test_run_count)
 
+  @mock.patch.object(sql_models, 'GetTestModuleResults')
+  @mock.patch.object(tfc_client, 'GetLatestFinishedAttempts')
+  def testUpdateTestRunSummary_withLatestAttempts(
+      self, mock_get_attempts, mock_get_results):
+    latest_finished_attempts = [
+        api_messages.CommandAttemptMessage(attempt_id='attempt_id')
+    ]
+    mock_get_results.return_value = [
+        sql_models.TestModuleResult(
+            id='module_1',
+            test_run_id='test_run_id',
+            attempt_id='attempt_id',
+            name='module_1',
+            complete=True,
+            duration_ms=0,
+            passed_tests=1,
+            failed_tests=2,
+            total_tests=3),
+    ]
+
+    test_result_handler.UpdateTestRunSummary(
+        'test_run_id', latest_finished_attempts=latest_finished_attempts)
+
+    # Test run summary was updated, and GetLatestFinishedAttempts was NOT called
+    mock_get_attempts.assert_not_called()
+    mock_get_results.assert_called_with(['attempt_id'])
+    self.test_run = self.test_run.key.get()
+    self.assertEqual(3, self.test_run.total_test_count)
+    self.assertEqual(2, self.test_run.failed_test_count)
+
 
 if __name__ == '__main__':
   absltest.main()

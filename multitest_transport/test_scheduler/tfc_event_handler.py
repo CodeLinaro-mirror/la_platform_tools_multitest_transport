@@ -251,7 +251,15 @@ def ProcessRequestEvent(message: api_messages.RequestEventMessage):
     with _lock:
       _StopSubscribeSession(test_run.key.id(), message.request_id)
     if test_run.test.result_file:
-      test_result_handler.UpdateTestRunSummary(test_run.key.id())
+      # Retrieve the latest finished attempt from the request.
+      attempts = None
+      if os.environ.get('IS_OMNILAB_BASED') == 'true' and message.request:
+        attempts = _GetLatestFinishedAttemptFromRequest(message.request)
+      try:
+        test_result_handler.UpdateTestRunSummary(
+            test_run.key.id(), latest_finished_attempts=attempts)
+      except Exception:  
+        logging.exception('Summary update failed for %s', test_run.key.id())
     if not test_run.is_finalized:
       # PRE-FETCH: Call _GetTestContext OUTSIDE the transaction.
       # This performs the RPCs and stub database updates non-transactionally.
@@ -429,6 +437,30 @@ def _ProcessCommandAttemptEvent(test_run_id, message):
   if common.IsFinalCommandState(attempt.state):
     _StoreTestResults(test_run_id, test_run, attempt)
     _InvokeAttemptHandler(test_run_id, test_run, attempt)
+
+
+def _GetLatestFinishedAttemptFromRequest(request):
+  """Gets the latest finished command attempt from a request.
+
+  Args:
+    request: The api_messages.RequestMessage object.
+
+  Returns:
+    A list containing the latest finished attempt, or None if no finished
+    attempts are found.
+  """
+  finished_attempts = [
+      a for a in request.command_attempts
+      if a.state and common.IsFinalCommandState(a.state)
+  ]
+  if finished_attempts:
+    return [
+        max(
+            finished_attempts,
+            key=lambda attempt: attempt.start_time or datetime.datetime.min,
+        )
+    ]
+  return None
 
 
 def _GetTestContext(request_id):

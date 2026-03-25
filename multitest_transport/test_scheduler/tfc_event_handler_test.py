@@ -166,7 +166,8 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
     self.assertEqual(mock_event.event_time, self.mock_test_run.update_time)
     self.assertEqual(ndb_models.TestRunState.COMPLETED,
                      self.mock_test_run.state)
-    mock_update_summary.assert_called_once_with(self.mock_test_run.key.id())
+    mock_update_summary.assert_called_once_with(
+        self.mock_test_run.key.id(), latest_finished_attempts=None)
     mock_after_test.assert_called_with(
         self.mock_test_run.key.id(), test_context=None
     )
@@ -218,7 +219,10 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
         [expected_device.to_dict()],
     )
     mock_get_test_module_results.assert_called_once_with(['attempt_id'])
-    mock_update_summary.assert_called_once_with(self.mock_test_run.key.id())
+    mock_update_summary.assert_called_once_with(
+        self.mock_test_run.key.id(),
+        latest_finished_attempts=mock_event.request.command_attempts,
+    )
     mock_after_test.assert_called_with(
         self.mock_test_run.key.id(), test_context=None
     )
@@ -311,7 +315,10 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
         ndb_models.TestRunState.COMPLETED, self.mock_test_run.state
     )
     mock_get_test_module_results.assert_called_once_with(['attempt_id'])
-    mock_update_summary.assert_called_once_with(self.mock_test_run.key.id())
+    mock_update_summary.assert_called_once_with(
+        self.mock_test_run.key.id(),
+        latest_finished_attempts=mock_event.request.command_attempts,
+    )
     mock_after_test.assert_called_with(
         self.mock_test_run.key.id(), test_context=None
     )
@@ -372,7 +379,10 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
     )
     tfc_event_handler.ProcessRequestEvent(mock_event)
     mock_get_test_module_results.assert_called_once_with(['attempt_id2'])
-    mock_update_summary.assert_called_once_with(self.mock_test_run.key.id())
+    mock_update_summary.assert_called_once_with(
+        self.mock_test_run.key.id(),
+        latest_finished_attempts=mock_event.request.command_attempts,
+    )
     mock_after_test.assert_called_with(
         self.mock_test_run.key.id(), test_context=None
     )
@@ -427,7 +437,10 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
         ndb_models.TestRunState.COMPLETED, self.mock_test_run.state
     )
     mock_get_test_module_results.assert_called_once_with(['attempt_id'])
-    mock_update_summary.assert_called_once_with(self.mock_test_run.key.id())
+    mock_update_summary.assert_called_once_with(
+        self.mock_test_run.key.id(),
+        latest_finished_attempts=mock_event.request.command_attempts,
+    )
     mock_after_test.assert_called_with(
         self.mock_test_run.key.id(), test_context=None
     )
@@ -452,8 +465,181 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
     # test run information updated, but state preserved and post-run skipped
     self.assertEqual(mock_event.event_time, self.mock_test_run.update_time)
     self.assertEqual(ndb_models.TestRunState.ERROR, self.mock_test_run.state)
-    mock_update_summary.assert_called_once_with(self.mock_test_run.key.id())
+    mock_update_summary.assert_called_once_with(
+        self.mock_test_run.key.id(), latest_finished_attempts=None)
     mock_after_test.assert_not_called()
+
+  @mock.patch.object(tfc_event_handler, '_AfterTestRunHandler')
+  @mock.patch.object(test_result_handler, 'UpdateTestRunSummary')
+  @mock.patch.object(tfc_event_handler, '_GetTestContext')
+  def testProcessRequestEvent_updateSummaryFailure(
+      self, mock_get_test_context, mock_update_summary, mock_after_test
+  ):
+    # Summary update fails, but after-test handler still executed
+    mock_event = self.CreateMockRequestEvent(
+        datetime.timedelta(hours=1), state=api_messages.RequestState.COMPLETED
+    )
+    mock_get_test_context.return_value = None
+    mock_update_summary.side_effect = Exception('failure')
+
+    tfc_event_handler.ProcessRequestEvent(mock_event)
+
+    mock_update_summary.assert_called_with(
+        self.mock_test_run.key.id(), latest_finished_attempts=None
+    )
+    mock_after_test.assert_called_with(
+        self.mock_test_run.key.id(), test_context=None
+    )
+
+  @mock.patch.object(tfc_event_handler, '_AfterTestRunHandler')
+  @mock.patch.object(test_result_handler, 'UpdateTestRunSummary')
+  @mock.patch.object(tfc_event_handler, '_GetTestContext')
+  def testProcessRequestEvent_withoutResultFile(
+      self, mock_get_test_context, mock_update_summary, mock_after_test
+  ):
+    # Test has no result file, summary update skipped
+    self.mock_test_run.test.result_file = None
+    self.mock_test_run.put()
+    mock_event = self.CreateMockRequestEvent(
+        datetime.timedelta(hours=1), state=api_messages.RequestState.COMPLETED
+    )
+    mock_get_test_context.return_value = None
+
+    tfc_event_handler.ProcessRequestEvent(mock_event)
+
+    mock_update_summary.assert_not_called()
+    mock_after_test.assert_called_with(
+        self.mock_test_run.key.id(), test_context=None
+    )
+
+  @mock.patch.object(tfc_event_handler, '_AfterTestRunHandler')
+  @mock.patch.object(test_result_handler, 'UpdateTestRunSummary')
+  @mock.patch.object(tfc_event_handler, '_GetTestContext')
+  @mock.patch.dict(os.environ, {'IS_OMNILAB_BASED': 'true'}, clear=True)
+  def testProcessRequestEventWithOmnilabEnabled_missingAttempts(
+      self, mock_get_test_context, mock_update_summary, mock_after_test
+  ):
+    # OmniLab enabled but event missing attempts, falls back to
+    # latest_finished_attempts=None
+    mock_event = self.CreateMockRequestEvent(
+        datetime.timedelta(hours=1), state=api_messages.RequestState.COMPLETED
+    )
+    mock_event.request.command_attempts = []
+    mock_get_test_context.return_value = None
+
+    tfc_event_handler.ProcessRequestEvent(mock_event)
+
+    mock_update_summary.assert_called_once_with(
+        self.mock_test_run.key.id(), latest_finished_attempts=None
+    )
+    mock_after_test.assert_called_with(
+        self.mock_test_run.key.id(), test_context=None
+    )
+
+  @mock.patch.object(tfc_event_handler, '_AfterTestRunHandler')
+  @mock.patch.object(test_result_handler, 'UpdateTestRunSummary')
+  @mock.patch.object(tfc_event_handler, '_GetTestContext')
+  @mock.patch.dict(os.environ, {'IS_OMNILAB_BASED': 'true'}, clear=True)
+  def testProcessRequestEventWithOmnilabEnabled_usesLatestAttempt(
+      self, mock_get_test_context, mock_update_summary, mock_after_test
+  ):
+    # Multiple attempts in event, only the latest finished one is passed.
+    time1 = datetime.datetime(2024, 1, 1, 12, 0, 0)
+    time2 = datetime.datetime(2024, 1, 1, 13, 0, 0)
+    attempt1 = api_messages.CommandAttemptMessage(
+        attempt_id='attempt1',
+        request_id='request_id',
+        command_id='command_id',
+        task_id='task_id',
+        state=common.CommandState.COMPLETED,
+        start_time=time1)
+    attempt2 = api_messages.CommandAttemptMessage(
+        attempt_id='attempt2',
+        request_id='request_id',
+        command_id='command_id',
+        task_id='task_id',
+        state=common.CommandState.COMPLETED,
+        start_time=time2)
+    mock_event = self.CreateMockRequestEvent(
+        datetime.timedelta(hours=1), state=api_messages.RequestState.COMPLETED
+    )
+    mock_event.request.command_attempts = [attempt1, attempt2]
+    mock_get_test_context.return_value = None
+
+    tfc_event_handler.ProcessRequestEvent(mock_event)
+
+    mock_update_summary.assert_called_once_with(
+        self.mock_test_run.key.id(),
+        latest_finished_attempts=[attempt2],
+    )
+    mock_after_test.assert_called_with(
+        self.mock_test_run.key.id(), test_context=None
+    )
+
+  def testGetLatestFinishedAttemptFromRequest_multipleAttempts(self):
+    # Multiple finished attempts, picks the one with the latest start_time.
+    time1 = datetime.datetime(2024, 1, 1, 12, 0, 0)
+    time2 = datetime.datetime(2024, 1, 1, 13, 0, 0)
+    request = api_messages.RequestMessage(
+        command_attempts=[
+            api_messages.CommandAttemptMessage(
+                attempt_id='attempt1',
+                request_id='request_id',
+                command_id='command_id',
+                task_id='task_id',
+                state=common.CommandState.COMPLETED,
+                start_time=time1),
+            api_messages.CommandAttemptMessage(
+                attempt_id='attempt2',
+                request_id='request_id',
+                command_id='command_id',
+                task_id='task_id',
+                state=common.CommandState.COMPLETED,
+                start_time=time2),
+        ]
+    )
+    result = tfc_event_handler._GetLatestFinishedAttemptFromRequest(request)
+    self.assertLen(result, 1)
+    self.assertEqual(result[0].attempt_id, 'attempt2')
+
+  def testGetLatestFinishedAttemptFromRequest_mixedStates(self):
+    # Mixed states, only finished ones are considered.
+    time1 = datetime.datetime(2024, 1, 1, 12, 0, 0)
+    request = api_messages.RequestMessage(
+        command_attempts=[
+            api_messages.CommandAttemptMessage(
+                attempt_id='attempt1',
+                request_id='request_id',
+                command_id='command_id',
+                task_id='task_id',
+                state=common.CommandState.COMPLETED,
+                start_time=time1),
+            api_messages.CommandAttemptMessage(
+                attempt_id='attempt2',
+                request_id='request_id',
+                command_id='command_id',
+                task_id='task_id',
+                state=common.CommandState.RUNNING,
+                start_time=time1 + datetime.timedelta(hours=1)),
+        ]
+    )
+    result = tfc_event_handler._GetLatestFinishedAttemptFromRequest(request)
+    self.assertLen(result, 1)
+    self.assertEqual(result[0].attempt_id, 'attempt1')
+
+  def testGetLatestFinishedAttemptFromRequest_noneFinished(self):
+    request = api_messages.RequestMessage(
+        command_attempts=[
+            api_messages.CommandAttemptMessage(
+                attempt_id='attempt1',
+                request_id='request_id',
+                command_id='command_id',
+                task_id='task_id',
+                state=common.CommandState.RUNNING),
+        ]
+    )
+    result = tfc_event_handler._GetLatestFinishedAttemptFromRequest(request)
+    self.assertIsNone(result)
 
   @mock.patch.object(tfc_client, 'GetDeviceInfo')
   def testProcessCommandAttemptEvent(self, mock_get_device):

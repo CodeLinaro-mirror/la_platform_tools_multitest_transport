@@ -59,16 +59,24 @@ def StoreTestResults(test_run_id, attempt_id, test_results_url):
 
 
 @ndb.transactional()
-def UpdateTestRunSummary(test_run_id):
-  """Update test run numbers."""
+def UpdateTestRunSummary(test_run_id, latest_finished_attempts=None):
+  """Updates a test run's summary statistics based on its latest attempts.
+
+  Args:
+    test_run_id: The ID of the test run to update.
+    latest_finished_attempts: Optional list of latest finished attempts.
+      If None, they will be fetched using the test run's request ID.
+  """
   logging.info('Updating summary for test run %s', test_run_id)
   test_run = ndb_models.TestRun.get_by_id(test_run_id)
   test_run.total_test_count = 0
   test_run.failed_test_count = 0
   test_run.failed_test_run_count = 0
-  attempts = tfc_client.GetLatestFinishedAttempts(test_run.request_id)
+  if latest_finished_attempts is None:
+    latest_finished_attempts = tfc_client.GetLatestFinishedAttempts(
+        test_run.request_id)
   modules = sql_models.GetTestModuleResults(
-      [attempt.attempt_id for attempt in attempts])
+      [attempt.attempt_id for attempt in latest_finished_attempts])
   for module in modules:
     test_run.total_test_count += module.total_tests
     test_run.failed_test_count += module.failed_tests
