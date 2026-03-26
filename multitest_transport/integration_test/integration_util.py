@@ -271,10 +271,15 @@ class MttContainer(object):
         'max_retry_on_test_failures': 1,
         'test_resource_objs': test_resource_objs,
     }
-    test_run_config.update(kwargs)
+    # Separate top-level fields in NewTestRunRequest from test_run_config.
     request = {
+        'labels': kwargs.pop('labels', []),
+        'rerun_context': kwargs.pop('rerun_context', None),
+        'rerun_configs': kwargs.pop('rerun_configs', []),
+        'required_report_id': kwargs.pop('required_report_id', None),
         'test_run_config': test_run_config,
     }
+    test_run_config.update(kwargs)
     response = requests.post('%s/test_runs' % self.mtt_api_url, json=request)
     response.raise_for_status()
     return response.json()

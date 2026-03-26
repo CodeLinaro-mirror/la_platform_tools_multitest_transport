@@ -142,7 +142,7 @@ class E2eIntegrationTest(integration_util.DockerContainerTest):
             'decompress': True,
             'mount_zip': True,
         }],
-        enable_xts_dynamic_download=True,
+        enable_xts_dynamic_download=False,
         max_retry_on_test_failures=1,
     )['id']
     self.container.WaitForState(test_run_id, 'COMPLETED', timeout=30 * 60)
@@ -162,6 +162,48 @@ class E2eIntegrationTest(integration_util.DockerContainerTest):
     self.assertIn('<Metric key="cached">true</Metric>', test_result_xml_content)
     self._AssertFileExists(output_dir + 'test_result_failures_suite.html')
 
+  def testRunCtsRerunWithCachedResult(self):
+    """Tests that rerunning a CTS test run uses cached results."""
+    test_id = 'android.cts.15_0'
+    extra_args = '-m CtsNetTestCasesLegacyApi22'
+    test_resource_objs = [{
+        'name': 'android-cts.zip',
+        'url': 'file:///data/local_file_store/android-cts.zip',
+        'decompress': True,
+        'mount_zip': True,
+    }]
+
+    # 1. Run the test with zero retry count.
+    test_run_id_1 = self.container.ScheduleTestRun(
+        FLAGS.serial_number,
+        test_id=test_id,
+        extra_args=extra_args,
+        test_resource_objs=test_resource_objs,
+        enable_xts_dynamic_download=False,
+        max_retry_on_test_failures=0,
+    )['id']
+    self.container.WaitForState(test_run_id_1, 'COMPLETED', timeout=30 * 60)
+
+    # 2. Rerun this first test run using rerun_context.
+    test_run_id_2 = self.container.ScheduleTestRun(
+        FLAGS.serial_number,
+        test_id=test_id,
+        extra_args=extra_args,
+        test_resource_objs=test_resource_objs,
+        enable_xts_dynamic_download=False,
+        rerun_context={'test_run_id': test_run_id_1},
+    )['id']
+    self.container.WaitForState(test_run_id_2, 'COMPLETED', timeout=30 * 60)
+
+    # Verify that the second run used cached results.
+    time.sleep(10)
+    test_run_2 = self.container.GetTestRun(test_run_id_2)
+    output_dir = self._GetOutputDir(test_run_2)
+    test_result_xml_path = output_dir + 'test_result.xml'
+    self._AssertFileExists(test_result_xml_path)
+    test_result_xml_content = self.container.ReadFile(test_result_xml_path)
+    self.assertIn('<Metric key="cached">true</Metric>', test_result_xml_content)
+
   def testRunCtsModuleWithDeviceAction(self):
     """Tests executing a CTS module with a device action."""
     test_run_id = self.container.ScheduleTestRun(
@@ -174,7 +216,7 @@ class E2eIntegrationTest(integration_util.DockerContainerTest):
             'decompress': True,
             'mount_zip': True,
         }],
-        enable_xts_dynamic_download=True,
+        enable_xts_dynamic_download=False,
         before_device_action_ids=['connect_wifi'],
     )['id']
     self.container.WaitForState(test_run_id, 'ERROR', timeout=30 * 60)
@@ -199,7 +241,7 @@ class E2eIntegrationTest(integration_util.DockerContainerTest):
             'decompress': True,
             'mount_zip': True,
         }],
-        enable_xts_dynamic_download=True,
+        enable_xts_dynamic_download=False,
         queue_timeout_seconds=60,  # Allow some time for the first run to start.
     )['id']
     logging.info('Scheduled first test run with ID: %s', test_run_id_1)
@@ -214,7 +256,7 @@ class E2eIntegrationTest(integration_util.DockerContainerTest):
             'decompress': True,
             'mount_zip': True,
         }],
-        enable_xts_dynamic_download=True,
+        enable_xts_dynamic_download=False,
         queue_timeout_seconds=60,  # Allow some time for the first run to start.
     )['id']
     logging.info('Scheduled second test run with ID: %s', test_run_id_2)
