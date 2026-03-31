@@ -164,6 +164,48 @@ class OlcsSessionClientTest(absltest.TestCase):
     self.assertEqual(first_request, test_request[0])
     self.assertCountEqual(result, [response_1, response_2])
 
+  def testNotifySession(self):
+    test_request = session_service_pb2.NotifySessionRequest()
+    test_response = session_service_pb2.NotifySessionResponse()
+    application_future = self._executor.submit(
+        self._stubby_client.notify_session, test_request
+    )
+    _, request, rpc = self._channel.take_unary_unary(
+        self._descriptor.methods_by_name['NotifySession']
+    )
+    self.assertEqual(request, test_request)
+
+    rpc.send_initial_metadata(())
+    rpc.terminate(
+        test_response,
+        self._trailing_metadata,
+        grpc.StatusCode.OK,
+        self._detailed_message,
+    )
+    result = application_future.result()
+    self.assertIs(result, test_response)
+
+  def testAbortSessions(self):
+    test_request = session_service_pb2.AbortSessionsRequest()
+    test_response = session_service_pb2.AbortSessionsResponse()
+    application_future = self._executor.submit(
+        self._stubby_client.abort_sessions, test_request
+    )
+    _, request, rpc = self._channel.take_unary_unary(
+        self._descriptor.methods_by_name['AbortSessions']
+    )
+    self.assertEqual(request, test_request)
+
+    rpc.send_initial_metadata(())
+    rpc.terminate(
+        test_response,
+        self._trailing_metadata,
+        grpc.StatusCode.OK,
+        self._detailed_message,
+    )
+    result = application_future.result()
+    self.assertIs(result, test_response)
+
 
 if __name__ == '__main__':
   absltest.main()

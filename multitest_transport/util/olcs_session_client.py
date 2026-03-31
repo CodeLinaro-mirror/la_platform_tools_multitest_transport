@@ -116,3 +116,17 @@ class OlcsSessionClient:
           if exception_detail
           else ''
       ) from e
+
+  def abort_sessions(
+      self, request: session_service_pb2.AbortSessionsRequest
+  ) -> session_service_pb2.AbortSessionsResponse:
+    """Abort one or multiple sessions."""
+    try:
+      return self._stub.AbortSessions(request)
+    except grpc.RpcError as e:
+      exception_detail = grpc_error_util.to_exception_detail(e)
+      raise OlcsSessionRpcError(
+          'Failed to abort sessions %s' % exception_detail.summary
+          if exception_detail
+          else ''
+      ) from e

@@ -141,31 +141,28 @@ class OlcsSessionStub:
     else:
       self._client = _GetSharedClient()
 
-  def CancelRequest(self, request_id: str):
-    """Cancel a request.
+  def CancelRequest(self, request_id: str) -> bool:
+    """Cancel a request using the infrastructure-level AbortSessions RPC.
 
     Args:
-      request_id: The request id of the request.
+      request_id: The session ID of the request to abort.
 
     Returns:
-      True if the request is cancelled successfully.
+      True if the session was successfully targetted for abortion.
     """
-    session_notification = session_pb2.SessionNotification(
-        plugin_label=session_pb2.SessionPluginLabel(label=SESSION_PLUGIN_LABEL)
-    )
-    session_notification.notification.Pack(
-        service_pb2.AtsServerSessionNotification(
-            cancel_session=service_pb2.CancelSession()
-        )
-    )
-    response = self._client.notify_session(
-        session_service_pb2.NotifySessionRequest(
-            session_id=session_pb2.SessionId(id=request_id),
-            session_notification=session_notification,
-        )
-    )
-    logging.info("Cancel request response:%s", response)
-    return response and response.successful
+    # 1. Construct the AbortSessionsRequest
+    request = session_service_pb2.AbortSessionsRequest()
+    request.session_id.add(id=request_id)
+
+    # 2. Call the new client method
+    response = self._client.abort_sessions(request)
+
+    logging.info("Abort sessions response: %s", response)
+
+    # 3. Check if our request_id is in the list of aborted sessions
+    # AbortSessionsResponse returns a list of SessionId objects that were
+    # aborted.
+    return any(s.id == request_id for s in response.session_id)
 
   def CreateNewRequest(
       self, request: api_messages.NewMultiCommandRequestMessage
