@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """MTT end-to-end tests."""
+
 import logging
 import os
 import socket
@@ -32,28 +33,10 @@ flags.mark_flag_as_required('serial_number')
 flags.DEFINE_string('architecture', 'arm', 'Device architecture (arm or x86)')
 
 
-# TODO: Replace /url with ?alt=media when it works
-_ARTIFACTS_DOWNLOAD_URL = (
-    'https://www.googleapis.com/android/internal/build/'
-    'v3/builds/%s/%s/attempts/latest/artifacts/%s/url'
-)
-_BUILD_ID = '13281750'
-_BUILD_TARGET = 'aosp_cf_x86_64_phone-trunk_staging-userdebug'
-_CVD_HOST_PACKAGE_URL = _ARTIFACTS_DOWNLOAD_URL % (
-    _BUILD_ID,
-    _BUILD_TARGET,
-    'cvd-host_package.tar.gz',
-)
-_IMG_ZIP_URL = _ARTIFACTS_DOWNLOAD_URL % (
-    _BUILD_ID,
-    _BUILD_TARGET,
-    f'aosp_cf_x86_64_phone-img-{_BUILD_ID}.zip',
-)
-_ACLOUD_PREBUILT_URL = _ARTIFACTS_DOWNLOAD_URL % (
-    _BUILD_ID,
-    _BUILD_TARGET,
-    'acloud_prebuilt',
-)
+_BUILD_ID = '14981173'
+_BUILD_TARGET = 'aosp_cf_x86_64_only_phone-userdebug'
+_CVD_HOST_PACKAGE = 'cvd-host_package.tar.gz'
+_IMG_ZIP = f'aosp_cf_x86_64_only_phone-img-{_BUILD_ID}.zip'
 _CTS_FILE_NAME = (
     'android-cts-git_24Q3-release-test_suites_x86_64-11835886-trimmed.zip'
 )
@@ -76,16 +59,25 @@ class E2eIntegrationTest(integration_util.DockerContainerTest):
     config_file = os.path.join(TEST_DATA_DIR, 'e2e_test_config.yaml')
     with open(config_file) as f:
       cls.container.ImportConfig(f.read())
+    img_signed_url = integration_util.GetAndroidBuildArtifactSignedUrl(
+        _BUILD_ID,
+        _BUILD_TARGET,
+        _IMG_ZIP,
+    )
     cls.container.Exec(
-        'wget', '--retry-connrefused', '-O', '/data/img.zip', _IMG_ZIP_URL
+        'wget', '--retry-connrefused', '-O', '/data/img.zip', img_signed_url
+    )
+    cvd_signed_url = integration_util.GetAndroidBuildArtifactSignedUrl(
+        _BUILD_ID, _BUILD_TARGET, _CVD_HOST_PACKAGE
     )
     cls.container.Exec(
         'wget',
         '--retry-connrefused',
         '-O',
         '/data/cvd.tar.gz',
-        _CVD_HOST_PACKAGE_URL,
+        cvd_signed_url,
     )
+
     cts_file = os.path.join(
         TEST_DATA_DIR,
         _CTS_FILE_NAME,

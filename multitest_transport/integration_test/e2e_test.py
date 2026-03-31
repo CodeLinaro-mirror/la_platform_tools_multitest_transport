@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """MTT end-to-end tests."""
+
 import logging
 import os
 import socket
@@ -31,24 +32,22 @@ flags.DEFINE_string('serial_number', None, 'Device serial number')
 flags.mark_flag_as_required('serial_number')
 flags.DEFINE_string('architecture', 'arm', 'Device architecture (arm or x86)')
 
-CTS_DOWNLOAD_URL = 'https://dl.google.com/dl/android/cts/android-cts-10_r2-linux_x86-%s.zip'
+CTS_DOWNLOAD_URL = (
+    'https://dl.google.com/dl/android/cts/android-cts-10_r2-linux_x86-%s.zip'
+)
 
-# TODO: Replace /url with ?alt=media when it works
-_ARTIFACTS_DOWNLOAD_URL = ('https://www.googleapis.com/android/internal/build/'
-                           'v3/builds/%s/%s/attempts/latest/artifacts/%s/url')
-_BUILD_ID = '13281750'
-_BUILD_TARGET = 'aosp_cf_x86_64_phone-trunk_staging-userdebug'
-_CVD_HOST_PACKAGE_URL = _ARTIFACTS_DOWNLOAD_URL % (
-    _BUILD_ID, _BUILD_TARGET, 'cvd-host_package.tar.gz')
-_IMG_ZIP_URL = _ARTIFACTS_DOWNLOAD_URL % (
-    _BUILD_ID, _BUILD_TARGET, f'aosp_cf_x86_64_phone-img-{_BUILD_ID}.zip')
+_BUILD_ID = '14981173'
+_BUILD_TARGET = 'aosp_cf_x86_64_only_phone-userdebug'
+
+_CVD_HOST_PACKAGE = 'cvd-host_package.tar.gz'
+_IMG_ZIP = f'aosp_cf_x86_64_only_phone-img-{_BUILD_ID}.zip'
 _CTS_FILE_NAME = (
     'android-cts-git_24Q3-release-test_suites_x86_64-11835886-trimmed.zip'
 )
 
 
 class E2eIntegrationTest(integration_util.DockerContainerTest):
-  """"Tests that TF is running and can handle test run information from MTT."""
+  """Tests that TF is running and can handle test run information from MTT."""
 
   @classmethod
   def GetContainer(cls, container_id=None):
@@ -73,8 +72,11 @@ class E2eIntegrationTest(integration_util.DockerContainerTest):
   def _GetOutputDir(self, test_run):
     """Returns the path to a test run's output directory."""
     attempt = self.container.GetAttempts(test_run['request_id'])[-1]
-    return ('/data/app_default_bucket/test_runs/%s/output/%s/%s/' %
-            (test_run['id'], attempt['command_id'], attempt['attempt_id']))
+    return '/data/app_default_bucket/test_runs/%s/output/%s/%s/' % (
+        test_run['id'],
+        attempt['command_id'],
+        attempt['attempt_id'],
+    )
 
   def _AssertFileExists(self, path):
     """Checks if a path (optionally with wildcards) matches any files."""
@@ -107,7 +109,7 @@ class E2eIntegrationTest(integration_util.DockerContainerTest):
     test_run_id = self.container.ScheduleTestRun(
         FLAGS.serial_number,
         test_id='e2e_fake_test',
-        extra_args='--set-option run:FakeModule=P'
+        extra_args='--set-option run:FakeModule=P',
     )['id']
     self.container.WaitForState(test_run_id, 'COMPLETED', timeout=3 * 60)
     # Verify that the test passed with a single attempt
@@ -122,7 +124,7 @@ class E2eIntegrationTest(integration_util.DockerContainerTest):
     test_run_id = self.container.ScheduleTestRun(
         FLAGS.serial_number,
         test_id='e2e_fake_test',
-        extra_args='--set-option run:FakeModule=F'
+        extra_args='--set-option run:FakeModule=F',
     )['id']
     self.container.WaitForState(test_run_id, 'COMPLETED', timeout=6 * 60)
     # Verify that the test failed and had two attempts
@@ -145,7 +147,8 @@ class E2eIntegrationTest(integration_util.DockerContainerTest):
     host_log = self.container.Exec('cat', output_dir + 'tool-logs/host_log.txt')
     local_device_serial = self._GetLocalDeviceSerial(FLAGS.serial_number)
     self.assertIn(
-        'Executing e2e_log_action on device %s' % local_device_serial, host_log)
+        'Executing e2e_log_action on device %s' % local_device_serial, host_log
+    )
 
   def testRunCtsModule(self):
     """Tests executing a CTS module (download test suite, handle results)."""
@@ -156,7 +159,8 @@ class E2eIntegrationTest(integration_util.DockerContainerTest):
         test_resource_objs=[{
             'name': 'android-cts.zip',
             'url': 'file:///data/android-cts.zip',
-        }])['id']
+        }],
+    )['id']
     self.container.WaitForState(test_run_id, 'COMPLETED', timeout=30 * 60)
     # Verify that the tests were executed (after waiting for result processing).
     time.sleep(10)
@@ -170,27 +174,42 @@ class E2eIntegrationTest(integration_util.DockerContainerTest):
 
   def testLocalVirtualDevice(self):
     """Tests executing a test on a local virtual device."""
-    self.container.Exec('wget', '--retry-connrefused', '-O', '/data/img.zip',
-                        _IMG_ZIP_URL)
-    self.container.Exec('wget', '--retry-connrefused', '-O', '/data/cvd.tar.gz',
-                        _CVD_HOST_PACKAGE_URL)
+    img_signed_url = integration_util.GetAndroidBuildArtifactSignedUrl(
+        _BUILD_ID,
+        _BUILD_TARGET,
+        _IMG_ZIP,
+    )
+    self.container.Exec(
+        'wget', '--retry-connrefused', '-O', '/data/img.zip', img_signed_url
+    )
+    cvd_signed_url = integration_util.GetAndroidBuildArtifactSignedUrl(
+        _BUILD_ID, _BUILD_TARGET, _CVD_HOST_PACKAGE
+    )
+    self.container.Exec(
+        'wget', '--retry-connrefused', '-O', '/data/cvd.tar.gz', cvd_signed_url
+    )
+
     test_run_id = self.container.ScheduleTestRun(
         self._GetGlobalDeviceSerial('local-virtual-device-0'),
         before_device_action_ids=['lvd_setup', 'cts_virtual_device_setup'],
-        test_resource_objs=[{
-            'name': 'device',
-            'url': 'file:///data/img.zip',
-            'decompress': True,
-            'decompress_dir': 'lvd-images',
-        }, {
-            'name': 'cvd-host_package.tar.gz',
-            'url': 'file:///data/cvd.tar.gz',
-            'decompress': True,
-            'decompress_dir': 'lvd-tools',
-        }, {
-            'name': 'acloud',
-            'url': 'file:///bin/acloud_prebuilt',
-        }],
+        test_resource_objs=[
+            {
+                'name': 'device',
+                'url': 'file:///data/img.zip',
+                'decompress': True,
+                'decompress_dir': 'lvd-images',
+            },
+            {
+                'name': 'cvd-host_package.tar.gz',
+                'url': 'file:///data/cvd.tar.gz',
+                'decompress': True,
+                'decompress_dir': 'lvd-tools',
+            },
+            {
+                'name': 'acloud',
+                'url': 'file:///bin/acloud_prebuilt',
+            },
+        ],
     )['id']
     self.container.WaitForState(test_run_id, 'COMPLETED', timeout=12 * 60)
     # Verify that the logs were generated

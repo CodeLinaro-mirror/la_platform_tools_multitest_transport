@@ -46,6 +46,10 @@ flags.DEFINE_enum(
     ['debug', 'info', 'warn', 'error', 'critical'],
     'Server log level')
 
+flags.DEFINE_string(
+    'android_build_api_key', None, 'API key for Android Build v4 API.'
+)
+
 
 @flags.multi_flags_validator(
     ['docker_image', 'container_id'],
@@ -64,6 +68,18 @@ RETRY_PARAMS = {'tries': 4, 'delay': 2, 'backoff': 2}
 CLUSTER = 'default'
 _SECCOMP_PROFILE_PACKAGE = 'multitest_transport.cli'
 _SECCOMP_PROFILE_NAME = 'seccomp.json'
+
+
+def GetAndroidBuildArtifactSignedUrl(build_id, target, artifact_name):
+  """Gets a signed URL for an Android Build artifact."""
+  url = (
+      f'https://androidbuild-pa.googleapis.com/v4/builds/{build_id}/{target}/'
+      f'attempts/latest/artifacts/{artifact_name}/url'
+      f'?redirect=false&key={FLAGS.android_build_api_key}'
+  )
+  response = requests.get(url, timeout=60)
+  response.raise_for_status()
+  return response.json()['signedUrl']
 
 
 class MttContainer(object):
