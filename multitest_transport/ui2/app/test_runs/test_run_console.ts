@@ -40,16 +40,17 @@ export const SOURCE_TYPE = ['Tradefed', 'OLC Server', 'Mobly'];
 export const TF_LOG_TYPES = {
   'Driver log': 'test_output.txt',
   'Host log': 'xts_tf_output.log',
-  'Test log': 'tool-logs/stdout.txt'
+  'Test log': 'tool-logs/stdout.txt',
 };
 /** Log types and filenames for Mobly jobs */
 export const MOBLY_LOG_TYPES = {
   'Mobly Log': 'mobly_logs/test_log.INFO',
-  'Driver log': 'test_output.txt'
+  'Driver log': 'test_output.txt',
 };
 /** Log types and filenames for Slate jobs */
 export const SLATE_LOG_TYPES = {
-  'Driver log': 'test_output.txt'
+  'Driver log': 'test_output.txt',
+  'Slate log': 'slate_run.log',
 };
 /** Maximum lines to keep. */
 export const MAX_CONSOLE_LENGTH = 200;
@@ -183,13 +184,16 @@ export class TestRunConsole implements OnInit, OnChanges, OnDestroy {
         return `logs/non-tradefed_logs/${this.selectedNonTradefedLogDirName}/${
             this.selectedMoblyLogType}`;
       } else if (this.selectedSourceType === 'Slate') {
+        let logType = this.selectedSlateLogType;
         if (isActive) {
+          if (this.selectedSlateLogType === SLATE_LOG_TYPES['Driver log']) {
+            logType = 'local_test_log.txt';
+          }
           return `log/mh_lab_gen_files/${
               this.selectedAttempt.working_job_id}/test_${
-              this.selectedAttempt.working_test_id}/local_test_log.txt`;
+              this.selectedAttempt.working_test_id}/${logType}`;
         }
-        return `logs/test_${this.selectedAttempt.working_test_id}/${
-            this.selectedSlateLogType}`;
+        return `logs/test_${this.selectedAttempt.working_test_id}/${logType}`;
       } else {  // Tradefed Logs
         if (isActive) {
           if (this.selectedTfLogType === 'test_output.txt') {
