@@ -15,8 +15,28 @@
 
 set -e
 
+# Register a cleanup function to ensure graceful shutdown of all services.
+function cleanup {
+  echo "Cleaning up..."
+
+  # 1. Trigger the Datastore Emulator's internal flush and shutdown mechanism.
+  # This endpoint ensures the memory-based data is persisted to datastore.db.
+  if [[ -n "${DATASTORE_EMULATOR_PORT}" ]]; then
+    echo "Requesting Datastore Emulator shutdown on port ${DATASTORE_EMULATOR_PORT}..."
+    curl -X POST "http://localhost:${DATASTORE_EMULATOR_PORT}/shutdown" || true
+  fi
+
+  # 2. Send termination signal to all other background processes (RabbitMQ, File Server, etc.).
+  pkill -P $$ -TERM
+
+  # 3. CRITICAL: Wait for all child processes to actually exit.
+  # This prevents the container from stopping until the persistence cycle is complete.
+  wait
+  echo "Shutdown complete."
+}
+
 # Kill all subprocesses when this script stops.
-trap "echo cleaning up... && pkill -P $$ -TERM" SIGINT SIGTERM EXIT
+trap cleanup SIGINT SIGTERM EXIT
 
 readonly SCRIPT_PATH="$(realpath "$0")"
 readonly SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
