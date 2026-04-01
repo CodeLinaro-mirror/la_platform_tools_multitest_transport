@@ -444,6 +444,8 @@ export declare interface TestRunParameters {
   invocation_timeout_seconds?: number;
   /** Default output idle timeout in seconds. */
   output_idle_timeout_seconds?: number;
+  /** Default queue timeout in seconds. */
+  queue_timeout_seconds?: number;
 }
 
 /**
@@ -757,6 +759,8 @@ export function initTestRunConfig(
       config.output_idle_timeout_seconds =
           parameters.output_idle_timeout_seconds ||
           DEFAULT_OUTPUT_IDLE_TIMEOUT_SECONDS;
+      config.queue_timeout_seconds =
+        parameters.queue_timeout_seconds || DEFAULT_QUEUE_TIMEOUT_SECONDS;
     }
   }
   if (testPlanToOverride) {

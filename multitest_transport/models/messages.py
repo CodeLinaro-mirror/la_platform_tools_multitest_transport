@@ -293,20 +293,27 @@ class TestRunParameter(messages.Message):
   max_retry_on_test_failures = messages.IntegerField(1)
   invocation_timeout_seconds = messages.IntegerField(2)
   output_idle_timeout_seconds = messages.IntegerField(3)
+  queue_timeout_seconds = messages.IntegerField(4)
 
 
 @Converter(ndb_models.TestRunParameter, TestRunParameter)
 def _TestRunParameterConverter(obj):
   return TestRunParameter(
       max_retry_on_test_failures=obj.max_retry_on_test_failures,
-      output_idle_timeout_seconds=obj.output_idle_timeout_seconds)
+      invocation_timeout_seconds=obj.invocation_timeout_seconds,
+      output_idle_timeout_seconds=obj.output_idle_timeout_seconds,
+      queue_timeout_seconds=obj.queue_timeout_seconds,
+  )
 
 
 @Converter(TestRunParameter, ndb_models.TestRunParameter)
 def _TestRunParameterMessageConverter(msg):
   return ndb_models.TestRunParameter(
       max_retry_on_test_failures=msg.max_retry_on_test_failures,
-      output_idle_timeout_seconds=msg.output_idle_timeout_seconds)
+      invocation_timeout_seconds=msg.invocation_timeout_seconds,
+      output_idle_timeout_seconds=msg.output_idle_timeout_seconds,
+      queue_timeout_seconds=msg.queue_timeout_seconds,
+  )
 
 
 class Test(messages.Message):

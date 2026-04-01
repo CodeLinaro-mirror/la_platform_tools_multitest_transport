@@ -92,6 +92,24 @@ class MessagesTest(testbed_dependent_test.TestbedDependentTest):
         obj.invocation_timeout_seconds, msg.invocation_timeout_seconds)
     self.assertEqual(
         obj.output_idle_timeout_seconds, msg.output_idle_timeout_seconds)
+    self.assertEqual(
+        obj.queue_timeout_seconds, msg.queue_timeout_seconds)
+
+  def testConvert_TestRunParameter(self):
+    obj = ndb_models.TestRunParameter(
+        max_retry_on_test_failures=1,
+        invocation_timeout_seconds=2,
+        output_idle_timeout_seconds=3,
+        queue_timeout_seconds=4)
+    msg = messages.TestRunParameter(
+        max_retry_on_test_failures=1,
+        invocation_timeout_seconds=2,
+        output_idle_timeout_seconds=3,
+        queue_timeout_seconds=4)
+    self.assertSameTestRunParameter(
+        obj, messages.Convert(obj, messages.TestRunParameter))
+    self.assertSameTestRunParameter(
+        messages.Convert(msg, ndb_models.TestRunParameter), msg)
 
   def assertSameTest(self, obj, msg):
     self.assertEqual(obj.name, msg.name)
@@ -126,6 +144,15 @@ class MessagesTest(testbed_dependent_test.TestbedDependentTest):
         build_attributes=[
             ndb_models.NameValuePair(name='attr', value='value')
         ])
+    msg = messages.Convert(obj, messages.Test)
+    self.assertIsInstance(msg, messages.Test)
+    self.assertSameTest(obj, msg)
+
+    obj.default_test_run_parameters = ndb_models.TestRunParameter(
+        max_retry_on_test_failures=1,
+        invocation_timeout_seconds=2,
+        output_idle_timeout_seconds=3,
+        queue_timeout_seconds=4)
     msg = messages.Convert(obj, messages.Test)
     self.assertIsInstance(msg, messages.Test)
     self.assertSameTest(obj, msg)

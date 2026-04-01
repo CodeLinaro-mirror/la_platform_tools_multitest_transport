@@ -203,6 +203,12 @@
              type="number"
              [(ngModel)]="defaultTestRunParameters.output_idle_timeout_seconds">
     </mat-form-field>
+    <mat-form-field appearance="outline" floatLabel="always" fxFlex>
+      <mat-label> Queue Timeout (Seconds) </mat-label>
+      <input matInput
+             type="number"
+             [(ngModel)]="defaultTestRunParameters.queue_timeout_seconds">
+    </mat-form-field>
   </div>
 
   <!-- Update/Create Button and Cancel Button-->

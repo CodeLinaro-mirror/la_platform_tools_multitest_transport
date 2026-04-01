@@ -264,6 +264,7 @@ export function newMockTest(
       max_retry_on_test_failures: 1,
       invocation_timeout_seconds: 0,
       output_idle_timeout_seconds: 1000,
+      queue_timeout_seconds: 500,
     },
   };
 }
@@ -388,7 +389,7 @@ export function newMockTestRunConfig(
     sharding_mode: mttModels.ShardingMode.RUNNER,
     max_retry_on_test_failures: 1,
     output_idle_timeout_seconds: 3600,
-    queue_timeout_seconds: 100,
+    queue_timeout_seconds: 24 * 60 * 60,
     before_device_action_ids: [],
     allow_partial_device_match: false,
   };

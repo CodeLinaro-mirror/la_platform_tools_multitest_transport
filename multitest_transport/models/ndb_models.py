@@ -232,10 +232,13 @@ class TestRunParameter(ndb.Model):
         force stopped.
     output_idle_timeout_seconds: how long a test run's output can be idle before
         attempting recovery
+    queue_timeout_seconds: how long a test run can stay in QUEUED state before
+        being cancelled
   """
   max_retry_on_test_failures = ndb.IntegerProperty()
   invocation_timeout_seconds = ndb.IntegerProperty()
   output_idle_timeout_seconds = ndb.IntegerProperty()
+  queue_timeout_seconds = ndb.IntegerProperty()
 
 
 class VisibilityType(messages.Enum):

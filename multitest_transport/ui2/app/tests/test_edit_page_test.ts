@@ -81,6 +81,7 @@ describe('TestEditPage', () => {
     expect(textContent).toContain('Test Resource Defs');
     expect(textContent).toContain('Setup Scripts');
     expect(textContent).toContain('Build Attributes');
+    expect(textContent).toContain('Queue Timeout (Seconds)');
   });
 
   describe('back button', () => {

@@ -45,6 +45,9 @@ describe('MttModels', () => {
           .toEqual(parameters.max_retry_on_test_failures);
       expect(config.output_idle_timeout_seconds)
           .toEqual(parameters.output_idle_timeout_seconds);
+      expect(config.queue_timeout_seconds).toEqual(
+        parameters.queue_timeout_seconds,
+      );
     });
 
     it('creates a config with a test plan to override', () => {
