@@ -269,10 +269,11 @@ function start_labconsole_ui {
   # Labconsole UI is served by a nodejs express server, think about the
   # main.py of the python server.
   echo "Starting Labconsole UI on port ${LAB_CONSOLE_PORT}..."
-  cd /mtt/lab_ui_runner
-  # No need to pass any arguments to npm start
-  # as this express node server will read the arguments from the env automatically.
-  npm start &
+
+  # Wrap the cd and npm start in a subshell to prevent side effects.
+  # No need to pass any arguments to npm start as this express node server will
+  # read the arguments from the env automatically.
+  (cd /mtt/lab_ui_runner && npm start) &
   echo "Labconsole UI started on port ${LAB_CONSOLE_PORT}."
 }
 
