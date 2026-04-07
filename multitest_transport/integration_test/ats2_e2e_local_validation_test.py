@@ -191,6 +191,7 @@ class E2eIntegrationTest(integration_util.DockerContainerTest):
         extra_args=extra_args,
         test_resource_objs=test_resource_objs,
         enable_xts_dynamic_download=False,
+        max_retry_on_test_failures=0,
         rerun_context={'test_run_id': test_run_id_1},
     )['id']
     self.container.WaitForState(test_run_id_2, 'COMPLETED', timeout=30 * 60)
@@ -291,6 +292,83 @@ class E2eIntegrationTest(integration_util.DockerContainerTest):
     output_dir = self._GetOutputDir(completed_run)
     self._AssertFileExists(output_dir + '*.zip')
     self._AssertFileExists(output_dir + 'test_result.xml')
+
+  def testAbortedRerunNoRetry(self):
+    """Tests that an aborted rerun does not trigger retries despite prior results.
+
+    Addresses b/499130798 where a rerun session with failures would trigger
+    a retry attempt even if the session was aborted, because the plugin saw
+    failure counts (prior results) in the request detail.
+    """
+    test_id = 'android.cts.15_0'
+    extra_args = '-m CtsNetTestCasesLegacyApi22'  # Module known to fail.
+    test_resource_objs = [{
+        'name': 'android-cts.zip',
+        'url': 'file:///data/local_file_store/android-cts.zip',
+        'decompress': True,
+        'mount_zip': True,
+    }]
+
+    # 1. Run the test initially to generate failure results.
+    test_run_id_1 = self.container.ScheduleTestRun(
+        FLAGS.serial_number,
+        test_id=test_id,
+        extra_args=extra_args,
+        test_resource_objs=test_resource_objs,
+        enable_xts_dynamic_download=False,
+        max_retry_on_test_failures=0,
+    )['id']
+    self.container.WaitForState(test_run_id_1, 'COMPLETED', timeout=30 * 60)
+    logging.info('Initial test run completed with failures.')
+
+    # 2. Schedule a rerun using the prior results (rerun_context).
+    # Enable max_retry_on_test_failures to test the suppression logic.
+    test_run_id_2 = self.container.ScheduleTestRun(
+        FLAGS.serial_number,
+        test_id=test_id,
+        extra_args=extra_args,
+        test_resource_objs=test_resource_objs,
+        enable_xts_dynamic_download=False,
+        rerun_context={'test_run_id': test_run_id_1},
+        max_retry_on_test_failures=1,
+    )['id']
+
+    # 3. Wait for the rerun to start and then abort it.
+    self.container.WaitForState(test_run_id_2, 'RUNNING', timeout=15 * 60)
+    test_run_2 = self.container.GetTestRun(test_run_id_2)
+    self.container.CancelTestRun(test_run_id_2)
+    logging.info('Rerun aborted while running.')
+
+    # 4. Wait for the final state and verify it's CANCELED.
+    state = self.container.WaitForFinalState(test_run_id_2, timeout=15 * 60)
+    self.assertEqual(
+        state, 'CANCELED', 'The rerun should reach CANCELED state.'
+    )
+
+    # 5. Wait for the sole attempt to become COMPLETED.
+    # When a run is canceled, its current attempt should eventually finish.
+    start_time = time.time()
+    while True:
+      attempts = self.container.GetAttempts(test_run_2['request_id'])
+      if attempts and attempts[0]['state'] == 'COMPLETED':
+        break
+      if time.time() - start_time > 5 * 60:
+        raise AssertionError(
+            f'Attempt did not become COMPLETED. Current attempts: {attempts}'
+        )
+      time.sleep(5)
+
+    # 6. Verify that no second attempt (retry) was triggered for this rerun.
+    # Increased wait time to 30 seconds to allow for any background
+    # post-processing that might incorrectly attempt to trigger a retry session.
+    time.sleep(30)
+    test_run_2 = self.container.GetTestRun(test_run_id_2)
+    attempts = self.container.GetAttempts(test_run_2['request_id'])
+    self.assertLen(
+        attempts,
+        1,
+        'Exactly 1 attempt should exist; retries must be suppressed.',
+    )
 
 
 if __name__ == '__main__':
