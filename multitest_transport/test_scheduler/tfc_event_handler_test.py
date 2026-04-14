@@ -1012,8 +1012,14 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
   @mock.patch.dict(
       os.environ, {'DEFAULT_VERSION_HOSTNAME': 'host-name'}, clear=True
   )
+  @mock.patch.object(
+      tfc_event_handler.email_formatter.EmailFormatter,
+      'FormatTestRunAttemptEvent',
+  )
   @mock.patch.object(mailer, 'SendEmail')
-  def testSendNotification(self, mock_send_email, mock_get_config):
+  def testSendNotification(
+      self, mock_send_email, mock_format_email, mock_get_config
+  ):
     mock_config = ndb_models.PrivateNodeConfig()
     mock_config.notification_config = ndb_models.NotificationConfig(
         events=[ndb_models.NotificationEvent.TEST_RUN_ATTEMPT_COMPLETED],
@@ -1022,6 +1028,7 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
         receiver_addresses=['receiver@test.com'],
     )
     mock_get_config.return_value = mock_config
+    mock_format_email.return_value = ('Mock Subject', 'Mock Body')
 
     attempt = api_messages.CommandAttemptMessage(
         attempt_id='attempt_id',
@@ -1034,23 +1041,15 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
     )
     attempt_json = protojson.encode_message(attempt)  # pytype: disable=module-attr
 
-    tfc_event_handler._SendNotification('run_id', attempt_json)
-
-    expected_body = (
-        'Test run attempt finished.<br><br><b>Test Run ID</b>:'
-        ' run_id<br><b>Attempt ID</b> (ATS Request ID/OLC Session ID):'
-        ' request_id<br><b>Results</b>: <a'
-        ' href="http://host-name/test_runs/run_id">http://host-name/test_runs/run_id</a><br><b>State</b>:'
-        ' ERROR<br><b>Error Reason</b>: Some reason<br><b>Error Detail</b>:'
-        ' Test error<br>'
-    )
+    test_run_id = self.mock_test_run.key.id()
+    tfc_event_handler._SendNotification(test_run_id, attempt_json)
 
     mock_send_email.assert_called_once_with(
         'sender@test.com',
         'password',
         ['receiver@test.com'],
-        'Test Run Attempt ERROR: run_id',
-        expected_body,
+        'Mock Subject',
+        'Mock Body',
     )
 
 

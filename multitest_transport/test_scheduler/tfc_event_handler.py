@@ -443,8 +443,12 @@ def _SendNotification(test_run_id, attempt_json):
   )
 
   # gather email content
+  test_run = ndb_models.TestRun.get_by_id(test_run_id)
+  if not test_run:
+    logging.warning('Test run %s not found for notification', test_run_id)
+    return
   subject, body = email_formatter.EmailFormatter.FormatTestRunAttemptEvent(
-      test_run_id, attempt
+      test_run_id, attempt, test_run=test_run
   )
 
   mailer.SendEmail(

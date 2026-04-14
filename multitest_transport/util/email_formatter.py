@@ -23,18 +23,21 @@ class EmailFormatter:
 
   @classmethod
   def FormatTestRunAttemptEvent(
-      cls, test_run_id: str, attempt: api_messages.CommandAttemptMessage
+      cls,
+      test_run_id: str,
+      attempt: api_messages.CommandAttemptMessage,
+      test_run=None,
   ) -> tuple[str, str]:
     """Formats the email subject and body for a test run attempt event.
 
     Args:
       test_run_id: The ID of the test run.
       attempt: The command attempt message from TFC.
+      test_run: The TestRun NDB model object.
 
     Returns:
       A tuple containing (subject, body).
     """
-    subject = 'Test Run Attempt %s: %s' % (attempt.state, test_run_id)
     hostname = os.environ.get('DEFAULT_VERSION_HOSTNAME', 'localhost')
     results_url = 'http://%s/test_runs/%s' % (hostname, test_run_id)
 
@@ -50,13 +53,68 @@ class EmailFormatter:
           )
       )
 
+    test_name = 'N/A'
+    run_command = 'N/A'
+    build_id = 'N/A'
+    run_target = 'N/A'
+    build_number = 'N/A'
+    fullname = 'N/A'
+    version = 'N/A'
+
+    if test_run:
+      if test_run.test:
+        test_name = test_run.test.name
+      if test_run.test_run_config:
+        run_command = test_run.test_run_config.command
+
+      if test_run.test_devices:
+        first_device = test_run.test_devices[0]
+        build_id = first_device.build_id or 'N/A'
+        run_target = first_device.run_target or 'N/A'
+
+      if test_run.test_package_info:
+        build_number = test_run.test_package_info.build_number or 'N/A'
+        fullname = test_run.test_package_info.fullname or 'N/A'
+        version = test_run.test_package_info.version or 'N/A'
+
+    subject = 'Test Run Attempt %s: %s %s' % (
+        attempt.state,
+        test_name,
+        run_command,
+    )
+
     body = (
-        'Test run attempt finished.<br><br>'
+        '<div style="font-family: Arial, sans-serif; color: #333;">'
+        'Test run attempt finished with state <b>%s</b>.'
+        '<hr style="border: 0; height: 1px; background: #ccc; margin: 15px 0;">'
+        '<h3>Test Info</h3>'
+        '<b>Name</b>: %s<br>'
+        '<b>Run Command</b>: <code>%s</code><br>'
+        '<hr style="border: 0; height: 1px; background: #ccc; margin: 15px 0;">'
+        '<h3>Device Info</h3>'
+        '<b>Build ID</b>: %s<br>'
+        '<b>Run Target</b>: %s<br>'
+        '<hr style="border: 0; height: 1px; background: #ccc; margin: 15px 0;">'
+        '<h3>Test Package Info</h3>'
+        '<b>Full Name</b>: %s<br>'
+        '<b>Version</b>: %s<br>'
+        '<b>Build Number</b>: %s<br>'
+        '<hr style="border: 0; height: 1px; background: #ccc; margin: 15px 0;">'
+        '<h3>Run info</h3>'
         '<b>Test Run ID</b>: %s<br>'
         '<b>Attempt ID</b> (ATS Request ID/OLC Session ID): %s<br>'
         '<b>Results</b>: <a href="%s">%s</a><br>'
         '<b>State</b>: %s<br>%s'
+        '</div>'
     ) % (
+        attempt.state,
+        test_name,
+        run_command,
+        build_id,
+        run_target,
+        fullname,
+        version,
+        build_number,
         test_run_id,
         attempt.request_id,
         results_url,
