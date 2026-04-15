@@ -15,6 +15,7 @@
 """Email formatter utility."""
 
 import os
+from multitest_transport.models import ndb_models
 from tradefed_cluster import api_messages
 
 
@@ -26,6 +27,7 @@ class EmailFormatter:
       cls,
       test_run_id: str,
       attempt: api_messages.CommandAttemptMessage,
+      event_type: ndb_models.NotificationEvent,
       test_run=None,
   ) -> tuple[str, str]:
     """Formats the email subject and body for a test run attempt event.
@@ -33,6 +35,7 @@ class EmailFormatter:
     Args:
       test_run_id: The ID of the test run.
       attempt: The command attempt message from TFC.
+      event_type: The notification event type.
       test_run: The TestRun NDB model object.
 
     Returns:
@@ -77,15 +80,40 @@ class EmailFormatter:
         fullname = test_run.test_package_info.fullname or 'N/A'
         version = test_run.test_package_info.version or 'N/A'
 
-    subject = 'Test Run Attempt %s: %s %s' % (
-        attempt.state,
-        test_name,
-        run_command,
-    )
+    if event_type == ndb_models.NotificationEvent.TEST_RUN_COMPLETED:
+      subject = 'Test Run %s: %s %s' % (
+          attempt.state,
+          test_name,
+          run_command,
+      )
+      body_intro = 'Test run finished with state <b>%s</b>.' % attempt.state
+    else:
+      subject = 'Test Run Attempt %s: %s %s' % (
+          attempt.state,
+          test_name,
+          run_command,
+      )
+      body_intro = (
+          'Test run attempt finished with state <b>%s</b>.' % attempt.state
+      )
+
+    run_info = [
+        '<h3>Run info</h3>',
+        '<b>Test Run ID</b>: %s<br>' % test_run_id,
+    ]
+    if event_type == ndb_models.NotificationEvent.TEST_RUN_ATTEMPT_COMPLETED:
+      run_info.append(
+          '<b>Attempt ID</b> (ATS Request ID/OLC Session ID): %s<br>'
+          % attempt.request_id
+      )
+    run_info.extend([
+        '<b>Results</b>: <a href="%s">%s</a><br>' % (results_url, results_url),
+        '<b>State</b>: %s<br>%s' % (attempt.state, error_details),
+    ])
 
     body = (
         '<div style="font-family: Arial, sans-serif; color: #333;">'
-        'Test run attempt finished with state <b>%s</b>.'
+        '%s'
         '<hr style="border: 0; height: 1px; background: #ccc; margin: 15px 0;">'
         '<h3>Test Info</h3>'
         '<b>Name</b>: %s<br>'
@@ -100,14 +128,10 @@ class EmailFormatter:
         '<b>Version</b>: %s<br>'
         '<b>Build Number</b>: %s<br>'
         '<hr style="border: 0; height: 1px; background: #ccc; margin: 15px 0;">'
-        '<h3>Run info</h3>'
-        '<b>Test Run ID</b>: %s<br>'
-        '<b>Attempt ID</b> (ATS Request ID/OLC Session ID): %s<br>'
-        '<b>Results</b>: <a href="%s">%s</a><br>'
-        '<b>State</b>: %s<br>%s'
+        '%s'
         '</div>'
     ) % (
-        attempt.state,
+        body_intro,
         test_name,
         run_command,
         build_id,
@@ -115,12 +139,7 @@ class EmailFormatter:
         fullname,
         version,
         build_number,
-        test_run_id,
-        attempt.request_id,
-        results_url,
-        results_url,
-        attempt.state,
-        error_details,
+        ''.join(run_info),
     )
 
     return subject, body

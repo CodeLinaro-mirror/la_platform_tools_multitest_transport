@@ -252,11 +252,21 @@ def ProcessRequestEvent(message: api_messages.RequestEventMessage):
   if test_run.IsFinal():
     with _lock:
       _StopSubscribeSession(test_run.key.id(), message.request_id)
+    # Retrieve the latest finished attempt from the request.
+    attempts = None
+    if os.environ.get('IS_OMNILAB_BASED') == 'true' and message.request:
+      attempts = _GetLatestFinishedAttemptFromRequest(message.request)
+      # Send notification for TEST_RUN_COMPLETED event
+      if attempts:
+        task_scheduler.AddCallableTask(
+            _SendNotification,
+            test_run.key.id(),
+            protojson.encode_message(attempts[0]),  # pytype: disable=module-attr
+            ndb_models.NotificationEvent.TEST_RUN_COMPLETED,
+            _transactional=True,
+        )
+
     if test_run.test.result_file:
-      # Retrieve the latest finished attempt from the request.
-      attempts = None
-      if os.environ.get('IS_OMNILAB_BASED') == 'true' and message.request:
-        attempts = _GetLatestFinishedAttemptFromRequest(message.request)
       try:
         test_result_handler.UpdateTestRunSummary(
             test_run.key.id(), latest_finished_attempts=attempts)
@@ -383,6 +393,7 @@ def _ProcessCommandAttemptResult(test_run_id, test_run, request):
           _SendNotification,
           test_run_id,
           protojson.encode_message(attempt),  # pytype: disable=module-attr
+          ndb_models.NotificationEvent.TEST_RUN_ATTEMPT_COMPLETED,
           _transactional=True,
       )
 
@@ -416,7 +427,7 @@ def _InvokeAttemptHandler(test_run_id, test_run, attempt):
     )
 
 
-def _SendNotification(test_run_id, attempt_json):
+def _SendNotification(test_run_id, attempt_json, event_type):
   """Sends notification for a test run event (if configured)."""
   private_node_config = ndb_models.GetPrivateNodeConfig()
   notification_config = private_node_config.notification_config
@@ -424,10 +435,7 @@ def _SendNotification(test_run_id, attempt_json):
     return
 
   # check events
-  if (
-      ndb_models.NotificationEvent.TEST_RUN_ATTEMPT_COMPLETED
-      not in notification_config.events
-  ):
+  if event_type not in notification_config.events:
     return
 
   # check credentials
@@ -448,7 +456,7 @@ def _SendNotification(test_run_id, attempt_json):
     logging.warning('Test run %s not found for notification', test_run_id)
     return
   subject, body = email_formatter.EmailFormatter.FormatTestRunAttemptEvent(
-      test_run_id, attempt, test_run=test_run
+      test_run_id, attempt, test_run=test_run, event_type=event_type
   )
 
   mailer.SendEmail(

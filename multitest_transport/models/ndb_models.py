@@ -920,6 +920,7 @@ class NotificationEvent(messages.Enum):
   """Notification events."""
 
   TEST_RUN_ATTEMPT_COMPLETED = 1
+  TEST_RUN_COMPLETED = 2
 
 
 class NotificationConfig(ndb.Model):

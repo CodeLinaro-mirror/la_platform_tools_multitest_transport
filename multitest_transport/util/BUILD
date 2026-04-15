@@ -168,6 +168,7 @@ pytype_strict_library(
         "email_formatter.py",
     ],
     deps = [
+        "//multitest_transport/models:ndb_models_lib",
         "@tradefed_cluster//tradefed_cluster:api_messages_lib",
     ],
 )
@@ -178,6 +179,7 @@ py_test(
     deps = [
         ":email_formatter_lib",
         "//third_party/py/absl/testing:absltest",
+        "//multitest_transport/models:ndb_models_lib",
         "@tradefed_cluster//tradefed_cluster:api_messages_lib",
     ],
 )

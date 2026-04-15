@@ -86,6 +86,31 @@ export class NotificationsForm
     }
   }
 
+  // Use a getter/setter to bind the checkbox for TEST_RUN_COMPLETED
+  get notifyTestRunCompleted(): boolean {
+    if (!this.privateNodeConfig?.notification_config?.events) return false;
+    return this.privateNodeConfig.notification_config.events.includes(
+      'TEST_RUN_COMPLETED',
+    );
+  }
+
+  set notifyTestRunCompleted(value: boolean) {
+    if (!this.privateNodeConfig.notification_config) {
+      this.privateNodeConfig.notification_config = {};
+    }
+    if (!this.privateNodeConfig.notification_config.events) {
+      this.privateNodeConfig.notification_config.events = [];
+    }
+    const idx = this.privateNodeConfig.notification_config.events.indexOf(
+      'TEST_RUN_COMPLETED',
+    );
+    if (value && idx === -1) {
+      this.privateNodeConfig.notification_config.events.push('TEST_RUN_COMPLETED');
+    } else if (!value && idx !== -1) {
+      this.privateNodeConfig.notification_config.events.splice(idx, 1);
+    }
+  }
+
   ngOnInit() {
     this.load();
   }

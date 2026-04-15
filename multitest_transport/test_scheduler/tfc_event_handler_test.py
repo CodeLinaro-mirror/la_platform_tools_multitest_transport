@@ -450,7 +450,13 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
     mock_after_test.assert_called_with(
         self.mock_test_run.key.id(), test_context=None
     )
-    mock_add_task.assert_not_called()
+    mock_add_task.assert_called_once_with(
+        tfc_event_handler._SendNotification,
+        self.mock_test_run.key.id(),
+        mock.ANY,
+        ndb_models.NotificationEvent.TEST_RUN_COMPLETED,
+        _transactional=True,
+    )
 
   @mock.patch.object(tfc_event_handler, '_AfterTestRunHandler')
   @mock.patch.object(test_result_handler, 'UpdateTestRunSummary')
@@ -1042,7 +1048,18 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
     attempt_json = protojson.encode_message(attempt)  # pytype: disable=module-attr
 
     test_run_id = self.mock_test_run.key.id()
-    tfc_event_handler._SendNotification(test_run_id, attempt_json)
+    tfc_event_handler._SendNotification(
+        test_run_id,
+        attempt_json,
+        ndb_models.NotificationEvent.TEST_RUN_ATTEMPT_COMPLETED,
+    )
+
+    mock_format_email.assert_called_once_with(
+        test_run_id,
+        mock.ANY,
+        test_run=mock.ANY,
+        event_type=ndb_models.NotificationEvent.TEST_RUN_ATTEMPT_COMPLETED,
+    )
 
     mock_send_email.assert_called_once_with(
         'sender@test.com',
@@ -1051,6 +1068,61 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
         'Mock Subject',
         'Mock Body',
     )
+
+  @mock.patch.object(ndb_models, 'GetPrivateNodeConfig')
+  @mock.patch.object(task_scheduler, 'AddCallableTask')
+  @mock.patch.object(tfc_event_handler, '_AfterTestRunHandler')
+  @mock.patch.object(test_result_handler, 'UpdateTestRunSummary')
+  @mock.patch.object(tfc_event_handler, '_GetTestContext')
+  @mock.patch.dict(os.environ, {'IS_OMNILAB_BASED': 'true'}, clear=True)
+  def testProcessRequestEvent_sendNotification_testRunCompleted(
+      self,
+      mock_get_test_context,
+      mock_update_summary,
+      mock_after_test,
+      mock_add_task,
+      mock_get_config,
+  ):
+    # Setup mock config to enable TEST_RUN_COMPLETED
+    mock_config = ndb_models.PrivateNodeConfig()
+    mock_config.notification_config = ndb_models.NotificationConfig(
+        events=[ndb_models.NotificationEvent.TEST_RUN_COMPLETED],
+        sender_address='sender@test.com',
+        sender_password='password',
+        receiver_addresses=['receiver@test.com'],
+    )
+    mock_get_config.return_value = mock_config
+
+    time1 = datetime.datetime(2024, 1, 1, 12, 0, 0)
+    attempt1 = api_messages.CommandAttemptMessage(
+        attempt_id='attempt1',
+        request_id='request_id',
+        command_id='command_id',
+        task_id='task_id',
+        state=common.CommandState.COMPLETED,
+        start_time=time1,
+    )
+    mock_event = self.CreateMockRequestEvent(
+        datetime.timedelta(hours=1), state=api_messages.RequestState.COMPLETED
+    )
+    mock_event.request.command_attempts = [attempt1]
+    mock_get_test_context.return_value = None
+
+    tfc_event_handler.ProcessRequestEvent(mock_event)
+
+    # Verify that _SendNotification was added as a task for TEST_RUN_COMPLETED
+    calls = mock_add_task.call_args_list
+    notification_calls = [
+        c for c in calls if c[0][0] == tfc_event_handler._SendNotification
+    ]
+    self.assertLen(notification_calls, 1)
+    args = notification_calls[0][0]
+    self.assertEqual(args[1], self.mock_test_run.key.id())
+    decoded_attempt = protojson.decode_message(
+        api_messages.CommandAttemptMessage, args[2]
+    )
+    self.assertEqual(decoded_attempt.attempt_id, 'attempt1')
+    self.assertEqual(args[3], ndb_models.NotificationEvent.TEST_RUN_COMPLETED)
 
 
 if __name__ == '__main__':

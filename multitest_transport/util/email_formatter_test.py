@@ -17,6 +17,7 @@
 import os
 from unittest import mock
 from absl.testing import absltest
+from multitest_transport.models import ndb_models
 from multitest_transport.util import email_formatter
 from tradefed_cluster import api_messages
 
@@ -31,7 +32,9 @@ class EmailFormatterTest(absltest.TestCase):
     )
     with mock.patch.dict(os.environ, {'DEFAULT_VERSION_HOSTNAME': 'test_host'}):
       subject, body = email_formatter.EmailFormatter.FormatTestRunAttemptEvent(
-          'test_run_123', attempt
+          'test_run_123',
+          attempt,
+          event_type=ndb_models.NotificationEvent.TEST_RUN_ATTEMPT_COMPLETED,
       )
 
     self.assertEqual(subject, 'Test Run Attempt COMPLETED: N/A N/A')
@@ -51,7 +54,9 @@ class EmailFormatterTest(absltest.TestCase):
     )
     with mock.patch.dict(os.environ, {'DEFAULT_VERSION_HOSTNAME': 'test_host'}):
       subject, body = email_formatter.EmailFormatter.FormatTestRunAttemptEvent(
-          'test_run_123', attempt
+          'test_run_123',
+          attempt,
+          event_type=ndb_models.NotificationEvent.TEST_RUN_ATTEMPT_COMPLETED,
       )
 
     self.assertEqual(subject, 'Test Run Attempt ERROR: N/A N/A')
@@ -89,7 +94,10 @@ class EmailFormatterTest(absltest.TestCase):
 
     with mock.patch.dict(os.environ, {'DEFAULT_VERSION_HOSTNAME': 'test_host'}):
       subject, body = email_formatter.EmailFormatter.FormatTestRunAttemptEvent(
-          'test_run_123', attempt, test_run=mock_test_run
+          'test_run_123',
+          attempt,
+          event_type=ndb_models.NotificationEvent.TEST_RUN_ATTEMPT_COMPLETED,
+          test_run=mock_test_run,
       )
 
     self.assertEqual(
@@ -103,6 +111,23 @@ class EmailFormatterTest(absltest.TestCase):
     self.assertIn('14604821', body)
     self.assertIn('Compatibility Test Suite', body)
     self.assertIn('16_r4', body)
+
+  def test_format_test_run_completed_event(self):
+    attempt = api_messages.CommandAttemptMessage(
+        attempt_id='attempt_123',
+        request_id='request_123',
+        state=api_messages.CommandState.COMPLETED,
+    )
+    with mock.patch.dict(os.environ, {'DEFAULT_VERSION_HOSTNAME': 'test_host'}):
+      subject, body = email_formatter.EmailFormatter.FormatTestRunAttemptEvent(
+          'test_run_123',
+          attempt,
+          event_type=ndb_models.NotificationEvent.TEST_RUN_COMPLETED,
+      )
+
+    self.assertEqual(subject, 'Test Run COMPLETED: N/A N/A')
+    self.assertIn('Test run finished with state', body)
+    self.assertNotIn('request_123', body)
 
 
 if __name__ == '__main__':

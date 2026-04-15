@@ -77,6 +77,14 @@
       <mat-checkbox [(ngModel)]="notifyTestRunAttemptCompleted">
         Test run attempt completed
       </mat-checkbox>
+      <div class="notice">Triggered on every test run attempt completion</div>
+    </div>
+
+    <div class="metrics">
+      <mat-checkbox [(ngModel)]="notifyTestRunCompleted">
+        Test run completed
+      </mat-checkbox>
+      <div class="notice">Triggered once on test run completion</div>
     </div>
 
     <mat-divider></mat-divider>
