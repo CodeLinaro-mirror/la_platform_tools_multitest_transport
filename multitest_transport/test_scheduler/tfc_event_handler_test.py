@@ -454,7 +454,7 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
         tfc_event_handler._SendNotification,
         self.mock_test_run.key.id(),
         mock.ANY,
-        ndb_models.NotificationEvent.TEST_RUN_COMPLETED,
+        ndb_models.NotificationEvent.TEST_RUN_FINISHED,
         _transactional=True,
     )
 
@@ -1028,7 +1028,7 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
   ):
     mock_config = ndb_models.PrivateNodeConfig()
     mock_config.notification_config = ndb_models.NotificationConfig(
-        events=[ndb_models.NotificationEvent.TEST_RUN_ATTEMPT_COMPLETED],
+        events=[ndb_models.NotificationEvent.TEST_RUN_ATTEMPT_FINISHED],
         sender_address='sender@test.com',
         sender_password='password',
         receiver_addresses=['receiver@test.com'],
@@ -1051,14 +1051,14 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
     tfc_event_handler._SendNotification(
         test_run_id,
         attempt_json,
-        ndb_models.NotificationEvent.TEST_RUN_ATTEMPT_COMPLETED,
+        ndb_models.NotificationEvent.TEST_RUN_ATTEMPT_FINISHED,
     )
 
     mock_format_email.assert_called_once_with(
         test_run_id,
         mock.ANY,
         test_run=mock.ANY,
-        event_type=ndb_models.NotificationEvent.TEST_RUN_ATTEMPT_COMPLETED,
+        event_type=ndb_models.NotificationEvent.TEST_RUN_ATTEMPT_FINISHED,
     )
 
     mock_send_email.assert_called_once_with(
@@ -1083,10 +1083,10 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
       mock_add_task,
       mock_get_config,
   ):
-    # Setup mock config to enable TEST_RUN_COMPLETED
+    # Setup mock config to enable TEST_RUN_FINISHED
     mock_config = ndb_models.PrivateNodeConfig()
     mock_config.notification_config = ndb_models.NotificationConfig(
-        events=[ndb_models.NotificationEvent.TEST_RUN_COMPLETED],
+        events=[ndb_models.NotificationEvent.TEST_RUN_FINISHED],
         sender_address='sender@test.com',
         sender_password='password',
         receiver_addresses=['receiver@test.com'],
@@ -1110,7 +1110,7 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
 
     tfc_event_handler.ProcessRequestEvent(mock_event)
 
-    # Verify that _SendNotification was added as a task for TEST_RUN_COMPLETED
+    # Verify that _SendNotification was added as a task for TEST_RUN_FINISHED
     calls = mock_add_task.call_args_list
     notification_calls = [
         c for c in calls if c[0][0] == tfc_event_handler._SendNotification
@@ -1122,7 +1122,7 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
         api_messages.CommandAttemptMessage, args[2]
     )
     self.assertEqual(decoded_attempt.attempt_id, 'attempt1')
-    self.assertEqual(args[3], ndb_models.NotificationEvent.TEST_RUN_COMPLETED)
+    self.assertEqual(args[3], ndb_models.NotificationEvent.TEST_RUN_FINISHED)
 
 
 if __name__ == '__main__':

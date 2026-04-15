@@ -61,15 +61,15 @@ export class NotificationsForm
   privateNodeConfig!: Partial<PrivateNodeConfig>;
   private readonly destroy = new ReplaySubject<void>();
 
-  // Use a getter/setter to bind the checkbox for TEST_RUN_ATTEMPT_COMPLETED
-  get notifyTestRunAttemptCompleted(): boolean {
+  // Use a getter/setter to bind the checkbox for TEST_RUN_ATTEMPT_FINISHED
+  get notifyTestRunAttemptFinished(): boolean {
     if (!this.privateNodeConfig?.notification_config?.events) return false;
     return this.privateNodeConfig.notification_config.events.includes(
-      'TEST_RUN_ATTEMPT_COMPLETED',
+      'TEST_RUN_ATTEMPT_FINISHED',
     );
   }
 
-  set notifyTestRunAttemptCompleted(value: boolean) {
+  set notifyTestRunAttemptFinished(value: boolean) {
     if (!this.privateNodeConfig.notification_config) {
       this.privateNodeConfig.notification_config = {};
     }
@@ -77,24 +77,24 @@ export class NotificationsForm
       this.privateNodeConfig.notification_config.events = [];
     }
     const idx = this.privateNodeConfig.notification_config.events.indexOf(
-      'TEST_RUN_ATTEMPT_COMPLETED',
+      'TEST_RUN_ATTEMPT_FINISHED',
     );
     if (value && idx === -1) {
-      this.privateNodeConfig.notification_config.events.push('TEST_RUN_ATTEMPT_COMPLETED');
+      this.privateNodeConfig.notification_config.events.push('TEST_RUN_ATTEMPT_FINISHED');
     } else if (!value && idx !== -1) {
       this.privateNodeConfig.notification_config.events.splice(idx, 1);
     }
   }
 
-  // Use a getter/setter to bind the checkbox for TEST_RUN_COMPLETED
-  get notifyTestRunCompleted(): boolean {
+  // Use a getter/setter to bind the checkbox for TEST_RUN_FINISHED
+  get notifyTestRunFinished(): boolean {
     if (!this.privateNodeConfig?.notification_config?.events) return false;
     return this.privateNodeConfig.notification_config.events.includes(
-      'TEST_RUN_COMPLETED',
+      'TEST_RUN_FINISHED',
     );
   }
 
-  set notifyTestRunCompleted(value: boolean) {
+  set notifyTestRunFinished(value: boolean) {
     if (!this.privateNodeConfig.notification_config) {
       this.privateNodeConfig.notification_config = {};
     }
@@ -102,10 +102,10 @@ export class NotificationsForm
       this.privateNodeConfig.notification_config.events = [];
     }
     const idx = this.privateNodeConfig.notification_config.events.indexOf(
-      'TEST_RUN_COMPLETED',
+      'TEST_RUN_FINISHED',
     );
     if (value && idx === -1) {
-      this.privateNodeConfig.notification_config.events.push('TEST_RUN_COMPLETED');
+      this.privateNodeConfig.notification_config.events.push('TEST_RUN_FINISHED');
     } else if (!value && idx !== -1) {
       this.privateNodeConfig.notification_config.events.splice(idx, 1);
     }

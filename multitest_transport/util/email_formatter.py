@@ -80,7 +80,7 @@ class EmailFormatter:
         fullname = test_run.test_package_info.fullname or 'N/A'
         version = test_run.test_package_info.version or 'N/A'
 
-    if event_type == ndb_models.NotificationEvent.TEST_RUN_COMPLETED:
+    if event_type == ndb_models.NotificationEvent.TEST_RUN_FINISHED:
       subject = 'Test Run %s: %s %s' % (
           attempt.state,
           test_name,
@@ -101,7 +101,7 @@ class EmailFormatter:
         '<h3>Run info</h3>',
         '<b>Test Run ID</b>: %s<br>' % test_run_id,
     ]
-    if event_type == ndb_models.NotificationEvent.TEST_RUN_ATTEMPT_COMPLETED:
+    if event_type == ndb_models.NotificationEvent.TEST_RUN_ATTEMPT_FINISHED:
       run_info.append(
           '<b>Attempt ID</b> (ATS Request ID/OLC Session ID): %s<br>'
           % attempt.request_id

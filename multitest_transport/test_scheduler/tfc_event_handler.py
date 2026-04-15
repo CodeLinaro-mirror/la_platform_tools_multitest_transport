@@ -256,13 +256,13 @@ def ProcessRequestEvent(message: api_messages.RequestEventMessage):
     attempts = None
     if os.environ.get('IS_OMNILAB_BASED') == 'true' and message.request:
       attempts = _GetLatestFinishedAttemptFromRequest(message.request)
-      # Send notification for TEST_RUN_COMPLETED event
+      # Send notification for TEST_RUN_FINISHED event
       if attempts:
         task_scheduler.AddCallableTask(
             _SendNotification,
             test_run.key.id(),
             protojson.encode_message(attempts[0]),  # pytype: disable=module-attr
-            ndb_models.NotificationEvent.TEST_RUN_COMPLETED,
+            ndb_models.NotificationEvent.TEST_RUN_FINISHED,
             _transactional=True,
         )
 
@@ -393,7 +393,7 @@ def _ProcessCommandAttemptResult(test_run_id, test_run, request):
           _SendNotification,
           test_run_id,
           protojson.encode_message(attempt),  # pytype: disable=module-attr
-          ndb_models.NotificationEvent.TEST_RUN_ATTEMPT_COMPLETED,
+          ndb_models.NotificationEvent.TEST_RUN_ATTEMPT_FINISHED,
           _transactional=True,
       )
 

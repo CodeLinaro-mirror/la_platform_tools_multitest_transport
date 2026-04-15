@@ -34,7 +34,7 @@ class EmailFormatterTest(absltest.TestCase):
       subject, body = email_formatter.EmailFormatter.FormatTestRunAttemptEvent(
           'test_run_123',
           attempt,
-          event_type=ndb_models.NotificationEvent.TEST_RUN_ATTEMPT_COMPLETED,
+          event_type=ndb_models.NotificationEvent.TEST_RUN_ATTEMPT_FINISHED,
       )
 
     self.assertEqual(subject, 'Test Run Attempt COMPLETED: N/A N/A')
@@ -56,7 +56,7 @@ class EmailFormatterTest(absltest.TestCase):
       subject, body = email_formatter.EmailFormatter.FormatTestRunAttemptEvent(
           'test_run_123',
           attempt,
-          event_type=ndb_models.NotificationEvent.TEST_RUN_ATTEMPT_COMPLETED,
+          event_type=ndb_models.NotificationEvent.TEST_RUN_ATTEMPT_FINISHED,
       )
 
     self.assertEqual(subject, 'Test Run Attempt ERROR: N/A N/A')
@@ -96,7 +96,7 @@ class EmailFormatterTest(absltest.TestCase):
       subject, body = email_formatter.EmailFormatter.FormatTestRunAttemptEvent(
           'test_run_123',
           attempt,
-          event_type=ndb_models.NotificationEvent.TEST_RUN_ATTEMPT_COMPLETED,
+          event_type=ndb_models.NotificationEvent.TEST_RUN_ATTEMPT_FINISHED,
           test_run=mock_test_run,
       )
 
@@ -112,7 +112,7 @@ class EmailFormatterTest(absltest.TestCase):
     self.assertIn('Compatibility Test Suite', body)
     self.assertIn('16_r4', body)
 
-  def test_format_test_run_completed_event(self):
+  def test_format_test_run_finished_event(self):
     attempt = api_messages.CommandAttemptMessage(
         attempt_id='attempt_123',
         request_id='request_123',
@@ -122,7 +122,7 @@ class EmailFormatterTest(absltest.TestCase):
       subject, body = email_formatter.EmailFormatter.FormatTestRunAttemptEvent(
           'test_run_123',
           attempt,
-          event_type=ndb_models.NotificationEvent.TEST_RUN_COMPLETED,
+          event_type=ndb_models.NotificationEvent.TEST_RUN_FINISHED,
       )
 
     self.assertEqual(subject, 'Test Run COMPLETED: N/A N/A')
