@@ -827,6 +827,8 @@ export declare interface TestRun {
   state: TestRunState;
   /** Additional state information */
   state_info?: string;
+  /** Error message */
+  error_message?: string;
   /** Link to output files folder */
   output_url?: string;
   /** Information on the test package */

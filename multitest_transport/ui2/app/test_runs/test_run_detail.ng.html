@@ -54,6 +54,7 @@
           </div>
           <div class="error-message state-text"  #errorMessage
               [title]="errorMessage.offsetWidth < errorMessage.scrollWidth ? testRun.error_message : ''"
+              (click)="showFullErrorMessage()"
               *ngIf="testRun.error_message">
             Error Message: {{testRun.error_message}}
           </div>

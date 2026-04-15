@@ -35,6 +35,7 @@ import {OverflowListType} from '../shared/overflow_list';
 import {assertRequiredInput, buildApiErrorMessage, getOmnilabWorkingDirPath} from '../shared/util';
 import {TestRunActionPickerDialog, TestRunActionPickerDialogData} from '../test_run_actions/test_run_action_picker_dialog';
 
+
 /** A component for displaying the details of a test run. */
 @Component({
   changeDetection: ChangeDetectionStrategy.Eager,standalone: false,
@@ -358,6 +359,13 @@ export class TestRunDetail implements OnInit, AfterViewInit, OnDestroy {
                         buildApiErrorMessage(error));
                   });
         });
+  }
+
+
+  showFullErrorMessage() {
+    if (this.testRun?.error_message) {
+      this.notifier.showError(this.testRun.error_message, undefined, 'Error Message');
+    }
   }
 
 }

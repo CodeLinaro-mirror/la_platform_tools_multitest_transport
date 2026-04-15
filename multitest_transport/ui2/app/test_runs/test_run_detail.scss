@@ -40,6 +40,14 @@
     white-space: nowrap;
     font-size: 16px;
   }
+
+  .error-message {
+    cursor: pointer;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
 }
 
 .mat-mdc-chip {
@@ -51,7 +59,6 @@
   border: 1px solid $border-chip;
   font-size: 12px;
 }
-
 
 .mat-mdc-tab-body {
   margin-top: 24px;
