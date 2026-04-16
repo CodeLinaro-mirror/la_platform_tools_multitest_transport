@@ -81,16 +81,20 @@ class EmailFormatter:
         version = test_run.test_package_info.version or 'N/A'
 
     if event_type == ndb_models.NotificationEvent.TEST_RUN_FINISHED:
-      subject = 'Test Run %s: %s %s' % (
+      subject = 'Test Run %s: %s_%s_%s_%s' % (
           attempt.state,
           test_name,
+          run_target,
+          build_id,
           run_command,
       )
       body_intro = 'Test run finished with state <b>%s</b>.' % attempt.state
     else:
-      subject = 'Test Run Attempt %s: %s %s' % (
+      subject = 'Test Run Attempt %s: %s_%s_%s_%s' % (
           attempt.state,
           test_name,
+          run_target,
+          build_id,
           run_command,
       )
       body_intro = (

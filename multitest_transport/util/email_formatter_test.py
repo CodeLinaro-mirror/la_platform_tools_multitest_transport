@@ -37,7 +37,7 @@ class EmailFormatterTest(absltest.TestCase):
           event_type=ndb_models.NotificationEvent.TEST_RUN_ATTEMPT_FINISHED,
       )
 
-    self.assertEqual(subject, 'Test Run Attempt COMPLETED: N/A N/A')
+    self.assertEqual(subject, 'Test Run Attempt COMPLETED: N/A_N/A_N/A_N/A')
     self.assertIn('test_run_123', body)
     self.assertIn('request_123', body)
     self.assertIn('COMPLETED', body)
@@ -59,7 +59,7 @@ class EmailFormatterTest(absltest.TestCase):
           event_type=ndb_models.NotificationEvent.TEST_RUN_ATTEMPT_FINISHED,
       )
 
-    self.assertEqual(subject, 'Test Run Attempt ERROR: N/A N/A')
+    self.assertEqual(subject, 'Test Run Attempt ERROR: N/A_N/A_N/A_N/A')
     self.assertIn('ERROR', body)
     self.assertIn('Error Reason</b>: N/A', body)
     self.assertIn('Error Detail</b>: invalid argument', body)
@@ -102,7 +102,8 @@ class EmailFormatterTest(absltest.TestCase):
 
     self.assertEqual(
         subject,
-        'Test Run Attempt COMPLETED: CTS 16.0 (ARM) cts -m CtsUsbTests',
+        'Test Run Attempt COMPLETED: CTS 16.0 (ARM)_oriole_bp3a.250905.014_cts'
+        ' -m CtsUsbTests',
     )
     self.assertIn('CTS 16.0 (ARM)', body)
     self.assertIn('cts -m CtsUsbTests', body)
@@ -125,7 +126,7 @@ class EmailFormatterTest(absltest.TestCase):
           event_type=ndb_models.NotificationEvent.TEST_RUN_FINISHED,
       )
 
-    self.assertEqual(subject, 'Test Run COMPLETED: N/A N/A')
+    self.assertEqual(subject, 'Test Run COMPLETED: N/A_N/A_N/A_N/A')
     self.assertIn('Test run finished with state', body)
     self.assertNotIn('request_123', body)
 
