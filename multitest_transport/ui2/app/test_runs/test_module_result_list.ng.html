@@ -45,8 +45,8 @@
       </ng-container>
 
       <ng-container matColumnDef="duration">
-        <mat-header-cell *matHeaderCellDef fxFlex="100px">
-          Run Time
+        <mat-header-cell *matHeaderCellDef fxFlex="180px">
+          Run Time ({{getTotalDuration()}})
         </mat-header-cell>
       </ng-container>
 
@@ -102,7 +102,7 @@
           </ng-container>
         </div>
 
-        <div fxFlex="100px" class="result-text duration-text">
+        <div fxFlex="180px" class="result-text duration-text">
           {{millisToDuration(moduleNode.moduleResult.duration_ms)}}
         </div>
 
@@ -136,7 +136,7 @@
             <status-button [state]="getStatusString(testCase)"></status-button>
           </div>
 
-          <div fxFlex="100px"><!-- Filler for duration column --></div>
+          <div fxFlex="180px"><!-- Filler for duration column --></div>
 
           <div fxFlex="20" class="failure-message overflow"
                [title]="testCase.error_message">

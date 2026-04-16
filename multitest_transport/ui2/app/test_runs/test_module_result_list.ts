@@ -168,6 +168,13 @@ export class TestModuleResultList implements OnInit {
     return `(${this.totalFailures}/${this.totalTests})`;
   }
 
+  getTotalDuration(): string {
+    const totalMs = this.moduleResultNodes.reduce((sum, node) => {
+      return sum + (Number(node.moduleResult.duration_ms) || 0);
+    }, 0);
+    return millisToDuration(totalMs);
+  }
+
   getStatusString(testCaseResult: mttModels.TestCaseResult): string {
     if (testCaseResult.status === mttModels.TestStatus.ASSUMPTION_FAILURE ||
         testCaseResult.status === mttModels.TestStatus.IGNORED) {

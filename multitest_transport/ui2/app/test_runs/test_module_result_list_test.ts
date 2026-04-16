@@ -95,6 +95,19 @@ describe('TestModuleResultList', () => {
     expect(textContent).not.toContain('null');
   });
 
+  it('displays the total duration in the header', () => {
+    module1.duration_ms = 1000;
+    module2.duration_ms = 2000;
+    testResultModuleList.moduleResultNodes = [
+      testResultModuleList.createModuleResultNode(module1),
+      testResultModuleList.createModuleResultNode(module2),
+    ];
+    testResultModuleListFixture.detectChanges();
+
+    const textContent = getTextContent(el);
+    expect(textContent).toContain('Run Time (00:00:03)');
+  });
+
   it('displays modules in the order received from backend', () => {
     // Backend sorts: incomplete first, then default order
     const m3 = newMockTestModuleResult(
