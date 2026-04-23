@@ -120,7 +120,7 @@ fi
 # Change working directory
 cd "${WORKING_DIR}"
 MTT_PYTHON_PATH="$(pwd):${PYTHONPATH}"
-MTT_PYTHON="python3.9"
+MTT_PYTHON="python3"
 
 # Set dependent variables
 MTT_PORT="${MTT_CONTROL_SERVER_PORT}"

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Keep loading this internal base image until we have external compilation ready
-FROM us.gcr.io/android-mtt/mtt:base_latest
+FROM us.gcr.io/android-mtt/mtt:base_candidate
 MAINTAINER Android Test Station <mtt-eng@google.com>
 
 # Docker builds image by layers. If a layer changes, all the following layers
@@ -56,7 +56,8 @@ RUN mkdir -p /etc/envoy \
     && rm -rf /mtt/envoy
 
 RUN python3 -m pip install /mtt/prebuilts/build_v4/ci-build-v4-py.tar.gz --no-deps
-RUN cp -r /usr/local/lib/python3.9/dist-packages/google/android /mtt/google3/third_party/py/google
+# Note that since Python 3.12, dist-packages is no longer used.
+RUN cp -r /usr/local/lib/python3.10/dist-packages/google/android /mtt/google3/third_party/py/google
 # Compile and remove all python source files. Explicitly don't compile
 # absl/colour/flask/scipy/sqlalchemy_utils/sqlalchemy/numpy because google3's
 # source code is only compatible with python 3.12+ and MTT still uses python
