@@ -24,7 +24,6 @@ setuptools.setup(
     version=VERSION,
     classifiers=[
         'Development Status :: 3 - Alpha',
-        'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
         'Programming Language :: Python :: 3.12',
@@ -34,8 +33,8 @@ setuptools.setup(
     package_data={
         'multitest_transport.cli': ['seccomp.json'],
     },
-    # The package works for 3.9 and up, but not for python 4 yet.
-    python_requires='~=3.9',
+    # The package works for 3.10 and up, but not for python 4 yet.
+    python_requires='~=3.10',
     entry_points={
         'console_scripts': ['mtt=multitest_transport.cli.cli:Main'],
     },

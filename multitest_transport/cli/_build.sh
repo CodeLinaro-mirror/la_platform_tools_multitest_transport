@@ -90,11 +90,11 @@ RUN export DEBIAN_FRONTEND=noninteractive; apt update -qq; apt install -y -qq \
 # Add deadsnakes for different versions of python and distutils
 RUN add-apt-repository -y ppa:deadsnakes/ppa
 RUN export DEBIAN_FRONTEND=noninteractive; apt update -qq; apt install -y -qq \
-  python3.9 python3.10 python3.11 python3.12 python3.13 \
-  python3.9-distutils python3.10-distutils python3.11-distutils \
+  python3.10 python3.11 python3.12 python3.13 \
+  python3.10-distutils python3.11-distutils \
   python3.10-dev python3.10-venv python3.11-venv python3.12-venv python3.13-venv
 
-# Set Python version to 3.10 since 3.9 will be deprecated on 2025-10.
+# Set Python version to 3.10.
 RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1000
 
 COPY ./requirements.txt /tmp
@@ -159,8 +159,8 @@ python3 -m grpc_tools.protoc \
 
 cd /workspace
 # Build mtt pex package.
-pex --python="python3.13" --python="python3.12" --python="python3.11" \
-  --python="python3.10" --python="python3.9" \
+pex --python="python3.13" --python="python3.12" \
+  --python="python3.11" --python="python3.10" \
   --python-shebang="/usr/bin/env python3" \
   --pip-version latest-compatible \
   -D src \
@@ -175,8 +175,8 @@ cd ..
 
 # Build mtt_lab pex package.
 cp mtt src/mtt_binary
-pex --python="python3.13" --python="python3.12" --python="python3.11" \
-  --python="python3.10" --python="python3.9" \
+pex --python="python3.13" --python="python3.12" \
+  --python="python3.11" --python="python3.10" \
   --python-shebang="/usr/bin/env python3" \
   --pip-version latest-compatible \
   -D src \
