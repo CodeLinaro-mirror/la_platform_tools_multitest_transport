@@ -592,6 +592,28 @@ def _StartMttNode(args, host):
     docker_helper.AddEnv('CLUSTER', host.config.cluster_name)
   docker_helper.AddEnv('IMAGE_NAME', image_name)
 
+  if args.enable_config_service:
+    docker_helper.AddEnv('MTT_ENABLE_CONFIG_SERVICE', 'true')
+    config_service_grpc_port = args.config_service_grpc_port
+    if config_service_grpc_port:
+      docker_helper.AddEnv(
+          'MTT_CONFIG_SERVICE_GRPC_PORT', str(config_service_grpc_port)
+      )
+      if network == _DOCKER_BRIDGE_NETWORK:
+        docker_helper.AddPort(
+            f'{args.bind_address}:{config_service_grpc_port}',
+            config_service_grpc_port,
+        )
+    if args.config_service_storage_type:
+      docker_helper.AddEnv(
+          'MTT_CONFIG_SERVICE_STORAGE_TYPE', args.config_service_storage_type
+      )
+    if args.config_service_local_storage_dir:
+      docker_helper.AddEnv(
+          'MTT_CONFIG_SERVICE_LOCAL_STORAGE_DIR',
+          args.config_service_local_storage_dir,
+      )
+
   if host.config.tf_global_config_path:
     docker_helper.AddEnv(
         'TF_GLOBAL_CONFIG_PATH',
@@ -1477,6 +1499,30 @@ def _CreateStartArgParser():
       help='Usage of the lab under Omni mode.',
       dest='omni_mode_usage',
       type=str,
+  )
+  parser.add_argument(
+      '--enable_config_service',
+      dest='enable_config_service',
+      action=argparse.BooleanOptionalAction,
+      default=False,
+      help='Enable device config service. Default is false.',
+  )
+  parser.add_argument(
+      '--config_service_grpc_port',
+      type=int,
+      default=8081,
+      help='Device config service gRPC port exposed by the container',
+  )
+  parser.add_argument(
+      '--config_service_storage_type',
+      help='Device config service storage type',
+      default='LOCAL_FILE',
+      choices=['LOCAL_FILE', 'JDBC_CONNECTOR'],
+  )
+  parser.add_argument(
+      '--config_service_local_storage_dir',
+      help='Device config service local storage directory',
+      default='/data/config_service',
   )
   parser.add_argument(
       '--enable_persistent_cache',

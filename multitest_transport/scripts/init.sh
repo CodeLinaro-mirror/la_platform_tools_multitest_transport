@@ -61,6 +61,24 @@ function set_java_non_proxy {
   export JAVA_TOOL_OPTIONS="${JAVA_TOOL_OPTIONS} -Dhttp.nonProxyHosts=${HOSTS}"
 }
 
+function start_config_service {
+  echo "Starting Config Service on port ${MTT_CONFIG_SERVICE_GRPC_PORT:-8081}..."
+  CONFIG_SERVICE_ARGS=(
+    --config_service_grpc_port="${MTT_CONFIG_SERVICE_GRPC_PORT:-8081}"
+    --config_service_storage_type="${MTT_CONFIG_SERVICE_STORAGE_TYPE:-LOCAL_FILE}"
+  )
+  if [[ "${MTT_CONFIG_SERVICE_STORAGE_TYPE}" == "LOCAL_FILE" ]]; then
+    mkdir -p "${MTT_CONFIG_SERVICE_LOCAL_STORAGE_DIR:-/data/config_service}"
+    CONFIG_SERVICE_ARGS+=(--config_service_local_storage_dir="${MTT_CONFIG_SERVICE_LOCAL_STORAGE_DIR:-/data/config_service}")
+  fi
+  # TODO: add flag for sql config service storage type.
+
+  java -XX:+HeapDumpOnOutOfMemoryError \
+      -jar /deviceinfra/device_config_server_deploy.jar \
+      "${CONFIG_SERVICE_ARGS[@]}" &
+  echo "Config Service started."
+}
+
 MAX_LOCAL_VIRTUAL_DEVICES="${MAX_LOCAL_VIRTUAL_DEVICES:-0}"
 
 # Add extra CA certificates.
@@ -158,6 +176,10 @@ then
           mysql -S "${MYSQL_SOCKET}" -e "CREATE DATABASE IF NOT EXISTS ${DB_NAME}"
           mysql -S "${MYSQL_SOCKET}" -D "${DB_NAME}" < /deviceinfra/test_allocations.sql
           mysql -S "${MYSQL_SOCKET}" -D "${DB_NAME}" < /deviceinfra/unfinished_sessions.sql
+          if [[ "${MTT_ENABLE_CONFIG_SERVICE}" == "true" ]]; then
+            mysql -S "${MYSQL_SOCKET}" -D "${DB_NAME}" < /deviceinfra/device_config_table.sql
+            mysql -S "${MYSQL_SOCKET}" -D "${DB_NAME}" < /deviceinfra/lab_config_table.sql
+          fi
           echo "MySQL initialized"
           break
         else
@@ -165,6 +187,10 @@ then
           sleep 1
         fi
       done
+    fi
+
+    if [[ "${MTT_ENABLE_CONFIG_SERVICE}" == "true" ]]; then
+      start_config_service
     fi
 
     if [[ "${ENABLE_PERSISTENT_CACHE}" == "true" ]]
