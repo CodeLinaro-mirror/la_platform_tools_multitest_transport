@@ -290,31 +290,43 @@ class CliTest(parameterized.TestCase):
     mock_command_result.return_value = common.CommandResult(
         return_code=0, stdout=cli._OMNI_LAB_SERVER_SUCCESS_INDICATOR, stderr=''
     )
-    self.assertTrue(
-        cli._IsConsoleSuccessfullyStarted(self._CreateHost(), True)
-    )
+    self.assertTrue(cli._IsConsoleSuccessfullyStarted(self._CreateHost(), True))
 
+  @mock.patch.object(time, 'time')
   @mock.patch.object(command_util.DockerContext, 'Run')
   def testCheckConsoleSuccessfullyStarted_withException(
-      self, mock_command_result):
+      self, mock_command_result, mock_time
+  ):
     self.mock_tf_console_started_patcher.stop()
     stderr = 'com.android.tradefed.config.ConfigurationException'
     mock_command_result.return_value = common.CommandResult(
-        return_code=0, stdout='', stderr=stderr)
+        return_code=0, stdout='', stderr=stderr
+    )
+    mock_time.side_effect = iter([
+        0,  # Initial time to calculate end_time
+        0,  # First check in while loop
+        0,  # Time to calculate remaining_time
+        cli._MTT_SERVER_WAIT_TIME_SECONDS + 1,  # Second check in while loop
+        cli._MTT_SERVER_WAIT_TIME_SECONDS + 1,  # Not strictly necessary
+    ])
     with self.assertRaisesRegex(
-        RuntimeError, r'.*ATS failed to start with exception:*'):
+        RuntimeError, r'.*ATS failed to start with exception:*'
+    ):
       cli._IsConsoleSuccessfullyStarted(self._CreateHost(), False)
 
   @mock.patch.object(time, 'time')
   @mock.patch.object(command_util.DockerContext, 'Run')
   def testCheckConsoleSuccessfullyStarted_withTimeout(
-      self, mock_command_result, mock_time):
+      self, mock_command_result, mock_time
+  ):
     self.mock_tf_console_started_patcher.stop()
     mock_command_result.return_value = common.CommandResult(
-        return_code=0, stdout='', stderr='')
+        return_code=0, stdout='', stderr=''
+    )
     mock_time.side_effect = iter([0, cli._MTT_SERVER_WAIT_TIME_SECONDS + 1])
     with self.assertRaisesRegex(
-        RuntimeError, r'.*ATS replica failed to start in*'):
+        RuntimeError, r'.*ATS replica failed to start in*'
+    ):
       cli._IsConsoleSuccessfullyStarted(self._CreateHost(), False)
 
   def testStart(self):

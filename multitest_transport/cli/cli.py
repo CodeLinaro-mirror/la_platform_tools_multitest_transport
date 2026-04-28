@@ -446,6 +446,7 @@ def _IsConsoleSuccessfullyStarted(host, is_omnilab_based):
   )
   docker_context = command_util.DockerContext(host.context, login=False)
   end_time = time.time() + _MTT_SERVER_WAIT_TIME_SECONDS
+  docker_log = ''
   while time.time() <= end_time:
     remaining_time = int(end_time - time.time())
     docker_context.RequestTfConsolePrintOut()
@@ -456,13 +457,16 @@ def _IsConsoleSuccessfullyStarted(host, is_omnilab_based):
 
     if indicator in command_result.stdout:
       return True
-    elif 'exception' in docker_log.lower():
-      raise RuntimeError(f'ATS failed to start with exception:\n{docker_log}')
     time.sleep(_LOG_INQUIRE_INTERVAL_SEC)
-  # when timeout
-  raise RuntimeError(
-      'ATS replica failed to start in %ss' % _MTT_SERVER_WAIT_TIME_SECONDS
-  )
+  # when timeout, check the docker log for exception and raise error if any.
+  if 'exception' in docker_log.lower():
+    raise RuntimeError('ATS failed to start with exception:\n%s' % (docker_log))
+  # Otherwise, raise error indicating the server failed to start.
+  else:
+    raise RuntimeError(
+        'ATS replica failed to start in %ss with docker log:\n%s'
+        % (_MTT_SERVER_WAIT_TIME_SECONDS, docker_log)
+    )
 
 
 def Start(args, host=None):
