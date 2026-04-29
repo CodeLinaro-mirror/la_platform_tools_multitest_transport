@@ -74,7 +74,7 @@
   <!-- Test run phases -->
   <h2>Test Run Phases</h2>
   <mat-selection-list [(ngModel)]="data.phases">
-    <mat-list-option *ngFor="let phase of PHASES" [value]="phase" checkboxPosition="before">
+    <mat-list-option *ngFor="let phase of PHASES" [value]="phase" togglePosition="before">
       {{ phase }}
     </mat-list-option>
   </mat-selection-list>
