@@ -184,6 +184,7 @@ class ModuleApplication(gunicorn.app.base.BaseApplication):
     self.cfg.set(
         'workers', self.workers
     )  # Have multiple workers to ensure availability
+    self.cfg.set('sendfile', False)
 
   def load(self):
     return RawPathMiddleware(CloudNdbMiddleware(self.module.app))
