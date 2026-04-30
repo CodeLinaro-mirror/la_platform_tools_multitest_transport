@@ -21,8 +21,7 @@ import {MatTabChangeEvent} from '@angular/material/tabs';
 import {Router} from '@angular/router';
 import {ReplaySubject} from 'rxjs';
 import {takeUntil} from 'rxjs/operators';
-import {trustedResourceUrl} from 'safevalues';
-import {IframeIntent, setIframeSrcWithIntent} from 'safevalues/dom';
+import {EntityType, V6IframeContainerComponent} from '../shared/v6_iframe_container_component';
 
 import {APP_DATA, AppData} from '../services/app_data';
 import {FeedbackService} from '../services/feedback_service';
@@ -75,13 +74,17 @@ export class DeviceDetails implements OnChanges, OnDestroy, OnInit {
   readonly appData: AppData|null = inject(APP_DATA, {optional: true});
   preferenceService: PreferenceService|null =
       inject(PreferenceService, {optional: true});
+  readonly container = inject(V6IframeContainerComponent, {optional: true});
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['id'] && !changes['id'].firstChange) {
       this.load(changes['id'].currentValue);
       this.appendDefaultOption();
-      // Load the iframe after the id to display changed
-      this.loadIframe();
+      // when the id changed(e.g. the user switches between devices via the
+      // device list in the header), we need to update the iframe URL.
+      if (this.container) {
+        this.container.navigateForEntity(EntityType.DEVICES, this.id);
+      }
     }
   }
 
@@ -98,10 +101,8 @@ export class DeviceDetails implements OnChanges, OnDestroy, OnInit {
       this.preferenceService!.useLabConsoleUISubject$
           .pipe(takeUntil(this.destroy))
           .subscribe((useLabConsoleUI) => {
-            if (useLabConsoleUI) {
-              setTimeout(() => {
-                this.loadIframe();
-              }, 0);
+            if (useLabConsoleUI && this.container) {
+              this.container.initIframeUrl(EntityType.DEVICES, this.id);
             }
           });
     }
@@ -176,17 +177,5 @@ export class DeviceDetails implements OnChanges, OnDestroy, OnInit {
     const url = this.router.serializeUrl(
         this.router.createUrlTree(['/devices', deviceSerial]));
     this.router.navigate([url], {replaceUrl: true});
-  }
-
-  loadIframe() {
-    if (this.iframe && this.id) {
-      const url =
-          trustedResourceUrl`/labui/devices/${this.id}?is_embedded_mode=true`;
-      setIframeSrcWithIntent(
-          this.iframe.nativeElement,
-          IframeIntent.EMBEDDED_INTERNAL_CONTENT,
-          url,
-      );
-    }
   }
 }

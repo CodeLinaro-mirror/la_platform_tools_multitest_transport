@@ -43,6 +43,7 @@ import {FileCleanerPolicyEditPage} from './file_cleaner/file_cleaner_policy_edit
 import {FileCleanerSettingList} from './file_cleaner/file_cleaner_setting_list';
 import {HostDetailsPage} from './hosts/host_details_page';
 import {HostListPage} from './hosts/host_list_page';
+import {V6IframeContainerComponent} from './shared/v6_iframe_container_component';
 import {NotesModule} from './notes/notes_module';
 import {AnalyticsInterceptor, AnalyticsService} from './services/analytics_service';
 import {APP_DATA, AppData, convertLocalUrl} from './services/app_data';
@@ -114,7 +115,14 @@ export const routes: Routes = [
     canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
   },
   {path: 'devices', component: DeviceListPage},
-  {path: 'devices/:id', component: DeviceDetailsPage},
+  {
+    path: '',
+    component: V6IframeContainerComponent,
+    children: [
+      {path: 'devices/:id', component: DeviceDetailsPage},
+      {path: 'hosts/:id', component: HostDetailsPage},
+    ]
+  },
   {
     path: 'file_cleaner/policy/new',
     component: FileCleanerPolicyEditPage,
@@ -136,7 +144,6 @@ export const routes: Routes = [
     canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
   },
   {path: 'hosts', component: HostListPage},
-  {path: 'hosts/:id', component: HostDetailsPage},
   {
     path: 'settings',
     component: SettingPage,

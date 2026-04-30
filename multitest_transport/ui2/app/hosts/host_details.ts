@@ -22,8 +22,7 @@ import {MatTabChangeEvent} from '@angular/material/tabs';
 import {Router} from '@angular/router';
 import {ReplaySubject} from 'rxjs';
 import {filter, finalize, switchMap, takeUntil} from 'rxjs/operators';
-import {trustedResourceUrl} from 'safevalues';
-import {IframeIntent, setIframeSrcWithIntent} from 'safevalues/dom';
+import {V6IframeContainerComponent, EntityType} from '../shared/v6_iframe_container_component';
 
 import {APP_DATA} from '../services/app_data';
 import {FeedbackService} from '../services/feedback_service';
@@ -86,13 +85,16 @@ export class HostDetails implements AfterViewChecked, OnChanges, OnDestroy,
   readonly preferenceService = inject(PreferenceService);
   readonly params: HostDetailsDialogParams|null =
       inject(MAT_DIALOG_DATA, {optional: true});
+  readonly container = inject(V6IframeContainerComponent, {optional: true});
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['id'] && !changes['id'].firstChange) {
       this.load(changes['id'].currentValue);
       this.appendDefaultOption();
-      // Load the iframe after the id to display changed
-      this.loadIframe();
+      // when the id changed, we need to update the iframe URL.
+      if (this.container) {
+        this.container.navigateForEntity(EntityType.HOSTS, this.id);
+      }
     }
   }
 
@@ -113,10 +115,8 @@ export class HostDetails implements AfterViewChecked, OnChanges, OnDestroy,
       this.preferenceService.useLabConsoleUISubject$
           .pipe(takeUntil(this.destroy))
           .subscribe((useLabConsoleUI) => {
-            if (useLabConsoleUI) {
-              setTimeout(() => {
-                this.loadIframe();
-              }, 0);
+            if (useLabConsoleUI && this.container) {
+              this.container.initIframeUrl(EntityType.HOSTS, this.id);
             }
           });
     }
@@ -129,18 +129,6 @@ export class HostDetails implements AfterViewChecked, OnChanges, OnDestroy,
 
   ngAfterViewChecked() {
     this.cdRef.detectChanges();
-  }
-
-  loadIframe() {
-    if (this.iframe && this.id) {
-      const url =
-          trustedResourceUrl`/labui/hosts/${this.id}?is_embedded_mode=true`;
-      setIframeSrcWithIntent(
-          this.iframe.nativeElement,
-          IframeIntent.EMBEDDED_INTERNAL_CONTENT,
-          url,
-      );
-    }
   }
 
   appendDefaultOption() {

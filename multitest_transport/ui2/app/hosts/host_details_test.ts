@@ -21,13 +21,15 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {MAT_DIALOG_DATA} from '@angular/material/dialog';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {ActivatedRoute, convertToParamMap, Router} from '@angular/router';
-import {of as observableOf} from 'rxjs';
+import {BehaviorSubject, of as observableOf} from 'rxjs';
 
 import {APP_DATA} from '../services';
 import {FeedbackService} from '../services/feedback_service';
 import {SurveyTrigger} from '../services/mtt_lab_models';
 import {Notifier} from '../services/notifier';
+import {PreferenceService} from '../services/preference_service';
 import {TfcClient} from '../services/tfc_client';
+import {EntityType, V6IframeContainerComponent} from '../shared/v6_iframe_container_component';
 import {getEl, getEls} from '../testing/jasmine_util';
 import {newMockAppData, newMockDeviceInfosResponse, newMockLabHostInfo} from '../testing/mtt_lab_mocks';
 
@@ -42,6 +44,9 @@ describe('HostDetails', () => {
   let routerSpy: jasmine.SpyObj<Router>;
   let tfcClient: jasmine.SpyObj<TfcClient>;
   let notifierSpy: jasmine.SpyObj<Notifier>;
+  let containerSpy: jasmine.SpyObj<V6IframeContainerComponent>;
+  let preferenceServiceSpy: jasmine.SpyObj<PreferenceService>;
+  let useLabConsoleUISubject$: BehaviorSubject<boolean>;
 
   const hostname = 'host1';
   const hostInfo = newMockDeviceInfosResponse(hostname);
@@ -76,6 +81,15 @@ describe('HostDetails', () => {
       showError: observableOf({}),
     });
 
+    containerSpy = jasmine.createSpyObj('V6IframeContainerComponent', [
+      'navigateForEntity',
+      'initIframeUrl',
+    ]);
+    useLabConsoleUISubject$ = new BehaviorSubject<boolean>(true);
+    preferenceServiceSpy = jasmine.createSpyObj('preferenceService', [], {
+      useLabConsoleUISubject$,
+    });
+
     TestBed.configureTestingModule({
       imports: [
         HostsModule,
@@ -91,19 +105,25 @@ describe('HostDetails', () => {
             queryParamMap: observableOf(convertToParamMap(queryParams)),
           },
         },
-        {provide: APP_DATA, useValue: newMockAppData()},
+        {
+          provide: APP_DATA,
+          useValue: Object.assign(newMockAppData(), {enableLabConsoleUI: true}),
+        },
         {provide: FeedbackService, useValue: feedbackService},
         {provide: LOCALE_ID, useValue: 'en-US'},
         {provide: MAT_DIALOG_DATA, useValue: {}},
         {provide: Notifier, useValue: notifierSpy},
+        {provide: PreferenceService, useValue: preferenceServiceSpy},
         {provide: Router, useValue: routerSpy},
         {provide: TfcClient, useValue: tfcClient},
+        {provide: V6IframeContainerComponent, useValue: containerSpy},
       ],
     });
     hostDetailsFixture = TestBed.createComponent(HostDetails);
+    hostDetails = hostDetailsFixture.componentInstance;
+    hostDetailsFixture.componentRef.setInput('id', hostname);
     hostDetailsFixture.detectChanges();
     el = hostDetailsFixture.debugElement;
-    hostDetails = hostDetailsFixture.componentInstance;
   });
 
   it('should gets initialized correctly', () => {
@@ -160,5 +180,20 @@ describe('HostDetails', () => {
     expect(tfcClient.getHostInfo).toHaveBeenCalledWith(hostname);
     expect(hostDetails.hostDetailsSummary.loadHost)
         .toHaveBeenCalledWith(hostname);
+  });
+
+  it('should call initIframeUrl on init if Lab Console UI is enabled', () => {
+    expect(containerSpy.initIframeUrl)
+        .toHaveBeenCalledWith(EntityType.HOSTS, hostname);
+  });
+
+  it('should call navigateForEntity when id changes', () => {
+    const newId = 'host2';
+    hostDetailsFixture.componentRef.setInput('id', 'temp');
+    hostDetailsFixture.detectChanges();
+    hostDetailsFixture.componentRef.setInput('id', newId);
+    hostDetailsFixture.detectChanges();
+    expect(containerSpy.navigateForEntity)
+        .toHaveBeenCalledWith(EntityType.HOSTS, newId);
   });
 });

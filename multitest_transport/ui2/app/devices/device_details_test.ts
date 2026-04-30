@@ -23,9 +23,11 @@ import {ActivatedRoute, convertToParamMap, Router} from '@angular/router';
 import {APP_DATA} from 'google3/third_party/py/multitest_transport/ui2/app/services';
 import {SurveyTrigger} from 'google3/third_party/py/multitest_transport/ui2/app/services/mtt_lab_models';
 import {getEl, getEls, getTextContent} from 'google3/third_party/py/multitest_transport/ui2/app/testing/jasmine_util';
-import {of as observableOf} from 'rxjs';
+import {BehaviorSubject, of as observableOf} from 'rxjs';
 
 import {FeedbackService} from '../services/feedback_service';
+import {PreferenceService} from '../services/preference_service';
+import {EntityType, V6IframeContainerComponent} from '../shared/v6_iframe_container_component';
 import {newMockAppData} from '../testing/mtt_lab_mocks';
 
 import {DeviceDetails} from './device_details';
@@ -37,6 +39,10 @@ describe('DeviceDetails', () => {
   let el: DebugElement;
   let feedbackService: jasmine.SpyObj<FeedbackService>;
   let routerSpy: jasmine.SpyObj<Router>;
+  let containerSpy: jasmine.SpyObj<V6IframeContainerComponent>;
+  let preferenceServiceSpy: jasmine.SpyObj<PreferenceService>;
+  let useLabConsoleUISubject$: BehaviorSubject<boolean>;
+
   const deviceSerial = 'device1';
   const queryParams = {
     deviceSerials: [deviceSerial, 'device2'],
@@ -53,6 +59,15 @@ describe('DeviceDetails', () => {
     routerSpy.createUrlTree.and.returnValue({});
     routerSpy.serializeUrl.and.returnValue('/devices/' + deviceSerial);
 
+    containerSpy = jasmine.createSpyObj('V6IframeContainerComponent', [
+      'navigateForEntity',
+      'initIframeUrl',
+    ]);
+    useLabConsoleUISubject$ = new BehaviorSubject<boolean>(true);
+    preferenceServiceSpy = jasmine.createSpyObj('preferenceService', [], {
+      useLabConsoleUISubject$,
+    });
+
     TestBed.configureTestingModule({
       imports: [
         DevicesModule,
@@ -62,7 +77,7 @@ describe('DeviceDetails', () => {
         provideHttpClientTesting(),
         {
           provide: APP_DATA,
-          useValue: newMockAppData(),
+          useValue: Object.assign(newMockAppData(), {enableLabConsoleUI: true}),
         },
         {
           provide: ActivatedRoute,
@@ -73,22 +88,26 @@ describe('DeviceDetails', () => {
           },
         },
         {provide: FeedbackService, useValue: feedbackService},
+        {provide: PreferenceService, useValue: preferenceServiceSpy},
         {
           provide: Router,
           useValue: routerSpy,
         },
         {provide: MAT_DIALOG_DATA, useValue: {}},
+        {provide: V6IframeContainerComponent, useValue: containerSpy},
       ],
     });
     deviceDetailsFixture = TestBed.createComponent(DeviceDetails);
+    deviceDetails = deviceDetailsFixture.componentInstance;
+    deviceDetailsFixture.componentRef.setInput('id', deviceSerial);
     deviceDetailsFixture.detectChanges();
     el = deviceDetailsFixture.debugElement;
-    deviceDetails = deviceDetailsFixture.componentInstance;
   });
 
   it('should gets initialized correctly', () => {
     const textContent = getTextContent(el);
     expect(deviceDetails).toBeTruthy();
+    expect(deviceDetails.container).toBe(containerSpy);
   });
 
   it('calls window.history.back when the back button clicked', () => {
@@ -127,5 +146,21 @@ describe('DeviceDetails', () => {
     deviceDetails.startDeviceNavigationHats();
     expect(feedbackService.startSurvey)
         .toHaveBeenCalledWith(SurveyTrigger.DEVICE_NAVIGATION);
+  });
+
+  it('should call initIframeUrl on init if Lab Console UI is enabled', () => {
+    expect(containerSpy.initIframeUrl)
+        .toHaveBeenCalledWith(EntityType.DEVICES, deviceSerial);
+  });
+  it('should call navigateForEntity when id changes', () => {
+    const newId = 'device2';
+    deviceDetailsFixture.componentRef.setInput('id', 'temp');
+    deviceDetailsFixture.detectChanges();
+    deviceDetailsFixture.componentRef.setInput('id', newId);
+    deviceDetailsFixture.detectChanges();
+    expect(containerSpy.navigateForEntity).toHaveBeenCalledWith(
+      EntityType.DEVICES,
+      newId,
+    );
   });
 });
