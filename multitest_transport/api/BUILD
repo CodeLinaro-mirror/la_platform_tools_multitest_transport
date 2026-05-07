@@ -1,4 +1,4 @@
-load("//devtools/python/blaze:strict.bzl", "py_strict_test")
+load("//third_party/bazel_rules/rules_python/python:py_test.bzl", "py_test")
 
 # MTT API handlers.
 load("@tradefed_cluster//tradefed_cluster:adapter.bzl", "py_test", "pytype_strict_library", "third_party")
@@ -633,7 +633,7 @@ pytype_strict_library(
     ],
 )
 
-py_strict_test(
+py_test(
     name = "request_api_test",
     srcs = ["request_api_test.py"],
     deps = [
