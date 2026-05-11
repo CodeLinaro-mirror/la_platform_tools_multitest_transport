@@ -237,6 +237,20 @@ device_actions:
     default_download_url: file:///bin/acloud_prebuilt
     test_resource_type: UNKNOWN
 
+- id: lvd_cloud_orchestrator_setup
+  name:  Cloud Orchestrator Device Setup
+  description: >
+    Setup a local virtual device via Cloud Orchestrator. The device type is Cuttlefish.
+  device_spec: '\b(device_serial:\S+:\d+)\b'
+  test_resource_defs:
+  - name: cvd_host_package
+    test_resource_type: UNKNOWN
+    decompress: true
+    decompress_dir: lvd_tools
+  - name: cvd_device_image
+    test_resource_type: DEVICE_IMAGE
+    decompress: true
+    decompress_dir: lvd_images
 - id: rvd_setup
   name: Remote Virtual Device Setup
   description: >

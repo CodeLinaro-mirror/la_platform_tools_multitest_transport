@@ -776,6 +776,11 @@ def _StartMttNode(args, host):
       docker_helper.AddSysctl('net.ipv6.conf.all.disable_ipv6', '0')
       docker_helper.AddSysctl('net.ipv6.conf.all.forwarding', '1')
 
+  if args.use_cloud_orchestrator:
+    docker_helper.AddEnv(
+        'CLOUD_ORCHESTRATOR_URL', args.orchestration_service_url
+    )
+
   if args.remote_virtual_devices and args.remote_ssh_key:
     docker_helper.AddEnv('REMOTE_VIRTUAL_DEVICES', args.remote_virtual_devices)
     # The device action rvd_setup in config.yaml loads /tmp/rvd_id_rsa.
@@ -1421,6 +1426,16 @@ def _CreateStartArgParser():
   parser.add_argument(
       '--max_local_virtual_devices', type=int, default=0,
       help='Maximum number of virtual devices on local host (experimental).')
+  parser.add_argument(
+      '--use_cloud_orchestrator',
+      action='store_true',
+      help='Use JIT Emulator with Cloud Orchestrator (experimental).',
+  )
+  parser.add_argument(
+      '--orchestration_service_url',
+      default='http://localhost:8080',
+      help='URL of the Cloud Orchestration service.',
+  )
   parser.add_argument(
       '--remote_virtual_devices',
       type=_RemoteVirtualDevicesArg,

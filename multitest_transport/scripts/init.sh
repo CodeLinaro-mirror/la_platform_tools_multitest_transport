@@ -366,7 +366,12 @@ else
   LAB_SERVER_ARGS=""
   if [[ "${MAX_LOCAL_VIRTUAL_DEVICES}" -gt 0 ]]; then
     LAB_SERVER_ARGS="--android_jit_emulator_num=${MAX_LOCAL_VIRTUAL_DEVICES} "
-    LAB_SERVER_ARGS+='--noop_jit_emulator=true'
+    if [[ -n "${CLOUD_ORCHESTRATOR_URL}" ]]; then
+      LAB_SERVER_ARGS+="--cloud_orchestrator_service_url=${CLOUD_ORCHESTRATOR_URL} "
+      LAB_SERVER_ARGS+="--noop_jit_emulator=false"
+    else
+      LAB_SERVER_ARGS+="--noop_jit_emulator=true"
+    fi
   fi
   if [[ "${RVD_COUNT}" -gt 0 ]]; then
     LAB_SERVER_ARGS="--android_jit_emulator_num=${RVD_COUNT} "
