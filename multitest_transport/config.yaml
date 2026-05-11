@@ -685,7 +685,7 @@ tests:
   name: CTS 14.0 (ARM)
   description: Compatibility Test Suite 14.0 (ARM)
   test_resource_defs:
-  - default_download_url: https://dl.google.com/dl/android/cts/android-cts-14_r11-linux_x86-arm.zip
+  - default_download_url: https://dl.google.com/dl/android/cts/android-cts-14_r12-linux_x86-arm.zip
     name: android-cts.zip
     test_resource_type: TEST_PACKAGE
     decompress: true
@@ -724,7 +724,7 @@ tests:
   name: CTS 15.0 (ARM)
   description: Compatibility Test Suite 15.0 (ARM)
   test_resource_defs:
-  - default_download_url: https://dl.google.com/dl/android/cts/android-cts-15_r7-linux_x86-arm.zip
+  - default_download_url: https://dl.google.com/dl/android/cts/android-cts-15_r8-linux_x86-arm.zip
     name: android-cts.zip
     test_resource_type: TEST_PACKAGE
     decompress: true
@@ -768,7 +768,7 @@ tests:
   name: CTS 16.0 (ARM)
   description: Compatibility Test Suite 16.0 (ARM)
   test_resource_defs:
-  - default_download_url: https://dl.google.com/dl/android/cts/android-cts-16_r4-linux_x86-arm.zip
+  - default_download_url: https://dl.google.com/dl/android/cts/android-cts-16_r5-linux_x86-arm.zip
     name: android-cts.zip
     test_resource_type: TEST_PACKAGE
     decompress: true
@@ -812,7 +812,7 @@ tests:
   name: CTS 16.1 (ARM)
   description: Compatibility Test Suite 16.1 (ARM)
   test_resource_defs:
-  - default_download_url: https://dl.google.com/dl/android/cts/android-cts-16.1_r2-linux_x86-arm.zip
+  - default_download_url: https://dl.google.com/dl/android/cts/android-cts-16.1_r3-linux_x86-arm.zip
     name: android-cts.zip
     test_resource_type: TEST_PACKAGE
     decompress: true
