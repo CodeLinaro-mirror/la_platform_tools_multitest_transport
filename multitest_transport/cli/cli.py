@@ -31,14 +31,11 @@ import socket
 import sys
 import tempfile
 import time
+from typing import Optional, Tuple
 import urllib.parse
 import zipfile
-from packaging import version
-from packaging_legacy import version as legacy_version
-import six
 
 
-from com_google_deviceinfra.src.devtools.deviceinfra.host.daemon.proto import health_pb2
 from multitest_transport.cli import cli_util
 from multitest_transport.cli import command_util
 from multitest_transport.cli import google_auth_util
@@ -46,7 +43,14 @@ from multitest_transport.cli import host_util
 from multitest_transport.cli import ssh_util
 from multitest_transport.util import env
 from multitest_transport.util import worker_lab_health_client
+from packaging import version
+from packaging_legacy import version as legacy_version
+import requests
+import six
 from tradefed_cluster.configs import lab_config_pb2
+
+
+from com_google_deviceinfra.src.devtools.deviceinfra.host.daemon.proto import health_pb2
 
 _MTT_CONTAINER_NAME = 'mtt'
 # The port must be consistent with those in init.sh and serve.sh.
@@ -127,8 +131,16 @@ logger = logging.getLogger(__name__)
 
 _CRASH_REPORT_FILE_PATH = '/data/.crash_report_file'
 
-# Percentage of hosts to rollout ATS2. This is a integer between 0 and 100.
-_ATS2_ROLLOUT_PERCENTAGE = 0
+# Percentage of hosts to rollout ATS2 by default. This is an integer between 0
+# and 100.
+
+_DEFAULT_ATS2_ROLLOUT_PERCENTAGE = 10
+
+_ATS2_ROLLOUT_CONFIG_URL = (
+    'https://storage.googleapis.com/android-mtt.appspot.com/prod/'
+    'rollout_config.json'
+)
+_PROD_ENVIRONMENT = 'prod'
 
 
 class ActionableError(Exception):
@@ -530,6 +542,14 @@ def _StartMttNode(args, host):
   if args.force_update or not docker_helper.DoesResourceExist(image_name):
     docker_helper.Pull()
 
+  # Get image build environment and release version
+  image_build_env, release = _GetImageVersionInfo(docker_helper, image_name)
+
+  # Determine if we should use ATS 2.0
+  is_omnilab_based = _IsOmnilabBased(
+      args, host.config, image_build_env, release, image_name
+  )
+
   # Enable FUSE
   docker_helper.AddDeviceNode('/dev/fuse')
   docker_helper.AddCapability('sys_admin')
@@ -790,7 +810,7 @@ def _StartMttNode(args, host):
     docker_helper.AddFile(
         args.extra_ca_cert, '/usr/local/share/ca-certificates/')
 
-  if _IsOmnilabBased(args, host.config):
+  if is_omnilab_based:
     docker_helper.AddEnv('IS_OMNILAB_BASED', 'true')
     if (
         network == _DOCKER_BRIDGE_NETWORK
@@ -820,7 +840,7 @@ def _StartMttNode(args, host):
     # localhost URL.
     hostname = 'localhost'
   if control_server_url:
-    if _IsConsoleSuccessfullyStarted(host, _IsOmnilabBased(args, host.config)):
+    if _IsConsoleSuccessfullyStarted(host, is_omnilab_based):
       logger.info('ATS replica is running.')
   else:
     url = 'http://%s:%s' % (hostname, args.port)
@@ -830,7 +850,7 @@ def _StartMttNode(args, host):
       raise RuntimeError(
           'ATS server failed to start in %ss' % _MTT_SERVER_WAIT_TIME_SECONDS)
     logger.info('ATS is serving at %s', url)
-  if _IsOmnilabBased(args, host.config):
+  if is_omnilab_based:
     logger.info(
         'Currently running ATS 2.0 (Omnilab based). You can override this by'
         ' setting --force_ats_version 1.'
@@ -842,7 +862,10 @@ def _StartMttNode(args, host):
         'Enhance your testing experience with the new Omnilab-based '
         'infrastructure.'
     )
-    print("Add '--force_ats_version 2' to your start command to try it out.")
+    print(
+        "Add '--force_ats_version 2 --force_update' to your start command to"
+        ' try it out.'
+    )
     print(
         'Learn more at https://source.android.com/docs/core/tests/development/'
         'android-test-station/ats-user-guide'
@@ -1559,16 +1582,144 @@ def _CreateStartArgParser():
   return parser
 
 
-def _IsOmnilabBased(args, host_config) -> bool:
-  """Whether to use ATS 2.0."""
+def _GetImageVersionInfo(
+    docker_helper, image_name
+) -> Tuple[str, Optional[int]]:
+  """Extracts the build environment and release version integer from the image.
+
+  This parses the `MTT_VERSION` environment variable from the Docker image's
+  internal metadata to safely identify build types and release numbers.
+
+  Supported Version String Formats (MTT_VERSION):
+    - Dev / Local builds: 'dev' or missing MTT_VERSION. Returns ('dev', None).
+    - Legacy Prod releases: 'prod_R52.202601.001'. Returns ('prod', 52).
+    - Modern Prod releases: 'prod_1.52.003'. Returns ('prod', 52).
+    - Custom / Release Candidates: 'latest_20260511.000'. Returns ('latest',
+    None).
+
+  To prevent false-positive substring matches (e.g. parsing a release integer
+  from the middle of a date timestamp like '202601' inside R51), we use strict
+  re.match anchored at the start of the version string.
+
+  Args:
+    docker_helper: an instance of command_util.DockerHelper for inspecting.
+    image_name: absolute Docker image name with tag.
+
+  Returns:
+    A tuple containing:
+      - build_env (str): Environment name ('prod', 'dev', etc.).
+      - release (int|None): The release number (e.g., 52 for r52/1.52 builds),
+        or None if the environment is dev or has an unparseable version format.
+  """
+  try:
+    env_vars = docker_helper.GetEnv(image_name)
+  except Exception as e:  
+    logger.warning('Failed to inspect image env: %s. Assuming dev.', e)
+    return 'dev', None
+
+  mtt_version = None
+  for env_var in env_vars:
+    if env_var.startswith('MTT_VERSION='):
+      mtt_version = env_var.split('=', 1)[1]
+      break
+
+  if not mtt_version:
+    logger.debug('MTT_VERSION not found in image env. Assuming dev.')
+    return 'dev', None
+
+  if mtt_version == 'dev':
+    return 'dev', None
+
+  build_env = 'dev'
+  version_str = mtt_version
+  if '_' in mtt_version:
+    # Extract environment prefix (e.g. 'prod') and version suffix
+    # (e.g. '1.52.003')
+    build_env, version_str = mtt_version.strip().split('_', 1)
+
+  release = None
+  # Check modern version format: '1.XX.YYY'
+  new_format_match = re.match(r'1\.(\d+)', version_str)
+  if new_format_match:
+    release = int(new_format_match.group(1))
+  else:
+    # Check legacy release format: 'RXX...' or 'rXX...'
+    old_format_match = re.match(r'R(\d+)', version_str, re.IGNORECASE)
+    if old_format_match:
+      release = int(old_format_match.group(1))
+
+  return build_env, release
+
+
+def _GetATS2RolloutPercentage() -> int:
+  """Fetches the dynamic rollout percentage from GCS with fallback."""
+  try:
+    response = requests.get(_ATS2_ROLLOUT_CONFIG_URL, timeout=2)
+    if response.status_code == 200:
+      config = response.json()
+      percentage = config.get(
+          'ats2_rollout_percentage', _DEFAULT_ATS2_ROLLOUT_PERCENTAGE
+      )
+      return int(percentage)
+  except Exception as e:  
+    logger.debug(
+        'Failed to fetch dynamic rollout config: %s. Falling back to %d%%.',
+        e,
+        _DEFAULT_ATS2_ROLLOUT_PERCENTAGE,
+    )
+  return _DEFAULT_ATS2_ROLLOUT_PERCENTAGE
+
+
+def _IsOmnilabBased(
+    args,
+    host_config,
+    image_build_env='dev',
+    release=None,
+    image_name=None,
+) -> bool:
+  """Determines if the CLI orchestration session should use ATS 2.0 (Omnilab).
+
+  The decision is made according to the following priority:
+    1. Manual command-line force override via `--force_ats_version <1|2>`.
+    2. Deprecated `--is_omnilab_based` flag (always forces ATS 2.0).
+    3. Host-specific config file override via `force_ats_version`.
+    4. Operation Mode check: ON_PREMISE nodes are excluded from ATS 2.0.
+    5. Image build environment evaluation:
+       - Non-prod (e.g. 'dev', 'latest', local builds) bypass rollout checks and
+         default directly to ATS 2.0.
+       - Prod ('prod') images are subject to percentage-based dynamic rollout.
+
+  After selecting ATS 2.0, a version safety floor compatibility check is
+  enforced
+  for production images. If the image release version is less than 52:
+    - If ATS 2.0 was explicitly forced via `--force_ats_version 2`, an
+      ActionableError is raised.
+    - Otherwise, the system logs a warning and falls back gracefully to ATS 1.0.
+
+  Args:
+    args: Command-line parsed arguments.
+    host_config: Current host's configuration structure.
+    image_build_env: The target image build environment ('prod', 'dev', etc.)
+      parsed from the container metadata.
+    release: Optional integer release version of the image.
+    image_name: Optional string name of the Docker image for error reporting.
+
+  Returns:
+    bool: True if ATS 2.0 (Omnilab) should be enabled; False for ATS 1.0.
+
+  Raises:
+    ActionableError: If ATS 2.0 is forced on an incompatible image.
+  """
   if args.force_ats_version:
     return args.force_ats_version == 2
+
   if args.is_omnilab_based:
     logging.info(
         '"--is_omnilab_based" flag is deprecated. Please use'
         ' "--force_ats_version" flag instead.'
     )
     return True
+
   if host_config.force_ats_version != 0:
     if host_config.force_ats_version not in (1, 2):
       raise ValueError(
@@ -1576,10 +1727,25 @@ def _IsOmnilabBased(args, host_config) -> bool:
           f' {host_config.force_ats_version}.'
       )
     return host_config.force_ats_version == 2
+
   operation_mode = lab_config_pb2.OperationMode.Value(args.operation_mode)
+  if (
+      operation_mode == lab_config_pb2.OperationMode.UNKNOWN
+      and host_config.operation_mode
+  ):
+    operation_mode = host_config.operation_mode
+
   # On Premise mode does not have percentage rollout to ATS 2.0.
   if operation_mode == lab_config_pb2.OperationMode.ON_PREMISE:
     return False
+
+  # Non-prod build environments (like local 'dev' and 'latest' tags) default
+  # to ATS 2.0 directly.
+  if image_build_env != _PROD_ENVIRONMENT:
+    return True
+
+  # Production images ('prod_...') use host-deterministic SHA-256 hashing
+  # for percentage-based rollouts.
   hostname = socket.gethostname()
   hash_value = int(hashlib.sha256(hostname.encode('utf-8')).hexdigest(), 16)
   rollout_number = (hash_value % 100) + 1
@@ -1589,7 +1755,18 @@ def _IsOmnilabBased(args, host_config) -> bool:
       hostname,
       hash_value,
   )
-  return rollout_number <= _ATS2_ROLLOUT_PERCENTAGE
+  is_ats2 = rollout_number <= _GetATS2RolloutPercentage()
+  if is_ats2:
+    # Enforce safety floor compatibility check only for automatic rollouts.
+    if release is None or release < 52:
+      display_image_name = image_name or 'The target image'
+      logger.warning(
+          'Image %s does not support ATS 2.0. Falling back to ATS 1.0.',
+          display_image_name,
+      )
+      return False
+
+  return is_ats2
 
 
 def _CreateStopArgParser():

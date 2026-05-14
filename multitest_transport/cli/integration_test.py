@@ -118,6 +118,26 @@ class CliIntegrationTest(absltest.TestCase):
         ])
     self.assertEqual(RUNNING, self._GetStatus())
 
+  def _GetEnv(self, name):
+    """Get environment variable value of the container."""
+    try:
+      outs, _ = _RunCmd(['docker', 'exec', 'mtt', 'printenv', name])
+      return outs.strip()
+    except CommandError:
+      return None
+
+  def testStart_forceAtsVersion1(self):
+    """Verify --force_ats_version 1 launches container in ATS 1.0 mode."""
+    self._Start(args=['--force_ats_version', '1'])
+    self.assertEqual(RUNNING, self._GetStatus())
+    self.assertNotEqual('true', self._GetEnv('IS_OMNILAB_BASED'))
+
+  def testStart_forceAtsVersion2(self):
+    """Verify --force_ats_version 2 launches container in ATS 2.0 mode."""
+    self._Start(args=['--force_ats_version', '2'])
+    self.assertEqual(RUNNING, self._GetStatus())
+    self.assertEqual('true', self._GetEnv('IS_OMNILAB_BASED'))
+
   def testStop(self):
     self._Start()
     self.assertEqual(RUNNING, self._GetStatus())

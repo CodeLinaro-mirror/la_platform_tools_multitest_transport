@@ -22,6 +22,7 @@ from unittest import mock
 
 from absl.testing import absltest
 from absl.testing import parameterized
+import requests
 from tradefed_cluster.configs import lab_config
 
 
@@ -83,9 +84,13 @@ class CliTest(parameterized.TestCase):
     self.mock_waiter_patcher.start()
     self.tmp_root = tempfile.mkdtemp()
     self.get_version_patcher = mock.patch.object(
-        cli_util, 'GetVersion',
-        return_value=('dev_version', 'dev'))
+        cli_util, 'GetVersion', return_value=('dev_version', 'prod')
+    )
     self.get_version_patcher.start()
+    self.gethostname_patcher = mock.patch(
+        '__main__.cli.socket.gethostname', return_value='mock-host'
+    )
+    self.gethostname_patcher.start()
 
     self.arg_parser = cli.CreateParser()
     self.arg_parser.add_argument('--cli_path', default='cli_path')
@@ -121,6 +126,7 @@ class CliTest(parameterized.TestCase):
 
   def tearDown(self):
     self.get_version_patcher.stop()
+    self.gethostname_patcher.stop()
     os.environ['USER'] = self.old_user
     self.expanduser_patcher.stop()
     self.file_exists_patcher.stop()
@@ -152,7 +158,13 @@ class CliTest(parameterized.TestCase):
       res.stdout = _DOCKER_VERSION_STRING
     if (command[:2] == ['docker', 'inspect'] and
         command[3:] == ['--format', '{{json .Config.Env}}']):
-      res.stdout = '["MTT_SUPPORT_BRIDGE_NETWORK=true"]'
+      image_name = command[2]
+      tag = 'dev'
+      if ':' in image_name:
+        tag = image_name.split(':', 1)[1]
+      if tag == 'prod':
+        tag = 'prod_1.52.003'
+      res.stdout = '["MTT_SUPPORT_BRIDGE_NETWORK=true", "MTT_VERSION=%s"]' % tag
     if command[:4] == ['docker', 'network', 'inspect', 'bridge']:
       res.stdout = ('{"EnableIPv6":%s,"IPAM":{"Config":['
                     '{"Subnet":"2001:db8::/56"},'
@@ -955,48 +967,83 @@ class CliTest(parameterized.TestCase):
         self._CreateHost(cluster_name='acluster'))
 
     self.mock_context.Run.assert_has_calls([
-        mock.call(['docker', 'inspect', 'animage:atag',
-                   '--format', '{{json .Config.Env}}'],
-                  raise_on_failure=False),
         mock.call(
-            ['docker', 'volume', 'rm', 'mtt-temp'], raise_on_failure=False),
+            [
+                'docker',
+                'inspect',
+                'animage:atag',
+                '--format',
+                '{{json .Config.Env}}',
+            ],
+            raise_on_failure=False,
+        ),
+        mock.call(
+            ['docker', 'volume', 'rm', 'mtt-temp'], raise_on_failure=False
+        ),
         mock.call(['mkdir', '-p', '/local/.ats_storage']),
-        mock.call(['docker', 'network', 'inspect', 'bridge',
-                   '--format={{json .}}'],
-                  raise_on_failure=False),
-        mock.call(['docker', 'container', 'rm', 'acontainer'],
-                  raise_on_failure=False),
+        mock.call(
+            ['docker', 'network', 'inspect', 'bridge', '--format={{json .}}'],
+            raise_on_failure=False,
+        ),
+        mock.call(
+            ['docker', 'container', 'rm', 'acontainer'], raise_on_failure=False
+        ),
         mock.call([
-            'docker', 'create',
-            '--name', 'acontainer', '-it',
+            'docker',
+            'create',
+            '--name',
+            'acontainer',
+            '-it',
             *_DEFAULT_CREATE_ARGS,
-            '--hostname', 'mock-host',
-            '--network', 'bridge',
-            '-e', 'OPERATION_MODE=unknown',
-            '-e', 'MTT_CLI_VERSION=dev_version',
-            '-e', 'MTT_CONTROL_SERVER_URL=url',
-            '-e', 'CLUSTER=acluster',
-            '-e', 'IMAGE_NAME=animage:atag',
-            '-e', 'USER=user',
-            '-e', 'TZ=Etc/UTC',
-            '-e', 'MTT_SERVER_LOG_LEVEL=info',
-            '--mount', 'type=volume,src=mtt-data,dst=/data',
-            '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
-            '--mount', 'type=bind,src=/local/.android,dst=/root/.android',
-            '--mount', ('type=bind,src=/var/run/docker.sock,'
-                        'dst=/var/run/docker.sock'),
-            '--mount', ('type=bind,src=/local/.ats_storage,'
-                        'dst=/tmp/.mnt/.ats_storage'),
-            '-p', '127.0.0.1:5037:5037',
-            '--cap-add', 'sys_admin',
-            '--device', '/dev/fuse',
-            '--security-opt', 'apparmor:unconfined',
-            '--security-opt', 'seccomp=/tmp/mtt_seccomp.json',
-            'animage:atag']),
+            '--hostname',
+            'mock-host',
+            '--network',
+            'bridge',
+            '-e',
+            'OPERATION_MODE=unknown',
+            '-e',
+            'MTT_CLI_VERSION=dev_version',
+            '-e',
+            'MTT_CONTROL_SERVER_URL=url',
+            '-e',
+            'CLUSTER=acluster',
+            '-e',
+            'IMAGE_NAME=animage:atag',
+            '-e',
+            'USER=user',
+            '-e',
+            'TZ=Etc/UTC',
+            '-e',
+            'MTT_SERVER_LOG_LEVEL=info',
+            '-e',
+            'IS_OMNILAB_BASED=true',
+            '--mount',
+            'type=volume,src=mtt-data,dst=/data',
+            '--mount',
+            'type=volume,src=mtt-temp,dst=/tmp',
+            '--mount',
+            'type=bind,src=/local/.android,dst=/root/.android',
+            '--mount',
+            'type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock',
+            '--mount',
+            'type=bind,src=/local/.ats_storage,dst=/tmp/.mnt/.ats_storage',
+            '-p',
+            '127.0.0.1:5037:5037',
+            '--cap-add',
+            'sys_admin',
+            '--device',
+            '/dev/fuse',
+            '--security-opt',
+            'apparmor:unconfined',
+            '--security-opt',
+            'seccomp=/tmp/mtt_seccomp.json',
+            'animage:atag',
+        ]),
         mock.call(['docker', 'start', 'acontainer']),
         mock.call(
             ['docker', 'exec', 'acontainer', 'printenv', 'MTT_VERSION'],
-            raise_on_failure=False),
+            raise_on_failure=False,
+        ),
     ])
 
   @mock.patch.object(shutil, 'rmtree')
@@ -1183,36 +1230,61 @@ class CliTest(parameterized.TestCase):
 
     self.mock_context.Run.assert_has_calls([
         mock.call([
-            'docker', 'create',
-            '--name', 'mtt', '-it',
+            'docker',
+            'create',
+            '--name',
+            'mtt',
+            '-it',
             *_DEFAULT_CREATE_ARGS,
-            '--hostname', 'mock-host',
-            '--network', 'bridge',
-            '-e', 'OPERATION_MODE=unknown',
-            '-e', 'MTT_CLI_VERSION=dev_version',
-            '-e', 'MTT_CONTROL_SERVER_URL=tfc',
-            '-e', 'CLUSTER=acluster',
-            '-e', 'IMAGE_NAME=a_docker_image',
-            '-e', 'USER=user',
-            '-e', 'TZ=Etc/UTC',
-            '-e', 'MTT_SERVER_LOG_LEVEL=info',
-            '--mount', 'type=volume,src=mtt-data,dst=/data',
-            '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
-            '--mount', 'type=bind,src=/local/.android,dst=/root/.android',
-            '--mount', ('type=bind,src=/var/run/docker.sock,'
-                        'dst=/var/run/docker.sock'),
-            '--mount', ('type=bind,src=/local/.ats_storage,'
-                        'dst=/tmp/.mnt/.ats_storage'),
-            '-p', '127.0.0.1:5037:5037',
-            '--cap-add', 'sys_admin',
-            '--device', '/dev/fuse',
-            '--security-opt', 'apparmor:unconfined',
-            '--security-opt', 'seccomp=/tmp/mtt_seccomp.json',
-            'a_docker_image']),
+            '--hostname',
+            'mock-host',
+            '--network',
+            'bridge',
+            '-e',
+            'OPERATION_MODE=unknown',
+            '-e',
+            'MTT_CLI_VERSION=dev_version',
+            '-e',
+            'MTT_CONTROL_SERVER_URL=tfc',
+            '-e',
+            'CLUSTER=acluster',
+            '-e',
+            'IMAGE_NAME=a_docker_image',
+            '-e',
+            'USER=user',
+            '-e',
+            'TZ=Etc/UTC',
+            '-e',
+            'MTT_SERVER_LOG_LEVEL=info',
+            '-e',
+            'IS_OMNILAB_BASED=true',
+            '--mount',
+            'type=volume,src=mtt-data,dst=/data',
+            '--mount',
+            'type=volume,src=mtt-temp,dst=/tmp',
+            '--mount',
+            'type=bind,src=/local/.android,dst=/root/.android',
+            '--mount',
+            'type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock',
+            '--mount',
+            'type=bind,src=/local/.ats_storage,dst=/tmp/.mnt/.ats_storage',
+            '-p',
+            '127.0.0.1:5037:5037',
+            '--cap-add',
+            'sys_admin',
+            '--device',
+            '/dev/fuse',
+            '--security-opt',
+            'apparmor:unconfined',
+            '--security-opt',
+            'seccomp=/tmp/mtt_seccomp.json',
+            'a_docker_image',
+        ]),
         mock.call(['docker', 'start', 'mtt']),
         mock.call(
             ['docker', 'exec', 'mtt', 'printenv', 'MTT_VERSION'],
-            raise_on_failure=False),
+            raise_on_failure=False,
+        ),
     ])
 
   @mock.patch.object(cli, '_StartMttNode')
@@ -2751,9 +2823,14 @@ class CliTest(parameterized.TestCase):
           False,
       ),
   )
-  @mock.patch.object(cli, '_ATS2_ROLLOUT_PERCENTAGE', new=0)
   def test_IsOmnilabBased_noRollout(self, args, host_config, expected):
-    self.assertEqual(expected, cli._IsOmnilabBased(args, host_config))
+    with mock.patch.object(cli, '_GetATS2RolloutPercentage', return_value=0):
+      self.assertEqual(
+          expected,
+          cli._IsOmnilabBased(
+              args, host_config, image_build_env='prod', release=52
+          ),
+      )
 
   @parameterized.named_parameters(
       (
@@ -2827,9 +2904,12 @@ class CliTest(parameterized.TestCase):
           False,
       ),
   )
-  @mock.patch.object(cli, '_ATS2_ROLLOUT_PERCENTAGE', new=100)
   def test_IsOmnilabBased_fullRollout(self, args, host, expected):
-    self.assertEqual(expected, cli._IsOmnilabBased(args, host))
+    with mock.patch.object(cli, '_GetATS2RolloutPercentage', return_value=100):
+      self.assertEqual(
+          expected,
+          cli._IsOmnilabBased(args, host, image_build_env='prod', release=52),
+      )
 
   def test_IsOmnilabBased_invalidForceAtsVersionInHostConfig(self):
     args = argparse.Namespace(
@@ -2841,6 +2921,296 @@ class CliTest(parameterized.TestCase):
     host_config = lab_config.CreateHostConfig(force_ats_version=3)
     with self.assertRaises(ValueError):
       cli._IsOmnilabBased(args, host_config)
+
+  def test_IsOmnilabBased_devImageDefaultsToAts2(self):
+    """Dev images should default to ATS 2.0 even if rollout is 0."""
+    args = argparse.Namespace(
+        force_ats_version=None,
+        is_omnilab_based=False,
+        operation_mode='UNKNOWN',
+    )
+    host_config = lab_config.CreateHostConfig()
+    with mock.patch.object(cli, '_GetATS2RolloutPercentage', return_value=0):
+      self.assertTrue(
+          cli._IsOmnilabBased(args, host_config, image_build_env='dev')
+      )
+
+  @parameterized.named_parameters(
+      ('force_1', 1, False),
+      ('force_2', 2, True),
+  )
+  def test_IsOmnilabBased_devImageRespectsForceAtsVersion(
+      self, force_version, expected
+  ):
+    """Dev images should still respect explicit version overrides."""
+    args = argparse.Namespace(
+        force_ats_version=force_version,
+        is_omnilab_based=False,
+        operation_mode='UNKNOWN',
+    )
+    host_config = lab_config.CreateHostConfig()
+    self.assertEqual(
+        expected, cli._IsOmnilabBased(args, host_config, image_build_env='dev')
+    )
+
+  def test_IsOmnilabBased_devImageRespectsHostConfigForceAtsVersion(self):
+    """Dev images should still respect host config version overrides."""
+    args = argparse.Namespace(
+        force_ats_version=None,
+        is_omnilab_based=False,
+        operation_mode='UNKNOWN',
+    )
+    host_config = lab_config.CreateHostConfig(force_ats_version=1)
+    self.assertFalse(
+        cli._IsOmnilabBased(args, host_config, image_build_env='dev')
+    )
+
+  def test_IsOmnilabBased_devImageOnPremiseDefaultsToAts1(self):
+    """Dev images in ON_PREMISE mode should still default to ATS 1.0."""
+    args = argparse.Namespace(
+        force_ats_version=None,
+        is_omnilab_based=False,
+        operation_mode='ON_PREMISE',
+    )
+    host_config = lab_config.CreateHostConfig()
+    self.assertFalse(
+        cli._IsOmnilabBased(args, host_config, image_build_env='dev')
+    )
+
+  def test_IsOmnilabBased_prodCompatibleReleaseVersion(self):
+    """Prod image with release >= 52 is compatible with ATS 2.0."""
+    args = argparse.Namespace(
+        force_ats_version=None,
+        is_omnilab_based=False,
+        operation_mode='UNKNOWN',
+    )
+    host_config = lab_config.CreateHostConfig()
+    with mock.patch.object(cli, '_GetATS2RolloutPercentage', return_value=100):
+      self.assertTrue(
+          cli._IsOmnilabBased(
+              args, host_config, image_build_env='prod', release=52
+          )
+      )
+
+  def test_IsOmnilabBased_prodIncompatibleReleaseVersionFallback(self):
+    """Prod image with release < 52 falls back gracefully to ATS 1.0."""
+    args = argparse.Namespace(
+        force_ats_version=None,
+        is_omnilab_based=False,
+        operation_mode='UNKNOWN',
+    )
+    host_config = lab_config.CreateHostConfig()
+    with mock.patch.object(cli, '_GetATS2RolloutPercentage', return_value=100):
+      self.assertFalse(
+          cli._IsOmnilabBased(
+              args, host_config, image_build_env='prod', release=51
+          )
+      )
+
+  def test_IsOmnilabBased_prodIncompatibleReleaseVersionForcedOverride(self):
+    """Forcing ATS 2.0 on incompatible release < 52 bypasses safety checks."""
+    args = argparse.Namespace(
+        force_ats_version=2,
+        is_omnilab_based=False,
+        operation_mode='UNKNOWN',
+    )
+    host_config = lab_config.CreateHostConfig()
+    self.assertTrue(
+        cli._IsOmnilabBased(
+            args, host_config, image_build_env='prod', release=51
+        )
+    )
+
+  @mock.patch.object(requests, 'get')
+  def test_GetATS2RolloutPercentage_success(self, mock_get):
+    """Verify _GetATS2RolloutPercentage successfully fetches percentage from remote GCS."""
+    mock_response = mock.Mock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {'ats2_rollout_percentage': 25}
+    mock_get.return_value = mock_response
+
+    percentage = cli._GetATS2RolloutPercentage()
+    self.assertEqual(25, percentage)
+    mock_get.assert_called_once_with(cli._ATS2_ROLLOUT_CONFIG_URL, timeout=2)
+
+  @mock.patch.object(requests, 'get')
+  def test_GetATS2RolloutPercentage_timeoutFallback(self, mock_get):
+    """Verify _GetATS2RolloutPercentage falls back to default 10% on timeout/exception."""
+    mock_get.side_effect = requests.exceptions.Timeout('Timeout error')
+
+    percentage = cli._GetATS2RolloutPercentage()
+    self.assertEqual(10, percentage)
+
+  @mock.patch.object(requests, 'get')
+  def test_GetATS2RolloutPercentage_invalidJsonFallback(self, mock_get):
+    """Verify _GetATS2RolloutPercentage falls back to default 10% on invalid JSON response."""
+    mock_response = mock.Mock()
+    mock_response.status_code = 200
+    mock_response.json.side_effect = ValueError('Invalid JSON')
+    mock_get.return_value = mock_response
+
+    percentage = cli._GetATS2RolloutPercentage()
+    self.assertEqual(10, percentage)
+
+  @mock.patch.object(requests, 'get')
+  def test_GetATS2RolloutPercentage_missingKeyFallback(self, mock_get):
+    """Verify _GetATS2RolloutPercentage falls back to default 10% if rollout key is missing."""
+    mock_response = mock.Mock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {'other_key': 123}
+    mock_get.return_value = mock_response
+
+    percentage = cli._GetATS2RolloutPercentage()
+    self.assertEqual(10, percentage)
+
+  @parameterized.named_parameters(
+      ('dev_env', ['MTT_VERSION=dev'], ('dev', None)),
+      ('prod_old_format', ['MTT_VERSION=prod_R52.202601.001'], ('prod', 52)),
+      ('prod_new_format', ['MTT_VERSION=prod_1.52.003'], ('prod', 52)),
+      (
+          'prod_old_format_incompatible',
+          ['MTT_VERSION=prod_R51.202501.001'],
+          ('prod', 51),
+      ),
+      (
+          'prod_new_format_incompatible',
+          ['MTT_VERSION=prod_1.51.001'],
+          ('prod', 51),
+      ),
+      ('no_mtt_version', ['OTHER_VAR=value'], ('dev', None)),
+      ('dev_no_underscore', ['MTT_VERSION=dev_version'], ('dev', None)),
+  )
+  def test_GetImageVersionInfo(self, env_vars, expected):
+    docker_helper = mock.MagicMock()
+    docker_helper.GetEnv.return_value = env_vars
+    self.assertEqual(
+        expected, cli._GetImageVersionInfo(docker_helper, 'image_name')
+    )
+
+  def test_GetImageVersionInfo_exception(self):
+    docker_helper = mock.MagicMock()
+    docker_helper.GetEnv.side_effect = Exception('Failed to inspect')
+    self.assertEqual(
+        ('dev', None), cli._GetImageVersionInfo(docker_helper, 'image_name')
+    )
+
+  @mock.patch.object(cli, '_IsConsoleSuccessfullyStarted')
+  @mock.patch.object(cli, '_WaitForServer')
+  def testStart_ats2CompatibleProdImage(self, mock_wait, mock_started):
+    """Verify prod image (>= 1.52) defaults to ATS 2.0 if rollout matches."""
+    mock_wait.return_value = True
+    mock_started.return_value = True
+    args = self.arg_parser.parse_args(['start'])
+
+    # Mock rollout to 100% (so prod is selected)
+    # Mock GetEnv to return prod_1.52.003 (compatible)
+    with mock.patch.object(cli, '_GetATS2RolloutPercentage', return_value=100):
+      with mock.patch.object(
+          cli.command_util.DockerHelper, 'GetEnv'
+      ) as mock_getenv:
+        mock_getenv.return_value = ['MTT_VERSION=prod_1.52.003']
+        cli.Start(args, self._CreateHost())
+
+        # Since ATS 2.0 is used, IS_OMNILAB_BASED=true env should be set
+        docker_create_args = None
+        for call in self.mock_context.Run.call_args_list:
+          call_args, _ = call
+          command_args = call_args[0]
+          if command_args[:2] == ['docker', 'create']:
+            docker_create_args = command_args
+            break
+        self.assertIsNotNone(docker_create_args)
+        self.assertIn('-e', docker_create_args)
+        # Find IS_OMNILAB_BASED=true
+        is_omnilab_based_env = False
+        for i, arg in enumerate(docker_create_args):
+          if (
+              arg == '-e'
+              and docker_create_args[i + 1] == 'IS_OMNILAB_BASED=true'
+          ):
+            is_omnilab_based_env = True
+            break
+        self.assertTrue(
+            is_omnilab_based_env,
+            'Expected IS_OMNILAB_BASED=true in docker create',
+        )
+
+  @mock.patch.object(cli, '_IsConsoleSuccessfullyStarted')
+  @mock.patch.object(cli, '_WaitForServer')
+  def testStart_ats2IncompatibleProdImageFallback(
+      self, mock_wait, mock_started
+  ):
+    """Verify incompatible prod image (< 1.52) falls back to ATS 1.0."""
+    mock_wait.return_value = True
+    mock_started.return_value = True
+    args = self.arg_parser.parse_args(['start'])
+
+    # Mock rollout to 100% (so prod is selected)
+    # Mock GetEnv to return prod_1.51.001 (incompatible)
+    with mock.patch.object(cli, '_GetATS2RolloutPercentage', return_value=100):
+      with mock.patch.object(
+          cli.command_util.DockerHelper, 'GetEnv'
+      ) as mock_getenv:
+        mock_getenv.return_value = ['MTT_VERSION=prod_1.51.001']
+        cli.Start(args, self._CreateHost())
+
+        # Falls back to 1.0, IS_OMNILAB_BASED=true should NOT be set
+        docker_create_args = None
+        for call in self.mock_context.Run.call_args_list:
+          call_args, _ = call
+          command_args = call_args[0]
+          if command_args[:2] == ['docker', 'create']:
+            docker_create_args = command_args
+            break
+        self.assertIsNotNone(docker_create_args)
+        # Ensure IS_OMNILAB_BASED=true is NOT in the args
+        for i, arg in enumerate(docker_create_args):
+          if (
+              arg == '-e'
+              and docker_create_args[i + 1] == 'IS_OMNILAB_BASED=true'
+          ):
+            self.fail(
+                'Did not expect IS_OMNILAB_BASED=true in docker create '
+                'for incompatible image'
+            )
+
+  @mock.patch.object(cli, '_IsConsoleSuccessfullyStarted')
+  @mock.patch.object(cli, '_WaitForServer')
+  def testStart_ats2IncompatibleProdImageForcedOverride(
+      self, mock_wait, mock_started
+  ):
+    """Forcing ATS 2.0 on incompatible prod image successfully launches ATS 2.0."""
+    mock_wait.return_value = True
+    mock_started.return_value = True
+    # Explicitly force ATS 2.0
+    args = self.arg_parser.parse_args(['start', '--force_ats_version', '2'])
+
+    # Mock GetEnv to return prod_1.51.001 (incompatible)
+    with mock.patch.object(
+        cli.command_util.DockerHelper, 'GetEnv'
+    ) as mock_getenv:
+      mock_getenv.return_value = ['MTT_VERSION=prod_1.51.001']
+      cli.Start(args, self._CreateHost())
+
+      # Since ATS 2.0 is forced, IS_OMNILAB_BASED=true env should be set
+      docker_create_args = None
+      for call in self.mock_context.Run.call_args_list:
+        call_args, _ = call
+        command_args = call_args[0]
+        if command_args[:2] == ['docker', 'create']:
+          docker_create_args = command_args
+          break
+      self.assertIsNotNone(docker_create_args)
+      self.assertIn('-e', docker_create_args)
+      is_omnilab_based_env = False
+      for i, arg in enumerate(docker_create_args):
+        if arg == '-e' and docker_create_args[i + 1] == 'IS_OMNILAB_BASED=true':
+          is_omnilab_based_env = True
+          break
+      self.assertTrue(
+          is_omnilab_based_env,
+          'Expected IS_OMNILAB_BASED=true in docker create',
+      )
 
 
 _ALL_START_OPTIONS = (
