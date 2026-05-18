@@ -273,21 +273,33 @@ function start_labconsole_ui {
   # Wrap the cd and npm start in a subshell to prevent side effects.
   # No need to pass any arguments to npm start as this express node server will
   # read the arguments from the env automatically.
-  (cd /mtt/lab_ui_runner && npm start) &
+  local labconsole_ui_log_dir="${MTT_LOG_DIR:-/data/log}/labconsole_ui"
+  mkdir -p "${labconsole_ui_log_dir}"
+  (cd /mtt/lab_ui_runner && npm start) 2>&1 | multilog s10485760 n10 "${labconsole_ui_log_dir}" &
   echo "Labconsole UI started on port ${LAB_CONSOLE_PORT}."
 }
 
 function start_oss_fe_server {
+  local oss_fe_log_dir="${MTT_LOG_DIR:-/data/log}/labconsole_oss_fe_server"
+  local envoy_log_dir="${MTT_LOG_DIR:-/data/log}/labconsole_envoy"
+  mkdir -p "${oss_fe_log_dir}"
+  mkdir -p "${envoy_log_dir}"
+
   echo "Starting OSS FE server on port ${LABCONSOLE_SERVER_GRPC_PORT}, connecting to OLC Server on port ${OLC_SERVER_PORT}..."
   # OSS FE server listens to gRPC port for backend requests, and talk to the olc server on a different port.
-  java -jar /deviceinfra/oss_fe_server_deploy.jar --fe_grpc_port=${LABCONSOLE_SERVER_GRPC_PORT} --olc_server_port=${OLC_SERVER_PORT} &
+  java -jar /deviceinfra/oss_fe_server_deploy.jar \
+      --fe_grpc_port=${LABCONSOLE_SERVER_GRPC_PORT} \
+      --olc_server_port=${OLC_SERVER_PORT} \
+      2>&1 | multilog s10485760 n10 "${oss_fe_log_dir}" &
   echo "OSS FE server started on port ${LABCONSOLE_SERVER_GRPC_PORT}..."
+
   echo "Starting Envoy proxy on port ${LABCONSOLE_SERVER_REST_PORT}..."
   # Envoy proxy listens to REST port for receiving request from frontend,
   # and forwards to the OSS FE backend that listen to gRPC port.
   sed -e "s/{{LABCONSOLE_SERVER_REST_PORT}}/${LABCONSOLE_SERVER_REST_PORT}/g" -e "s/{{LABCONSOLE_SERVER_GRPC_PORT}}/${LABCONSOLE_SERVER_GRPC_PORT}/g" /etc/envoy/envoy.yaml > /tmp/envoy.yaml
-  /usr/bin/envoy -c /tmp/envoy.yaml &
+  /usr/bin/envoy -c /tmp/envoy.yaml 2>&1 | multilog s10485760 n10 "${envoy_log_dir}" &
   echo "Envoy proxy started on port ${LABCONSOLE_SERVER_REST_PORT}..."
+
   start_labconsole_ui
 }
 
