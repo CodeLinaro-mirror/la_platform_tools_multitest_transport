@@ -365,16 +365,16 @@ else
   # Start OSS lab server
   LAB_SERVER_ARGS=""
   if [[ "${MAX_LOCAL_VIRTUAL_DEVICES}" -gt 0 ]]; then
-    LAB_SERVER_ARGS="--android_jit_emulator_num=${MAX_LOCAL_VIRTUAL_DEVICES} "
+    LAB_SERVER_ARGS+="--android_jit_emulator_num=${MAX_LOCAL_VIRTUAL_DEVICES} "
     if [[ -n "${CLOUD_ORCHESTRATOR_URL}" ]]; then
       LAB_SERVER_ARGS+="--cloud_orchestrator_service_url=${CLOUD_ORCHESTRATOR_URL} "
-      LAB_SERVER_ARGS+="--noop_jit_emulator=false"
+      LAB_SERVER_ARGS+="--noop_jit_emulator=false "
     else
-      LAB_SERVER_ARGS+="--noop_jit_emulator=true"
+      LAB_SERVER_ARGS+="--noop_jit_emulator=true "
     fi
   fi
   if [[ "${RVD_COUNT}" -gt 0 ]]; then
-    LAB_SERVER_ARGS="--android_jit_emulator_num=${RVD_COUNT} "
+    LAB_SERVER_ARGS+="--remote_android_jit_emulator_num=${RVD_COUNT} "
     LAB_SERVER_ARGS+="--noop_jit_emulator=true "
     LAB_SERVER_ARGS+="--virtual_device_server_ip=${RVD_HOST} "
     LAB_SERVER_ARGS+="--virtual_device_server_username=${RVD_USER} "
