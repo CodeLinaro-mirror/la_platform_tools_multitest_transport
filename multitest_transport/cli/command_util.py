@@ -1077,7 +1077,10 @@ class DockerHelper(object):
     return res.stdout
 
   def GetBridgeNetworkInfo(self):
-    """Get info on Docker bridge networks.
+    """Get info on the Docker network.
+
+    Inspects the network specified in `self._network`, or the default 'bridge'
+    network if `self._network` is not set.
 
     Returns:
       a BridgeNetworkInfo object.
@@ -1088,8 +1091,8 @@ class DockerHelper(object):
     args = [
         'network',
         'inspect',
-        'bridge',
-        '--format={{json .}}'
+        self._network or 'bridge',
+        '--format={{json .}}',
     ]
     res = self._docker_context.Run(args, raise_on_failure=False)
     if res.return_code:

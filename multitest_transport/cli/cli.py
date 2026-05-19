@@ -481,6 +481,32 @@ def _IsConsoleSuccessfullyStarted(host, is_omnilab_based):
     )
 
 
+def _GetTargetNetwork(args, config, docker_env):
+  """Get target Docker network based on command-line args and host config."""
+  # 1. First check command-line arguments (highest priority).
+  if getattr(args, 'network', None):
+    return args.network
+  elif getattr(args, 'use_host_network', False):
+    return _DOCKER_HOST_NETWORK
+  # 2. Next fallback to host config values.
+  else:
+    config_network = getattr(config, 'network', None)
+    if config_network and getattr(config, 'use_host_network', False):
+      raise ActionableError(
+          'Conflicting host.config: network and use_host_network cannot be '
+          'enabled together in the configuration file.'
+      )
+    if config_network:
+      return config_network
+    elif (
+        not getattr(config, 'use_host_network', False)
+        and 'MTT_SUPPORT_BRIDGE_NETWORK=true' in docker_env
+    ):
+      return _DOCKER_BRIDGE_NETWORK
+    else:
+      return _DOCKER_HOST_NETWORK
+
+
 def Start(args, host=None):
   """Execute 'mtt start [OPTION] ...' on local host.
 
@@ -559,12 +585,10 @@ def _StartMttNode(args, host):
   docker_helper.AddExtraArgs(['--security-opt',
                               'seccomp=' + _CreateSeccompProfile(host)])
 
-  if (not (args.use_host_network or host.config.use_host_network) and
-      'MTT_SUPPORT_BRIDGE_NETWORK=true' in docker_helper.GetEnv(image_name)):
+  docker_env = docker_helper.GetEnv(image_name)
+  network = _GetTargetNetwork(args, host.config, docker_env)
+  if network != _DOCKER_HOST_NETWORK:
     docker_helper.SetHostname(host.name)
-    network = _DOCKER_BRIDGE_NETWORK
-  else:
-    network = _DOCKER_HOST_NETWORK
   docker_helper.SetNetwork(network)
 
   docker_helper.AddEnv(
@@ -600,7 +624,7 @@ def _StartMttNode(args, host):
   if (control_server_url and operation_mode
       == lab_config_pb2.OperationMode.ON_PREMISE) or not control_server_url:
     docker_helper.AddEnv('MTT_CONTROL_SERVER_PORT', args.port)
-    if network == _DOCKER_BRIDGE_NETWORK:
+    if network != _DOCKER_HOST_NETWORK:
       for port in _GetMttServerPublicPorts(args.port):
         # The server binds to IPv4 addresses only.
         docker_helper.AddPort(f'{args.bind_address}:{port}', port)
@@ -623,7 +647,7 @@ def _StartMttNode(args, host):
       docker_helper.AddEnv(
           'MTT_CONFIG_SERVICE_GRPC_PORT', str(config_service_grpc_port)
       )
-      if network == _DOCKER_BRIDGE_NETWORK:
+      if network != _DOCKER_HOST_NETWORK:
         docker_helper.AddPort(
             f'{args.bind_address}:{config_service_grpc_port}',
             config_service_grpc_port,
@@ -723,7 +747,7 @@ def _StartMttNode(args, host):
   docker_helper.AddEnv('MTT_SERVER_LOG_LEVEL', args.server_log_level)
 
   enable_ipv6_bridge_network = False
-  if network == _DOCKER_BRIDGE_NETWORK:
+  if network != _DOCKER_HOST_NETWORK:
     network_info = docker_helper.GetBridgeNetworkInfo()
     if network_info.IsIPv6Enabled():
       enable_ipv6_bridge_network = True
@@ -813,7 +837,7 @@ def _StartMttNode(args, host):
   if is_omnilab_based:
     docker_helper.AddEnv('IS_OMNILAB_BASED', 'true')
     if (
-        network == _DOCKER_BRIDGE_NETWORK
+        network != _DOCKER_HOST_NETWORK
         and operation_mode == lab_config_pb2.OperationMode.ON_PREMISE
     ):
       if control_server_url:
@@ -829,7 +853,7 @@ def _StartMttNode(args, host):
 
   _CheckDockerImageVersion(docker_helper, args.name)
 
-  # Delete temp tools directory
+  # Delete temp tools directory.
   if custom_sdk_dir:
     shutil.rmtree(custom_sdk_dir)
 
@@ -1475,10 +1499,17 @@ def _CreateStartArgParser():
   parser.add_argument('--extra_ca_cert', help='Extra CA cert file for SSL.')
   parser.add_argument('--mount_local_path', action='append',
                       help='Additional path to mount in the local file store.')
-  parser.add_argument(
+  net_group = parser.add_mutually_exclusive_group()
+  net_group.add_argument(
       '--use_host_network',
       help='Use host networking for the container.',
-      action='store_true')
+      action='store_true',
+  )
+  net_group.add_argument(
+      '--network',
+      help='Use a specific existing Docker network for the container.',
+      default=None,
+  )
   parser.add_argument(
       '--use_host_adb',
       help=(

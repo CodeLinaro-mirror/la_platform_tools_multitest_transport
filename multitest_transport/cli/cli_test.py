@@ -3212,6 +3212,42 @@ class CliTest(parameterized.TestCase):
           'Expected IS_OMNILAB_BASED=true in docker create',
       )
 
+  def testGetTargetNetwork_argsNetworkPriority(self):
+    args = argparse.Namespace(network='my_net', use_host_network=False)
+    config = mock.MagicMock(network='conf_net', use_host_network=False)
+    self.assertEqual('my_net', cli._GetTargetNetwork(args, config, []))
+
+  def testGetTargetNetwork_argsUseHostNetworkPriority(self):
+    args = argparse.Namespace(network=None, use_host_network=True)
+    config = mock.MagicMock(network='conf_net', use_host_network=False)
+    self.assertEqual('host', cli._GetTargetNetwork(args, config, []))
+
+  def testGetTargetNetwork_configNetworkFallback(self):
+    args = argparse.Namespace(network=None, use_host_network=False)
+    config = mock.MagicMock(network='conf_net', use_host_network=False)
+    self.assertEqual('conf_net', cli._GetTargetNetwork(args, config, []))
+
+  def testGetTargetNetwork_configConflictRaises(self):
+    args = argparse.Namespace(network=None, use_host_network=False)
+    config = mock.MagicMock(network='conf_net', use_host_network=True)
+    with self.assertRaises(cli.ActionableError):
+      cli._GetTargetNetwork(args, config, [])
+
+  def testGetTargetNetwork_bridgeNetworkFallback(self):
+    args = argparse.Namespace(network=None, use_host_network=False)
+    config = mock.MagicMock(network=None, use_host_network=False)
+    self.assertEqual(
+        'bridge',
+        cli._GetTargetNetwork(
+            args, config, ['MTT_SUPPORT_BRIDGE_NETWORK=true']
+        ),
+    )
+
+  def testGetTargetNetwork_hostNetworkFallback(self):
+    args = argparse.Namespace(network=None, use_host_network=False)
+    config = mock.MagicMock(network=None, use_host_network=False)
+    self.assertEqual('host', cli._GetTargetNetwork(args, config, []))
+
 
 _ALL_START_OPTIONS = (
     ('force_update', True),
