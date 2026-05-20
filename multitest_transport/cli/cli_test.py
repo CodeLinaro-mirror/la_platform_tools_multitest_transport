@@ -55,7 +55,31 @@ class CliTest(parameterized.TestCase):
         return_value=self.mock_context)
     self.mock_create_context = self.context_patcher.start()
     self.enable_ipv6 = False
-    self.mock_context.Run.side_effect = self._MockRun
+    self.unfiltered_runs = []
+
+    def _FilteredRun(*args, **kwargs):
+      if not args:
+        return self._MockRun(*args, **kwargs)
+      cmd, *unused_rest = args
+      if isinstance(cmd, list):
+        self.unfiltered_runs.append(list(cmd))
+        new_cmd = []
+        args_iter = iter(cmd)
+        for arg in args_iter:
+          if arg == '-e':
+            try:
+              next_arg = next(args_iter)
+            except StopIteration:
+              break  # Reached the end of the command list.
+            if next_arg.startswith(('PARENT_HOSTNAME=', 'LOCAL_HOSTNAME=')):
+              continue  # Skip both -e and these env vars.
+            new_cmd.extend([arg, next_arg])
+            continue
+          new_cmd.append(arg)
+        cmd[:] = new_cmd
+      return self._MockRun(*args, **kwargs)
+
+    self.mock_context.Run.side_effect = _FilteredRun
     self.mock_context.IsLocal.return_value = True
 
     self.mock_socket = mock.MagicMock()
@@ -384,6 +408,27 @@ class CliTest(parameterized.TestCase):
             ['docker', 'exec', 'mtt', 'printenv', 'MTT_VERSION'],
             raise_on_failure=False),
     ])
+
+  def testStart_parentHostname(self):
+    args = self.arg_parser.parse_args(['start'])
+    cli.Start(
+        args,
+        self._CreateHost(
+            hostname='my-custom-host', cluster_name='acluster', lab_name='alab'
+        ),
+    )
+
+    create_cmd = next(
+        (
+            cmd
+            for cmd in self.unfiltered_runs
+            if cmd[:2] == ['docker', 'create']
+        ),
+        None,
+    )
+    self.assertIsNotNone(create_cmd, 'docker create command not found')
+    self.assertIn('PARENT_HOSTNAME=my-custom-host', create_cmd)
+    self.assertIn('LOCAL_HOSTNAME=mtt', create_cmd)
 
   def testStart_withCloudOrchestrator(self):
     """Test start with cloud orchestrator flags."""

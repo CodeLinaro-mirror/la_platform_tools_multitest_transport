@@ -484,27 +484,26 @@ def _IsConsoleSuccessfullyStarted(host, is_omnilab_based):
 def _GetTargetNetwork(args, config, docker_env):
   """Get target Docker network based on command-line args and host config."""
   # 1. First check command-line arguments (highest priority).
-  if getattr(args, 'network', None):
-    return args.network
-  elif getattr(args, 'use_host_network', False):
+  if network := getattr(args, 'network', None):
+    return network
+  if getattr(args, 'use_host_network', False):
     return _DOCKER_HOST_NETWORK
+
   # 2. Next fallback to host config values.
-  else:
-    config_network = getattr(config, 'network', None)
-    if config_network and getattr(config, 'use_host_network', False):
-      raise ActionableError(
-          'Conflicting host.config: network and use_host_network cannot be '
-          'enabled together in the configuration file.'
-      )
-    if config_network:
-      return config_network
-    elif (
-        not getattr(config, 'use_host_network', False)
-        and 'MTT_SUPPORT_BRIDGE_NETWORK=true' in docker_env
-    ):
-      return _DOCKER_BRIDGE_NETWORK
-    else:
-      return _DOCKER_HOST_NETWORK
+  config_network = getattr(config, 'network', None)
+  if config_network and getattr(config, 'use_host_network', False):
+    raise ActionableError(
+        'Conflicting host.config: network and use_host_network cannot be '
+        'enabled together in the configuration file.'
+    )
+  if config_network:
+    return config_network
+  if (
+      not getattr(config, 'use_host_network', False)
+      and 'MTT_SUPPORT_BRIDGE_NETWORK=true' in docker_env
+  ):
+    return _DOCKER_BRIDGE_NETWORK
+  return _DOCKER_HOST_NETWORK
 
 
 def Start(args, host=None):
@@ -589,6 +588,8 @@ def _StartMttNode(args, host):
   network = _GetTargetNetwork(args, host.config, docker_env)
   if network != _DOCKER_HOST_NETWORK:
     docker_helper.SetHostname(host.name)
+    docker_helper.AddEnv('PARENT_HOSTNAME', host.name)
+    docker_helper.AddEnv('LOCAL_HOSTNAME', 'mtt')
   docker_helper.SetNetwork(network)
 
   docker_helper.AddEnv(
