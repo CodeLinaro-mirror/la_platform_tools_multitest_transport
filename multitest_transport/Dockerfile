@@ -43,14 +43,16 @@ ENV MTT_USE_HOST_ADB ""
 
 # Authenticate on GCE (ignored if running locally or file not provided)
 ENV GOOGLE_APPLICATION_CREDENTIALS /tmp/keyfile/key.json
+ENV GRPC_XDS_BOOTSTRAP /etc/grpc/bootstrap.json
 
 # In case there are libraries in context folder
 COPY /usr/ /usr/
 
 COPY /mtt/ /mtt/
 
-RUN mkdir -p /etc/envoy \
+RUN mkdir -p /etc/envoy /etc/grpc \
     && mv /mtt/envoy/envoy.yaml /etc/envoy/envoy.yaml \
+    && mv /mtt/envoy/bootstrap.json /etc/grpc/bootstrap.json \
     && mv /mtt/envoy/api_descriptor.pb /etc/envoy/api_descriptor.pb \
     && mv /mtt/envoy/envoy /usr/bin/envoy \
     && rm -rf /mtt/envoy

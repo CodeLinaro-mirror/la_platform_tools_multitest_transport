@@ -1,0 +1,9 @@
+{
+  "xds_servers": [
+    {
+      "server_uri": "acceptor:18000",
+      "channel_creds": [{"type": "insecure"}]
+    }
+  ],
+  "node": {"id": "node"}
+}
