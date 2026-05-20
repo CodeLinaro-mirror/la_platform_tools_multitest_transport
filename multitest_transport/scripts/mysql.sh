@@ -20,6 +20,7 @@ function start_mysql_database {
     --skip-grant-tables \
     --skip-networking \
     --datadir="${datadir}" \
+    --log-error="${datadir}/error.log" \
     &
   SQL_DATABASE_URI="mysql+pymysql://root@/${DB_NAME}?unix_socket=${MYSQL_SOCKET}"
 }

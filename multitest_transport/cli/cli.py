@@ -992,6 +992,8 @@ def _StopMttNode(args, host):
     if host.config.graceful_shutdown or args.wait:
       logger.info('Wait all tests to finish.')
       docker_helper.Kill([args.name], _TF_QUIT)
+      # Send shutdown signal to mariadb to gracefully shut down the database.
+      docker_helper.Exec(args.name, ['bash', '-c', 'mysqladmin shutdown'])
       timeout = _LONG_CONTAINER_SHUTDOWN_TIMEOUT_SEC
     else:
       # This send "TERM" to TF inside the container.
@@ -1803,7 +1805,9 @@ def _IsOmnilabBased(
 def _CreateStopArgParser():
   """Create argparser for Stop."""
   parser = argparse.ArgumentParser(add_help=False)
-  parser.add_argument('--wait', action='store_true')
+  parser.add_argument(
+      '--wait', action=argparse.BooleanOptionalAction, default=True
+  )
   parser.add_argument(
       '--drain',
       action='store_true',

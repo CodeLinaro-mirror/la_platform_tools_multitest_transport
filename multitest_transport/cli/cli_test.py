@@ -1946,7 +1946,7 @@ class CliTest(parameterized.TestCase):
     is_running.return_value = True
     daemon_active.return_value = False
     self.mock_context.host = 'ahost'
-    args = self.arg_parser.parse_args(['stop'])
+    args = self.arg_parser.parse_args(['stop', '--no-wait'])
     host = self._CreateHost()
     cli.Stop(args, host)
 
@@ -1971,7 +1971,7 @@ class CliTest(parameterized.TestCase):
     is_running.return_value = True
     daemon_active.return_value = False
     self.mock_context.host = 'ahost'
-    args = self.arg_parser.parse_args(['stop', '--drain', 'true'])
+    args = self.arg_parser.parse_args(['stop', '--drain', 'true', '--no-wait'])
     host = self._CreateHost()
     cli.Stop(args, host)
 
@@ -1999,7 +1999,7 @@ class CliTest(parameterized.TestCase):
     is_running.return_value = True
     daemon_active.return_value = False
     self.mock_context.host = 'ahost'
-    args = self.arg_parser.parse_args(['stop'])
+    args = self.arg_parser.parse_args(['stop', '--no-wait'])
     host = self._CreateHost(drain=True)
     cli.Stop(args, host)
 
@@ -2049,13 +2049,20 @@ class CliTest(parameterized.TestCase):
     cli.Stop(args, self._CreateHost())
 
     self.mock_context.Run.assert_has_calls([
-        mock.call(['docker', 'kill', '-s', 'TSTP', 'mtt'],
-                  timeout=command_util._DOCKER_KILL_CMD_TIMEOUT_SEC),
-        mock.call(['docker', 'container', 'wait', 'mtt'],
-                  timeout=cli._LONG_CONTAINER_SHUTDOWN_TIMEOUT_SEC),
+        mock.call(
+            ['docker', 'kill', '-s', 'TSTP', 'mtt'],
+            timeout=command_util._DOCKER_KILL_CMD_TIMEOUT_SEC,
+        ),
+        mock.call(
+            ['docker', 'exec', 'mtt', 'bash', '-c', 'mysqladmin shutdown'],
+            raise_on_failure=False,
+        ),
+        mock.call(
+            ['docker', 'container', 'wait', 'mtt'],
+            timeout=cli._LONG_CONTAINER_SHUTDOWN_TIMEOUT_SEC,
+        ),
         mock.call(['docker', 'inspect', 'mtt'], raise_on_failure=False),
-        mock.call(['docker', 'container', 'rm', 'mtt'],
-                  raise_on_failure=False),
+        mock.call(['docker', 'container', 'rm', 'mtt'], raise_on_failure=False),
     ])
     is_running.assert_called_once_with('mtt')
 
@@ -2073,13 +2080,20 @@ class CliTest(parameterized.TestCase):
     cli.Stop(args, self._CreateHost(graceful_shutdown=True))
 
     self.mock_context.Run.assert_has_calls([
-        mock.call(['docker', 'kill', '-s', 'TSTP', 'mtt'],
-                  timeout=command_util._DOCKER_KILL_CMD_TIMEOUT_SEC),
-        mock.call(['docker', 'container', 'wait', 'mtt'],
-                  timeout=cli._LONG_CONTAINER_SHUTDOWN_TIMEOUT_SEC),
+        mock.call(
+            ['docker', 'kill', '-s', 'TSTP', 'mtt'],
+            timeout=command_util._DOCKER_KILL_CMD_TIMEOUT_SEC,
+        ),
+        mock.call(
+            ['docker', 'exec', 'mtt', 'bash', '-c', 'mysqladmin shutdown'],
+            raise_on_failure=False,
+        ),
+        mock.call(
+            ['docker', 'container', 'wait', 'mtt'],
+            timeout=cli._LONG_CONTAINER_SHUTDOWN_TIMEOUT_SEC,
+        ),
         mock.call(['docker', 'inspect', 'mtt'], raise_on_failure=False),
-        mock.call(['docker', 'container', 'rm', 'mtt'],
-                  raise_on_failure=False),
+        mock.call(['docker', 'container', 'rm', 'mtt'], raise_on_failure=False),
     ])
     is_running.assert_called_once_with('mtt')
 
@@ -2092,7 +2106,7 @@ class CliTest(parameterized.TestCase):
     is_running.return_value = True
     daemon_active.return_value = False
     self.mock_context.host = 'ahost'
-    args = self.arg_parser.parse_args(['stop'])
+    args = self.arg_parser.parse_args(['stop', '--no-wait'])
     host = self._CreateHost(shutdown_timeout_sec=60)
     cli.Stop(args, host)
 
@@ -2158,7 +2172,7 @@ class CliTest(parameterized.TestCase):
     euid.return_value = 0
     is_running.return_value = True
     self.mock_context.host = 'ahost'
-    args = self.arg_parser.parse_args(['stop'])
+    args = self.arg_parser.parse_args(['stop', '--no-wait'])
 
     cli.Stop(args, self._CreateHost())
 

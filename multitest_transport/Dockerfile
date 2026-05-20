@@ -74,7 +74,7 @@ RUN unzip -q /mtt/prebuilts/deviceinfra/deviceinfra.zip -d /deviceinfra
 RUN unzip -q /mtt/prebuilts/tools/report_generator.zip -d ${MTT_REPORT_GENERATOR_JAR_DIR}
 
 RUN rm -rf /mtt/prebuilts
-ENV PATH /tradefed:${PATH}
+ENV PATH /tradefed:${PATH}:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin
 
 # Setup scripts
 RUN chmod 755 \
