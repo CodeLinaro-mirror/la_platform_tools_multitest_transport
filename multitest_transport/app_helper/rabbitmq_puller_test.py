@@ -49,7 +49,7 @@ class MessagePullerTest(absltest.TestCase):
 
     self.mock_conn_ctor.assert_called_with(self.conn_params)
     self.mock_channel.assert_has_calls([
-        mock.call.queue_declare(queue='queue'),
+        mock.call.queue_declare(queue='queue', durable=True),
         mock.call.queue_purge(queue='queue'),
         mock.call.basic_consume('queue', mock.ANY, auto_ack=True),
         mock.call.start_consuming(),
@@ -188,6 +188,7 @@ class MessagePullerTest(absltest.TestCase):
 
     self.mock_channel.queue_declare.assert_called_with(
         queue='queue.1234000',
+        durable=True,
         arguments={
             'x-dead-letter-exchange': rabbitmq_puller.DEFAULT_EXCHANGE,
             'x-dead-letter-routing-key': 'queue',

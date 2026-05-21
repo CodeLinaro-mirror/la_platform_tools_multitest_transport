@@ -130,6 +130,7 @@ then
     chmod 755 ${RABBITMQ_PID_DIR}
   fi
   export RABBITMQ_PID_FILE="${RABBITMQ_PID_DIR}/pid"
+  export RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS="-rabbitmq_server deprecated_features_permit_transient_nonexcl_queues true"
   rabbitmq-server >/var/log/rabbitmq/startup_log 2>&1 &
   time rabbitmqctl wait --timeout 600 "${RABBITMQ_PID_FILE}" || \
   (cat /var/log/rabbitmq/startup_*; false)

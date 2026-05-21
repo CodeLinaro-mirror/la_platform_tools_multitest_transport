@@ -86,7 +86,7 @@ class MessagePuller(threading.Thread):
         with pika.BlockingConnection(self._conn_params) as connection, \
             futures.ThreadPoolExecutor(max_workers=1) as executor:
           channel = connection.channel()
-          channel.queue_declare(queue=self._queue)
+          channel.queue_declare(queue=self._queue, durable=True)
           channel.queue_purge(queue=self._queue)
           # Handle messages in a worker thread to prevent blocking the puller
           # thread (which could cause a heartbeat timeout)
@@ -191,6 +191,7 @@ class MessagePuller(threading.Thread):
     delay_queue = '.'.join([self._queue, properties.expiration])
     channel.queue_declare(
         queue=delay_queue,
+        durable=True,
         # RabbmitMQ DLX arguments documentation can be found at the link below:
         # https://www.rabbitmq.com/dlx.html.
         arguments={
