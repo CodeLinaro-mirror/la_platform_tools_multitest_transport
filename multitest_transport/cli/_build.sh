@@ -36,29 +36,65 @@ pushd "${CLI_DIR}"
 mkdir src
 mv -t src multitest_transport tradefed_cluster setup.py
 
-# Also move device-infra source code needed by MTT CLI to the src directory:
-# (device-infra source code is available in $KOKORO_ARTIFACTS_DIR,
-# configured by http://google3/devtools/kokoro/config/data/git_on_borg_resource_acl.gcl;l=18131-18142;rcl=808571504)
+# Some device-infra source code files are needed by the MTT CLI.
+# When running in Kokoro, these files are pre-populated in $KOKORO_ARTIFACTS_DIR
+# (configured by
+# http://google3/devtools/kokoro/config/data/git_on_borg_resource_acl.gcl;l=18131-18142;rcl=808571504).
+# When running locally (outside of Kokoro), $KOKORO_ARTIFACTS_DIR is not set.
+# To support local development/builds, we download these files from the public
+# google/device-infra GitHub repository if they are not available locally.
 #
-# Moving device-infra's grpc_error_util.py
-mkdir -p src/google3/third_party/deviceinfra/src/devtools/common/metrics/stability/util/
-mv $KOKORO_ARTIFACTS_DIR/git/device-infra/src/devtools/common/metrics/stability/util/grpc_error_util.py src/google3/third_party/deviceinfra/src/devtools/common/metrics/stability/util/grpc_error_util.py
+# This helper function handles preparing these files by either moving them from
+# Kokoro artifacts or downloading them from GitHub.
+prepare_file() {
+  local repo_path="$1"
+  local target_path="$2"
 
-# Moving device-infra's exception.proto
-mkdir -p src/src/devtools/common/metrics/stability/model/proto/
-mv $KOKORO_ARTIFACTS_DIR/git/device-infra/src/devtools/common/metrics/stability/model/proto/exception.proto src/src/devtools/common/metrics/stability/model/proto/exception.proto
-mv $KOKORO_ARTIFACTS_DIR/git/device-infra/src/devtools/common/metrics/stability/model/proto/error_id.proto src/src/devtools/common/metrics/stability/model/proto/error_id.proto
-mv $KOKORO_ARTIFACTS_DIR/git/device-infra/src/devtools/common/metrics/stability/model/proto/error_type.proto src/src/devtools/common/metrics/stability/model/proto/error_type.proto
-mv $KOKORO_ARTIFACTS_DIR/git/device-infra/src/devtools/common/metrics/stability/model/proto/namespace.proto src/src/devtools/common/metrics/stability/model/proto/namespace.proto
+  local target_dir
+  target_dir=$(dirname "${target_path}")
+  mkdir -p "${target_dir}"
 
-# Moving device-infra's rpc_error_payload.proto
-mkdir -p src/src/devtools/common/metrics/stability/rpc/proto/
-mv $KOKORO_ARTIFACTS_DIR/git/device-infra/src/devtools/common/metrics/stability/rpc/proto/rpc_error_payload.proto src/src/devtools/common/metrics/stability/rpc/proto/rpc_error_payload.proto
-mv $KOKORO_ARTIFACTS_DIR/git/device-infra/src/devtools/common/metrics/stability/rpc/proto/rpc_error.proto src/src/devtools/common/metrics/stability/rpc/proto/rpc_error.proto
+  if [[ -n "${KOKORO_ARTIFACTS_DIR:-}" ]]; then
+    # Kokoro environment: move the file from the pre-populated artifacts directory.
+    local source_path="${KOKORO_ARTIFACTS_DIR}/git/device-infra/${repo_path}"
+    if [[ -f "${source_path}" ]]; then
+      mv "${source_path}" "${target_path}"
+    else
+      echo "Error: Source file not found in Kokoro artifacts: ${source_path}"
+      exit 1
+    fi
+  else
+    # Local environment: download the file from the public GitHub repository.
+    echo "KOKORO_ARTIFACTS_DIR not set. Downloading ${repo_path} from GitHub..."
+    if ! command -v curl &> /dev/null; then
+      echo "Error: curl is required to download files but is not installed."
+      exit 1
+    fi
+    local url="https://raw.githubusercontent.com/google/device-infra/master/${repo_path}"
+    if ! curl -sSfL "${url}" -o "${target_path}"; then
+      echo "Error: Failed to download ${url} to ${target_path}"
+      exit 1
+    fi
+  fi
+}
 
-# Moving device-infra's health.proto
-mkdir -p src/google3/third_party/deviceinfra/src/devtools/deviceinfra/host/daemon/proto/
-mv $KOKORO_ARTIFACTS_DIR/git/device-infra/src/devtools/deviceinfra/host/daemon/proto/health.proto src/google3/third_party/deviceinfra/src/devtools/deviceinfra/host/daemon/proto/health.proto
+# Prepare device-infra's files that go to src/google3/third_party/deviceinfra/
+for file in \
+  "src/devtools/common/metrics/stability/util/grpc_error_util.py" \
+  "src/devtools/deviceinfra/host/daemon/proto/health.proto"; do
+  prepare_file "${file}" "src/google3/third_party/deviceinfra/${file}"
+done
+
+# Prepare device-infra's files that go to src/
+for file in \
+  "src/devtools/common/metrics/stability/model/proto/exception.proto" \
+  "src/devtools/common/metrics/stability/model/proto/error_id.proto" \
+  "src/devtools/common/metrics/stability/model/proto/error_type.proto" \
+  "src/devtools/common/metrics/stability/model/proto/namespace.proto" \
+  "src/devtools/common/metrics/stability/rpc/proto/rpc_error_payload.proto" \
+  "src/devtools/common/metrics/stability/rpc/proto/rpc_error.proto"; do
+  prepare_file "${file}" "src/${file}"
+done
 
 # Adding __init__.py in all subdirectories so Python can import modules in them
 # correctly.
@@ -117,45 +153,43 @@ echo "Starting Docker build at: $(date)"
 docker build -t docker_pex . --cache-from gcr.io/android-mtt/pex:latest
 echo "Docker build finished at: $(date)"
 
-cat << EOF > inside_docker_build.sh
+cat << 'EOF' > inside_docker_build.sh
 # Build python file from proto
 /protoc/bin/protoc --python_out=/workspace/src/tradefed_cluster/configs/ \
   --proto_path /workspace/src/tradefed_cluster/configs/ \
   /workspace/src/tradefed_cluster/configs/lab_config.proto
 
-/protoc/bin/protoc --python_out=/workspace/src/ \
---proto_path /workspace/src/ \
-/workspace/src/src/devtools/common/metrics/stability/model/proto/exception.proto
+# Compile stability model and RPC error protos
+for proto in \
+  "src/devtools/common/metrics/stability/model/proto/exception.proto" \
+  "src/devtools/common/metrics/stability/model/proto/error_id.proto" \
+  "src/devtools/common/metrics/stability/model/proto/error_type.proto" \
+  "src/devtools/common/metrics/stability/model/proto/namespace.proto" \
+  "src/devtools/common/metrics/stability/rpc/proto/rpc_error_payload.proto" \
+  "src/devtools/common/metrics/stability/rpc/proto/rpc_error.proto"; do
+  /protoc/bin/protoc --python_out=/workspace/src/ \
+    --proto_path /workspace/src/ \
+    "/workspace/src/${proto}"
+done
 
-/protoc/bin/protoc --python_out=/workspace/src/ \
---proto_path /workspace/src/ \
-/workspace/src/src/devtools/common/metrics/stability/model/proto/error_id.proto
-
-/protoc/bin/protoc --python_out=/workspace/src/ \
---proto_path /workspace/src/ \
-/workspace/src/src/devtools/common/metrics/stability/model/proto/error_type.proto
-
-/protoc/bin/protoc --python_out=/workspace/src/ \
---proto_path /workspace/src/ \
-/workspace/src/src/devtools/common/metrics/stability/model/proto/namespace.proto
-
-/protoc/bin/protoc --python_out=/workspace/src/ \
---proto_path /workspace/src/ \
-/workspace/src/src/devtools/common/metrics/stability/rpc/proto/rpc_error_payload.proto
-
-/protoc/bin/protoc --python_out=/workspace/src/ \
---proto_path /workspace/src/ \
-/workspace/src/src/devtools/common/metrics/stability/rpc/proto/rpc_error.proto
-
-/protoc/bin/protoc --python_out=/workspace/src/ \
---proto_path /workspace/src/ \
-/workspace/src/google3/third_party/deviceinfra/src/devtools/deviceinfra/host/daemon/proto/health.proto
-
-# Generate gRPC server and client code for health.proto.
+# Generate both python proto and gRPC code for health.proto
 python3 -m grpc_tools.protoc \
   --proto_path /workspace/src/ \
+  --python_out=/workspace/src/ \
   --grpc_python_out=/workspace/src/ \
   /workspace/src/google3/third_party/deviceinfra/src/devtools/deviceinfra/host/daemon/proto/health.proto
+
+# Clean up raw proto files to avoid packaging them into PEX/ZIP
+rm -f /workspace/src/google3/third_party/deviceinfra/src/devtools/deviceinfra/host/daemon/proto/health.proto
+for proto in \
+  "src/devtools/common/metrics/stability/model/proto/exception.proto" \
+  "src/devtools/common/metrics/stability/model/proto/error_id.proto" \
+  "src/devtools/common/metrics/stability/model/proto/error_type.proto" \
+  "src/devtools/common/metrics/stability/model/proto/namespace.proto" \
+  "src/devtools/common/metrics/stability/rpc/proto/rpc_error_payload.proto" \
+  "src/devtools/common/metrics/stability/rpc/proto/rpc_error.proto"; do
+  rm -f "/workspace/src/${proto}"
+done
 
 cd /workspace
 # Build mtt pex package.
