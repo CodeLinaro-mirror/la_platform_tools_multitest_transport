@@ -17,6 +17,7 @@
 A module to check availability of the core services.
 """
 import logging
+import os
 import subprocess
 import requests
 
@@ -51,7 +52,8 @@ class RabbitMQChecker(ServiceChecker):
   @classmethod
   def Run(cls):
     """Check RabbitMQ service availability using its management plugin."""
-    response = requests.get('http://localhost:15672/api/vhosts',
+    rabbitmq_host = os.environ.get('RABBITMQ_HOST', 'localhost')
+    response = requests.get(f'http://{rabbitmq_host}:15672/api/vhosts',
                             auth=requests.auth.HTTPBasicAuth('guest', 'guest'))
     response.raise_for_status()
 

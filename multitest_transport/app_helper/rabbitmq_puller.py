@@ -26,6 +26,7 @@ import datetime
 import functools
 import json
 import logging
+import os
 import socket
 import threading
 import time
@@ -224,6 +225,7 @@ def main(argv):
   kwargs = {}
   if FLAGS.rabbitmq_node_port:
     kwargs['port'] = FLAGS.rabbitmq_node_port
+  kwargs['host'] = os.environ.get('RABBITMQ_HOST', 'localhost')
   conn_params = pika.ConnectionParameters(**kwargs)
 
   try:

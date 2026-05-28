@@ -17,6 +17,7 @@ import base64
 import datetime
 import json
 import logging
+import os
 from typing import Union
 import uuid
 
@@ -71,7 +72,9 @@ class TaskScheduler(base.TaskScheduler):
       A base.Task object.
     """
     logging.getLogger('pika').setLevel(logging.WARNING)
-    with pika.BlockingConnection() as conn:
+    rabbitmq_host = os.environ.get('RABBITMQ_HOST', 'localhost')
+    parameters = pika.ConnectionParameters(host=rabbitmq_host)
+    with pika.BlockingConnection(parameters) as conn:
       channel = conn.channel()
       headers = {}
       if eta:

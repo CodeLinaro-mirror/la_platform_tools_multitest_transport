@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: mtt-rabbitmq
+    ports:
+      - "5672:5672"     # AMQP port
+      - "15672:15672"   # Management UI port
+    environment:
+      # Keep the Erlang arguments from the original init.sh if needed
+      RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: "-rabbitmq_server deprecated_features_permit_transient_nonexcl_queues true"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  mtt:
+    # image: us.gcr.io/android-mtt/mtt:latest # TODO: Replace with your monolithic image tag
+    image: gcr.io/android-mtt/mtt:dev # TODO: Replace with your monolithic image tag
+    container_name: mtt-app
+    command: ["/mtt/scripts/init_compose.sh"]
+    tty: true
+    stdin_open: true
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    ports:
+      - "8000:8000"     # Control Server
+      - "8080:8080"     # LabConsole gRPC
+      - "9000:9000"     # LabConsole REST
+      - "4200:4200"     # Lab Console UI
+      - "7030:7030"     # OLC Server
+      - "7031:7031"     # ATS Worker gRPC
+      - "5037:5037"     # ADB
+    volumes:
+      - mtt_data:/data
+
+    # NOTE: The current application code defaults to connecting to RabbitMQ on 'localhost'.
+    # To make it work without changing code, you can use the shared network namespace:
+    #
+    # network_mode: "service:rabbitmq"
+    #
+    # If you uncomment the line above, you MUST remove the `ports` section from this `mtt` service
+    # and move those ports to the `rabbitmq` service instead, because `mtt` will share its network stack.
+    #
+    # We updated the app code to read RabbitMQ host from environment.
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - OPERATION_MODE
+      - MTT_CONTROL_SERVER_URL
+      - MTT_CONTROL_FILE_SERVER_URL
+      - MTT_CONTROL_SERVER_PORT
+      - LAB_NAME
+      - CLUSTER
+      - MTT_ENABLE_CONFIG_SERVICE
+      - MTT_CONFIG_SERVICE_GRPC_PORT
+      - MTT_CONFIG_SERVICE_STORAGE_TYPE
+      - MTT_CONFIG_SERVICE_LOCAL_STORAGE_DIR
+      - TF_GLOBAL_CONFIG_PATH
+      - MTT_SERVER_LOG_LEVEL
+      - MTT_ENABLE_LAB_CONSOLE_UI
+      - LABCONSOLE_SERVER_GRPC_PORT
+      - LABCONSOLE_SERVER_REST_PORT
+      - LAB_CONSOLE_PORT
+      - IS_OMNILAB_BASED
+
+volumes:
+  rabbitmq_data:
+  mtt_data:
