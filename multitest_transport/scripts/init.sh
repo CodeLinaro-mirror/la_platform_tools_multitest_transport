@@ -194,31 +194,44 @@ then
       start_config_service
     fi
 
+    # Setup OLC server default options
+    OLC_SERVER_DEFAULT_OPTS=(
+      "--ats_worker_grpc_port=${ATS_WORKER_GRPC_PORT}"
+      "--connect_to_lab_server_using_ip=true"
+      "--connect_to_lab_server_using_master_detected_ip=true"
+      "--enable_ats_mode=true"
+      "--enable_client_experiment_manager=false"
+      "--enable_client_file_transfer=false"
+      "--enable_grpc_lab_server=true"
+      "--enable_simple_scheduler_shuffle=true"
+      "--olc_database_jdbc_property=socketFactory=org.newsclub.net.mysql.AFUNIXDatabaseSocketFactory,junixsocket.file=/data/ats_db/mysqld.sock"
+      "--olc_database_jdbc_url=jdbc:mysql:///ats_db"
+      "--olc_server_port=${OLC_SERVER_PORT}"
+      "--public_dir=${MTT_LOG_DIR}"
+      "--resource_dir_name=olc_server_res_files"
+      "--tmp_dir_root=${MTT_MH_WORK_DIR}"
+      "--use_tf_retry=false"
+    )
+
     if [[ "${ENABLE_PERSISTENT_CACHE}" == "true" ]]
     then
-      OLC_SERVER_OPTS+=" --enable_persistent_cache=true"
+      OLC_SERVER_DEFAULT_OPTS+=("--enable_persistent_cache=true")
+    fi
+
+    if [[ "${USE_DCON_XDS_ADDRESS}" == "true" ]]
+    then
+      OLC_SERVER_DEFAULT_OPTS+=("--use_dcon_xds_address=true")
+      JAVA_LOADER_ARGS=(-cp "/deviceinfra/ats_olc_server_deploy.jar:/deviceinfra/grpc_xds_plugin_deploy.jar" "com.google.devtools.mobileharness.infra.client.longrunningservice.OlcServer")
+    else
+      JAVA_LOADER_ARGS=(-jar "/deviceinfra/ats_olc_server_deploy.jar")
     fi
 
     if [[ "${FILE_SERVICE_ONLY}" == "false" ]]
     then
       # Start OLC server on the controller
       java -XX:+HeapDumpOnOutOfMemoryError \
-        -jar /deviceinfra/ats_olc_server_deploy.jar \
-        --ats_worker_grpc_port="${ATS_WORKER_GRPC_PORT}" \
-        --connect_to_lab_server_using_ip=true \
-        --connect_to_lab_server_using_master_detected_ip=true \
-        --enable_ats_mode=true \
-        --enable_client_experiment_manager=false \
-        --enable_client_file_transfer=false \
-        --enable_grpc_lab_server=true \
-        --enable_simple_scheduler_shuffle=true \
-        --olc_database_jdbc_property='socketFactory=org.newsclub.net.mysql.AFUNIXDatabaseSocketFactory,junixsocket.file=/data/ats_db/mysqld.sock' \
-        --olc_database_jdbc_url='jdbc:mysql:///ats_db' \
-        --olc_server_port="${OLC_SERVER_PORT}" \
-        --public_dir="${MTT_LOG_DIR}" \
-        --resource_dir_name="olc_server_res_files" \
-        --tmp_dir_root="${MTT_MH_WORK_DIR}" \
-        --use_tf_retry=false \
+        "${JAVA_LOADER_ARGS[@]}" \
+        "${OLC_SERVER_DEFAULT_OPTS[@]}" \
         ${OLC_SERVER_OPTS} &> /dev/null &
     else
       REMOTES_CONTROL_SERVER_PORT="$(echo ${MTT_CONTROL_SERVER_URL} | sed 's,^\([^:/]\+://\)\?\([^:/]\+:\)\(\([0-9]\{1\,5\}\)\)\?\+.*$,\3,g')"

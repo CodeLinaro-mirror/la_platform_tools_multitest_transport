@@ -599,6 +599,8 @@ def _StartMttNode(args, host):
 
   if args.enable_persistent_cache:
     docker_helper.AddEnv('ENABLE_PERSISTENT_CACHE', 'true')
+  if args.use_dcon_xds_address:
+    docker_helper.AddEnv('USE_DCON_XDS_ADDRESS', 'true')
   if args.bind_jfs_volume:
     docker_helper.AddVolume(args.bind_jfs_volume, '/jfs')
     docker_helper.AddEnv('PERSISTENT_CACHE_DIR', '/jfs/persistent_cache')
@@ -1455,6 +1457,16 @@ def _CreateStartArgParser():
       action=argparse.BooleanOptionalAction,
       default=False,
       help='Enable Lab Console UI and backend services. Default is false.',
+  )
+  parser.add_argument(
+      '--use_dcon_xds_address',
+      dest='use_dcon_xds_address',
+      action=argparse.BooleanOptionalAction,
+      default=False,
+      help=(
+          'Whether to use xDS addresses exposed by Dual Conduit. Default is'
+          ' false.'
+      ),
   )
   parser.add_argument(
       '--server_log_level',
