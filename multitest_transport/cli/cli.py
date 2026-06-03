@@ -786,6 +786,11 @@ def _StartMttNode(args, host):
         'MTT_ENABLE_LAB_CONSOLE_UI',
         'true',
     )
+    if args.connect_labconsole_to_config_server:
+      docker_helper.AddEnv(
+          'MTT_CONNECT_LABCONSOLE_TO_CONFIG_SERVER',
+          'true',
+      )
     docker_helper.AddEnv(
         'LABCONSOLE_SERVER_GRPC_PORT', str(labconsole_grpc_port)
     )
@@ -1457,6 +1462,17 @@ def _CreateStartArgParser():
       action=argparse.BooleanOptionalAction,
       default=False,
       help='Enable Lab Console UI and backend services. Default is false.',
+  )
+  parser.add_argument(
+      '--connect_labconsole_to_config_server',
+      dest='connect_labconsole_to_config_server',
+      action=argparse.BooleanOptionalAction,
+      default=False,
+      help=(
+          'Whether the OSS FE server should connect to the config server. '
+          'Default is false. Note: this is only applicable when '
+          '--enable_lab_console_ui is set.'
+      ),
   )
   parser.add_argument(
       '--use_dcon_xds_address',

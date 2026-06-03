@@ -42,6 +42,13 @@ readonly SCRIPT_PATH="$(realpath "$0")"
 readonly SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
 readonly NETDATA_STREAM_API_KEY="2ba5b231-875d-4d39-82b0-adafd4c977d9"
 readonly MYSQL_SCRIPT_PATH="${SCRIPT_DIR}/scripts/mysql.sh"
+# Timestamp for the launch separator
+readonly LAUNCH_TIMESTAMP="$(date +'%Y%m%d%H%M%S')"
+# We use this to separate different rounds of launches in the same log file.
+readonly LAUNCH_SEPARATOR="
+--------------------launchOf-${LAUNCH_TIMESTAMP}--------------------
+
+"
 
 # Set environment defaults
 ADB_VERSION="$(adb version | grep -oP "Version \K(.*)")"
@@ -218,6 +225,35 @@ function start_and_wait_for_datastore {
   wait_for_datastore
 }
 
+# Helper function to wait for a service to start listening on a specific TCP port.
+# This function runs a polling loop, checking the port readiness periodically.
+function wait_for_port {
+  local port="$1"
+  local name="$2"
+  local timeout_secs="${3:-90}"
+  # Polling interval in seconds.
+  local interval=5
+  # Track elapsed time.
+  local elapsed=0
+
+  echo "Waiting for ${name} to start on port ${port} (timeout ${timeout_secs}s, checking every ${interval}s)..."
+
+  while [ $elapsed -lt $timeout_secs ]; do
+    if (: > /dev/tcp/127.0.0.1/${port}) >/dev/null 2>&1; then
+      echo "${name} started on port ${port}."
+      return 0
+    fi
+    # If connection failed, wait for the interval before trying again.
+    sleep $interval
+    # Increment elapsed time.
+    elapsed=$((elapsed + interval))
+  done
+
+  # If the loop finishes without success, the timeout was reached.
+  echo "ERROR: ${name} failed to start on port ${port} within ${timeout_secs}s."
+  return 1
+}
+
 function start_main_server {
   # Start Android Test Station
   echo "Starting main server..."
@@ -275,8 +311,11 @@ function start_labconsole_ui {
   # read the arguments from the env automatically.
   local labconsole_ui_log_dir="${MTT_LOG_DIR:-/data/log}/labconsole_ui"
   mkdir -p "${labconsole_ui_log_dir}"
-  (cd /mtt/lab_ui_runner && npm start) 2>&1 | multilog s10485760 n10 "${labconsole_ui_log_dir}" &
-  echo "Labconsole UI started on port ${LAB_CONSOLE_PORT}."
+  (
+    printf "%s" "${LAUNCH_SEPARATOR}"
+    cd /mtt/lab_ui_runner && npm start
+  ) 2>&1 | multilog s10485760 n10 "${labconsole_ui_log_dir}" &
+  wait_for_port "${LAB_CONSOLE_PORT}" "Labconsole UI" &
 }
 
 function start_oss_fe_server {
@@ -285,20 +324,35 @@ function start_oss_fe_server {
   mkdir -p "${oss_fe_log_dir}"
   mkdir -p "${envoy_log_dir}"
 
-  echo "Starting OSS FE server on port ${LABCONSOLE_SERVER_GRPC_PORT}, connecting to OLC Server on port ${OLC_SERVER_PORT}..."
   # OSS FE server listens to gRPC port for backend requests, and talk to the olc server on a different port.
-  java -jar /deviceinfra/oss_fe_server_deploy.jar \
-      --fe_grpc_port=${LABCONSOLE_SERVER_GRPC_PORT} \
-      --olc_server_port=${OLC_SERVER_PORT} \
-      2>&1 | multilog s10485760 n10 "${oss_fe_log_dir}" &
-  echo "OSS FE server started on port ${LABCONSOLE_SERVER_GRPC_PORT}..."
+  local oss_fe_args=(
+      --fe_grpc_port=${LABCONSOLE_SERVER_GRPC_PORT}
+      --olc_server_port=${OLC_SERVER_PORT}
+  )
+  if [[ "${MTT_CONNECT_LABCONSOLE_TO_CONFIG_SERVER}" == "true" ]]; then
+    local config_port="${MTT_CONFIG_SERVICE_GRPC_PORT:-8081}"
+    oss_fe_args+=(
+        --enable_external_config_service
+        --config_service_grpc_target="localhost:${config_port}"
+        --fe_connect_to_config_server
+    )
+  fi
+  echo "Starting OSS FE server on port ${LABCONSOLE_SERVER_GRPC_PORT} with args: ${oss_fe_args[*]}..."
+  (
+    printf "%s" "${LAUNCH_SEPARATOR}"
+    java -jar /deviceinfra/oss_fe_server_deploy.jar "${oss_fe_args[@]}"
+  ) 2>&1 | multilog s10485760 n10 "${oss_fe_log_dir}" &
+  wait_for_port "${LABCONSOLE_SERVER_GRPC_PORT}" "OSS FE server" &
 
-  echo "Starting Envoy proxy on port ${LABCONSOLE_SERVER_REST_PORT}..."
+  echo "Starting Labconsole Envoy proxy on port ${LABCONSOLE_SERVER_REST_PORT}..."
   # Envoy proxy listens to REST port for receiving request from frontend,
   # and forwards to the OSS FE backend that listen to gRPC port.
   sed -e "s/{{LABCONSOLE_SERVER_REST_PORT}}/${LABCONSOLE_SERVER_REST_PORT}/g" -e "s/{{LABCONSOLE_SERVER_GRPC_PORT}}/${LABCONSOLE_SERVER_GRPC_PORT}/g" /etc/envoy/envoy.yaml > /tmp/envoy.yaml
-  /usr/bin/envoy -c /tmp/envoy.yaml 2>&1 | multilog s10485760 n10 "${envoy_log_dir}" &
-  echo "Envoy proxy started on port ${LABCONSOLE_SERVER_REST_PORT}..."
+  (
+    printf "%s" "${LAUNCH_SEPARATOR}"
+    /usr/bin/envoy -c /tmp/envoy.yaml
+  ) 2>&1 | multilog s10485760 n10 "${envoy_log_dir}" &
+  wait_for_port "${LABCONSOLE_SERVER_REST_PORT}" "Labconsole Envoy proxy" &
 
   start_labconsole_ui
 }
