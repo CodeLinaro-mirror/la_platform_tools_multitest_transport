@@ -14,7 +14,7 @@
  limitations under the License.
 -->
 
-<mat-spinner class="loading-spinner" color="accent" *ngIf="isLoading"></mat-spinner>
+<mat-spinner class="loading-spinner" color="accent" *ngIf="isLoading && !(preferenceService?.useLabConsoleUISubject$ | async)"></mat-spinner>
 
 <div class="header">
   <div class="back-button-label">Device Details</div>

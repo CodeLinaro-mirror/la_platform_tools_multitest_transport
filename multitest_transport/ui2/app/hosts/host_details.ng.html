@@ -49,7 +49,7 @@
         Back to Legacy UI
       </mat-slide-toggle>
     </div>
-    <div class="loading-spinner-overlay" *ngIf="isLoading">
+    <div class="loading-spinner-overlay" *ngIf="isLoading && !(preferenceService.useLabConsoleUISubject$ | async)">
       <mat-spinner color="accent"></mat-spinner>
     </div>
     <div *ngIf="!appData.isOmniLabBased" [class.loading-mask]="isLoading">
