@@ -329,6 +329,9 @@ function start_oss_fe_server {
       --fe_grpc_port=${LABCONSOLE_SERVER_GRPC_PORT}
       --olc_server_port=${OLC_SERVER_PORT}
   )
+  if [[ "${OLCS_CREDENTIAL_TYPE}" == "alts" ]]; then
+    oss_fe_args+=(--use_alts=true)
+  fi
   if [[ "${MTT_CONNECT_LABCONSOLE_TO_CONFIG_SERVER}" == "true" ]]; then
     local config_port="${MTT_CONFIG_SERVICE_GRPC_PORT:-8081}"
     oss_fe_args+=(
