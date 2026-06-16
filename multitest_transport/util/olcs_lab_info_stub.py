@@ -16,10 +16,18 @@
 
 import datetime
 import functools
+import importlib.abc
+import importlib.resources
 import re
+import sys
 from typing import List, Optional
 
-import endpoints
+# Workaround for pyglib.resources on Python 3.10 in MTT container environment.
+if sys.version_info < (3, 11):
+  sys.modules['importlib.resources.abc'] = importlib.abc
+  importlib.resources.abc = importlib.abc
+
+import endpoints  
 from multitest_transport.util import olcs_lab_info_client
 from protorpc import messages
 from tradefed_cluster import api_messages

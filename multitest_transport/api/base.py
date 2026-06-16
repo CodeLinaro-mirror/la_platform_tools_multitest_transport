@@ -15,11 +15,18 @@
 """A base class for API handlers."""
 import functools
 import http
+import importlib.abc
+import importlib.resources
 import logging
 import sys
 import traceback
 
-import endpoints
+# Workaround for pyglib.resources on Python 3.10 in MTT container environment.
+if sys.version_info < (3, 11):
+  sys.modules['importlib.resources.abc'] = importlib.abc
+  importlib.resources.abc = importlib.abc
+
+import endpoints  
 from tradefed_cluster.util import ndb_shim as ndb
 
 
