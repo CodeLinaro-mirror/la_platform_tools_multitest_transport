@@ -121,6 +121,20 @@ export class TestRunConfigForm extends FormChangeTracker implements OnInit,
       return;
     }
 
+    const test = this.testMap[this.testId];
+    // TODO: Use the stricter regex matching the backend (e.g., \d{4}\.\d{2}\.\d{2}_\d{2}\.\d{2}\.\d{2}\.\d{3}_\d{4}\.zip) after ATS 2.0 is 100% migrated.
+    const patternString = test?.context_file_pattern || '[\\d_\\.]+\\.zip';
+    const regex = new RegExp(`^${patternString}$`);
+
+    if (!regex.test(file.name)) {
+      let message = `The uploaded results file must match the pattern '${patternString}' to be recognized by the retry system. Please rename '${file.name}' and try again.`;
+      if (!test?.context_file_pattern) {
+        message = `The uploaded results file must use a standard timestamp format (e.g., 2026.05.10_05.14.03.040.0000.zip) to be recognized by the retry system. Please rename '${file.name}' and try again.`;
+      }
+      this.notifier.showError('Invalid results filename', {message});
+      return;
+    }
+
     this.isUploading = true;
     noAwait(this.liveAnnouncer.announce(`Uploading ${file.name}`, 'polite'));
     this.fs.uploadFile(file, `tmp/${file.name}`)
