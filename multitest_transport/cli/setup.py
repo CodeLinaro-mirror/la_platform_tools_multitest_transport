@@ -54,7 +54,7 @@ setuptools.setup(
         'grpcio-status',
         'packaging',
         'packaging-legacy',
-        'protobuf',
+        'protobuf == 6.33.5',
         'pyOpenSSL',
         'python-dateutil',
         'pytz',

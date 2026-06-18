@@ -17,7 +17,7 @@ grpcio-status
 grpcio-tools
 packaging
 packaging-legacy
-protobuf
+protobuf == 6.33.5
 pyOpenSSL
 python-dateutil
 pytz
