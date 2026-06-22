@@ -1,0 +1,8 @@
+<configuration description="Android Build API configuration template">
+   <!-- Add the dynamic downloader for go/ab -->
+   <object type="dynamic-resolver" class="com.google.android.tradefed.config.remote.AndroidBuildRemoteFileResolver" />
+   <option name="host_options:download-cache-dir" value="/data/mh/mh_lab_tmp/lc_cache" />
+   <option name="host_options:use-zip64-in-partial-download" value="true" />
+   <option name="host_options:cache-size-limit" value="1073741824000" />
+   <object type="android-build" class="com.google.android.tradefed.util.androidbuildapi.AndroidBuildAPIOptions" />
+</configuration>

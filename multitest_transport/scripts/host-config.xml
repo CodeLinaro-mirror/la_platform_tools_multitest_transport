@@ -36,6 +36,9 @@
   <option name="host_options:use-sso-client" value="false" />
   ${PRECONFIGURED_VIRTUAL_DEVICE_POOL}
 
+  <!-- Conditional Includes -->
+  <include name="${AB_INCLUDE}" />
+
   <!-- device manager options -->
   <option name="dmgr:device-recovery-interval" value="5m" />
   <option name="dmgr:max-emulators" value="0" />

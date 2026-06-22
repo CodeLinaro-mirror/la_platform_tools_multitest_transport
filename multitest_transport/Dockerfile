@@ -69,7 +69,8 @@ RUN python3 -m compileall -bq \
     -x "/mtt/google3/third_party/py/(absl|colour|flask|scipy|sqlalchemy_utils|sqlalchemy|numpy|cryptography|OpenSSL)" /mtt/google3 \
     && find /mtt/google3 -type f -iname "*.py" ! -iname "gunicorn_config.py" -exec rm -rf {} \;
 # Unzip the selected prebuilt TF runner
-RUN unzip -q /mtt/prebuilts/tradefed/${MTT_TRADEFED_PREBUILT} -d /tradefed
+RUN unzip -q /mtt/prebuilts/tradefed/${MTT_TRADEFED_PREBUILT} -d /tradefed \
+    && mkdir -p /tradefed/configs /tradefed/secrets
 # Unzip the device infra servers
 RUN unzip -q /mtt/prebuilts/deviceinfra/deviceinfra.zip -d /deviceinfra
 # Prepare the report generator jar used for merging reports

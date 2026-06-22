@@ -709,6 +709,12 @@ def _StartMttNode(args, host):
     docker_helper.AddFile(
         host.config.service_account_json_key_path, _DOCKER_KEY_FILE)
     docker_helper.AddEnv('JSON_KEY_PATH', _DOCKER_KEY_FILE)
+  if getattr(args, 'android_service_account_key_path', None):
+    docker_helper.AddVolume('mtt-tf-key', '/tradefed/secrets')
+    docker_helper.AddFile(
+        args.android_service_account_key_path,
+        '/tradefed/secrets/key.json',
+    )
   if host.config.enable_stackdriver:
     if host.config.service_account_json_key_path:
       docker_helper.AddEnv('ENABLE_STACKDRIVER_LOGGING', 1)
@@ -1496,6 +1502,14 @@ def _CreateStartArgParser():
   # Set env GOOGLE_APPLICATION_CREDENTIALS to the service account json key path.
   parser.add_argument(
       '--service_account_json_key_path', help='Service account json key path.')
+  parser.add_argument(
+      '--android_service_account_key_path',
+      help=(
+          'Android service account json key path (provided by Android for'
+          ' access to resources like Android builds, AnTS). Do not set this'
+          ' unless you are within Google or a partner of Android.'
+      ),
+  )
   parser.add_argument('--custom_adb_path', help='Path to custom ADB tool')
   parser.add_argument(
       '--adb_server_port', type=int,

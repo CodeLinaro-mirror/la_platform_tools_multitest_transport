@@ -273,10 +273,22 @@ then
 fi
 
 # Construct TF global config
-TF_CONFIG_FILE=scripts/host-config.xml
+TF_CONFIG_FILE=/tradefed/configs/host-config.xml
+AB_CONFIG_FILE=/tradefed/configs/ab.xml
+cp scripts/host-config.xml "${TF_CONFIG_FILE}"
+cp scripts/ab.xml "${AB_CONFIG_FILE}"
 if [[ -f "${MTT_CUSTOM_TF_CONFIG_FILE}" ]]
 then
   cp "${MTT_CUSTOM_TF_CONFIG_FILE}" "${TF_CONFIG_FILE}"
+fi
+
+chmod -R a+rX /tradefed/configs /tradefed/secrets
+
+AB_INCLUDE="empty"
+TF_EXTRA_OPTS="--tradefed_host_config=${TF_CONFIG_FILE}"
+if [[ -f /tradefed/secrets/key.json ]]; then
+  AB_INCLUDE="${AB_CONFIG_FILE}"
+  TF_EXTRA_OPTS+=" --tradefed_service_account_key_file=/tradefed/secrets/key.json"
 fi
 
 # Convert REMOTE_VIRTUAL_DEVICES to PRECONFIGURED_VIRTUAL_DEVICE_POOL.
@@ -297,6 +309,7 @@ done
 sed -e s,\${MTT_CONTROL_SERVER_URL},"${MTT_CONTROL_SERVER_URL}",g \
     -e s/\${MAX_LOCAL_VIRTUAL_DEVICES}/"${MAX_LOCAL_VIRTUAL_DEVICES}"/g \
     -e s/\${PRECONFIGURED_VIRTUAL_DEVICE_POOL}/"${PRECONFIGURED_VIRTUAL_DEVICE_POOL}"/g \
+    -e s,\${AB_INCLUDE},"${AB_INCLUDE}",g \
     -i "${TF_CONFIG_FILE}"
 
 if [[ -z "${MTT_USE_HOST_ADB}" ]]
@@ -429,5 +442,6 @@ else
     --public_dir="${MTT_LOG_DIR}" \
     --tmp_dir_root="${MTT_MH_WORK_DIR}" \
     ${LAB_SERVER_OPTS} \
-    ${LAB_SERVER_ARGS}
+    ${LAB_SERVER_ARGS} \
+    ${TF_EXTRA_OPTS}
 fi
