@@ -68,7 +68,7 @@
       <device-details-history [id]="id"></device-details-history>
     </mat-tab>
     <mat-tab label="Extra Info">
-      <device-details-extra-infos [extraInfo]="data?.extraInfo"></device-details-extra-infos>
+      <device-details-extra-infos *ngIf="data" [extraInfo]="data.extraInfo"></device-details-extra-infos>
     </mat-tab>
   </mat-tab-group>
 </div>

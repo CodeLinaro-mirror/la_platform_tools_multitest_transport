@@ -103,7 +103,7 @@
       <host-details-device-count-summaries [id]="id"></host-details-device-count-summaries>
     </mat-tab>
     <mat-tab label="Extra Infos">
-      <host-details-extra-infos [extraInfo]="data?.extraInfo"></host-details-extra-infos>
+      <host-details-extra-infos *ngIf="data" [extraInfo]="data.extraInfo"></host-details-extra-infos>
     </mat-tab>
     <mat-tab label="Host Resource">
       <host-details-host-resource [id]="id"></host-details-host-resource>
