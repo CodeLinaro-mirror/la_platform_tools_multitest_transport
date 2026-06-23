@@ -1,0 +1,62 @@
+%% LINT.IfChange
+flowchart TD
+    Start(["Start init.sh"]) --> Env["Load Environment & Local Variables"]
+    Env --> ModeDet{"Determine Mode<br/>(MTT_CONTROL_SERVER_URL<br/>& OPERATION_MODE)"}
+
+    ModeDet -->|Worker Mode| SetWorker["ENABLE_CONTROLLER_FEATURES = false<br/>Configure Remote Targets"]
+    ModeDet -->|Controller Mode| SetCtrl["ENABLE_WORKER_FEATURES = false"]
+    ModeDet -->|Standalone / Default| SetBoth["Both Features Enabled"]
+
+    SetWorker --> Certs["Import CA Certificates &<br/>Configure Proxy Settings"]
+    SetCtrl --> Certs
+    SetBoth --> Certs
+
+    Certs --> Mounts["Link Temporary Mounts<br/>to Local File Store"]
+    Mounts --> PreRun{"Check Pre-run Scripts"}
+
+    PreRun -->|Exists| RunPreRun["Source init_pre_run.sh<br/>& mysql.sh"]
+    PreRun -->|None| CheckCtrl{"ENABLE_CONTROLLER_FEATURES<br/>== true?"}
+    RunPreRun --> CheckCtrl
+
+    CheckCtrl -->|Yes| StartRabbit["Start RabbitMQ Server"]
+    StartRabbit --> CheckOmniCtrl{"IS_OMNILAB_BASED?"}
+    CheckOmniCtrl -->|Yes| StartMySQL["Start MySQL Database"]
+    StartMySQL --> CheckCfg{"Config Service<br/>Enabled?"}
+    CheckCfg -->|Yes| StartCfg["Start Config Service<br/>(device_config_server_deploy.jar)"]
+    CheckCfg -->|No| StartOLC["Start OLC Server<br/>(ats_olc_server_deploy.jar)"]
+    StartCfg --> StartOLC
+    StartOLC --> CheckOLCOpts["Check OLC Credential Type"]
+    CheckOmniCtrl -->|No| CheckOLCOpts
+    CheckOLCOpts --> StartATS["Start ATS Server<br/>(/mtt/serve.sh in Background)"]
+
+    CheckCtrl -->|No| StartATS
+
+    StartATS --> CheckWorker{"ENABLE_WORKER_FEATURES<br/>== true?"}
+
+    CheckWorker -->|No| KeepAlive["Keep Container Alive<br/>(tail -f /dev/null)"]
+
+    CheckWorker -->|Yes| ConfigTF["Configure TradeFed Global Config<br/>& Virtual Device Pool"]
+    ConfigTF --> ConfigADB{"MTT_USE_HOST_ADB<br/>unset?"}
+    ConfigADB -->|Yes| StartADBLocal["Start ADB Server &<br/>Socat Forwarding to Container"]
+    ConfigADB -->|No| StartADBHost["Socat Forwarding to Host ADB"]
+
+    StartADBLocal --> CheckCVD{"MAX_LOCAL_VIRTUAL_DEVICES<br/>!= 0?"}
+    StartADBHost --> CheckCVD
+
+    CheckCVD -->|Yes| StartCVD["Start rsyslogd &<br/>Cuttlefish Common / ndppd"]
+    CheckCVD -->|No| CheckPostRun{"Check Post-run Script"}
+    StartCVD --> CheckPostRun
+
+    CheckPostRun -->|Exists| RunPost["Source init_post_run.sh"]
+    CheckPostRun -->|None| PrepWork["Prepare MTT_TEST_WORK_DIR<br/>& Calculate Heap"]
+    RunPost --> PrepWork
+
+    PrepWork --> CheckOmniWorker{"IS_OMNILAB_BASED?"}
+
+    CheckOmniWorker -->|No| RunTF["exec tradefed.sh"]
+    CheckOmniWorker -->|Yes| CheckCache{"Persistent Cache<br/>Enabled?"}
+
+    CheckCache -->|Yes| StartCache["Start Cache Manager<br/>(cache_manager_server_deploy.jar)"]
+    CheckCache -->|No| RunLabServer["Start OSS Lab Server<br/>(lab_server_oss_deploy.jar)"]
+    StartCache --> RunLabServer
+%% LINT.ThenChange(init.sh)
