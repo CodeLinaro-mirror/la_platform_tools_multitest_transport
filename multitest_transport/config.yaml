@@ -861,10 +861,6 @@ tests:
     test_resource_type: TEST_PACKAGE
     decompress: true
     mount_zip: true
-  - name: dynamic_download.zip
-    default_download_url: https://dl.google.com/android/xts/mcts/tool/dynamic_download.zip
-    decompress: true
-    test_resource_type: UNKNOWN
   command: cts --enable-token-sharding --max-testcase-run-count 2 --retry-strategy RETRY_ANY_FAILURE --enable-default-logs false
   env_vars:
   - name: JAVA_HOME
@@ -894,4 +890,4 @@ tests:
   - max_retry_on_test_failures: 3
   module_config_pattern: 'android-cts/testcases/.*\.config'
   module_execution_args: '-m ${MODULE_NAME}'
-  use_dynamic_download_mcts: true
+  use_dynamic_download_mcts: false
