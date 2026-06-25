@@ -115,6 +115,7 @@ export const routes: Routes = [
     canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
   },
   {path: 'devices', component: DeviceListPage},
+  {path: '', redirectTo: '/test_runs', pathMatch: 'full'},
   {
     path: '',
     component: V6IframeContainerComponent,

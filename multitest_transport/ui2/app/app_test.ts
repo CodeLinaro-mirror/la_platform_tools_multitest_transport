@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
+import {Location} from '@angular/common';
 import {DebugElement} from '@angular/core';
-import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {RouterModule} from '@angular/router';
+import {ComponentFixture, TestBed, fakeAsync, tick} from '@angular/core/testing';
+import {Router, RouterModule} from '@angular/router';
 import {of as observableOf} from 'rxjs';
 
 import {Mtt, MttModule} from './app';
@@ -72,4 +73,12 @@ describe('Mtt', () => {
     getEl(el, '#monitorButton').click();
     expect(analyticsServiceSpy.trackLocation).toHaveBeenCalledWith('netdata');
   });
+
+  it('should redirect empty path to /test_runs', fakeAsync(() => {
+    const router = TestBed.inject(Router);
+    const location = TestBed.inject(Location);
+    router.initialNavigation();
+    tick();
+    expect(location.path()).toEqual('/test_runs');
+  }));
 });
