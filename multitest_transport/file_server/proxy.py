@@ -28,6 +28,26 @@ from multitest_transport.util import env
 APP = flask.Flask(__name__)
 
 
+HOP_BY_HOP_HEADERS = {
+    'connection',
+    'keep-alive',
+    'proxy-authenticate',
+    'proxy-authorization',
+    'te',
+    'trailers',
+    'transfer-encoding',
+    'upgrade',
+}
+
+
+def _SanitizeHeaders(headers):
+  return {
+      k: v
+      for k, v in dict(headers).items()
+      if k.lower() not in HOP_BY_HOP_HEADERS
+  }
+
+
 class FileServerProxy(flask.views.MethodView):
   """Proxies requests to the local file server."""
 
@@ -64,7 +84,7 @@ class FileServerProxy(flask.views.MethodView):
       response = urllib.request.urlopen(request)
     except urllib.error.HTTPError as e:
       # Relay HTTP errors back to caller
-      r = flask.Response(e.read(), headers=dict(e.headers))
+      r = flask.Response(e.read(), headers=_SanitizeHeaders(e.headers))
       r.status = e.reason
       r.status_code = int(e.code)
       return r
@@ -72,10 +92,21 @@ class FileServerProxy(flask.views.MethodView):
       logging.exception('Error during proxy request %s', url)
       return flask.Response(status=http.HTTPStatus.INTERNAL_SERVER_ERROR.value)
 
-    r = flask.Response(response.read(), headers=dict(response.headers))
-    r.status = getattr(response, 'msg')
+    def _GenerateChunks(resp):
+      try:
+        while True:
+          chunk = resp.read(65536)
+          if not chunk:
+            break
+          yield chunk
+      finally:
+        resp.close()
+
+    r = flask.Response(
+        _GenerateChunks(response), headers=_SanitizeHeaders(response.headers)
+    )
+    r.status = getattr(response, 'msg', None)
     r.status_code = int(response.code)
-    response.close()
     return r
 
 

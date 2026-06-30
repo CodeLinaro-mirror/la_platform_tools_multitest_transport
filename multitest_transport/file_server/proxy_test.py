@@ -35,8 +35,12 @@ class MockProxyResponse(object):
     self.headers = headers or {}
     self.data = data
 
-  def read(self):  
-    return self.data
+  def read(self, amt=None):  
+    if amt is None:
+      res, self.data = self.data, b''
+      return res
+    res, self.data = self.data[:amt], self.data[amt:]
+    return res
 
   def close(self):  
     pass
@@ -175,6 +179,29 @@ class FileServerProxyTest(absltest.TestCase):
     self.mock_urlopen.side_effect = urllib.error.URLError('error')
     response = self.SendMockRequest('/fs_proxy/path', expect_errors=True)
     self.AssertResponse(response, status=500)
+
+  def testProxyRequest_streamingChunkedResponse(self):
+    """Tests that proxy response streams in chunks and excludes hop-by-hop headers."""
+    mock_resp = MockProxyResponse(
+        data=b'a' * 150000,
+        headers={
+            'Content-Type': 'application/zip',
+            'Transfer-Encoding': 'chunked',
+            'CONNECTION': 'keep-alive',
+        },
+    )
+    mock_resp.read = mock.MagicMock(side_effect=mock_resp.read)
+    mock_resp.close = mock.MagicMock()
+    self.mock_urlopen.return_value = mock_resp
+
+    response = self.SendMockRequest('/fs_proxy/path/large.zip')
+
+    self.AssertResponse(response, status=200, data=b'a' * 150000)
+    self.assertIn('Content-Type', response.headers)
+    self.assertNotIn('Transfer-Encoding', response.headers)
+    self.assertNotIn('Connection', response.headers)
+    self.assertGreater(mock_resp.read.call_count, 1)
+    mock_resp.close.assert_called_once()
 
 
 if __name__ == '__main__':
