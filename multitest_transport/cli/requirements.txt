@@ -12,9 +12,9 @@ google-cloud-core
 google-cloud-logging
 google-cloud-secret-manager
 google-cloud-storage
-grpcio
-grpcio-status
-grpcio-tools
+grpcio == 1.72.1
+grpcio-status == 1.72.1
+grpcio-tools == 1.72.1
 packaging
 packaging-legacy
 protobuf == 6.33.5

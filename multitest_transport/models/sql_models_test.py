@@ -92,6 +92,23 @@ class SqlModelsTest(parameterized.TestCase):
     self.assertEqual('hello world', sql_models._Truncate('hello world', 11))
     self.assertEqual('hello w...', sql_models._Truncate('hello world', 10))
 
+  def testTruncateBytes(self):
+    """Tests that strings can be truncated based on byte length."""
+    self.assertIsNone(sql_models._TruncateBytes(None, 10))
+    self.assertEqual(
+        'hello world', sql_models._TruncateBytes('hello world', 11)
+    )
+    self.assertEqual('hello w...', sql_models._TruncateBytes('hello world', 10))
+    # '\U0001F600' is 4 bytes in UTF-8
+    self.assertEqual(
+        '\U0001F600\U0001F600...',
+        sql_models._TruncateBytes('\U0001F600\U0001F600\U0001F600', 11),
+    )  # 8 bytes + 3 bytes '...' = 11 bytes.
+    self.assertEqual(
+        '\U0001F600...',
+        sql_models._TruncateBytes('\U0001F600\U0001F600\U0001F600', 10),
+    )  # 4 bytes + 3 bytes '...' = 7 bytes.
+
   @parameterized.parameters((100, 3), (2, 5))
   def testInsertTestResults(self, batch_size, num_statements):
     """Tests that *TS test results can be inserted efficiently."""

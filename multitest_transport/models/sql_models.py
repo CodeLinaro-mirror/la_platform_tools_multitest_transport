@@ -29,7 +29,7 @@ _CONNECTION_RECYCLE_SECONDS = 3600
 # MySQL option to enable compressed tables
 _COMPRESSED_ROW_FORMAT = {'mysql_row_format': 'compressed'}
 # Maximum length of a text column
-_TEXT_MAX_LENGTH = 65535
+_TEXT_MAX_BYTES = 65535
 # Default number of test result rows to insert at a time
 RESULTS_BATCH_SIZE = 100000
 # Maximum length of a module/test name
@@ -93,6 +93,17 @@ def _Truncate(value: Optional[str], max_length: int) -> Optional[str]:
   return value
 
 
+def _TruncateBytes(value: Optional[str], max_bytes: int) -> Optional[str]:
+  """Truncate a string so its UTF-8 encoded bytes do not exceed max_bytes."""
+  if not value:
+    return value
+  encoded = value.encode('utf-8')
+  if len(encoded) <= max_bytes:
+    return value
+  truncated_bytes = encoded[: max_bytes - 3]
+  return truncated_bytes.decode('utf-8', errors='ignore') + '...'
+
+
 def InsertTestResults(
     test_run_id: str,
     attempt_id: str,
@@ -130,7 +141,7 @@ def InsertTestResults(
           passed_tests=0,
           failed_tests=0,
           total_tests=0,
-          error_message=_Truncate(module.error_message, _TEXT_MAX_LENGTH),
+          error_message=_TruncateBytes(module.error_message, _TEXT_MAX_BYTES),
       )
       session.add(module_entity)
 
@@ -149,10 +160,12 @@ def InsertTestResults(
                 module_id=module_entity.id,
                 name=_Truncate(test_case.name, _NAME_MAX_LENGTH),
                 status=test_case.status,
-                error_message=_Truncate(
-                    test_case.error_message, _TEXT_MAX_LENGTH
+                error_message=_TruncateBytes(
+                    test_case.error_message, _TEXT_MAX_BYTES
                 ),
-                stack_trace=_Truncate(test_case.stack_trace, _TEXT_MAX_LENGTH),
+                stack_trace=_TruncateBytes(
+                    test_case.stack_trace, _TEXT_MAX_BYTES
+                ),
             )
         )
         # Bulk insert raw test case data in batches to reduce memory usage
