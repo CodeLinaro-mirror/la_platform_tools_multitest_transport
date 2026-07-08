@@ -91,7 +91,7 @@ def _CalculateAndCacheSha256(file_path):
 def DownloadFile(path: str) -> flask.Response:
   """Retrieve file content."""
   resolved_path = security.safe_join(flask.current_app.root_path, path)
-  if not os.path.isfile(resolved_path):
+  if not os.path.isfile(resolved_path):  # pyrefly: ignore[bad-argument-type]
     flask.abort(http.HTTPStatus.NOT_FOUND, 'File \'%s\' not found' % path)
   # Treat as attachment if the 'download' query parameter is set.
   as_attachment = flask.request.args.get('download', default=False, type=bool)
@@ -152,11 +152,11 @@ def UploadFile(path: str) -> flask.Response:
         http.HTTPStatus.BAD_REQUEST,
         'Request can only upload one file each time: %s' % flask.request.files)
   for file_name in flask.request.files:
-    os.makedirs(os.path.dirname(resolved_path), exist_ok=True)
+    os.makedirs(os.path.dirname(resolved_path), exist_ok=True)  # pyrefly: ignore[no-matching-overload]
     f = flask.request.files[file_name]
     # overwrite the existing file.
-    if os.path.exists(resolved_path):
-      os.remove(resolved_path)
+    if os.path.exists(resolved_path):  # pyrefly: ignore[bad-argument-type]
+      os.remove(resolved_path)  # pyrefly: ignore[bad-argument-type]
     f.save(resolved_path)
     flask_app.logger.info('File %s is saved to %s', f.filename, resolved_path)
   return flask.Response(status=http.HTTPStatus.CREATED)
@@ -204,8 +204,8 @@ def UploadFileByChunks(path: str) -> flask.Response:
 def DeleteFile(path: str) -> flask.Response:
   """Delete a file if it exists."""
   resolved_path = security.safe_join(flask.current_app.root_path, path)
-  if os.path.isfile(resolved_path):
-    os.remove(resolved_path)
+  if os.path.isfile(resolved_path):  # pyrefly: ignore[bad-argument-type]
+    os.remove(resolved_path)  # pyrefly: ignore[bad-argument-type]
   return flask.Response(status=http.HTTPStatus.NO_CONTENT)
 
 
@@ -215,7 +215,7 @@ def GetFileHash(path: str) -> flask.Response:
   """Retrieve file sha256 hash."""
   flask_app.logger.info('Getting SHA256 hash for file: %s', path)
   resolved_path = security.safe_join(flask.current_app.root_path, path)
-  if not os.path.isfile(resolved_path):
+  if not os.path.isfile(resolved_path):  # pyrefly: ignore[bad-argument-type]
     flask.abort(http.HTTPStatus.NOT_FOUND, "File '%s' not found" % path)
 
   # Check for a cached hash
@@ -293,7 +293,7 @@ class FileNode(object):
 def ListDirectory(path: str = '') -> flask.Response:
   """Retrieve directory contents as a list of JSON nodes or a tar archive."""
   resolved_path = security.safe_join(flask.current_app.root_path, path)
-  if not os.path.isdir(resolved_path):
+  if not os.path.isdir(resolved_path):  # pyrefly: ignore[bad-argument-type]
     flask.abort(http.HTTPStatus.NOT_FOUND, 'Directory \'%s\' not found' % path)
 
   # Return contents as a tar archive if the 'download' query parameter is set.
@@ -301,7 +301,7 @@ def ListDirectory(path: str = '') -> flask.Response:
     with tempfile.NamedTemporaryFile() as tmp_file:
       with tarfile.open(fileobj=tmp_file, mode='w:gz') as archive:
         for filename in os.listdir(resolved_path):
-          archive.add(os.path.join(resolved_path, filename), arcname=filename)
+          archive.add(os.path.join(resolved_path, filename), arcname=filename)  # pyrefly: ignore[no-matching-overload]
       tmp_file.flush()
       return flask.send_file(
           tmp_file.name,
@@ -311,7 +311,7 @@ def ListDirectory(path: str = '') -> flask.Response:
   # Otherwise, convert nested files into a list of JSON nodes.
   nodes = []
   for filename in os.listdir(resolved_path):
-    node = FileNode.FromPath(os.path.join(resolved_path, filename))
+    node = FileNode.FromPath(os.path.join(resolved_path, filename))  # pyrefly: ignore[no-matching-overload]
     if node:
       nodes.append(node)
   return flask.jsonify([child.__dict__ for child in sorted(nodes)])

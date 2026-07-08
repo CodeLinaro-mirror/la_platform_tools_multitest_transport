@@ -39,7 +39,7 @@ _CRASH_REPORT_FILE = '.crash_report_file'
 
 def CheckPreviousCrash():
   """The crash file should be deleted during a normal shutdown, so its presence on startup indicates a crash."""
-  filepath = os.path.join(env.STORAGE_PATH, _CRASH_REPORT_FILE)
+  filepath = os.path.join(env.STORAGE_PATH, _CRASH_REPORT_FILE)  # pyrefly: ignore[no-matching-overload]
   crash_report_file = pathlib.Path(filepath)
   if crash_report_file.is_file():
     logging.info('Uploading ATS crash status to Google Analytics')

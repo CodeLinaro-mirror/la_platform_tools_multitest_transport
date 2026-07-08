@@ -113,7 +113,7 @@ class TestResultApi(remote.Service):
       self, attempt_id: str) -> typing.List[mtt_messages.TestModuleResult]:
     """Fetch test module results from the DB."""
     with sql_models.db.Session() as session:
-      query = session.query(sql_models.TestModuleResult)
+      query = session.query(sql_models.TestModuleResult)  # pyrefly: ignore[missing-attribute]
       query = query.order_by(sql_models.TestModuleResult.complete,
                              sql_models.TestModuleResult.failed_tests.desc(),
                              sql_models.TestModuleResult.id)
@@ -159,12 +159,12 @@ class TestResultApi(remote.Service):
     """
     with sql_models.db.Session() as session:
       # Find parent module
-      module = session.query(sql_models.TestModuleResult).get(request.module_id)
+      module = session.query(sql_models.TestModuleResult).get(request.module_id)  # pyrefly: ignore[missing-attribute]
       if not module:
         raise endpoints.NotFoundException(
             'Module %s not found' % request.module_id)
       # Initialize query (ordered by insertion order)
-      query = session.query(sql_models.TestCaseResult)
+      query = session.query(sql_models.TestCaseResult)  # pyrefly: ignore[missing-attribute]
       query = query.order_by(sql_models.TestCaseResult.id).with_parent(module)
       # Apply page token (<last id>)
       if request.page_token:

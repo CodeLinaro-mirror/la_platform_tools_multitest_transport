@@ -172,19 +172,19 @@ class ModuleApplication(gunicorn.app.base.BaseApplication):
     os.environ['DEFAULT_VERSION_HOSTNAME'] = self.module.hostname
     os.environ['GAE_SERVICE'] = self.module.name
     # Set gunicorn config
-    self.cfg.set('accesslog', '-')  # Log requests to stdout
-    self.cfg.set('bind', self.bind_address)
-    self.cfg.set('logconfig_dict', self.get_log_config())
-    self.cfg.set('post_worker_init', lambda _: self.post_worker_init())
-    self.cfg.set('reload', self.live_reload)
-    self.cfg.set('threads', 10)  # Default max_concurrent_requests value
+    self.cfg.set('accesslog', '-')  # Log requests to stdout  # pyrefly: ignore[missing-attribute]
+    self.cfg.set('bind', self.bind_address)  # pyrefly: ignore[missing-attribute]
+    self.cfg.set('logconfig_dict', self.get_log_config())  # pyrefly: ignore[missing-attribute]
+    self.cfg.set('post_worker_init', lambda _: self.post_worker_init())  # pyrefly: ignore[missing-attribute]
+    self.cfg.set('reload', self.live_reload)  # pyrefly: ignore[missing-attribute]
+    self.cfg.set('threads', 10)  # Default max_concurrent_requests value  # pyrefly: ignore[missing-attribute]
     # Increase worker timeout as errors may cause test runs to fail
-    self.cfg.set('timeout', 5 * 60)
-    self.cfg.set('worker_class', 'gthread')
-    self.cfg.set(
+    self.cfg.set('timeout', 5 * 60)  # pyrefly: ignore[missing-attribute]
+    self.cfg.set('worker_class', 'gthread')  # pyrefly: ignore[missing-attribute]
+    self.cfg.set(  # pyrefly: ignore[missing-attribute]
         'workers', self.workers
     )  # Have multiple workers to ensure availability
-    self.cfg.set('sendfile', False)
+    self.cfg.set('sendfile', False)  # pyrefly: ignore[missing-attribute]
 
   def load(self):
     return RawPathMiddleware(CloudNdbMiddleware(self.module.app))
@@ -193,7 +193,7 @@ class ModuleApplication(gunicorn.app.base.BaseApplication):
     log_config = LOG_CONFIG.copy()
     log_config['root']['level'] = self.log_level  # pytype: disable=unsupported-operands
     log_format = LOG_FORMAT.format(module=self.module.name)
-    log_config['formatters']['default']['format'] = log_format
+    log_config['formatters']['default']['format'] = log_format  # pyrefly: ignore[bad-index, unsupported-operation]
     return log_config
 
   def post_worker_init(self):
@@ -213,7 +213,7 @@ def monkeypatch_default_auth():
   """Use anonymous credentials and application ID as the defaults."""
   from google import auth  
   from google.auth.credentials import AnonymousCredentials  
-  auth.default = lambda **_: (AnonymousCredentials(), FLAGS.application_id)
+  auth.default = lambda **_: (AnonymousCredentials(), FLAGS.application_id)  # pyrefly: ignore[bad-assignment]
 
 
 def monkeypatch_read_consistency():

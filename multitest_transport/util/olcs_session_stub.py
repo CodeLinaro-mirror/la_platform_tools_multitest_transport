@@ -744,7 +744,7 @@ class OlcsSessionStub:
         request_detail.non_tradefed_log_dir_names
     )
 
-    log_dir_path = os.path.join(
+    log_dir_path = os.path.join(  # pyrefly: ignore[no-matching-overload]
         file_util.GetLocalFilePath(
             request_detail.original_request.test_environment.output_file_upload_url
         ),

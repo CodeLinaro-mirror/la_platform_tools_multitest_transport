@@ -102,7 +102,7 @@ class BuildProviderOptions:
       self.__dict__[name] = option_def.value_type(value)
 
 
-class BuildProvider(metaclass=BUILD_PROVIDER_REGISTRY.GetMetaclass()):
+class BuildProvider(metaclass=BUILD_PROVIDER_REGISTRY.GetMetaclass()):  # pyrefly: ignore[invalid-inheritance]
   """A base class for a build provider."""
   name: str
   auth_methods: List[AuthorizationMethod] = []
@@ -293,7 +293,7 @@ class TestRunTask:
   extra_options: Dict[str, List[str]]
 
 
-class TestRunHook(metaclass=TEST_RUN_HOOK_REGISTRY.GetMetaclass()):
+class TestRunHook(metaclass=TEST_RUN_HOOK_REGISTRY.GetMetaclass()):  # pyrefly: ignore[invalid-inheritance]
   """Base class for all test run hooks."""
   name: str
   oauth2_config: Optional[oauth2_util.OAuth2Config]

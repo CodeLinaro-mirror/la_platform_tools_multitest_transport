@@ -35,7 +35,7 @@ class WebHook(base.TestRunHook):
   def Execute(self, context):
     """Make HTTP request according to test run context."""
     test_run_context = context.test_run.GetContext()
-    url = string.Template(self.url).safe_substitute(test_run_context)
+    url = string.Template(self.url).safe_substitute(test_run_context)  # pyrefly: ignore[bad-argument-type]
     data = None
     if self.data:
       data = string.Template(self.data).safe_substitute(test_run_context)
@@ -43,7 +43,7 @@ class WebHook(base.TestRunHook):
     logging.info('Invoking a webhook: url=%s, method=%s, data=%s',
                  url, self.http_method, data)
     request = urllib.request.Request(
-        url=url, data=data, headers={'X-MTT-HOST': hostname})
+        url=url, data=data, headers={'X-MTT-HOST': hostname})  # pyrefly: ignore[bad-argument-type]
     request.get_method = lambda: self.http_method
     response = urllib.request.urlopen(request)
     logging.info('Response: %s', response.read())

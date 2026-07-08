@@ -156,7 +156,7 @@ class BaseReadStream(io.RawIOBase):
         file_info = self.handle.Info()
         if not file_info:
           raise ValueError('File %s not found' % self.handle.url)
-        self.size = file_info.total_size
+        self.size = file_info.total_size  # pyrefly: ignore[bad-assignment]
       self.cursor = self.size + offset
     else:
       raise ValueError('Unsupported whence %s' % whence)
@@ -170,7 +170,7 @@ class BaseReadStream(io.RawIOBase):
     self.cursor += len(data)
     return data
 
-  def readinto(self, b: bytearray) -> int:
+  def readinto(self, b: bytearray) -> int:  # pyrefly: ignore[bad-override]
     data = self.read(len(b))
     b[:len(data)] = data
     return len(data)
@@ -219,7 +219,7 @@ class BaseWriteStream(io.RawIOBase):
   def read(self, *arg, **kwargs):
     raise io.UnsupportedOperation('read')
 
-  def write(self, data: bytes) -> int:
+  def write(self, data: bytes) -> int:  # pyrefly: ignore[bad-override]
     self.WriteBytes(offset=self.cursor, data=data, finish=False)
     self.cursor += len(data)
     return len(data)
@@ -302,8 +302,8 @@ class LocalFileHandle(FileHandle):
     if not local_file_path:
       raise ValueError('Invalid local file URL %s' % url)
     self.path = local_file_path
-    if not self.path.startswith(env.STORAGE_PATH):
-      self.path = _JoinPath('/', env.STORAGE_PATH, self.path)
+    if not self.path.startswith(env.STORAGE_PATH):  # pyrefly: ignore[bad-argument-type]
+      self.path = _JoinPath('/', env.STORAGE_PATH, self.path)  # pyrefly: ignore[bad-argument-type]
 
   def _GetFileInfo(self, path: str) -> FileInfo:
     stat_info = os.stat(path)
@@ -454,7 +454,7 @@ class HttpFileHandle(FileHandle):
 
   def Open(self, mode: str = 'r') -> BinaryIO:
     if mode == 'r':
-      return io.BufferedReader(
+      return io.BufferedReader(  # pyrefly: ignore[bad-specialization]
           HttpReadStream(self, self.read_url, self.urlopen))
     raise ValueError('Unsupported mode %s' % mode)
 
@@ -469,8 +469,8 @@ class RemoteFileHandle(HttpFileHandle):
       raise ValueError('Invalid file URL %s' % url)
     self.hostname, self.path = match.groups()
     # Remove storage path prefix (file server expect relative paths)
-    if self.path and self.path.startswith(env.STORAGE_PATH):
-      self.path = self.path[len(env.STORAGE_PATH):]
+    if self.path and self.path.startswith(env.STORAGE_PATH):  # pyrefly: ignore[bad-argument-type]
+      self.path = self.path[len(env.STORAGE_PATH):]  # pyrefly: ignore[bad-argument-type]
     # Use remote file server if hostname is provided
     fs_url = env.FILE_SERVER_URL
     if self.hostname is not None:
@@ -478,16 +478,16 @@ class RemoteFileHandle(HttpFileHandle):
       fs_url = parsed_fs_url._replace(
           netloc='{}:{}'.format(self.hostname, parsed_fs_url.port)).geturl()
     # Generate URLs
-    self.file_url = _JoinPath(fs_url, 'file', self.path)
-    self.dir_url = _JoinPath(fs_url, 'dir', self.path)
+    self.file_url = _JoinPath(fs_url, 'file', self.path)  # pyrefly: ignore[bad-argument-type]
+    self.dir_url = _JoinPath(fs_url, 'dir', self.path)  # pyrefly: ignore[bad-argument-type]
     super(RemoteFileHandle, self).__init__(url, info_url=self.file_url)
 
   def Open(self, mode: str = 'r') -> BinaryIO:
     if mode == 'r':
-      return io.BufferedReader(
+      return io.BufferedReader(  # pyrefly: ignore[bad-specialization]
           HttpReadStream(self, self.file_url, self.urlopen))
     if mode == 'w':
-      return io.BufferedWriter(
+      return io.BufferedWriter(  # pyrefly: ignore[bad-specialization]
           HttpWriteStream(self, self.file_url, self.urlopen))
     raise ValueError('Unsupported mode %s' % mode)
 
@@ -542,8 +542,8 @@ def GetAppStorageUrl(parts: List[str], hostname: Optional[str] = None) -> str:
   """
   # TODO: Support GCS storage in cloud mode
   if hostname:
-    return _JoinPath(*(['file://', hostname, env.STORAGE_PATH] + parts))
-  return _JoinPath(*(['file:///', env.STORAGE_PATH] + parts))
+    return _JoinPath(*(['file://', hostname, env.STORAGE_PATH] + parts))  # pyrefly: ignore[bad-argument-type]
+  return _JoinPath(*(['file:///', env.STORAGE_PATH] + parts))  # pyrefly: ignore[bad-argument-type]
 
 
 def GetWorkFileUrl(attempt, file_path: str = '') -> str:
@@ -654,7 +654,7 @@ def GetWorkerAccessibleUrl(url: str) -> str:
   u = urllib.parse.urlparse(url)
   # If the URL is under file server root directory, translate it to http.
   # Otherwise, it refers to a local file on worker.
-  if u.scheme == 'file' and (u.hostname or u.path.startswith(env.STORAGE_PATH)):
+  if u.scheme == 'file' and (u.hostname or u.path.startswith(env.STORAGE_PATH)):  # pyrefly: ignore[bad-argument-type]
     u = urllib.parse.urlparse(RemoteFileHandle(url).file_url)
   # IN ON_PREMISE mode, return templated url for worker,
   # and tradefed will populate it with accessible url
@@ -718,7 +718,7 @@ def TailFile(file_url: str, length: int) -> Optional[FileSegment]:
     return None
   total_size = info.total_size
 
-  offset = max(0, total_size - length)
+  offset = max(0, total_size - length)  # pyrefly: ignore[unsupported-operation]
   with handle.Open() as stream:
     stream.seek(offset)
     data = stream.read()
@@ -762,7 +762,7 @@ def DownloadFile(
       data = stream.read(DOWNLOAD_BUFFER_SIZE)
       size = len(data)
       offset += size
-      yield FileChunk(data=data, offset=offset, total_size=total_size)
+      yield FileChunk(data=data, offset=offset, total_size=total_size)  # pyrefly: ignore[bad-argument-type]
 
 
 def GetTestSuiteInfo(file_obj: BinaryIO) -> Optional[TestSuiteInfo]:
@@ -790,11 +790,11 @@ def GetTestSuiteInfo(file_obj: BinaryIO) -> Optional[TestSuiteInfo]:
             continue
           key, value = line.split('=', 1)
           suite_info[key.strip()] = value.strip()
-        return TestSuiteInfo(build_number=suite_info.get('build_number'),
-                             target_architecture=suite_info.get('target_arch'),
-                             name=suite_info.get('name'),
-                             fullname=suite_info.get('fullname'),
-                             version=suite_info.get('version'))
+        return TestSuiteInfo(build_number=suite_info.get('build_number'),  # pyrefly: ignore[bad-argument-type]
+                             target_architecture=suite_info.get('target_arch'),  # pyrefly: ignore[bad-argument-type]
+                             name=suite_info.get('name'),  # pyrefly: ignore[bad-argument-type]
+                             fullname=suite_info.get('fullname'),  # pyrefly: ignore[bad-argument-type]
+                             version=suite_info.get('version'))  # pyrefly: ignore[bad-argument-type]
   except Exception:  
     logging.exception('Failed to get test suite info')
   return None

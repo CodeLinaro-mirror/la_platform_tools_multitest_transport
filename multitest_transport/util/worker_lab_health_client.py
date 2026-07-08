@@ -37,7 +37,7 @@ class WorkerLabHealthClient:
       cls, server_address: Optional[str] = None
   ) -> 'WorkerLabHealthClient':
     """Create worker lab server's Health service client."""
-    channel = channel_util.WorkerLabServerChannel(server_address).get_channel()
+    channel = channel_util.WorkerLabServerChannel(server_address).get_channel()  # pyrefly: ignore[bad-argument-type]
     return WorkerLabHealthClient(channel)
 
   def drain(

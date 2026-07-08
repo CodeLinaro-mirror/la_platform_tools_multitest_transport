@@ -115,7 +115,7 @@ class TestPlanApi(remote.Service):
     _ValidateTestPlan(test_plan)
     test_plan.key = None
     test_plan.put()
-    test_scheduler.ScheduleTestPlanCronJob(test_plan.key.id())
+    test_scheduler.ScheduleTestPlanCronJob(test_plan.key.id())  # pyrefly: ignore[missing-attribute]
     return mtt_messages.Convert(test_plan, mtt_messages.TestPlan)
 
   @base.ApiMethod(

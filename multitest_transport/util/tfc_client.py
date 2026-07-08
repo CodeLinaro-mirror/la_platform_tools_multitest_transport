@@ -196,7 +196,7 @@ def GetRequest(request_id: str) -> api_messages.RequestMessage:
         or api_messages.RequestMessage()
     )
   else:
-    request_id = int(request_id)
+    request_id = int(request_id)  # pyrefly: ignore[bad-assignment]
     res = _GetAPIClient().requests().get(request_id=request_id).execute()
     # pytype: disable=module-attr
     return protojson.decode_message(
@@ -214,7 +214,7 @@ def CancelRequest(request_id: str):
   if os.environ.get('IS_OMNILAB_BASED') == 'true':
     olcs_session_stub.GetSharedStub().CancelRequest(request_id)
   else:
-    request_id = int(request_id)
+    request_id = int(request_id)  # pyrefly: ignore[bad-assignment]
     _GetAPIClient().requests().cancel(request_id=request_id).execute()
 
 
@@ -347,7 +347,7 @@ def GetRequestInvocationStatus(
         request_id
     )
   else:
-    request_id = int(request_id)
+    request_id = int(request_id)  # pyrefly: ignore[bad-assignment]
     res = (
         _GetAPIClient()
         .requests()

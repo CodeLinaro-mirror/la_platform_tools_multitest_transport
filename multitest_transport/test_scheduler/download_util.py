@@ -273,7 +273,7 @@ def CleanTestResourceCache(min_access_time=None):
   for cache_file in cache_files:
     if not cache_file.is_file:
       continue  # skip directories
-    if cache_file.timestamp > min_access_time:
+    if cache_file.timestamp > min_access_time:  # pyrefly: ignore[unsupported-operation]
       continue  # skip recently updated files
     if cache_file.url in files_to_keep:
       continue  # skip recently used files

@@ -40,7 +40,7 @@ class DescriptiveOpenApiGenerator(OpenApiGenerator):
   def _OpenApiGenerator__method_descriptor(self, service, method_info,
                                            operation_id, protorpc_method_info,
                                            security_definitions):
-    descriptor = super(DescriptiveOpenApiGenerator,
+    descriptor = super(DescriptiveOpenApiGenerator,  # pyrefly: ignore[missing-attribute]
                        self)._OpenApiGenerator__method_descriptor(
                            service, method_info, operation_id,
                            protorpc_method_info, security_definitions)

@@ -141,7 +141,7 @@ def MergeReports(test_run_id):
     logging.info('Acquired the lock to merge reports...')
     xml_report_files = ','.join(result_urls)
     test_record_proto_files = ','.join(test_record_urls)
-    merged_report_dir = os.path.join(
+    merged_report_dir = os.path.join(  # pyrefly: ignore[no-matching-overload]
         file_util.GetLocalFilePath(
             file_util.GetAppStorageUrl([test_run.output_path])
         ),

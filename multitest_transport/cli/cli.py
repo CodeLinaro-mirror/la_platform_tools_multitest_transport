@@ -748,7 +748,7 @@ def _StartMttNode(args, host):
   for mount_path in mount_paths:
     local_path, remote_path = (mount_path.split(':', 1) + [None])[:2]
     if not remote_path:
-      remote_path = os.path.basename(local_path)
+      remote_path = os.path.basename(local_path)  # pyrefly: ignore[no-matching-overload]
     remote_path = os.path.normpath('/tmp/.mnt/' + remote_path)
     logger.debug('Mounting \'%s\' to \'%s\'', local_path, remote_path)
     docker_helper.AddBind(local_path, remote_path)

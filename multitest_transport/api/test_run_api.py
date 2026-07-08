@@ -321,7 +321,7 @@ class TestRunApi(remote.Service):
 
     # Delete test results database
     with sql_models.db.Session() as session:
-      session.query(sql_models.TestModuleResult).filter_by(
+      session.query(sql_models.TestModuleResult).filter_by(  # pyrefly: ignore[missing-attribute]
           test_run_id=test_run_id
       ).delete()
 

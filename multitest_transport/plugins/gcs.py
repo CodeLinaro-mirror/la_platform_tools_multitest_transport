@@ -161,7 +161,7 @@ class GCSBuildProvider(base.BuildProvider):
     bucket, object_name = _ParsePath(path)
     # If an object name is not given, return a root directory.
     if not object_name:
-      return base.BuildItem(name='', is_file=False, path=path)
+      return base.BuildItem(name='', is_file=False, path=path)  # pyrefly: ignore[bad-argument-type]
     response = self._GetGCSObject(bucket, object_name)
     if response:
       return base.BuildItem(
@@ -182,7 +182,7 @@ class GCSBuildProvider(base.BuildProvider):
     if response and response.get('items'):
       return base.BuildItem(
           name=_ParseFileName(object_name),
-          path=path,
+          path=path,  # pyrefly: ignore[bad-argument-type]
           is_file=False,
       )
     return None
