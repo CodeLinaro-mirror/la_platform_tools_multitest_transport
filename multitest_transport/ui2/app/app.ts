@@ -48,6 +48,7 @@ import {NotesModule} from './notes/notes_module';
 import {AnalyticsInterceptor, AnalyticsService} from './services/analytics_service';
 import {APP_DATA, AppData, convertLocalUrl} from './services/app_data';
 import {FILE_BROWSER_PATH} from './services/file_service';
+import {IapInterceptor} from './services/iap_interceptor';
 import {ServicesModule} from './services/services_module';
 import {StrictParamsInterceptor} from './services/strict_params';
 import {UserService} from './services/user_service';
@@ -327,7 +328,8 @@ export class Mtt implements OnDestroy {
   bootstrap: [Mtt],
   providers: [
     provideZoneChangeDetection(),
-    {provide: HTTP_INTERCEPTORS, useClass: AnalyticsInterceptor, multi: true}, {
+    {provide: HTTP_INTERCEPTORS, useClass: AnalyticsInterceptor, multi: true},
+    {provide: HTTP_INTERCEPTORS, useClass: IapInterceptor, multi: true}, {
       provide: HTTP_INTERCEPTORS,
       useClass: StrictParamsInterceptor,  // must be placed after analytics
       multi: true

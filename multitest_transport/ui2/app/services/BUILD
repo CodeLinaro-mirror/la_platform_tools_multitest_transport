@@ -24,6 +24,7 @@ ng_module(
         "error_dialog.ts",
         "feedback_service.ts",
         "file_service.ts",
+        "iap_interceptor.ts",
         "index.ts",
         "mtt_client.ts",
         "mtt_lab_models.ts",
@@ -68,6 +69,7 @@ ng_module(
     srcs = [
         "analytics_service_test.ts",
         "file_service_test.ts",
+        "iap_interceptor_test.ts",
         "mtt_client_test.ts",
         "mtt_lab_models_test.ts",
         "mtt_models_test.ts",
