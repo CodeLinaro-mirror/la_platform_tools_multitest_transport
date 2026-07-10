@@ -49,6 +49,7 @@ sass_library(
 sass_binary(
     name = "styles",
     src = "styles.scss",
+    allow_imports = True,
     output_name = "styles.css",
     sass_stack = False,
     visibility = ["//multitest_transport"],

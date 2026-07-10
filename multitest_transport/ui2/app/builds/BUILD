@@ -14,6 +14,7 @@ sass_binary(
 sass_binary(
     name = "build_detail",
     src = "build_detail.scss",
+    allow_imports = True,
     output_name = "build_detail.css",
     visibility = ["//visibility:private"],
     deps = [

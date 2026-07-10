@@ -19,6 +19,7 @@ sass_library(
 sass_binary(
     name = "app_styles",
     src = "app.scss",
+    allow_imports = True,
     output_name = "app.css",
     sass_stack = False,
     strict_deps = False,
