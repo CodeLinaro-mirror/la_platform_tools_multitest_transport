@@ -8,6 +8,7 @@ licenses(["notice"])
 per_file_sass_binaries(
     name = "styles",
     srcs = glob(["*.scss"]),
+    allow_imports = True,
     visibility = ["//visibility:private"],
     deps = [
         ":shared_styles",

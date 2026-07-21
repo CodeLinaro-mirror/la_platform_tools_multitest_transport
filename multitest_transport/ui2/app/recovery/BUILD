@@ -7,6 +7,7 @@ licenses(["notice"])
 per_file_sass_binaries(
     name = "styles",
     srcs = glob(["*.scss"]),
+    allow_imports = True,
     deps = [
         "//multitest_transport/ui2:constants",
         "//multitest_transport/ui2/app/shared:shared_styles",
