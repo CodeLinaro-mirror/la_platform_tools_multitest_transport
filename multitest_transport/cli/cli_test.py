@@ -557,6 +557,32 @@ class CliTest(parameterized.TestCase):
         docker_create_args,
     )
 
+  def testStart_connectLabserverToConfigServer(self):
+    """Test start with connect_labserver_to_config_server."""
+    args = self.arg_parser.parse_args([
+        'start',
+        '--connect_labserver_to_config_server',
+    ])
+    cli.Start(args, self._CreateHost(cluster_name='acluster', lab_name='alab'))
+
+    docker_create_args = None
+    for call in self.mock_context.Run.call_args_list:
+      call_args, _ = call
+      command_args = call_args[0]
+      if command_args[:2] == ['docker', 'create']:
+        docker_create_args = command_args
+        break
+
+    self.assertIsNotNone(docker_create_args, 'docker create call not found')
+    self.assertIn(
+        '-e',
+        docker_create_args,
+    )
+    self.assertIn(
+        'MTT_CONNECT_LABSERVER_TO_CONFIG_SERVER=true',
+        docker_create_args,
+    )
+
   @mock.patch.dict(
       os.environ, {
           'http_proxy': 'http_proxy',

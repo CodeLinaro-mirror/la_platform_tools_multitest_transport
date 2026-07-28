@@ -82,8 +82,12 @@ The script dictates which feature sets (`ENABLE_CONTROLLER_FEATURES` and
         `exec`.
     -   *OmniLab Mode:* Sets up persistent caching
         (`cache_manager_server_deploy.jar`) if enabled, configures JIT emulator
-    flags, and launches the Mobile Harness OSS Lab Server
-        (`lab_server_oss_deploy.jar`).
+        flags, and launches the Mobile Harness OSS Lab Server
+        (`lab_server_oss_deploy.jar`). If
+        `MTT_CONNECT_LABSERVER_TO_CONFIG_SERVER` is set to `true`, it configures
+        the Lab Server to connect to the external Config Service via gRPC;
+        otherwise, it falls back to using the local
+        `/deviceinfra/lab_server_api_config.textproto`.
 
 ---
 

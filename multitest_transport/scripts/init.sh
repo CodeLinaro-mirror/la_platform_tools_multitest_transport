@@ -45,11 +45,13 @@ MAX_LOCAL_VIRTUAL_DEVICES="${MAX_LOCAL_VIRTUAL_DEVICES:-0}"
 # The version of the MTT CLI.
 MTT_CLI_VERSION="${MTT_CLI_VERSION:-}"
 # gRPC port for the Config Service.
-MTT_CONFIG_SERVICE_GRPC_PORT="${MTT_CONFIG_SERVICE_GRPC_PORT:-}"
+MTT_CONFIG_SERVICE_GRPC_PORT="${MTT_CONFIG_SERVICE_GRPC_PORT:-8081}"
 # Local storage directory for the Config Service.
-MTT_CONFIG_SERVICE_LOCAL_STORAGE_DIR="${MTT_CONFIG_SERVICE_LOCAL_STORAGE_DIR:-}"
+MTT_CONFIG_SERVICE_LOCAL_STORAGE_DIR="${MTT_CONFIG_SERVICE_LOCAL_STORAGE_DIR:-/data/config_service}"
 # Storage type for the Config Service (e.g., LOCAL_FILE).
-MTT_CONFIG_SERVICE_STORAGE_TYPE="${MTT_CONFIG_SERVICE_STORAGE_TYPE:-}"
+MTT_CONFIG_SERVICE_STORAGE_TYPE="${MTT_CONFIG_SERVICE_STORAGE_TYPE:-LOCAL_FILE}"
+# Flag to indicate if the lab server should connect to the config server.
+MTT_CONNECT_LABSERVER_TO_CONFIG_SERVER="${MTT_CONNECT_LABSERVER_TO_CONFIG_SERVER:-false}"
 # URL of the file server on the control server.
 MTT_CONTROL_FILE_SERVER_URL="${MTT_CONTROL_FILE_SERVER_URL:-}"
 # Port bound by the MTT control server.
@@ -193,14 +195,14 @@ function set_java_non_proxy {
 }
 
 function start_config_service {
-  echo "Starting Config Service on port ${MTT_CONFIG_SERVICE_GRPC_PORT:-8081}..."
+  echo "Starting Config Service on port ${MTT_CONFIG_SERVICE_GRPC_PORT}..."
   CONFIG_SERVICE_ARGS=(
-    --config_service_grpc_port="${MTT_CONFIG_SERVICE_GRPC_PORT:-8081}"
-    --config_service_storage_type="${MTT_CONFIG_SERVICE_STORAGE_TYPE:-LOCAL_FILE}"
+    --config_service_grpc_port="${MTT_CONFIG_SERVICE_GRPC_PORT}"
+    --config_service_storage_type="${MTT_CONFIG_SERVICE_STORAGE_TYPE}"
   )
   if [[ "${MTT_CONFIG_SERVICE_STORAGE_TYPE}" == "LOCAL_FILE" ]]; then
-    mkdir -p "${MTT_CONFIG_SERVICE_LOCAL_STORAGE_DIR:-/data/config_service}"
-    CONFIG_SERVICE_ARGS+=(--config_service_local_storage_dir="${MTT_CONFIG_SERVICE_LOCAL_STORAGE_DIR:-/data/config_service}")
+    mkdir -p "${MTT_CONFIG_SERVICE_LOCAL_STORAGE_DIR}"
+    CONFIG_SERVICE_ARGS+=(--config_service_local_storage_dir="${MTT_CONFIG_SERVICE_LOCAL_STORAGE_DIR}")
   fi
   # TODO: add flag for sql config service storage type.
 
@@ -526,18 +528,24 @@ sed -e s,\${MTT_CONTROL_SERVER_URL},"${MTT_CONTROL_SERVER_URL}",g \
       fi
     fi
 
-    java \
-      "-Xmx${MAX_HEAP_MB}m" \
-      -XX:+HeapDumpOnOutOfMemoryError \
-      -Dcom.google.mobileharness.ats.lab_server_type="${ATS_LAB_SERVER_TYPE}" \
-      -jar /deviceinfra/lab_server_oss_deploy.jar \
-      --api_config=/deviceinfra/lab_server_api_config.textproto \
-      --ats_file_server="${ATS_FILE_SERVER}" \
-      --ats_xts_work_dir="${MTT_MH_WORK_DIR}" \
-      --master_grpc_target="${OLC_SERVER_GRPC_TARGET}" \
-      --public_dir="${MTT_LOG_DIR}" \
-      --tmp_dir_root="${MTT_MH_WORK_DIR}" \
-      ${LAB_SERVER_OPTS} \
+    if [[ "${MTT_CONNECT_LABSERVER_TO_CONFIG_SERVER}" == "true" ]]; then
+      LAB_SERVER_ARGS+=" --enable_external_config_service=true"
+      LAB_SERVER_ARGS+=" --config_service_grpc_target=localhost:${MTT_CONFIG_SERVICE_GRPC_PORT}"
+    else
+      LAB_SERVER_ARGS+=" --api_config=/deviceinfra/lab_server_api_config.textproto"
+    fi
+
+  java \
+    "-Xmx${MAX_HEAP_MB}m" \
+    -XX:+HeapDumpOnOutOfMemoryError \
+    -Dcom.google.mobileharness.ats.lab_server_type="${ATS_LAB_SERVER_TYPE}" \
+    -jar /deviceinfra/lab_server_oss_deploy.jar \
+    --ats_file_server="${ATS_FILE_SERVER}" \
+    --ats_xts_work_dir="${MTT_MH_WORK_DIR}" \
+    --master_grpc_target="${OLC_SERVER_GRPC_TARGET}" \
+    --public_dir="${MTT_LOG_DIR}" \
+    --tmp_dir_root="${MTT_MH_WORK_DIR}" \
+    ${LAB_SERVER_OPTS} \
       ${LAB_SERVER_ARGS} \
       ${TF_EXTRA_OPTS}
   fi

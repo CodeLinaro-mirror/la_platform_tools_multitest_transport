@@ -57,6 +57,10 @@ flowchart TD
     CheckOmniWorker -->|Yes| CheckCache{"Persistent Cache<br/>Enabled?"}
 
     CheckCache -->|Yes| StartCache["Start Cache Manager<br/>(cache_manager_server_deploy.jar)"]
-    CheckCache -->|No| RunLabServer["Start OSS Lab Server<br/>(lab_server_oss_deploy.jar)"]
-    StartCache --> RunLabServer
+    CheckCache -->|No| CheckLabCfg{"Connect Lab Server<br/>to Config Server?"}
+    StartCache --> CheckLabCfg
+    CheckLabCfg -->|Yes| CfgExt["Configure External Config Service<br/>(localhost:8081)"]
+    CheckLabCfg -->|No| CfgLocal["Configure Local API Config<br/>(lab_server_api_config.textproto)"]
+    CfgExt --> RunLabServer["Start OSS Lab Server<br/>(lab_server_oss_deploy.jar)"]
+    CfgLocal --> RunLabServer
 %% LINT.ThenChange(init.sh)

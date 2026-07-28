@@ -665,6 +665,12 @@ def _StartMttNode(args, host):
           args.config_service_local_storage_dir,
       )
 
+  if args.connect_labserver_to_config_server:
+    docker_helper.AddEnv(
+        'MTT_CONNECT_LABSERVER_TO_CONFIG_SERVER',
+        'true',
+    )
+
   if host.config.tf_global_config_path:
     docker_helper.AddEnv(
         'TF_GLOBAL_CONFIG_PATH',
@@ -1641,6 +1647,16 @@ def _CreateStartArgParser():
       '--config_service_local_storage_dir',
       help='Device config service local storage directory',
       default='/data/config_service',
+  )
+  parser.add_argument(
+      '--connect_labserver_to_config_server',
+      dest='connect_labserver_to_config_server',
+      action=argparse.BooleanOptionalAction,
+      default=False,
+      help=(
+          'Whether the OSS lab server should connect to the config server. '
+          'Default is false.'
+      ),
   )
   parser.add_argument(
       '--enable_persistent_cache',
