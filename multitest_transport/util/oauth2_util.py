@@ -45,11 +45,14 @@ class CredentialsProperty(ndb.BlobProperty):
     try:
       # Use UTF-8 encoding for backwards compatibility with Python 2
       credentials = pickle.loads(value, encoding='utf-8')
-      # Patch missing fields from older credentials objects (b/176850961)
+      # Patch missing fields from older credentials objects
+      # (b/176850961, b/540280985)
       if not hasattr(credentials, '_quota_project_id'):
         setattr(credentials, '_quota_project_id', None)
       if not hasattr(credentials, '_always_use_jwt_access'):
         setattr(credentials, '_always_use_jwt_access', None)
+      if not hasattr(credentials, '_cred_file_path'):
+        setattr(credentials, '_cred_file_path', None)
       return credentials
     except (KeyError, pickle.PickleError, UnicodeDecodeError):
       logging.warning('Unpickling credentials failed, reverting to JSON')
@@ -84,4 +87,3 @@ def AuthorizeHttp(http: httplib2.Http,
   if scopes:
     credentials = ga_credentials.with_scopes_if_required(credentials, scopes)
   return google_auth_httplib2.AuthorizedHttp(credentials, http)
-

@@ -1,4 +1,4 @@
-load("@tradefed_cluster//tradefed_cluster:adapter.bzl", "py_library", "py_test", "pytype_strict_library", "third_party")
+load("@tradefed_cluster//tradefed_cluster:adapter.bzl", "py_binary", "py_library", "py_test", "pytype_strict_library", "third_party")
 
 package(
     default_applicable_licenses = ["//multitest_transport:license"],
@@ -211,6 +211,9 @@ py_test(
     srcs = [
         "oauth2_util_test.py",
     ],
+    data = [
+        "testdata/legacy_service_account_credentials.pickle",
+    ],
     strict_deps = False,
     tags = ["not_run:arm"],
     deps = [
@@ -220,6 +223,20 @@ py_test(
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
         "@tradefed_cluster//tradefed_cluster/util:ndb_shim_lib",
+        third_party("google/oauth2:service_account"),
+    ],
+)
+
+# Tool to generate/update golden testdata pickle files:
+#   blaze run //multitest_transport/util:generate_testdata
+py_binary(
+    name = "generate_testdata",
+    srcs = [
+        "generate_testdata.py",
+    ],
+    deps = [
+        "//third_party/py/absl:app",
+        "//third_party/py/absl/flags",
         third_party("google/oauth2:service_account"),
     ],
 )
