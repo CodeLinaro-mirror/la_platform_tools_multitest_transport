@@ -247,8 +247,8 @@ py_library(
     srcs = ["sql_util.py"],
     strict_deps = False,
     deps = [
+        "//third_party/py/sqlalchemy:sqlalchemy_v2_0",
         third_party("protorpc"),
-        third_party("sqlalchemy"),
         third_party("sqlalchemy_utils"),
     ],
 )
@@ -262,9 +262,9 @@ py_test(
     deps = [
         ":sql_util_lib",
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
+        "//third_party/py/sqlalchemy:sqlalchemy_v2_0",
         third_party("absl/testing:absltest"),
         third_party("protorpc"),
-        third_party("sqlalchemy"),
         third_party("sqlalchemy_utils"),
         third_party("sqlite3"),
     ],

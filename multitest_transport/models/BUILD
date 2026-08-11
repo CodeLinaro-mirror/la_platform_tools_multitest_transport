@@ -190,7 +190,7 @@ py_library(
     strict_deps = False,
     deps = [
         "//multitest_transport/util",
-        third_party("sqlalchemy"),
+        "//third_party/py/sqlalchemy:sqlalchemy_v2_0",
     ],
 )
 
@@ -204,9 +204,9 @@ py_test(
         ":sql_models_lib",
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         "//multitest_transport/util",
+        "//third_party/py/sqlalchemy:sqlalchemy_v2_0",
         third_party("absl/testing:absltest"),
         third_party("absl/testing:parameterized"),
-        third_party("sqlalchemy"),
         third_party("sqlite3"),
     ],
 )
