@@ -126,6 +126,9 @@ FILE_SERVICE_ONLY="true"
 # Directory for MTT control server logs.
 MTT_CONTROL_SERVER_LOG_DIR="${MTT_LOG_DIR}/server"
 
+# Directory for Config Service logs.
+MTT_CONFIG_SERVICE_LOG_DIR="${MTT_LOG_DIR}/config_service"
+
 # Credential type for the OLC server.
 OLCS_CREDENTIAL_TYPE="no_credential"
 
@@ -206,9 +209,11 @@ function start_config_service {
   fi
   # TODO: add flag for sql config service storage type.
 
+  mkdir -p "${MTT_CONFIG_SERVICE_LOG_DIR}"
   java -XX:+HeapDumpOnOutOfMemoryError \
       -jar /deviceinfra/device_config_server_deploy.jar \
-      "${CONFIG_SERVICE_ARGS[@]}" &
+      "${CONFIG_SERVICE_ARGS[@]}" \
+      &> "${MTT_CONFIG_SERVICE_LOG_DIR}/log.txt" &
   echo "Config Service started."
 }
 

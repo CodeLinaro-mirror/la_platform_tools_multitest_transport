@@ -73,9 +73,12 @@ function start_config_service {
   fi
   # TODO: add flag for sql config service storage type.
 
+  MTT_CONFIG_SERVICE_LOG_DIR="${MTT_LOG_DIR:-/data/log}/config_service"
+  mkdir -p "${MTT_CONFIG_SERVICE_LOG_DIR}"
   java -XX:+HeapDumpOnOutOfMemoryError \
       -jar /deviceinfra/device_config_server_deploy.jar \
-      "${CONFIG_SERVICE_ARGS[@]}" &
+      "${CONFIG_SERVICE_ARGS[@]}" \
+      &> "${MTT_CONFIG_SERVICE_LOG_DIR}/log.txt" &
   echo "Config Service started."
 }
 
