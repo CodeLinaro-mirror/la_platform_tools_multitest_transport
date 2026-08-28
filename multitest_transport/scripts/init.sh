@@ -549,6 +549,7 @@ sed -e s,\${MTT_CONTROL_SERVER_URL},"${MTT_CONTROL_SERVER_URL}",g \
     --ats_xts_work_dir="${MTT_MH_WORK_DIR}" \
     --master_grpc_target="${OLC_SERVER_GRPC_TARGET}" \
     --public_dir="${MTT_LOG_DIR}" \
+    --tf_fallback_java_binary="${JAVA21_HOME}/bin/java" \
     --tmp_dir_root="${MTT_MH_WORK_DIR}" \
     ${LAB_SERVER_OPTS} \
       ${LAB_SERVER_ARGS} \
