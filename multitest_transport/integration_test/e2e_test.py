@@ -41,9 +41,7 @@ _BUILD_TARGET = 'aosp_cf_x86_64_only_phone-userdebug'
 
 _CVD_HOST_PACKAGE = 'cvd-host_package.tar.gz'
 _IMG_ZIP = f'aosp_cf_x86_64_only_phone-img-{_BUILD_ID}.zip'
-_CTS_FILE_NAME = (
-    'android-cts-git_24Q3-release-test_suites_x86_64-11835886-trimmed.zip'
-)
+_CTS_FILE_NAME = 'android-cts-aosp-android15-tests-dev-test_suites_x86_64-14462755-trimmed-extra-tests.zip'
 
 
 class E2eIntegrationTest(integration_util.DockerContainerTest):

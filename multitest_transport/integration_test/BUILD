@@ -45,11 +45,12 @@ py_test(
 py_test(
     name = "e2e_test",
     timeout = "eternal",
+    testonly = True,
     srcs = [
         "e2e_test.py",
     ],
     data = [
-        "test_data/android-cts-git_24Q3-release-test_suites_x86_64-11835886-trimmed.zip",
+        "test_data/android-cts-aosp-android15-tests-dev-test_suites_x86_64-14462755-trimmed-extra-tests.zip",
         "test_data/e2e_test_config.yaml",
     ],
     features = ["-enable_relr"],
@@ -67,11 +68,12 @@ py_test(
 py_test(
     name = "ats2_e2e_test",
     timeout = "eternal",
+    testonly = True,
     srcs = [
         "ats2_e2e_test.py",
     ],
     data = [
-        "test_data/android-cts-git_24Q3-release-test_suites_x86_64-11835886-trimmed.zip",
+        "test_data/android-cts-aosp-android15-tests-dev-test_suites_x86_64-14462755-trimmed-extra-tests.zip",
         "test_data/e2e_test_config.yaml",
     ],
     features = ["-enable_relr"],
