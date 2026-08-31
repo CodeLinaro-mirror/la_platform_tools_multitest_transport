@@ -82,6 +82,10 @@ USE_DCON_XDS_ADDRESS="${USE_DCON_XDS_ADDRESS:-}"
 # --- Environment Variables from Dockerfile ---
 # Path to Google application credentials.
 GOOGLE_APPLICATION_CREDENTIALS="${GOOGLE_APPLICATION_CREDENTIALS:-/tmp/keyfile/key.json}"
+# Path to Java home directory (defaults to Java 25).
+JAVA_HOME="${JAVA_HOME:-${JAVA25_HOME}}"
+export JAVA_HOME
+export PATH="${JAVA_HOME}/bin:${PATH}"
 # Path to TradeFed host config file.
 MTT_CUSTOM_TF_CONFIG_FILE="${MTT_CUSTOM_TF_CONFIG_FILE:-/data/host-config.xml}"
 # Google OAuth2 client ID.
