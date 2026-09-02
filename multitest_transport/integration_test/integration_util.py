@@ -101,16 +101,20 @@ class MttContainer(object):
     if self._is_existing:
       docker_client = docker.from_env()
       self._delegate = docker_client.containers.get(container_id)
-      try:
-        self._control_server_port = self._delegate.attrs['NetworkSettings'][
-            'Ports'
-        ]['8000/tcp'][0]['HostPort']
-      except (KeyError, IndexError, TypeError) as e:
-        raise RuntimeError(
-            'Could not determine host port for 8000/tcp on container'
-            f' {self._container_id}. Is it running and is port 8000'
-            f' published?: {e}'
-        ) from e
+      host_container_id = os.environ.get('HOST_CONTAINER_NAME')
+      if host_container_id:
+        self._control_server_port = 8000
+      else:
+        try:
+          self._control_server_port = self._delegate.attrs['NetworkSettings'][
+              'Ports'
+          ]['8000/tcp'][0]['HostPort']
+        except (KeyError, IndexError, TypeError) as e:
+          raise RuntimeError(
+              'Could not determine host port for 8000/tcp on container'
+              f' {self._container_id}. Is it running and is port 8000'
+              f' published?: {e}'
+          ) from e
       self.base_url = 'http://localhost:%s' % self._control_server_port
       self.mtt_api_url = '%s/_ah/api/mtt/v1' % self.base_url
       if self._ats2:
@@ -127,7 +131,13 @@ class MttContainer(object):
     """Start the MTT docker container."""
     if self._is_existing:
       return self
-    self._control_server_port = portpicker.pick_unused_port()
+    host_container_id = os.environ.get('HOST_CONTAINER_NAME')
+    if host_container_id:
+      self._control_server_port = 8000
+      network_mode = f'container:{host_container_id}'
+    else:
+      self._control_server_port = portpicker.pick_unused_port()
+      network_mode = 'bridge'
     # Docker API takes the seccomp profile as a string.
     seccomp_profile = resources.read_text(
         _SECCOMP_PROFILE_PACKAGE, _SECCOMP_PROFILE_NAME)
@@ -139,16 +149,17 @@ class MttContainer(object):
         },
         'stdin_open': True,
         'tty': True,  # interactive
-        'hostname': socket.gethostname(),
-        'network_mode': 'bridge',
-        'ports': {
-            '8000/tcp': self._control_server_port,
-        },
+        'network_mode': network_mode,
         'security_opt': [
             'apparmor:unconfined',
             'seccomp=' + seccomp_profile,
         ],
     }
+    if not host_container_id:
+      kwargs['hostname'] = socket.gethostname()
+      kwargs['ports'] = {
+          '8000/tcp': self._control_server_port,
+      }
     if self._ats2:
       kwargs['environment']['IS_OMNILAB_BASED'] = 'true'
     if self._max_local_virtual_devices:
@@ -186,7 +197,7 @@ class MttContainer(object):
     time.sleep(5)  # Additional delay for initialization to complete
     return self
 
-  @retry.retry(tries=60, delay=1, logger=None)
+  @retry.retry(tries=120, delay=1, logger=None)
   def _WaitForServer(self):
     """Wait up to 60 seconds for the MTT server."""
     requests.get(self.base_url).raise_for_status()
@@ -218,10 +229,31 @@ class MttContainer(object):
 
   def DumpLogs(self):
     """Output the server logs for debugging."""
-    output = self._delegate.logs()
+    output = self._delegate.logs(stdout=True, stderr=True)
     logging.info('Logs: %s', output.decode())
-    _, output = self._delegate.exec_run(['cat', '/data/log/server/current'])
-    logging.info('Server logs: %s', output.decode())
+    commands = [
+        ['ps', 'auxf'],
+        ['netstat', '-tulpn'],
+        ['ss', '-tulpn'],
+        ['cat', '/var/log/rabbitmq/startup_log'],
+        ['cat', '/var/log/rabbitmq/startup_err'],
+        ['cat', '/tmp/mtt/ats_db/error.log'],
+        ['cat', '/data/log/server/current'],
+        ['find', '/data/log', '-type', 'f'],
+        ['find', '/var/log', '-type', 'f'],
+    ]
+    for cmd in commands:
+      try:
+        exit_code, output = self._delegate.exec_run(cmd)
+        logging.info(
+            'Output of "%s" (exit %d): %s',
+            ' '.join(cmd),
+            exit_code,
+            output.decode() if output else '',
+        )
+      except Exception as e:  
+        logging.info('Failed to run "%s": %s', ' '.join(cmd), e)
+
     if self._ats2:
       _, output = self._delegate.exec_run(
           ['cat', '/data/log/mh_lab_log/log0.txt']

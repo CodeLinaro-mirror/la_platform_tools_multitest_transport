@@ -417,8 +417,10 @@ sed -e s,\${MTT_CONTROL_SERVER_URL},"${MTT_CONTROL_SERVER_URL}",g \
   if [[ -z "${MTT_USE_HOST_ADB}" ]]
   then
     # Start ADB and load keys
-    export ADB_VENDOR_KEYS=$(ls -1 /root/.android/*.adb_key | paste -sd ":" -)
-    adb start-server
+    [[ -e /root/.android && ! -d /root/.android ]] && rm -f /root/.android
+    mkdir -p /root/.android
+    export ADB_VENDOR_KEYS="$(ls -1 /root/.android/*.adb_key 2>/dev/null | paste -sd ":" - || echo "")"
+    adb start-server || echo "adb start-server returned non-zero code."
     # If IPv6 is enabled, the hostname command prints IPv6 and IPv4 addresses
     # separated by spaces. The following command finds the IPv4 address.
     CONTAINER_IPV4_ADDRESS="$(hostname -i | grep -Eo '(^|\s)[0-9]+(\.[0-9]+){3}($|\s)' | xargs)"

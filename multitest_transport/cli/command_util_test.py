@@ -510,6 +510,7 @@ class DockerHelperTest(absltest.TestCase):
                       timeout=command_util._DOCKER_WAIT_CMD_TIMEOUT_SEC)
     ])
 
+
   def testInspect(self):
     self._docker_helper.Inspect('c1')
     self._docker_context.assert_has_calls([

@@ -69,6 +69,7 @@ class CliIntegrationTest(absltest.TestCase):
         '--use_host_network',
         '--image_name',
         image or FLAGS.docker_image,
+        '--no-mount_host_android_dir',
     ]
     _RunCmd(cmd + (args or []))
 
@@ -86,6 +87,7 @@ class CliIntegrationTest(absltest.TestCase):
         '--use_host_network',
         '--image_name',
         image or FLAGS.docker_image,
+        '--no-mount_host_android_dir',
     ]
     _RunCmd(cmd + (args or []))
 

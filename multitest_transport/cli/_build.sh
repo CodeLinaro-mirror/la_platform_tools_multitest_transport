@@ -124,7 +124,7 @@ ENV LANG=C.UTF-8
 RUN export DEBIAN_FRONTEND=noninteractive; apt update -qq; apt install -y -qq \
   unzip wget zip software-properties-common build-essential;
 # Add deadsnakes for different versions of python and distutils
-RUN add-apt-repository -y ppa:deadsnakes/ppa
+RUN export PYTHONHTTPSVERIFY=0; add-apt-repository -y ppa:deadsnakes/ppa
 RUN export DEBIAN_FRONTEND=noninteractive; apt update -qq; apt install -y -qq \
   python3.10 python3.11 python3.12 python3.13 \
   python3.10-distutils python3.11-distutils \
@@ -219,8 +219,13 @@ pex --python="python3.13" --python="python3.12" \
   -o mtt_lab
 EOF
 chmod +x inside_docker_build.sh
+if [ -n "${KOKORO_HOST_ROOT_DIR:-}" ] && [ -n "${KOKORO_ROOT_DIR:-}" ]; then
+  HOST_CLI_DIR="${CLI_DIR/#$KOKORO_ROOT_DIR/$KOKORO_HOST_ROOT_DIR}"
+else
+  HOST_CLI_DIR="$CLI_DIR"
+fi
 echo "Starting build inside Docker at: $(date)"
-docker run --rm --mount type=bind,source="$CLI_DIR",target=/workspace docker_pex sh -c /workspace/inside_docker_build.sh
+docker run --rm --mount type=bind,source="$HOST_CLI_DIR",target=/workspace docker_pex sh -c /workspace/inside_docker_build.sh
 echo "Build inside Docker finished at: $(date)"
 cd -
 

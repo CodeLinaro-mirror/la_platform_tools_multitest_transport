@@ -486,16 +486,17 @@ def _GetTargetNetwork(args, config, docker_env):
   # 1. First check command-line arguments (highest priority).
   if network := getattr(args, 'network', None):
     return network
-  if getattr(args, 'use_host_network', False):
-    return _DOCKER_HOST_NETWORK
-
-  # 2. Next fallback to host config values.
   config_network = getattr(config, 'network', None)
   if config_network and getattr(config, 'use_host_network', False):
     raise ActionableError(
         'Conflicting host.config: network and use_host_network cannot be '
         'enabled together in the configuration file.'
     )
+
+  if getattr(args, 'use_host_network', False) or getattr(
+      config, 'use_host_network', False
+  ):
+    return _DOCKER_HOST_NETWORK
   if config_network:
     return config_network
   if (
@@ -504,6 +505,11 @@ def _GetTargetNetwork(args, config, docker_env):
   ):
     return _DOCKER_BRIDGE_NETWORK
   return _DOCKER_HOST_NETWORK
+
+
+def _IsContainerNetwork(network):
+  """Returns True if the network attaches to a container."""
+  return bool(network and str(network).startswith('container:'))
 
 
 def Start(args, host=None):
@@ -586,7 +592,8 @@ def _StartMttNode(args, host):
 
   docker_env = docker_helper.GetEnv(image_name)
   network = _GetTargetNetwork(args, host.config, docker_env)
-  if network != _DOCKER_HOST_NETWORK:
+  if network != _DOCKER_HOST_NETWORK and not _IsContainerNetwork(network):
+    # Containers sharing network namespace cannot configure hostname.
     docker_helper.SetHostname(host.name)
     docker_helper.AddEnv('PARENT_HOSTNAME', host.name)
     docker_helper.AddEnv('LOCAL_HOSTNAME', 'mtt')
@@ -627,7 +634,7 @@ def _StartMttNode(args, host):
   if (control_server_url and operation_mode
       == lab_config_pb2.OperationMode.ON_PREMISE) or not control_server_url:
     docker_helper.AddEnv('MTT_CONTROL_SERVER_PORT', args.port)
-    if network != _DOCKER_HOST_NETWORK:
+    if network != _DOCKER_HOST_NETWORK and not _IsContainerNetwork(network):
       for port in _GetMttServerPublicPorts(args.port):
         # The server binds to IPv4 addresses only.
         docker_helper.AddPort(f'{args.bind_address}:{port}', port)
@@ -650,7 +657,7 @@ def _StartMttNode(args, host):
       docker_helper.AddEnv(
           'MTT_CONFIG_SERVICE_GRPC_PORT', str(config_service_grpc_port)
       )
-      if network != _DOCKER_HOST_NETWORK:
+      if network != _DOCKER_HOST_NETWORK and not _IsContainerNetwork(network):
         docker_helper.AddPort(
             f'{args.bind_address}:{config_service_grpc_port}',
             config_service_grpc_port,
@@ -758,36 +765,44 @@ def _StartMttNode(args, host):
     remote_path = os.path.normpath('/tmp/.mnt/' + remote_path)
     logger.debug('Mounting \'%s\' to \'%s\'', local_path, remote_path)
     docker_helper.AddBind(local_path, remote_path)
-
   docker_helper.AddEnv('MTT_SERVER_LOG_LEVEL', args.server_log_level)
 
   enable_ipv6_bridge_network = False
-  if network != _DOCKER_HOST_NETWORK:
+  if network != _DOCKER_HOST_NETWORK and not _IsContainerNetwork(network):
     network_info = docker_helper.GetBridgeNetworkInfo()
     if network_info.IsIPv6Enabled():
       enable_ipv6_bridge_network = True
       ipv6_subnet, _ = network_info.GetIPv6Subnet()
       if not ipv6_subnet:
-        raise ActionableError('Cannot get IPv6 subnet of bridge network. '
-                              'Please check fixed-cidr-v6 in '
-                              '/etc/docker/daemon.json and restart docker '
-                              'daemon.')
+        raise ActionableError(
+            'Cannot get IPv6 subnet of bridge network. '
+            'Please check fixed-cidr-v6 in '
+            '/etc/docker/daemon.json and restart docker '
+            'daemon.'
+        )
       docker_helper.AddEnv('IPV6_BRIDGE_NETWORK', ipv6_subnet)
 
     if args.use_host_adb:
       docker_helper.AddEnv('MTT_USE_HOST_ADB', '1')
       _, host_ip = network_info.GetIPv4Subnet()
       if not host_ip:
-        raise ActionableError('Cannot get IPv4 gateway of bridge network. '
-                              'Please check /etc/docker/daemon.json and '
-                              'restart docker daemon.')
+        raise ActionableError(
+            'Cannot get IPv4 gateway of bridge network. '
+            'Please check /etc/docker/daemon.json and '
+            'restart docker daemon.'
+        )
       logger.info(
-          'Using host ADB; please forward %s:5037 to ADB server port '
-          '(e.g. run "socat tcp-listen:5037,bind=%s,reuseaddr,fork tcp-connect:127.0.0.1:5037 &")',
-          host_ip, host_ip)
+          'Using host ADB; please forward %s:5037 to ADB server port (e.g. run'
+          ' "socat tcp-listen:5037,bind=%s,reuseaddr,fork'
+          ' tcp-connect:127.0.0.1:5037 &")',
+          host_ip,
+          host_ip,
+      )
     else:
-      docker_helper.AddPort(
-          '127.0.0.1:%d' % args.adb_server_port, _ADB_SERVER_PORT)
+      if not _IsContainerNetwork(network):
+        docker_helper.AddPort(
+            '127.0.0.1:%d' % args.adb_server_port, _ADB_SERVER_PORT
+        )
 
   # Labconsole ports
   labconsole_grpc_port = args.labconsole_grpc_port
@@ -858,6 +873,7 @@ def _StartMttNode(args, host):
     docker_helper.AddEnv('IS_OMNILAB_BASED', 'true')
     if (
         network != _DOCKER_HOST_NETWORK
+        and not _IsContainerNetwork(network)
         and operation_mode == lab_config_pb2.OperationMode.ON_PREMISE
     ):
       if control_server_url:
@@ -1158,10 +1174,20 @@ def _ForceKillMttNode(host, docker_helper, container_name):
   # Step 1: Find process ID of MTT container.
   mtt_pid = docker_helper.GetProcessIdForContainer(container_name)
   # Step 2: Get the parent process ID of MTT(containerd-shim process ID).
-  containerd_pid = host.context.Run(['ps', '-o', 'ppid=', '-p', mtt_pid],
-                                    raise_on_failure=True).stdout.strip()
-  # Step 3: Kill the parent process of MTT and wait until it exists.
-  host.context.Run(['kill', '-9', containerd_pid], raise_on_failure=True)
+  res = host.context.Run(
+      ['ps', '-o', 'ppid=', '-p', mtt_pid], raise_on_failure=False
+  )
+  if res.return_code == 0:
+    containerd_pid = res.stdout.strip()
+    # Step 3: Kill the parent process of MTT and wait until it exists.
+    host.context.Run(['kill', '-9', containerd_pid], raise_on_failure=True)
+  else:
+    logger.warning(
+        'Failed to find parent process ID for PID %s (maybe running in a'
+        ' container?). Falling back to docker kill.',
+        mtt_pid,
+    )
+    docker_helper.Kill([container_name])
   docker_helper.Wait([container_name])
 
 

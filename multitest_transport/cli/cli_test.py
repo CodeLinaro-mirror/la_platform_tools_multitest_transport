@@ -2632,7 +2632,7 @@ class CliTest(parameterized.TestCase):
     docker_helper.Wait.assert_called_with(['a_container_name'])
     host.context.Run.assert_has_calls([
         mock.call(['ps', '-o', 'ppid=', '-p', 'acontainer_pid'],
-                  raise_on_failure=True),
+                  raise_on_failure=False),
         mock.call(['kill', '-9', 'a_parent_pid'], raise_on_failure=True),
     ])
 
