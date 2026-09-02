@@ -18,7 +18,7 @@
 <configuration description="Common TF config for cluster hosts">
   <command_scheduler class="com.android.tradefed.cluster.ClusterCommandScheduler">
   </command_scheduler>
-  <sandbox_factory class="com.android.tradefed.sandbox.TradefedSandboxFactory">
+  <sandbox_factory class="com.google.android.tradefed.sandbox.GoogleTradefedSandboxFactory">
   </sandbox_factory>
   <device_monitor class="com.android.tradefed.cluster.ClusterDeviceMonitor">
   </device_monitor>
