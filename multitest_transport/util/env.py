@@ -88,7 +88,7 @@ LABCONSOLE_SERVER_REST_PORT = os.environ.get(
 )
 LAB_CONSOLE_PORT = os.environ.get('LAB_CONSOLE_PORT', '4200')
 MTT_ENABLE_LAB_CONSOLE_UI = (
-    os.environ.get('MTT_ENABLE_LAB_CONSOLE_UI', 'false') == 'true'
+    os.environ.get('MTT_ENABLE_LAB_CONSOLE_UI', 'true') == 'true'
 )
 
 # Google OAuth2 parameters

@@ -71,7 +71,14 @@ class CliTest(parameterized.TestCase):
               next_arg = next(args_iter)
             except StopIteration:
               break  # Reached the end of the command list.
-            if next_arg.startswith(('PARENT_HOSTNAME=', 'LOCAL_HOSTNAME=')):
+            if next_arg.startswith((
+                'PARENT_HOSTNAME=',
+                'LOCAL_HOSTNAME=',
+                'MTT_ENABLE_LAB_CONSOLE_UI=',
+                'LABCONSOLE_SERVER_GRPC_PORT=',
+                'LABCONSOLE_SERVER_REST_PORT=',
+                'LAB_CONSOLE_PORT='
+            )):
               continue  # Skip both -e and these env vars.
             new_cmd.extend([arg, next_arg])
             continue
@@ -458,9 +465,9 @@ class CliTest(parameterized.TestCase):
         docker_create_args,
     )
 
-  def testStart_enableLabConsoleUI(self):
-    """Test start with enable_lab_console_ui."""
-    args = self.arg_parser.parse_args(['start', '--enable_lab_console_ui'])
+  def testStart_disableLabConsoleUI(self):
+    """Test start with labconsole disabled."""
+    args = self.arg_parser.parse_args(['start', '--no-enable_lab_console_ui'])
     cli.Start(args, self._CreateHost(cluster_name='acluster', lab_name='alab'))
 
     self.mock_context.Run.assert_has_calls([
@@ -493,14 +500,6 @@ class CliTest(parameterized.TestCase):
             'TZ=Etc/UTC',
             '-e',
             'MTT_SERVER_LOG_LEVEL=info',
-            '-e',
-            'MTT_ENABLE_LAB_CONSOLE_UI=true',
-            '-e',
-            'LABCONSOLE_SERVER_GRPC_PORT=8080',
-            '-e',
-            'LABCONSOLE_SERVER_REST_PORT=9000',
-            '-e',
-            'LAB_CONSOLE_PORT=4200',
             '--mount',
             'type=volume,src=mtt-data,dst=/data',
             '--mount',
@@ -529,6 +528,36 @@ class CliTest(parameterized.TestCase):
             raise_on_failure=False,
         ),
     ])
+
+    create_cmd = next(
+        (
+            cmd
+            for cmd in self.unfiltered_runs
+            if cmd[:2] == ['docker', 'create']
+        ),
+        None,
+    )
+    self.assertIsNotNone(create_cmd, 'docker create command not found')
+    self.assertIn('MTT_ENABLE_LAB_CONSOLE_UI=false', create_cmd)
+
+  def testStart_defaultLabConsoleUI(self):
+    """Test start with default labconsole enablement."""
+    args = self.arg_parser.parse_args(['start'])
+    cli.Start(args, self._CreateHost())
+
+    create_cmd = next(
+        (
+            cmd
+            for cmd in self.unfiltered_runs
+            if cmd[:2] == ['docker', 'create']
+        ),
+        None,
+    )
+    self.assertIsNotNone(create_cmd, 'docker create command not found')
+    self.assertIn('MTT_ENABLE_LAB_CONSOLE_UI=true', create_cmd)
+    self.assertIn('LABCONSOLE_SERVER_GRPC_PORT=8080', create_cmd)
+    self.assertIn('LABCONSOLE_SERVER_REST_PORT=9000', create_cmd)
+    self.assertIn('LAB_CONSOLE_PORT=4200', create_cmd)
 
   def testStart_connectLabconsoleToConfigServer(self):
     """Test start with connect_labconsole_to_config_server."""
@@ -832,6 +861,7 @@ class CliTest(parameterized.TestCase):
         mock.call(['docker', 'network', 'inspect', 'bridge',
                    '--format={{json .}}'],
                   raise_on_failure=False),
+
         mock.call(['docker', 'container', 'rm', 'mtt'],
                   raise_on_failure=False),
         mock.call([
@@ -1083,6 +1113,7 @@ class CliTest(parameterized.TestCase):
             ['docker', 'network', 'inspect', 'bridge', '--format={{json .}}'],
             raise_on_failure=False,
         ),
+
         mock.call(
             ['docker', 'container', 'rm', 'acontainer'], raise_on_failure=False
         ),
@@ -1218,6 +1249,7 @@ class CliTest(parameterized.TestCase):
         mock.call(['docker', 'network', 'inspect', 'bridge',
                    '--format={{json .}}'],
                   raise_on_failure=False),
+
         mock.call(['docker', 'container', 'rm', 'mtt'],
                   raise_on_failure=False),
         mock.call([
@@ -1280,6 +1312,7 @@ class CliTest(parameterized.TestCase):
         mock.call(['docker', 'network', 'inspect', 'bridge',
                    '--format={{json .}}'],
                   raise_on_failure=False),
+
         mock.call(['docker', 'container', 'rm', 'mtt'],
                   raise_on_failure=False),
         mock.call([
@@ -1753,6 +1786,7 @@ class CliTest(parameterized.TestCase):
         mock.call(['docker', 'network', 'inspect', 'bridge',
                    '--format={{json .}}'],
                   raise_on_failure=False),
+
         mock.call(['docker', 'container', 'rm', 'mtt'],
                   raise_on_failure=False),
         mock.call([

@@ -72,7 +72,7 @@ REPORT_GENERATOR_JAR=""
 IS_OMNILAB_BASED="false"
 OLCS_SERVER_ADDRESS="localhost:7030"
 OLCS_CREDENTIAL_TYPE="no_credential"
-ENABLE_LAB_CONSOLE_UI="false"
+ENABLE_LAB_CONSOLE_UI="true"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --bind_address) MTT_HOST="$2";;
@@ -319,6 +319,12 @@ function start_labconsole_ui {
 }
 
 function start_oss_fe_server {
+  if [[ ! -f "/deviceinfra/oss_fe_server_deploy.jar" ]]; then
+    echo "WARNING: /deviceinfra/oss_fe_server_deploy.jar not found. Disabling Lab Console UI and falling back to legacy mode."
+    ENABLE_LAB_CONSOLE_UI="false"
+    return
+  fi
+
   local oss_fe_log_dir="${MTT_LOG_DIR:-/data/log}/labconsole_oss_fe_server"
   local envoy_log_dir="${MTT_LOG_DIR:-/data/log}/labconsole_envoy"
   mkdir -p "${oss_fe_log_dir}"

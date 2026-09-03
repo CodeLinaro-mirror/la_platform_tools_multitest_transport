@@ -61,7 +61,7 @@ MTT_CONTROL_SERVER_URL="${MTT_CONTROL_SERVER_URL:-}"
 # Flag to indicate if the Config Service is enabled.
 MTT_ENABLE_CONFIG_SERVICE="${MTT_ENABLE_CONFIG_SERVICE:-}"
 # Flag to enable the Lab Console UI.
-MTT_ENABLE_LAB_CONSOLE_UI="${MTT_ENABLE_LAB_CONSOLE_UI:-false}"
+MTT_ENABLE_LAB_CONSOLE_UI="${MTT_ENABLE_LAB_CONSOLE_UI:-true}"
 # Proxy settings for no_proxy.
 NO_PROXY="${NO_PROXY:-}"
 # Port for the OLC server.

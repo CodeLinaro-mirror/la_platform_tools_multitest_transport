@@ -828,6 +828,10 @@ def _StartMttNode(args, host):
     logger.debug('labconsole grpc port=%d, rest port=%d, ui port=%d',
                  labconsole_grpc_port, labconsole_rest_port, lab_console_port)
   else:
+    docker_helper.AddEnv(
+        'MTT_ENABLE_LAB_CONSOLE_UI',
+        'false',
+    )
     logger.debug('enable_lab_console_ui is false.')
 
   custom_sdk_dir = None
@@ -1498,8 +1502,8 @@ def _CreateStartArgParser():
       '--enable_lab_console_ui',
       dest='enable_lab_console_ui',
       action=argparse.BooleanOptionalAction,
-      default=False,
-      help='Enable Lab Console UI and backend services. Default is false.',
+      default=True,
+      help='Enable Lab Console UI and backend services. Default is true.',
   )
   parser.add_argument(
       '--connect_labconsole_to_config_server',
