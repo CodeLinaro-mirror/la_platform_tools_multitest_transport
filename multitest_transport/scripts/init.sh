@@ -42,6 +42,8 @@ LABCONSOLE_SERVER_REST_PORT="${LABCONSOLE_SERVER_REST_PORT:-9000}"
 LAB_CONSOLE_PORT="${LAB_CONSOLE_PORT:-4200}"
 # Maximum number of local virtual devices to allocate.
 MAX_LOCAL_VIRTUAL_DEVICES="${MAX_LOCAL_VIRTUAL_DEVICES:-0}"
+# Maximum number of orchestration-managed virtual devices to allocate.
+MAX_ORCHESTRATION_VIRTUAL_DEVICES="${MAX_ORCHESTRATION_VIRTUAL_DEVICES:-0}"
 # The version of the MTT CLI.
 MTT_CLI_VERSION="${MTT_CLI_VERSION:-}"
 # gRPC port for the Config Service.
@@ -494,7 +496,12 @@ sed -e s,\${MTT_CONTROL_SERVER_URL},"${MTT_CONTROL_SERVER_URL}",g \
   else
     # Start OSS lab server
     LAB_SERVER_ARGS=""
-    if [[ "${MAX_LOCAL_VIRTUAL_DEVICES}" -gt 0 ]]; then
+    if [[ "${MAX_ORCHESTRATION_VIRTUAL_DEVICES}" -gt 0 ]]; then
+      CLOUD_ORCHESTRATOR_URL="${CLOUD_ORCHESTRATOR_URL:-http://localhost:8080}"
+      LAB_SERVER_ARGS+="--android_jit_emulator_num=${MAX_ORCHESTRATION_VIRTUAL_DEVICES} "
+      LAB_SERVER_ARGS+="--cloud_orchestrator_service_url=${CLOUD_ORCHESTRATOR_URL} "
+      LAB_SERVER_ARGS+="--noop_jit_emulator=false "
+    elif [[ "${MAX_LOCAL_VIRTUAL_DEVICES}" -gt 0 ]]; then
       LAB_SERVER_ARGS+="--android_jit_emulator_num=${MAX_LOCAL_VIRTUAL_DEVICES} "
       if [[ -n "${CLOUD_ORCHESTRATOR_URL}" ]]; then
         LAB_SERVER_ARGS+="--cloud_orchestrator_service_url=${CLOUD_ORCHESTRATOR_URL} "

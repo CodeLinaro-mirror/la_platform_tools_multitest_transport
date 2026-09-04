@@ -351,6 +351,19 @@ def _CheckMttNodePrerequisites(args, host):
       not all(os.path.exists(path) for path in _LOCAL_VIRTUAL_DEVICE_NODES)):
     messages.append('Some required device nodes are missing. '
                     'Try `sudo modprobe -a kvm tun vhost_net vhost_vsock`.')
+
+  max_orchestration_virtual_devices = args.max_orchestration_virtual_devices
+  if max_orchestration_virtual_devices == 0 and getattr(
+      host.config, 'max_orchestration_virtual_devices', None
+  ):
+    max_orchestration_virtual_devices = (
+        host.config.max_orchestration_virtual_devices
+    )
+  if max_orchestration_virtual_devices < 0:
+    messages.append(
+        '--max_orchestration_virtual_devices must be greater than or equal to'
+        ' 0.'
+    )
   if messages:
     raise ActionableError('\n'.join(messages))
   # Try connecting to the remote host that runs virtual devices.
@@ -859,7 +872,18 @@ def _StartMttNode(args, host):
       docker_helper.AddSysctl('net.ipv6.conf.all.disable_ipv6', '0')
       docker_helper.AddSysctl('net.ipv6.conf.all.forwarding', '1')
 
-  if args.use_cloud_orchestrator:
+  max_orchestration_virtual_devices = args.max_orchestration_virtual_devices
+  if max_orchestration_virtual_devices == 0 and getattr(
+      host.config, 'max_orchestration_virtual_devices', None
+  ):
+    max_orchestration_virtual_devices = (
+        host.config.max_orchestration_virtual_devices
+    )
+  if max_orchestration_virtual_devices:
+    docker_helper.AddEnv(
+        'MAX_ORCHESTRATION_VIRTUAL_DEVICES',
+        str(max_orchestration_virtual_devices),
+    )
     docker_helper.AddEnv(
         'CLOUD_ORCHESTRATOR_URL', args.orchestration_service_url
     )
@@ -1555,9 +1579,10 @@ def _CreateStartArgParser():
       '--max_local_virtual_devices', type=int, default=0,
       help='Maximum number of virtual devices on local host (experimental).')
   parser.add_argument(
-      '--use_cloud_orchestrator',
-      action='store_true',
-      help='Use JIT Emulator with Cloud Orchestrator (experimental).',
+      '--max_orchestration_virtual_devices',
+      type=int,
+      default=0,
+      help='Maximum number of virtual devices managed by Cloud Orchestrator.',
   )
   parser.add_argument(
       '--orchestration_service_url',

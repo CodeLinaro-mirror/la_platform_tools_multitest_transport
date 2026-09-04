@@ -437,11 +437,60 @@ class CliTest(parameterized.TestCase):
     self.assertIn('PARENT_HOSTNAME=my-custom-host', create_cmd)
     self.assertIn('LOCAL_HOSTNAME=mtt', create_cmd)
 
-  def testStart_withCloudOrchestrator(self):
-    """Test start with cloud orchestrator flags."""
+  def testStart_withMaxOrchestrationVirtualDevices(self):
+    """Test start with max_orchestration_virtual_devices."""
     args = self.arg_parser.parse_args([
         'start',
-        '--use_cloud_orchestrator',
+        '--max_orchestration_virtual_devices',
+        '5',
+    ])
+    cli.Start(args, self._CreateHost(cluster_name='acluster', lab_name='alab'))
+
+    docker_create_args = None
+    for call in self.mock_context.Run.call_args_list:
+      call_args, _ = call
+      command_args = call_args[0]
+      if command_args[:2] == ['docker', 'create']:
+        docker_create_args = command_args
+        break
+
+    self.assertIsNotNone(docker_create_args, 'docker create call not found')
+    self.assertIn(
+        'MAX_ORCHESTRATION_VIRTUAL_DEVICES=5',
+        docker_create_args,
+    )
+    self.assertIn(
+        'CLOUD_ORCHESTRATOR_URL=http://localhost:8080',
+        docker_create_args,
+    )
+    self.assertNotIn('/dev/kvm', docker_create_args)
+    self.assertNotIn('net_admin', docker_create_args)
+
+  def testStart_negativeMaxOrchestrationVirtualDevices_raisesActionableError(
+      self,
+  ):
+    """Test start with negative max_orchestration_virtual_devices raises error."""
+    args = self.arg_parser.parse_args([
+        'start',
+        '--max_orchestration_virtual_devices',
+        '-1',
+    ])
+    with self.assertRaises(cli.ActionableError) as ctx:
+      cli.Start(
+          args, self._CreateHost(cluster_name='acluster', lab_name='alab')
+      )
+    self.assertIn(
+        '--max_orchestration_virtual_devices must be greater than or equal to'
+        ' 0.',
+        ctx.exception.message,
+    )
+
+  def testStart_withMaxOrchestrationVirtualDevices_customUrl(self):
+    """Test start with max_orchestration_virtual_devices and custom orchestration_service_url."""
+    args = self.arg_parser.parse_args([
+        'start',
+        '--max_orchestration_virtual_devices',
+        '3',
         '--orchestration_service_url',
         'http://my-orch:8080',
     ])
@@ -457,13 +506,45 @@ class CliTest(parameterized.TestCase):
 
     self.assertIsNotNone(docker_create_args, 'docker create call not found')
     self.assertIn(
-        '-e',
+        'MAX_ORCHESTRATION_VIRTUAL_DEVICES=3',
         docker_create_args,
     )
     self.assertIn(
         'CLOUD_ORCHESTRATOR_URL=http://my-orch:8080',
         docker_create_args,
     )
+
+  def testStart_withMaxLocalVirtualDevices_doesNotSetCloudOrchestratorUrl(self):
+    """Test start with max_local_virtual_devices does not set orchestrator url."""
+    args = self.arg_parser.parse_args([
+        'start',
+        '--max_local_virtual_devices',
+        '2',
+    ])
+    with mock.patch.object(os.path, 'exists', return_value=True):
+      cli.Start(
+          args, self._CreateHost(cluster_name='acluster', lab_name='alab')
+      )
+
+    docker_create_args = None
+    for call in self.mock_context.Run.call_args_list:
+      call_args, _ = call
+      command_args = call_args[0]
+      if command_args[:2] == ['docker', 'create']:
+        docker_create_args = command_args
+        break
+
+    self.assertIsNotNone(docker_create_args, 'docker create call not found')
+    self.assertIn(
+        'MAX_LOCAL_VIRTUAL_DEVICES=2',
+        docker_create_args,
+    )
+    cloud_orch_envs = [
+        arg
+        for arg in docker_create_args
+        if arg.startswith('CLOUD_ORCHESTRATOR_URL=')
+    ]
+    self.assertEmpty(cloud_orch_envs)
 
   def testStart_disableLabConsoleUI(self):
     """Test start with labconsole disabled."""
