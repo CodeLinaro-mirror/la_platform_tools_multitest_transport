@@ -161,8 +161,8 @@ function configure_operation_mode {
 
     # Only initialize the ATS file server if the controller URL is set.
     OLC_SERVER_GRPC_TARGET="$(echo ${MTT_CONTROL_SERVER_URL} | sed 's,^\([^:/]\+://\)\?\([^:/]\+\)\(:\([0-9]\{1\,5\}\)\)\?\+.*$,\2,g'):${ATS_WORKER_GRPC_PORT}"
-    REMOTES_CONTROL_SERVER_PORT="$(echo ${MTT_CONTROL_SERVER_URL} | sed 's,^\([^:/]\+://\)\?\([^:/]\+:\)\(\([0-9]\{1\,5\}\)\)\?\+.*$,\3,g')"
-    ATS_FILE_SERVER_PORT="$((${REMOTES_CONTROL_SERVER_PORT}+6))"
+    local REMOTES_CONTROL_SERVER_PORT="$(echo ${MTT_CONTROL_SERVER_URL} | sed 's,^\([^:/]\+://\)\?\([^:/]\+:\)\(\([0-9]\{1\,5\}\)\)\?\+.*$,\3,g')"
+    local ATS_FILE_SERVER_PORT="$((${REMOTES_CONTROL_SERVER_PORT}+6))"
     ATS_FILE_SERVER="$(echo ${MTT_CONTROL_SERVER_URL} | sed 's,^\(\([^:/]\+://\)\?\([^:/]\+\)\)\(:\([0-9]\{1\,5\}\)\)\?\+.*$,\1,g'):${ATS_FILE_SERVER_PORT}"
   fi
 
@@ -176,6 +176,7 @@ function configure_operation_mode {
 
 function import_ca_certificates {
   # Add extra CA certificates.
+  local FILE
   for FILE in /usr/local/share/ca-certificates/*
   do
     [[ -f "${FILE}" ]] || continue
@@ -191,14 +192,14 @@ function import_ca_certificates {
 }
 
 function set_java_proxy {
-  HOST=$(echo ${2} | sed "s,^\(https\?://\)\?\([^:/]\+\)\(:\([0-9]\+\)\)\?\+.*$,\2,g")
-  PORT=$(echo ${2} | sed "s,^\(https\?://\)\?\([^:/]\+\)\(:\([0-9]\+\)\)\?\+.*$,\4,g")
+  local HOST=$(echo ${2} | sed "s,^\(https\?://\)\?\([^:/]\+\)\(:\([0-9]\+\)\)\?\+.*$,\2,g")
+  local PORT=$(echo ${2} | sed "s,^\(https\?://\)\?\([^:/]\+\)\(:\([0-9]\+\)\)\?\+.*$,\4,g")
   export JAVA_TOOL_OPTIONS="${JAVA_TOOL_OPTIONS} -D${1}.proxyHost=${HOST} -D${1}.proxyPort=${PORT}"
 }
 
 function set_java_non_proxy {
   # Convert ${no_proxy} to java property. For example, "127.0.0.1,::1" => "127.0.0.1|[::1]".
-  HOSTS=$(echo -n "${1}" | awk 'BEGIN {RS=","} NR > 1 {printf "|"} {printf ($0 ~ /:/ ? "[%s]" : "%s"), $0}')
+  local HOSTS=$(echo -n "${1}" | awk 'BEGIN {RS=","} NR > 1 {printf "|"} {printf ($0 ~ /:/ ? "[%s]" : "%s"), $0}')
   export JAVA_TOOL_OPTIONS="${JAVA_TOOL_OPTIONS} -Dhttp.nonProxyHosts=${HOSTS}"
 }
 
@@ -241,7 +242,7 @@ function init_omnilab_workdir {
 
 function start_config_service {
   echo "Starting Config Service on port ${MTT_CONFIG_SERVICE_GRPC_PORT}..."
-  CONFIG_SERVICE_ARGS=(
+  local -a CONFIG_SERVICE_ARGS=(
     --config_service_grpc_port="${MTT_CONFIG_SERVICE_GRPC_PORT}"
     --config_service_storage_type="${MTT_CONFIG_SERVICE_STORAGE_TYPE}"
   )
@@ -263,7 +264,7 @@ function start_olc_server {
   echo "Starting OLC server on port ${OLC_SERVER_PORT}..."
 
   # Setup OLC server default options
-  OLC_SERVER_DEFAULT_OPTS=(
+  local -a OLC_SERVER_DEFAULT_OPTS=(
     "--ats_worker_grpc_port=${ATS_WORKER_GRPC_PORT}"
     "--connect_to_lab_server_using_ip=true"
     "--connect_to_lab_server_using_master_detected_ip=true"
@@ -286,6 +287,7 @@ function start_olc_server {
     OLC_SERVER_DEFAULT_OPTS+=("--enable_persistent_cache=true")
   fi
 
+  local -a JAVA_LOADER_ARGS
   if [[ "${USE_DCON_XDS_ADDRESS}" == "true" ]]
   then
     OLC_SERVER_DEFAULT_OPTS+=("--use_dcon_xds_address=true")
@@ -304,8 +306,8 @@ function start_olc_server {
 
 function start_controller_features {
   # Start RabbitMQ server
-  RABBITMQ_PID_DIR="/var/run/rabbitmq"
-  RABBITMQ_USER="rabbitmq"
+  local RABBITMQ_PID_DIR="/var/run/rabbitmq"
+  local RABBITMQ_USER="rabbitmq"
   if [ ! -d ${RABBITMQ_PID_DIR} ] ; then
     mkdir -p ${RABBITMQ_PID_DIR}
     chown -R ${RABBITMQ_USER}:${RABBITMQ_USER} ${RABBITMQ_PID_DIR}
@@ -324,7 +326,7 @@ function start_controller_features {
   # Start OMNILAB specific controller features.
   if [[ ! -z "${IS_OMNILAB_BASED}" ]]
   then
-    ATS_FILE_SERVER_PORT="$((${MTT_CONTROL_SERVER_PORT}+6))"
+    local ATS_FILE_SERVER_PORT="$((${MTT_CONTROL_SERVER_PORT}+6))"
     ATS_FILE_SERVER="localhost:${ATS_FILE_SERVER_PORT}"
 
     # Start MySQL server and wait for it to be ready.
@@ -373,7 +375,7 @@ function start_common_services {
 function configure_tradefed {
   # Construct TF global config
   TF_CONFIG_FILE=/tradefed/configs/host-config.xml
-  AB_CONFIG_FILE=/tradefed/configs/ab.xml
+  local AB_CONFIG_FILE=/tradefed/configs/ab.xml
   cp scripts/host-config.xml "${TF_CONFIG_FILE}"
   cp scripts/ab.xml "${AB_CONFIG_FILE}"
   if [[ -f "${MTT_CUSTOM_TF_CONFIG_FILE}" ]]
@@ -383,7 +385,7 @@ function configure_tradefed {
 
   chmod -R a+rX /tradefed/configs /tradefed/secrets
 
-  AB_INCLUDE="empty"
+  local AB_INCLUDE="empty"
   TF_EXTRA_OPTS="--tradefed_host_config=${TF_CONFIG_FILE}"
   if [[ -f /tradefed/secrets/key.json ]]; then
     AB_INCLUDE="${AB_CONFIG_FILE}"
@@ -392,6 +394,8 @@ function configure_tradefed {
 
   # Convert REMOTE_VIRTUAL_DEVICES to PRECONFIGURED_VIRTUAL_DEVICE_POOL.
   # Each input element is "${RVD_USER}@${RVD_HOST}/{RVD_COUNT}".
+  local PRECONFIGURED_VIRTUAL_DEVICE_POOL=""
+  local RVD RVD_USER_HOST I
   for RVD in ${REMOTE_VIRTUAL_DEVICES}
   do
     RVD_USER_HOST=$(cut -f 1 -d / <<< "${RVD}")
@@ -422,7 +426,7 @@ function start_adb {
     adb start-server || echo "adb start-server returned non-zero code."
     # If IPv6 is enabled, the hostname command prints IPv6 and IPv4 addresses
     # separated by spaces. The following command finds the IPv4 address.
-    CONTAINER_IPV4_ADDRESS="$(hostname -i | grep -Eo '(^|\s)[0-9]+(\.[0-9]+){3}($|\s)' | xargs)"
+    local CONTAINER_IPV4_ADDRESS="$(hostname -i | grep -Eo '(^|\s)[0-9]+(\.[0-9]+){3}($|\s)' | xargs)"
     # Because the adb server listens to 127.0.0.1:5037, this script forwards only
     # IPv4 packets to the server. The container exposes port 5037 to the host-side
     # adb commands. The docker proxy forwards the commands to
@@ -433,7 +437,7 @@ function start_adb {
           tcp-connect:127.0.0.1:5037 &
   else
     # Forward 5037 port to the host.
-    HOST_IPV4_ADDRESS=$(/sbin/ip -4 route | awk '/default/ { print $3 }')
+    local HOST_IPV4_ADDRESS=$(/sbin/ip -4 route | awk '/default/ { print $3 }')
     socat -lf /tmp/socat.log \
           tcp-listen:5037,bind=127.0.0.1,reuseaddr,fork \
           tcp-connect:"${HOST_IPV4_ADDRESS}":5037 &
@@ -444,8 +448,9 @@ function start_ndppd {
   # This function generates a configuration file and starts ndppd. The arguments
   # are the networks to which the neighbor solocitations are forwarded.
   # For example, "2001:db8::/64".
-  DEFAULT_INTERFACE="$(ip -6 route show default | awk '/default/ {print $5}')"
-  CONFIG_PATH=/tmp/ndppd.conf
+  local DEFAULT_INTERFACE="$(ip -6 route show default | awk '/default/ {print $5}')"
+  local CONFIG_PATH=/tmp/ndppd.conf
+  local SUBNET
   echo "proxy ${DEFAULT_INTERFACE} {" > "${CONFIG_PATH}"
   for SUBNET in "$@"
   do
@@ -463,7 +468,7 @@ function start_cuttlefish {
     # Start rsyslog which is a dependency of crosvm.
     # It starts slowly if open file limit is high.
     # Reference: https://github.com/rsyslog/rsyslog/issues/5158
-    OPEN_FILE_LIMIT="$(ulimit -Sn)"
+    local OPEN_FILE_LIMIT="$(ulimit -Sn)"
     if [[ "${OPEN_FILE_LIMIT}" -gt 32768 ]] || [[ "${OPEN_FILE_LIMIT}" == unlimited ]]; then
       ulimit -Sn 32768
     fi
@@ -472,7 +477,8 @@ function start_cuttlefish {
     # Start cuttlefish service.
     if [[ -n "${IPV6_BRIDGE_NETWORK}" ]]
     then
-      IPV6_SUBNETS="$(/mtt/scripts/gen_subnets.py "${IPV6_BRIDGE_NETWORK}" 64 2 $(hostname -I))"
+      local IPV6_SUBNETS="$(/mtt/scripts/gen_subnets.py "${IPV6_BRIDGE_NETWORK}" 64 2 $(hostname -I))"
+      local WIFI_IPV6_PREFIX ETHERNET_IPV6_PREFIX
       read WIFI_IPV6_PREFIX ETHERNET_IPV6_PREFIX <<< "${IPV6_SUBNETS}"
       echo "WIFI_IPV6_PREFIX=${WIFI_IPV6_PREFIX}"
       echo "ETHERNET_IPV6_PREFIX=${ETHERNET_IPV6_PREFIX}"
@@ -501,13 +507,13 @@ function run_postrun_hook {
 function start_test_runner {
   rm -rf "${MTT_TEST_WORK_DIR}"
   mkdir -p "${MTT_TEST_WORK_DIR}"
-  MAX_HEAP_MB="$(expr `free -m | awk '/^Mem:/{print $2}'` / 4)"
+  local MAX_HEAP_MB="$(expr `free -m | awk '/^Mem:/{print $2}'` / 4)"
   MAX_HEAP_MB=$(( MAX_HEAP_MB < 6000 ? 6000 : MAX_HEAP_MB ))
   if [[ -z "${IS_OMNILAB_BASED}" ]]
   then
     # Start TF with the modified global config and at least 6GB of heap space (can
     # be adjusted by setting the -Xmx flag in the TRADEFED_OPTS variable).
-    MTT_TRADEFED_OPTS="-Djava.io.tmpdir=${MTT_TEST_WORK_DIR} -Xmx${MAX_HEAP_MB}m"
+    local MTT_TRADEFED_OPTS="-Djava.io.tmpdir=${MTT_TEST_WORK_DIR} -Xmx${MAX_HEAP_MB}m"
     TF_GLOBAL_CONFIG="${TF_CONFIG_FILE}"\
       MTT_CONTROL_SERVER_URL="${MTT_CONTROL_SERVER_URL}"\
       MTT_CONTROL_FILE_SERVER_URL="${MTT_CONTROL_FILE_SERVER_URL}"\
@@ -515,7 +521,7 @@ function start_test_runner {
       exec tradefed.sh
   else
     # Start OSS lab server
-    LAB_SERVER_ARGS=""
+    local LAB_SERVER_ARGS=""
     if [[ "${MAX_ORCHESTRATION_VIRTUAL_DEVICES}" -gt 0 ]]; then
       CLOUD_ORCHESTRATOR_URL="${CLOUD_ORCHESTRATOR_URL:-http://localhost:8080}"
       LAB_SERVER_ARGS+="--android_jit_emulator_num=${MAX_ORCHESTRATION_VIRTUAL_DEVICES} "
@@ -539,7 +545,7 @@ function start_test_runner {
 
     # Only start cache manager in worker mode.
     if [[ "${ENABLE_CONTROLLER_FEATURES}" != "true" ]]; then
-      is_cache_local="false"
+      local is_cache_local="false"
       if [[ -z "${PERSISTENT_CACHE_DIR}" ]]; then
         is_cache_local="true"
         PERSISTENT_CACHE_DIR="${MTT_STORAGE_PATH}/local_file_store/persistent_cache"
