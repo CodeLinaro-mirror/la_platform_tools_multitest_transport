@@ -392,7 +392,7 @@ function configure_tradefed {
 
   # Convert REMOTE_VIRTUAL_DEVICES to PRECONFIGURED_VIRTUAL_DEVICE_POOL.
   # Each input element is "${RVD_USER}@${RVD_HOST}/{RVD_COUNT}".
-  for RVD in "${REMOTE_VIRTUAL_DEVICES}"
+  for RVD in ${REMOTE_VIRTUAL_DEVICES}
   do
     RVD_USER_HOST=$(cut -f 1 -d / <<< "${RVD}")
     RVD_COUNT=$(cut -f 2 -d / <<< "${RVD}")
