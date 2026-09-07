@@ -137,28 +137,6 @@ OLCS_CREDENTIAL_TYPE="no_credential"
 # SQL database URI.
 SQL_DATABASE_URI=""
 
-# Standalone mode: mtt start
-# Worker mode: mtt start --mtt_control_server_url=... --operation_mode=on_premise
-# Controller mode: mtt start --operation_mode=on_premise
-# If the controller URL is set, we are in worker mode.
-if [[ ! -z "${MTT_CONTROL_SERVER_URL}" ]]; then
-  # Disable controller features in worker mode.
-  ENABLE_CONTROLLER_FEATURES="false"
-
-  # Only initialize the ATS file server if the controller URL is set.
-  OLC_SERVER_GRPC_TARGET="$(echo ${MTT_CONTROL_SERVER_URL} | sed 's,^\([^:/]\+://\)\?\([^:/]\+\)\(:\([0-9]\{1\,5\}\)\)\?\+.*$,\2,g'):${ATS_WORKER_GRPC_PORT}"
-  REMOTES_CONTROL_SERVER_PORT="$(echo ${MTT_CONTROL_SERVER_URL} | sed 's,^\([^:/]\+://\)\?\([^:/]\+:\)\(\([0-9]\{1\,5\}\)\)\?\+.*$,\3,g')"
-  ATS_FILE_SERVER_PORT="$((${REMOTES_CONTROL_SERVER_PORT}+6))"
-  ATS_FILE_SERVER="$(echo ${MTT_CONTROL_SERVER_URL} | sed 's,^\(\([^:/]\+://\)\?\([^:/]\+\)\)\(:\([0-9]\{1\,5\}\)\)\?\+.*$,\1,g'):${ATS_FILE_SERVER_PORT}"
-fi
-
-# If we are in on-premise mode but the controller URL is not set, we are in
-# controller mode.
-if [[ -z "${MTT_CONTROL_SERVER_URL}" ]] && [[ "${OPERATION_MODE}" == "on_premise" ]]; then
-  # Disable worker features in controller mode.
-  ENABLE_WORKER_FEATURES="false"
-fi
-
 # The custom script that is executed after basic environment is set up and
 # before any services are started.
 readonly PRERUN_SCRIPT_PATH="/mtt/scripts/init_pre_run.sh"
@@ -170,21 +148,46 @@ readonly POSTRUN_SCRIPT_PATH="/mtt/scripts/init_post_run.sh"
 
 readonly MYSQL_SCRIPT_PATH="/mtt/scripts/mysql.sh"
 
-function start_ndppd {
-  # This function generates a configuration file and starts ndppd. The arguments
-  # are the networks to which the neighbor solocitations are forwarded.
-  # For example, "2001:db8::/64".
-  DEFAULT_INTERFACE="$(ip -6 route show default | awk '/default/ {print $5}')"
-  CONFIG_PATH=/tmp/ndppd.conf
-  echo "proxy ${DEFAULT_INTERFACE} {" > "${CONFIG_PATH}"
-  for SUBNET in "$@"
+# --- Helper Functions ---
+
+function configure_operation_mode {
+  # Standalone mode: mtt start
+  # Worker mode: mtt start --mtt_control_server_url=... --operation_mode=on_premise
+  # Controller mode: mtt start --operation_mode=on_premise
+  # If the controller URL is set, we are in worker mode.
+  if [[ ! -z "${MTT_CONTROL_SERVER_URL}" ]]; then
+    # Disable controller features in worker mode.
+    ENABLE_CONTROLLER_FEATURES="false"
+
+    # Only initialize the ATS file server if the controller URL is set.
+    OLC_SERVER_GRPC_TARGET="$(echo ${MTT_CONTROL_SERVER_URL} | sed 's,^\([^:/]\+://\)\?\([^:/]\+\)\(:\([0-9]\{1\,5\}\)\)\?\+.*$,\2,g'):${ATS_WORKER_GRPC_PORT}"
+    REMOTES_CONTROL_SERVER_PORT="$(echo ${MTT_CONTROL_SERVER_URL} | sed 's,^\([^:/]\+://\)\?\([^:/]\+:\)\(\([0-9]\{1\,5\}\)\)\?\+.*$,\3,g')"
+    ATS_FILE_SERVER_PORT="$((${REMOTES_CONTROL_SERVER_PORT}+6))"
+    ATS_FILE_SERVER="$(echo ${MTT_CONTROL_SERVER_URL} | sed 's,^\(\([^:/]\+://\)\?\([^:/]\+\)\)\(:\([0-9]\{1\,5\}\)\)\?\+.*$,\1,g'):${ATS_FILE_SERVER_PORT}"
+  fi
+
+  # If we are in on-premise mode but the controller URL is not set, we are in
+  # controller mode.
+  if [[ -z "${MTT_CONTROL_SERVER_URL}" ]] && [[ "${OPERATION_MODE}" == "on_premise" ]]; then
+    # Disable worker features in controller mode.
+    ENABLE_WORKER_FEATURES="false"
+  fi
+}
+
+function import_ca_certificates {
+  # Add extra CA certificates.
+  for FILE in /usr/local/share/ca-certificates/*
   do
-    echo "  rule ${SUBNET} {" >> "${CONFIG_PATH}"
-    echo "    auto" >> "${CONFIG_PATH}"
-    echo "  }" >> "${CONFIG_PATH}"
+    [[ -f "${FILE}" ]] || continue
+    chmod 644 "${FILE}"
+    echo yes | keytool -importcert\
+        -cacerts\
+        -trustcacerts\
+        -file "${FILE}"\
+        -alias $(basename -- "${FILE}")\
+        -storepass "changeit"
   done
-  echo "}" >> "${CONFIG_PATH}"
-  ndppd -d -c "${CONFIG_PATH}"
+  update-ca-certificates
 }
 
 function set_java_proxy {
@@ -197,6 +200,43 @@ function set_java_non_proxy {
   # Convert ${no_proxy} to java property. For example, "127.0.0.1,::1" => "127.0.0.1|[::1]".
   HOSTS=$(echo -n "${1}" | awk 'BEGIN {RS=","} NR > 1 {printf "|"} {printf ($0 ~ /:/ ? "[%s]" : "%s"), $0}')
   export JAVA_TOOL_OPTIONS="${JAVA_TOOL_OPTIONS} -Dhttp.nonProxyHosts=${HOSTS}"
+}
+
+function configure_proxies {
+  # Configure proxy settings for tools.
+  [[ ! -z "${HTTP_PROXY}" ]] && set_java_proxy http ${HTTP_PROXY}
+  [[ ! -z "${HTTPS_PROXY}" ]] && set_java_proxy https ${HTTPS_PROXY}
+  [[ ! -z "${NO_PROXY}" ]] && set_java_non_proxy ${NO_PROXY}
+  export HTTPLIB2_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
+}
+
+function link_temporary_mounts {
+  # Link temporarily mounted files/directories into the local file store
+  mkdir -p "${MTT_STORAGE_PATH}/local_file_store"
+  find "${MTT_STORAGE_PATH}/local_file_store" -xtype l -delete
+  [[ -d /tmp/.mnt ]] && find /tmp/.mnt -mindepth 1 -maxdepth 1 \
+    -exec ln -sf {} "${MTT_STORAGE_PATH}/local_file_store" \;
+}
+
+function run_prerun_hook {
+  cd /mtt
+
+  if [[ -f "${PRERUN_SCRIPT_PATH}" ]]; then
+    source ${PRERUN_SCRIPT_PATH}
+  fi
+
+  if [[ -f "${MYSQL_SCRIPT_PATH}" ]]; then
+    source ${MYSQL_SCRIPT_PATH}
+  fi
+}
+
+function init_omnilab_workdir {
+  # Initialize MTT work directory for OmniLab based setups.
+  if [[ ! -z "${IS_OMNILAB_BASED}" ]]
+  then
+    rm -rf "${MTT_MH_WORK_DIR}"
+    mkdir -p "${MTT_MH_WORK_DIR}"
+  fi
 }
 
 function start_config_service {
@@ -262,64 +302,6 @@ function start_olc_server {
   echo "OLC server started."
 }
 
-function import_ca_certificates {
-  # Add extra CA certificates.
-  for FILE in /usr/local/share/ca-certificates/*
-  do
-    [[ -f "${FILE}" ]] || continue
-    chmod 644 "${FILE}"
-    echo yes | keytool -importcert\
-        -cacerts\
-        -trustcacerts\
-        -file "${FILE}"\
-        -alias $(basename -- "${FILE}")\
-        -storepass "changeit"
-  done
-  update-ca-certificates
-}
-import_ca_certificates
-
-function configure_proxies {
-  # Configure proxy settings for tools.
-  [[ ! -z "${HTTP_PROXY}" ]] && set_java_proxy http ${HTTP_PROXY}
-  [[ ! -z "${HTTPS_PROXY}" ]] && set_java_proxy https ${HTTPS_PROXY}
-  [[ ! -z "${NO_PROXY}" ]] && set_java_non_proxy ${NO_PROXY}
-  export HTTPLIB2_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
-}
-configure_proxies
-
-function link_temporary_mounts {
-  # Link temporarily mounted files/directories into the local file store
-  mkdir -p "${MTT_STORAGE_PATH}/local_file_store"
-  find "${MTT_STORAGE_PATH}/local_file_store" -xtype l -delete
-  [[ -d /tmp/.mnt ]] && find /tmp/.mnt -mindepth 1 -maxdepth 1 \
-    -exec ln -sf {} "${MTT_STORAGE_PATH}/local_file_store" \;
-}
-link_temporary_mounts
-
-function run_prerun_hook {
-  cd /mtt
-
-  if [[ -f "${PRERUN_SCRIPT_PATH}" ]]; then
-    source ${PRERUN_SCRIPT_PATH}
-  fi
-
-  if [[ -f "${MYSQL_SCRIPT_PATH}" ]]; then
-    source ${MYSQL_SCRIPT_PATH}
-  fi
-}
-run_prerun_hook
-
-function init_omnilab_workdir {
-  # Initialize MTT work directory for OmniLab based setups.
-  if [[ ! -z "${IS_OMNILAB_BASED}" ]]
-  then
-    rm -rf "${MTT_MH_WORK_DIR}"
-    mkdir -p "${MTT_MH_WORK_DIR}"
-  fi
-}
-init_omnilab_workdir
-
 function start_controller_features {
   # Start RabbitMQ server
   RABBITMQ_PID_DIR="/var/run/rabbitmq"
@@ -361,12 +343,6 @@ function start_controller_features {
   fi
 }
 
-# Start controller features first.
-if [[ "${ENABLE_CONTROLLER_FEATURES}" == "true" ]]
-then
-  start_controller_features
-fi
-
 function start_common_services {
   # Regardless of the operational mode, we always launch the serve.sh
   # orchestrator. Depending on the configuration, it will either orchestrate the
@@ -393,213 +369,247 @@ function start_common_services {
       --enable_lab_console_ui "${MTT_ENABLE_LAB_CONSOLE_UI}" \
       2>&1 | multilog s10485760 n10 "${MTT_CONTROL_SERVER_LOG_DIR}" &
 }
+
+function configure_tradefed {
+  # Construct TF global config
+  TF_CONFIG_FILE=/tradefed/configs/host-config.xml
+  AB_CONFIG_FILE=/tradefed/configs/ab.xml
+  cp scripts/host-config.xml "${TF_CONFIG_FILE}"
+  cp scripts/ab.xml "${AB_CONFIG_FILE}"
+  if [[ -f "${MTT_CUSTOM_TF_CONFIG_FILE}" ]]
+  then
+    cp "${MTT_CUSTOM_TF_CONFIG_FILE}" "${TF_CONFIG_FILE}"
+  fi
+
+  chmod -R a+rX /tradefed/configs /tradefed/secrets
+
+  AB_INCLUDE="empty"
+  TF_EXTRA_OPTS="--tradefed_host_config=${TF_CONFIG_FILE}"
+  if [[ -f /tradefed/secrets/key.json ]]; then
+    AB_INCLUDE="${AB_CONFIG_FILE}"
+    TF_EXTRA_OPTS+=" --tradefed_service_account_key_file=/tradefed/secrets/key.json"
+  fi
+
+  # Convert REMOTE_VIRTUAL_DEVICES to PRECONFIGURED_VIRTUAL_DEVICE_POOL.
+  # Each input element is "${RVD_USER}@${RVD_HOST}/{RVD_COUNT}".
+  for RVD in "${REMOTE_VIRTUAL_DEVICES}"
+  do
+    RVD_USER_HOST=$(cut -f 1 -d / <<< "${RVD}")
+    RVD_COUNT=$(cut -f 2 -d / <<< "${RVD}")
+    RVD_USER=$(cut -f 1 -d @ <<< "${RVD_USER_HOST}")
+    RVD_HOST=$(cut -f 2 -d @ <<< "${RVD_USER_HOST}")
+    for I in $(seq "${RVD_COUNT}")
+    do
+      PRECONFIGURED_VIRTUAL_DEVICE_POOL+="\\n<option name=\"host_options:preconfigured-virtual-device-pool\" value=\"${RVD_HOST}:${RVD_USER}\" \\/>"
+    done
+  done
+
+  # Use comma as delimiter because MTT_CONTROL_SERVER_URL has forward slashes.
+  sed -e s,\${MTT_CONTROL_SERVER_URL},"${MTT_CONTROL_SERVER_URL}",g \
+      -e s/\${MAX_LOCAL_VIRTUAL_DEVICES}/"${MAX_LOCAL_VIRTUAL_DEVICES}"/g \
+      -e s/\${PRECONFIGURED_VIRTUAL_DEVICE_POOL}/"${PRECONFIGURED_VIRTUAL_DEVICE_POOL}"/g \
+      -e s,\${AB_INCLUDE},"${AB_INCLUDE}",g \
+      -i "${TF_CONFIG_FILE}"
+}
+
+function start_adb {
+  if [[ -z "${MTT_USE_HOST_ADB}" ]]
+  then
+    # Start ADB and load keys
+    [[ -e /root/.android && ! -d /root/.android ]] && rm -f /root/.android
+    mkdir -p /root/.android
+    export ADB_VENDOR_KEYS="$(ls -1 /root/.android/*.adb_key 2>/dev/null | paste -sd ":" - || echo "")"
+    adb start-server || echo "adb start-server returned non-zero code."
+    # If IPv6 is enabled, the hostname command prints IPv6 and IPv4 addresses
+    # separated by spaces. The following command finds the IPv4 address.
+    CONTAINER_IPV4_ADDRESS="$(hostname -i | grep -Eo '(^|\s)[0-9]+(\.[0-9]+){3}($|\s)' | xargs)"
+    # Because the adb server listens to 127.0.0.1:5037, this script forwards only
+    # IPv4 packets to the server. The container exposes port 5037 to the host-side
+    # adb commands. The docker proxy forwards the commands to
+    # ${CONTAINER_IPV4_ADDRESS}:5037 in the container. Then the socat process
+    # forwards them to 127.0.0.1:5037.
+    socat -lf /tmp/socat.log \
+          tcp-listen:5037,bind="${CONTAINER_IPV4_ADDRESS}",reuseaddr,fork \
+          tcp-connect:127.0.0.1:5037 &
+  else
+    # Forward 5037 port to the host.
+    HOST_IPV4_ADDRESS=$(/sbin/ip -4 route | awk '/default/ { print $3 }')
+    socat -lf /tmp/socat.log \
+          tcp-listen:5037,bind=127.0.0.1,reuseaddr,fork \
+          tcp-connect:"${HOST_IPV4_ADDRESS}":5037 &
+  fi
+}
+
+function start_ndppd {
+  # This function generates a configuration file and starts ndppd. The arguments
+  # are the networks to which the neighbor solocitations are forwarded.
+  # For example, "2001:db8::/64".
+  DEFAULT_INTERFACE="$(ip -6 route show default | awk '/default/ {print $5}')"
+  CONFIG_PATH=/tmp/ndppd.conf
+  echo "proxy ${DEFAULT_INTERFACE} {" > "${CONFIG_PATH}"
+  for SUBNET in "$@"
+  do
+    echo "  rule ${SUBNET} {" >> "${CONFIG_PATH}"
+    echo "    auto" >> "${CONFIG_PATH}"
+    echo "  }" >> "${CONFIG_PATH}"
+  done
+  echo "}" >> "${CONFIG_PATH}"
+  ndppd -d -c "${CONFIG_PATH}"
+}
+
+function start_cuttlefish {
+  if [[ "${MAX_LOCAL_VIRTUAL_DEVICES}" -ne 0 ]]
+  then
+    # Start rsyslog which is a dependency of crosvm.
+    # It starts slowly if open file limit is high.
+    # Reference: https://github.com/rsyslog/rsyslog/issues/5158
+    OPEN_FILE_LIMIT="$(ulimit -Sn)"
+    if [[ "${OPEN_FILE_LIMIT}" -gt 32768 ]] || [[ "${OPEN_FILE_LIMIT}" == unlimited ]]; then
+      ulimit -Sn 32768
+    fi
+    rsyslogd -iNONE
+    ulimit -Sn "${OPEN_FILE_LIMIT}"
+    # Start cuttlefish service.
+    if [[ -n "${IPV6_BRIDGE_NETWORK}" ]]
+    then
+      IPV6_SUBNETS="$(/mtt/scripts/gen_subnets.py "${IPV6_BRIDGE_NETWORK}" 64 2 $(hostname -I))"
+      read WIFI_IPV6_PREFIX ETHERNET_IPV6_PREFIX <<< "${IPV6_SUBNETS}"
+      echo "WIFI_IPV6_PREFIX=${WIFI_IPV6_PREFIX}"
+      echo "ETHERNET_IPV6_PREFIX=${ETHERNET_IPV6_PREFIX}"
+      # Reference: https://github.com/google/android-cuttlefish/blob/main/debian/cuttlefish-common.default
+      num_cvd_accounts="${MAX_LOCAL_VIRTUAL_DEVICES}" \
+        wifi_ipv6_prefix="${WIFI_IPV6_PREFIX}" \
+        wifi_ipv6_prefix_length=64 \
+        ethernet_ipv6_prefix="${ETHERNET_IPV6_PREFIX}" \
+        ethernet_ipv6_prefix_length=64 \
+        /etc/init.d/cuttlefish-common start
+      start_ndppd "${WIFI_IPV6_PREFIX}/64" "${ETHERNET_IPV6_PREFIX}/64"
+    else
+      num_cvd_accounts="${MAX_LOCAL_VIRTUAL_DEVICES}" \
+        /etc/init.d/cuttlefish-common start
+    fi
+  fi
+}
+
+# TODO Move the post-run script to run after lab server startup.
+function run_postrun_hook {
+  if [[ -f "${POSTRUN_SCRIPT_PATH}" ]]; then
+    source ${POSTRUN_SCRIPT_PATH}
+  fi
+}
+
+function start_test_runner {
+  rm -rf "${MTT_TEST_WORK_DIR}"
+  mkdir -p "${MTT_TEST_WORK_DIR}"
+  MAX_HEAP_MB="$(expr `free -m | awk '/^Mem:/{print $2}'` / 4)"
+  MAX_HEAP_MB=$(( MAX_HEAP_MB < 6000 ? 6000 : MAX_HEAP_MB ))
+  if [[ -z "${IS_OMNILAB_BASED}" ]]
+  then
+    # Start TF with the modified global config and at least 6GB of heap space (can
+    # be adjusted by setting the -Xmx flag in the TRADEFED_OPTS variable).
+    MTT_TRADEFED_OPTS="-Djava.io.tmpdir=${MTT_TEST_WORK_DIR} -Xmx${MAX_HEAP_MB}m"
+    TF_GLOBAL_CONFIG="${TF_CONFIG_FILE}"\
+      MTT_CONTROL_SERVER_URL="${MTT_CONTROL_SERVER_URL}"\
+      MTT_CONTROL_FILE_SERVER_URL="${MTT_CONTROL_FILE_SERVER_URL}"\
+      TRADEFED_OPTS="${MTT_TRADEFED_OPTS} ${TRADEFED_OPTS}"\
+      exec tradefed.sh
+  else
+    # Start OSS lab server
+    LAB_SERVER_ARGS=""
+    if [[ "${MAX_ORCHESTRATION_VIRTUAL_DEVICES}" -gt 0 ]]; then
+      CLOUD_ORCHESTRATOR_URL="${CLOUD_ORCHESTRATOR_URL:-http://localhost:8080}"
+      LAB_SERVER_ARGS+="--android_jit_emulator_num=${MAX_ORCHESTRATION_VIRTUAL_DEVICES} "
+      LAB_SERVER_ARGS+="--cloud_orchestrator_service_url=${CLOUD_ORCHESTRATOR_URL} "
+      LAB_SERVER_ARGS+="--noop_jit_emulator=false "
+    elif [[ "${MAX_LOCAL_VIRTUAL_DEVICES}" -gt 0 ]]; then
+      LAB_SERVER_ARGS+="--android_jit_emulator_num=${MAX_LOCAL_VIRTUAL_DEVICES} "
+      if [[ -n "${CLOUD_ORCHESTRATOR_URL}" ]]; then
+        LAB_SERVER_ARGS+="--cloud_orchestrator_service_url=${CLOUD_ORCHESTRATOR_URL} "
+        LAB_SERVER_ARGS+="--noop_jit_emulator=false "
+      else
+        LAB_SERVER_ARGS+="--noop_jit_emulator=true "
+      fi
+    fi
+    if [[ "${RVD_COUNT}" -gt 0 ]]; then
+      LAB_SERVER_ARGS+="--remote_android_jit_emulator_num=${RVD_COUNT} "
+      LAB_SERVER_ARGS+="--noop_jit_emulator=true "
+      LAB_SERVER_ARGS+="--virtual_device_server_ip=${RVD_HOST} "
+      LAB_SERVER_ARGS+="--virtual_device_server_username=${RVD_USER} "
+    fi
+
+    # Only start cache manager in worker mode.
+    if [[ "${ENABLE_CONTROLLER_FEATURES}" != "true" ]]; then
+      is_cache_local="false"
+      if [[ -z "${PERSISTENT_CACHE_DIR}" ]]; then
+        is_cache_local="true"
+        PERSISTENT_CACHE_DIR="${MTT_STORAGE_PATH}/local_file_store/persistent_cache"
+      fi
+      if [ ! -d "${PERSISTENT_CACHE_DIR}" ]; then
+        mkdir -p "${PERSISTENT_CACHE_DIR}"
+      fi
+
+      if [[ "${ENABLE_PERSISTENT_CACHE}" == "true" ]]
+      then
+        # Move this logic to local docker volume setup outside of the mtt container when we migrate to docker compose deployment.
+        if [[ "${is_cache_local}" == "true" ]]; then
+          PERSISTENT_CACHE_OPTS+=" --persistent_cache_dir=${PERSISTENT_CACHE_DIR} --public_dir=${MTT_LOG_DIR}"
+          echo "Start persistent cache manager with opts: ${PERSISTENT_CACHE_OPTS} for local cache."
+          java -XX:+HeapDumpOnOutOfMemoryError \
+            -jar /deviceinfra/cache_manager_server_deploy.jar \
+            ${PERSISTENT_CACHE_OPTS} &> /dev/null &
+        fi
+        LAB_SERVER_ARGS+=" --persistent_cache_dir=${PERSISTENT_CACHE_DIR} --enable_persistent_cache=true"
+      fi
+    fi
+
+    if [[ "${MTT_CONNECT_LABSERVER_TO_CONFIG_SERVER}" == "true" ]]; then
+      LAB_SERVER_ARGS+=" --enable_external_config_service=true"
+      LAB_SERVER_ARGS+=" --config_service_grpc_target=localhost:${MTT_CONFIG_SERVICE_GRPC_PORT}"
+    else
+      LAB_SERVER_ARGS+=" --api_config=/deviceinfra/lab_server_api_config.textproto"
+    fi
+
+    java \
+      "-Xmx${MAX_HEAP_MB}m" \
+      -XX:+HeapDumpOnOutOfMemoryError \
+      -Dcom.google.mobileharness.ats.lab_server_type="${ATS_LAB_SERVER_TYPE}" \
+      -jar /deviceinfra/lab_server_oss_deploy.jar \
+      --ats_file_server="${ATS_FILE_SERVER}" \
+      --ats_xts_work_dir="${MTT_MH_WORK_DIR}" \
+      --master_grpc_target="${OLC_SERVER_GRPC_TARGET}" \
+      --public_dir="${MTT_LOG_DIR}" \
+      --tf_fallback_java_binary="${JAVA21_HOME}/bin/java" \
+      --tmp_dir_root="${MTT_MH_WORK_DIR}" \
+      ${LAB_SERVER_OPTS} \
+        ${LAB_SERVER_ARGS} \
+        ${TF_EXTRA_OPTS}
+  fi
+}
+
+# --- Main Execution Flow ---
+
+configure_operation_mode
+import_ca_certificates
+configure_proxies
+link_temporary_mounts
+run_prerun_hook
+init_omnilab_workdir
+
+# Start controller features first.
+if [[ "${ENABLE_CONTROLLER_FEATURES}" == "true" ]]
+then
+  start_controller_features
+fi
+
 start_common_services
 
 # Start worker features if enabled.
 if [[ "${ENABLE_WORKER_FEATURES}" == "true" ]]
 then
-  function configure_tradefed {
-    # Construct TF global config
-    TF_CONFIG_FILE=/tradefed/configs/host-config.xml
-    AB_CONFIG_FILE=/tradefed/configs/ab.xml
-    cp scripts/host-config.xml "${TF_CONFIG_FILE}"
-    cp scripts/ab.xml "${AB_CONFIG_FILE}"
-    if [[ -f "${MTT_CUSTOM_TF_CONFIG_FILE}" ]]
-    then
-      cp "${MTT_CUSTOM_TF_CONFIG_FILE}" "${TF_CONFIG_FILE}"
-    fi
-
-    chmod -R a+rX /tradefed/configs /tradefed/secrets
-
-    AB_INCLUDE="empty"
-    TF_EXTRA_OPTS="--tradefed_host_config=${TF_CONFIG_FILE}"
-    if [[ -f /tradefed/secrets/key.json ]]; then
-      AB_INCLUDE="${AB_CONFIG_FILE}"
-      TF_EXTRA_OPTS+=" --tradefed_service_account_key_file=/tradefed/secrets/key.json"
-    fi
-
-    # Convert REMOTE_VIRTUAL_DEVICES to PRECONFIGURED_VIRTUAL_DEVICE_POOL.
-    # Each input element is "${RVD_USER}@${RVD_HOST}/{RVD_COUNT}".
-    for RVD in "${REMOTE_VIRTUAL_DEVICES}"
-    do
-      RVD_USER_HOST=$(cut -f 1 -d / <<< "${RVD}")
-      RVD_COUNT=$(cut -f 2 -d / <<< "${RVD}")
-      RVD_USER=$(cut -f 1 -d @ <<< "${RVD_USER_HOST}")
-      RVD_HOST=$(cut -f 2 -d @ <<< "${RVD_USER_HOST}")
-      for I in $(seq "${RVD_COUNT}")
-      do
-        PRECONFIGURED_VIRTUAL_DEVICE_POOL+="\\n<option name=\"host_options:preconfigured-virtual-device-pool\" value=\"${RVD_HOST}:${RVD_USER}\" \\/>"
-      done
-    done
-
-    # Use comma as delimiter because MTT_CONTROL_SERVER_URL has forward slashes.
-    sed -e s,\${MTT_CONTROL_SERVER_URL},"${MTT_CONTROL_SERVER_URL}",g \
-        -e s/\${MAX_LOCAL_VIRTUAL_DEVICES}/"${MAX_LOCAL_VIRTUAL_DEVICES}"/g \
-        -e s/\${PRECONFIGURED_VIRTUAL_DEVICE_POOL}/"${PRECONFIGURED_VIRTUAL_DEVICE_POOL}"/g \
-        -e s,\${AB_INCLUDE},"${AB_INCLUDE}",g \
-        -i "${TF_CONFIG_FILE}"
-  }
   configure_tradefed
-
-  function start_adb {
-    if [[ -z "${MTT_USE_HOST_ADB}" ]]
-    then
-      # Start ADB and load keys
-      [[ -e /root/.android && ! -d /root/.android ]] && rm -f /root/.android
-      mkdir -p /root/.android
-      export ADB_VENDOR_KEYS="$(ls -1 /root/.android/*.adb_key 2>/dev/null | paste -sd ":" - || echo "")"
-      adb start-server || echo "adb start-server returned non-zero code."
-      # If IPv6 is enabled, the hostname command prints IPv6 and IPv4 addresses
-      # separated by spaces. The following command finds the IPv4 address.
-      CONTAINER_IPV4_ADDRESS="$(hostname -i | grep -Eo '(^|\s)[0-9]+(\.[0-9]+){3}($|\s)' | xargs)"
-      # Because the adb server listens to 127.0.0.1:5037, this script forwards only
-      # IPv4 packets to the server. The container exposes port 5037 to the host-side
-      # adb commands. The docker proxy forwards the commands to
-      # ${CONTAINER_IPV4_ADDRESS}:5037 in the container. Then the socat process
-      # forwards them to 127.0.0.1:5037.
-      socat -lf /tmp/socat.log \
-            tcp-listen:5037,bind="${CONTAINER_IPV4_ADDRESS}",reuseaddr,fork \
-            tcp-connect:127.0.0.1:5037 &
-    else
-      # Forward 5037 port to the host.
-      HOST_IPV4_ADDRESS=$(/sbin/ip -4 route | awk '/default/ { print $3 }')
-      socat -lf /tmp/socat.log \
-            tcp-listen:5037,bind=127.0.0.1,reuseaddr,fork \
-            tcp-connect:"${HOST_IPV4_ADDRESS}":5037 &
-    fi
-  }
   start_adb
-
-  function start_cuttlefish {
-    if [[ "${MAX_LOCAL_VIRTUAL_DEVICES}" -ne 0 ]]
-    then
-      # Start rsyslog which is a dependency of crosvm.
-      # It starts slowly if open file limit is high.
-      # Reference: https://github.com/rsyslog/rsyslog/issues/5158
-      OPEN_FILE_LIMIT="$(ulimit -Sn)"
-      if [[ "${OPEN_FILE_LIMIT}" -gt 32768 ]] || [[ "${OPEN_FILE_LIMIT}" == unlimited ]]; then
-        ulimit -Sn 32768
-      fi
-      rsyslogd -iNONE
-      ulimit -Sn "${OPEN_FILE_LIMIT}"
-      # Start cuttlefish service.
-      if [[ -n "${IPV6_BRIDGE_NETWORK}" ]]
-      then
-        IPV6_SUBNETS="$(/mtt/scripts/gen_subnets.py "${IPV6_BRIDGE_NETWORK}" 64 2 $(hostname -I))"
-        read WIFI_IPV6_PREFIX ETHERNET_IPV6_PREFIX <<< "${IPV6_SUBNETS}"
-        echo "WIFI_IPV6_PREFIX=${WIFI_IPV6_PREFIX}"
-        echo "ETHERNET_IPV6_PREFIX=${ETHERNET_IPV6_PREFIX}"
-        # Reference: https://github.com/google/android-cuttlefish/blob/main/debian/cuttlefish-common.default
-        num_cvd_accounts="${MAX_LOCAL_VIRTUAL_DEVICES}" \
-          wifi_ipv6_prefix="${WIFI_IPV6_PREFIX}" \
-          wifi_ipv6_prefix_length=64 \
-          ethernet_ipv6_prefix="${ETHERNET_IPV6_PREFIX}" \
-          ethernet_ipv6_prefix_length=64 \
-          /etc/init.d/cuttlefish-common start
-        start_ndppd "${WIFI_IPV6_PREFIX}/64" "${ETHERNET_IPV6_PREFIX}/64"
-      else
-        num_cvd_accounts="${MAX_LOCAL_VIRTUAL_DEVICES}" \
-          /etc/init.d/cuttlefish-common start
-      fi
-    fi
-  }
   start_cuttlefish
-
-  # TODO Move the post-run script to run after lab server startup.
-  function run_postrun_hook {
-    if [[ -f "${POSTRUN_SCRIPT_PATH}" ]]; then
-      source ${POSTRUN_SCRIPT_PATH}
-    fi
-  }
   run_postrun_hook
-
-  function start_test_runner {
-    rm -rf "${MTT_TEST_WORK_DIR}"
-    mkdir -p "${MTT_TEST_WORK_DIR}"
-    MAX_HEAP_MB="$(expr `free -m | awk '/^Mem:/{print $2}'` / 4)"
-    MAX_HEAP_MB=$(( MAX_HEAP_MB < 6000 ? 6000 : MAX_HEAP_MB ))
-    if [[ -z "${IS_OMNILAB_BASED}" ]]
-    then
-      # Start TF with the modified global config and at least 6GB of heap space (can
-      # be adjusted by setting the -Xmx flag in the TRADEFED_OPTS variable).
-      MTT_TRADEFED_OPTS="-Djava.io.tmpdir=${MTT_TEST_WORK_DIR} -Xmx${MAX_HEAP_MB}m"
-      TF_GLOBAL_CONFIG="${TF_CONFIG_FILE}"\
-        MTT_CONTROL_SERVER_URL="${MTT_CONTROL_SERVER_URL}"\
-        MTT_CONTROL_FILE_SERVER_URL="${MTT_CONTROL_FILE_SERVER_URL}"\
-        TRADEFED_OPTS="${MTT_TRADEFED_OPTS} ${TRADEFED_OPTS}"\
-        exec tradefed.sh
-    else
-      # Start OSS lab server
-      LAB_SERVER_ARGS=""
-      if [[ "${MAX_ORCHESTRATION_VIRTUAL_DEVICES}" -gt 0 ]]; then
-        CLOUD_ORCHESTRATOR_URL="${CLOUD_ORCHESTRATOR_URL:-http://localhost:8080}"
-        LAB_SERVER_ARGS+="--android_jit_emulator_num=${MAX_ORCHESTRATION_VIRTUAL_DEVICES} "
-        LAB_SERVER_ARGS+="--cloud_orchestrator_service_url=${CLOUD_ORCHESTRATOR_URL} "
-        LAB_SERVER_ARGS+="--noop_jit_emulator=false "
-      elif [[ "${MAX_LOCAL_VIRTUAL_DEVICES}" -gt 0 ]]; then
-        LAB_SERVER_ARGS+="--android_jit_emulator_num=${MAX_LOCAL_VIRTUAL_DEVICES} "
-        if [[ -n "${CLOUD_ORCHESTRATOR_URL}" ]]; then
-          LAB_SERVER_ARGS+="--cloud_orchestrator_service_url=${CLOUD_ORCHESTRATOR_URL} "
-          LAB_SERVER_ARGS+="--noop_jit_emulator=false "
-        else
-          LAB_SERVER_ARGS+="--noop_jit_emulator=true "
-        fi
-      fi
-      if [[ "${RVD_COUNT}" -gt 0 ]]; then
-        LAB_SERVER_ARGS+="--remote_android_jit_emulator_num=${RVD_COUNT} "
-        LAB_SERVER_ARGS+="--noop_jit_emulator=true "
-        LAB_SERVER_ARGS+="--virtual_device_server_ip=${RVD_HOST} "
-        LAB_SERVER_ARGS+="--virtual_device_server_username=${RVD_USER} "
-      fi
-
-      # Only start cache manager in worker mode.
-      if [[ "${ENABLE_CONTROLLER_FEATURES}" != "true" ]]; then
-        is_cache_local="false"
-        if [[ -z "${PERSISTENT_CACHE_DIR}" ]]; then
-          is_cache_local="true"
-          PERSISTENT_CACHE_DIR="${MTT_STORAGE_PATH}/local_file_store/persistent_cache"
-        fi
-        if [ ! -d "${PERSISTENT_CACHE_DIR}" ]; then
-          mkdir -p "${PERSISTENT_CACHE_DIR}"
-        fi
-
-        if [[ "${ENABLE_PERSISTENT_CACHE}" == "true" ]]
-        then
-          # Move this logic to local docker volume setup outside of the mtt container when we migrate to docker compose deployment.
-          if [[ "${is_cache_local}" == "true" ]]; then
-            PERSISTENT_CACHE_OPTS+=" --persistent_cache_dir=${PERSISTENT_CACHE_DIR} --public_dir=${MTT_LOG_DIR}"
-            echo "Start persistent cache manager with opts: ${PERSISTENT_CACHE_OPTS} for local cache."
-            java -XX:+HeapDumpOnOutOfMemoryError \
-              -jar /deviceinfra/cache_manager_server_deploy.jar \
-              ${PERSISTENT_CACHE_OPTS} &> /dev/null &
-          fi
-          LAB_SERVER_ARGS+=" --persistent_cache_dir=${PERSISTENT_CACHE_DIR} --enable_persistent_cache=true"
-        fi
-      fi
-
-      if [[ "${MTT_CONNECT_LABSERVER_TO_CONFIG_SERVER}" == "true" ]]; then
-        LAB_SERVER_ARGS+=" --enable_external_config_service=true"
-        LAB_SERVER_ARGS+=" --config_service_grpc_target=localhost:${MTT_CONFIG_SERVICE_GRPC_PORT}"
-      else
-        LAB_SERVER_ARGS+=" --api_config=/deviceinfra/lab_server_api_config.textproto"
-      fi
-
-      java \
-        "-Xmx${MAX_HEAP_MB}m" \
-        -XX:+HeapDumpOnOutOfMemoryError \
-        -Dcom.google.mobileharness.ats.lab_server_type="${ATS_LAB_SERVER_TYPE}" \
-        -jar /deviceinfra/lab_server_oss_deploy.jar \
-        --ats_file_server="${ATS_FILE_SERVER}" \
-        --ats_xts_work_dir="${MTT_MH_WORK_DIR}" \
-        --master_grpc_target="${OLC_SERVER_GRPC_TARGET}" \
-        --public_dir="${MTT_LOG_DIR}" \
-        --tf_fallback_java_binary="${JAVA21_HOME}/bin/java" \
-        --tmp_dir_root="${MTT_MH_WORK_DIR}" \
-        ${LAB_SERVER_OPTS} \
-          ${LAB_SERVER_ARGS} \
-          ${TF_EXTRA_OPTS}
-    fi
-  }
   start_test_runner
 else
   # Keep the container alive when worker features are disabled (e.g., in controller mode).
