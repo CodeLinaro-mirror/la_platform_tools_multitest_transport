@@ -72,7 +72,6 @@ The script dictates which feature sets (`ENABLE_CONTROLLER_FEATURES` and
 -   **Cuttlefish / Local Virtual Devices:** If `MAX_LOCAL_VIRTUAL_DEVICES > 0`,
     configures `rsyslogd`, generates IPv6 bridge subnets, starts
     `cuttlefish-common`, and launches `ndppd`.
--   **Post-Run Hook:** Executes `/mtt/scripts/init_post_run.sh` if present.
 -   **Test Execution Engine:**
     -   *TradeFed Mode (Non-OmniLab):* Launches `tradefed.sh` in the background
         and records its process ID as `WORKER_MAIN_PID`.
@@ -85,8 +84,11 @@ The script dictates which feature sets (`ENABLE_CONTROLLER_FEATURES` and
         Config Service via gRPC; otherwise, it falls back to using the local
         `/deviceinfra/lab_server_api_config.textproto`.
 
-### Stage 5: Service Lifecycle Management (`wait_for_services`)
+### Stage 5: Post-Run Hook & Service Lifecycle Management
 
+-   **Post-Run Hook:** Executes `/mtt/scripts/init_post_run.sh` if present after
+    all services (controller, common, and worker test runner) have started,
+    allowing post-startup configuration (such as starting the Wrangler agent).
 -   **Primary Process Arbitration:** Arbitrates the primary service process to
     wait on, prioritizing `CONTROLLER_MAIN_PID` (Controller and Standalone
     modes) over `WORKER_MAIN_PID` (Worker mode).

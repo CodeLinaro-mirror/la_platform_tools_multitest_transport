@@ -147,9 +147,8 @@ SQL_DATABASE_URI=""
 # before any services are started.
 readonly PRERUN_SCRIPT_PATH="/mtt/scripts/init_pre_run.sh"
 
-# The custom script that is executed only before the lab server or TF are
-# started, and after all other services are started.
-# TODO Move the post-run script to run after lab server startup.
+# The custom script that is executed after all services (controller, common,
+# and worker test runner) have started, and before waiting for service exit.
 readonly POSTRUN_SCRIPT_PATH="/mtt/scripts/init_post_run.sh"
 
 readonly MYSQL_SCRIPT_PATH="/mtt/scripts/mysql.sh"
@@ -504,7 +503,6 @@ function start_cuttlefish {
   fi
 }
 
-# TODO Move the post-run script to run after lab server startup.
 function run_postrun_hook {
   if [[ -f "${POSTRUN_SCRIPT_PATH}" ]]; then
     source ${POSTRUN_SCRIPT_PATH}
@@ -642,9 +640,10 @@ then
   configure_tradefed
   start_adb
   start_cuttlefish
-  run_postrun_hook
   start_test_runner
 fi
+
+run_postrun_hook
 
 wait_for_services
 

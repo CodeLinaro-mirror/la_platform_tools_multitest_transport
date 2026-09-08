@@ -33,7 +33,7 @@ flowchart TD
 
     StartATS --> CheckWorker{"ENABLE_WORKER_FEATURES<br/>== true?"}
 
-    CheckWorker -->|No| WaitForServices
+    CheckWorker -->|No| CheckPostRun{"Check Post-run Script"}
 
     CheckWorker -->|Yes| ConfigTF["Configure TradeFed Global Config<br/>& Virtual Device Pool"]
     ConfigTF --> ConfigADB{"MTT_USE_HOST_ADB<br/>unset?"}
@@ -44,12 +44,8 @@ flowchart TD
     StartADBHost --> CheckCVD
 
     CheckCVD -->|Yes| StartCVD["Start rsyslogd &<br/>Cuttlefish Common / ndppd"]
-    CheckCVD -->|No| CheckPostRun{"Check Post-run Script"}
-    StartCVD --> CheckPostRun
-
-    CheckPostRun -->|Exists| RunPost["Source init_post_run.sh"]
-    CheckPostRun -->|None| PrepWork["Prepare MTT_TEST_WORK_DIR<br/>& Calculate Heap"]
-    RunPost --> PrepWork
+    CheckCVD -->|No| PrepWork["Prepare MTT_TEST_WORK_DIR<br/>& Calculate Heap"]
+    StartCVD --> PrepWork
 
     PrepWork --> CheckOmniWorker{"IS_OMNILAB_BASED?"}
 
@@ -64,7 +60,12 @@ flowchart TD
     CfgExt --> RunLabServer["Start OSS Lab Server in Background<br/>(Record WORKER_MAIN_PID)"]
     CfgLocal --> RunLabServer
 
-    RunTF --> WaitForServices
-    RunLabServer --> WaitForServices
+    RunTF --> CheckPostRun
+    RunLabServer --> CheckPostRun
+
+    CheckPostRun -->|Exists| RunPost["Source init_post_run.sh"]
+    CheckPostRun -->|None| WaitForServices
+    RunPost --> WaitForServices
+
     WaitForServices["wait_for_services<br/>(Wait for primary PID &<br/>propagate exit code)"] --> End(["Exit Container"])
 %% LINT.ThenChange(init.sh)
