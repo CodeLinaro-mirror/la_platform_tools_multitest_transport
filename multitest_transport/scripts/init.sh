@@ -122,6 +122,12 @@ BIND_ADDRESS="0.0.0.0"
 ENABLE_CONTROLLER_FEATURES="true"
 ENABLE_WORKER_FEATURES="true"
 
+# Process ID of the primary controller service (OLC server).
+CONTROLLER_MAIN_PID=""
+
+# Process ID of the primary worker service (Lab server or TradeFed).
+WORKER_MAIN_PID=""
+
 # Default to file service only mode.
 FILE_SERVICE_ONLY="true"
 
@@ -301,6 +307,7 @@ function start_olc_server {
     "${java_loader_args[@]}" \
     "${olc_server_default_opts[@]}" \
     ${OLC_SERVER_OPTS} &> /dev/null &
+  CONTROLLER_MAIN_PID=$!
   echo "OLC server started."
 }
 
@@ -514,11 +521,12 @@ function start_test_runner {
     # Start TF with the modified global config and at least 6GB of heap space (can
     # be adjusted by setting the -Xmx flag in the TRADEFED_OPTS variable).
     local mtt_tradefed_opts="-Djava.io.tmpdir=${MTT_TEST_WORK_DIR} -Xmx${max_heap_mb}m"
-    TF_GLOBAL_CONFIG="${TF_CONFIG_FILE}"\
-      MTT_CONTROL_SERVER_URL="${MTT_CONTROL_SERVER_URL}"\
-      MTT_CONTROL_FILE_SERVER_URL="${MTT_CONTROL_FILE_SERVER_URL}"\
-      TRADEFED_OPTS="${mtt_tradefed_opts} ${TRADEFED_OPTS}"\
-      exec tradefed.sh
+    TF_GLOBAL_CONFIG="${TF_CONFIG_FILE}" \
+      MTT_CONTROL_SERVER_URL="${MTT_CONTROL_SERVER_URL}" \
+      MTT_CONTROL_FILE_SERVER_URL="${MTT_CONTROL_FILE_SERVER_URL}" \
+      TRADEFED_OPTS="${mtt_tradefed_opts} ${TRADEFED_OPTS}" \
+      tradefed.sh &
+    WORKER_MAIN_PID=$!
   else
     # Start OSS lab server
     local lab_server_args=""
@@ -588,8 +596,27 @@ function start_test_runner {
       --tmp_dir_root="${MTT_MH_WORK_DIR}" \
       ${LAB_SERVER_OPTS} \
         ${lab_server_args} \
-        ${TF_EXTRA_OPTS}
+        ${TF_EXTRA_OPTS} &
+    WORKER_MAIN_PID=$!
   fi
+}
+
+function wait_for_services {
+  local main_pid=""
+  if [[ -n "${CONTROLLER_MAIN_PID}" ]]; then
+    main_pid="${CONTROLLER_MAIN_PID}"
+  elif [[ -n "${WORKER_MAIN_PID}" ]]; then
+    main_pid="${WORKER_MAIN_PID}"
+  fi
+
+  if [[ -z "${main_pid}" ]]; then
+    echo "Error: No main process was started. Exiting..." >&2
+    exit 1
+  fi
+
+  echo "Waiting for main process (PID: ${main_pid})..."
+  wait "${main_pid}"
+  exit $?
 }
 
 # --- Main Execution Flow ---
@@ -617,10 +644,8 @@ then
   start_cuttlefish
   run_postrun_hook
   start_test_runner
-else
-  # Keep the container alive when worker features are disabled (e.g., in controller mode).
-  echo "Worker features disabled. Keeping container alive for controller services..."
-  tail -f /dev/null
 fi
+
+wait_for_services
 
 # LINT.ThenChange(init_script_workflow.md, init_script_workflow.mermaid)

@@ -55,7 +55,8 @@ The script dictates which feature sets (`ENABLE_CONTROLLER_FEATURES` and
     -   Initializes and starts the MySQL database daemon.
     -   Optionally launches the Device Config Server
         (`device_config_server_deploy.jar`).
-    -   Launches the OmniLab Client (OLC) Server (`ats_olc_server_deploy.jar`).
+    -   Launches the OmniLab Client (OLC) Server (`ats_olc_server_deploy.jar`)
+        and records its process ID as `CONTROLLER_MAIN_PID`.
 
 ### Stage 3: ATS Serve Script (Always Executed)
 
@@ -64,30 +65,37 @@ The script dictates which feature sets (`ENABLE_CONTROLLER_FEATURES` and
 
 ### Stage 4: Worker Features (If Enabled)
 
--   **Worker Disabled (`ENABLE_WORKER_FEATURES == false`):** When worker
-    features are disabled (e.g., in Controller mode), the script initiates a
-    keep-alive process (`tail -f /dev/null`) to prevent the Docker container
-    from exiting, thereby maintaining all active background controller
-    daemons.
 -   **TradeFed Setup:** Prepares `host-config.xml` and populates the
     preconfigured virtual device pool from `REMOTE_VIRTUAL_DEVICES`.
 -   **ADB Daemon:** Starts `adb start-server` and configures `socat` proxies to
-  forward port `5037` traffic appropriately (local container vs. host ADB).
+    forward port `5037` traffic appropriately (local container vs. host ADB).
 -   **Cuttlefish / Local Virtual Devices:** If `MAX_LOCAL_VIRTUAL_DEVICES > 0`,
-  configures `rsyslogd`, generates IPv6 bridge subnets, starts
+    configures `rsyslogd`, generates IPv6 bridge subnets, starts
     `cuttlefish-common`, and launches `ndppd`.
 -   **Post-Run Hook:** Executes `/mtt/scripts/init_post_run.sh` if present.
 -   **Test Execution Engine:**
-    -   *TradeFed Mode (Non-OmniLab):* Directly executes `tradefed.sh` via
-        `exec`.
+    -   *TradeFed Mode (Non-OmniLab):* Launches `tradefed.sh` in the background
+        and records its process ID as `WORKER_MAIN_PID`.
     -   *OmniLab Mode:* Sets up persistent caching
         (`cache_manager_server_deploy.jar`) if enabled, configures JIT emulator
         flags, and launches the Mobile Harness OSS Lab Server
-        (`lab_server_oss_deploy.jar`). If
-        `MTT_CONNECT_LABSERVER_TO_CONFIG_SERVER` is set to `true`, it configures
-        the Lab Server to connect to the external Config Service via gRPC;
-        otherwise, it falls back to using the local
+        (`lab_server_oss_deploy.jar`) in the background, recording its process
+        ID as `WORKER_MAIN_PID`. If `MTT_CONNECT_LABSERVER_TO_CONFIG_SERVER` is
+        set to `true`, it configures the Lab Server to connect to the external
+        Config Service via gRPC; otherwise, it falls back to using the local
         `/deviceinfra/lab_server_api_config.textproto`.
+
+### Stage 5: Service Lifecycle Management (`wait_for_services`)
+
+-   **Primary Process Arbitration:** Arbitrates the primary service process to
+    wait on, prioritizing `CONTROLLER_MAIN_PID` (Controller and Standalone
+    modes) over `WORKER_MAIN_PID` (Worker mode).
+-   **Fail-Fast Error Handling:** If no primary service was started (both
+    `CONTROLLER_MAIN_PID` and `WORKER_MAIN_PID` are unset), logs an error and
+    immediately exits with code 1, preventing zombie or headless containers.
+-   **Lifecycle Monitoring:** Waits for the arbitrated primary process using
+    `wait "${main_pid}"` and propagates its exit code (`exit $?`), ensuring
+    container runtimes accurately track service health.
 
 ---
 

@@ -23,7 +23,7 @@ flowchart TD
     CheckOmniCtrl -->|Yes| StartMySQL["Start MySQL Database"]
     StartMySQL --> CheckCfg{"Config Service<br/>Enabled?"}
     CheckCfg -->|Yes| StartCfg["Start Config Service<br/>(device_config_server_deploy.jar)"]
-    CheckCfg -->|No| StartOLC["Start OLC Server<br/>(ats_olc_server_deploy.jar)"]
+    CheckCfg -->|No| StartOLC["Start OLC Server<br/>(Record CONTROLLER_MAIN_PID)"]
     StartCfg --> StartOLC
     StartOLC --> CheckOLCOpts["Check OLC Credential Type"]
     CheckOmniCtrl -->|No| CheckOLCOpts
@@ -33,7 +33,7 @@ flowchart TD
 
     StartATS --> CheckWorker{"ENABLE_WORKER_FEATURES<br/>== true?"}
 
-    CheckWorker -->|No| KeepAlive["Keep Container Alive<br/>(tail -f /dev/null)"]
+    CheckWorker -->|No| WaitForServices
 
     CheckWorker -->|Yes| ConfigTF["Configure TradeFed Global Config<br/>& Virtual Device Pool"]
     ConfigTF --> ConfigADB{"MTT_USE_HOST_ADB<br/>unset?"}
@@ -53,7 +53,7 @@ flowchart TD
 
     PrepWork --> CheckOmniWorker{"IS_OMNILAB_BASED?"}
 
-    CheckOmniWorker -->|No| RunTF["exec tradefed.sh"]
+    CheckOmniWorker -->|No| RunTF["Start TradeFed in Background<br/>(Record WORKER_MAIN_PID)"]
     CheckOmniWorker -->|Yes| CheckCache{"Persistent Cache<br/>Enabled?"}
 
     CheckCache -->|Yes| StartCache["Start Cache Manager<br/>(cache_manager_server_deploy.jar)"]
@@ -61,6 +61,10 @@ flowchart TD
     StartCache --> CheckLabCfg
     CheckLabCfg -->|Yes| CfgExt["Configure External Config Service<br/>(localhost:8081)"]
     CheckLabCfg -->|No| CfgLocal["Configure Local API Config<br/>(lab_server_api_config.textproto)"]
-    CfgExt --> RunLabServer["Start OSS Lab Server<br/>(lab_server_oss_deploy.jar)"]
+    CfgExt --> RunLabServer["Start OSS Lab Server in Background<br/>(Record WORKER_MAIN_PID)"]
     CfgLocal --> RunLabServer
+
+    RunTF --> WaitForServices
+    RunLabServer --> WaitForServices
+    WaitForServices["wait_for_services<br/>(Wait for primary PID &<br/>propagate exit code)"] --> End(["Exit Container"])
 %% LINT.ThenChange(init.sh)
