@@ -476,7 +476,7 @@ class RemoteFileHandle(HttpFileHandle):
     if self.hostname is not None:
       parsed_fs_url = urllib.parse.urlparse(fs_url)
       fs_url = parsed_fs_url._replace(
-          netloc='{}:{}'.format(self.hostname, parsed_fs_url.port)).geturl()
+          netloc='{}:{}'.format(self.hostname, parsed_fs_url.port)).geturl()  # pyrefly: ignore[bad-argument-type]
     # Generate URLs
     self.file_url = _JoinPath(fs_url, 'file', self.path)  # pyrefly: ignore[bad-argument-type]
     self.dir_url = _JoinPath(fs_url, 'dir', self.path)  # pyrefly: ignore[bad-argument-type]
