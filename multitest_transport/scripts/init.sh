@@ -638,6 +638,9 @@ function wait_for_services {
     exit 1
   fi
 
+  # Wait for services to finish graceful shutdown on SIGTERM/SIGINT.
+  trap 'wait "${target_pids[@]}" 2>/dev/null; exit $?' SIGTERM SIGINT
+
   # Exit on first failure in standalone mode, or wait for the single service.
   if [[ ${#target_pids[@]} -gt 1 ]]; then
     wait -n "${target_pids[@]}"
