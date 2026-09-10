@@ -27,7 +27,7 @@ flowchart TD
     StartCfg --> StartOLC
     StartOLC --> CheckOLCOpts["Check OLC Credential Type"]
     CheckOmniCtrl -->|No| CheckOLCOpts
-    CheckOLCOpts --> StartATS["Start ATS Server<br/>(/mtt/serve.sh in Background)"]
+    CheckOLCOpts --> StartATS["Start ATS Server<br/>(/mtt/serve.sh in Background,<br/>Record COMMON_SERVICE_MAIN_PID)"]
 
     CheckCtrl -->|No| StartATS
 
@@ -67,5 +67,5 @@ flowchart TD
     CheckPostRun -->|None| WaitForServices
     RunPost --> WaitForServices
 
-    WaitForServices["wait_for_services<br/>(Wait for primary PID &<br/>propagate exit code)"] --> End(["Exit Container"])
+    WaitForServices["wait_for_services<br/>(Wait for controller, worker,<br/>or both to finish)"] --> End(["Exit Container"])
 %% LINT.ThenChange(init.sh)

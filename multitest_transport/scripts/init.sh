@@ -122,8 +122,12 @@ BIND_ADDRESS="0.0.0.0"
 ENABLE_CONTROLLER_FEATURES="true"
 ENABLE_WORKER_FEATURES="true"
 
-# Process ID of the primary controller service (OLC server).
+# Process ID of the primary controller service (OLC server in ATS 2.0 or
+# serve.sh in ATS 1.0).
 CONTROLLER_MAIN_PID=""
+
+# Process ID of the primary common service (ATS serve orchestrator).
+COMMON_SERVICE_MAIN_PID=""
 
 # Process ID of the primary worker service (Lab server or TradeFed).
 WORKER_MAIN_PID=""
@@ -375,7 +379,8 @@ function start_common_services {
       --report_generator_jar "${MTT_REPORT_GENERATOR_JAR}" \
       --is_omnilab_based "${IS_OMNILAB_BASED}" \
       --enable_lab_console_ui "${MTT_ENABLE_LAB_CONSOLE_UI}" \
-      2>&1 | multilog s10485760 n10 "${MTT_CONTROL_SERVER_LOG_DIR}" &
+      > >(multilog s10485760 n10 "${MTT_CONTROL_SERVER_LOG_DIR}") 2>&1 &
+  COMMON_SERVICE_MAIN_PID=$!
 }
 
 function configure_tradefed {
@@ -599,22 +604,48 @@ function start_test_runner {
   fi
 }
 
+# Waits for background services to complete and propagates the exit code.
 function wait_for_services {
-  local main_pid=""
-  if [[ -n "${CONTROLLER_MAIN_PID}" ]]; then
-    main_pid="${CONTROLLER_MAIN_PID}"
-  elif [[ -n "${WORKER_MAIN_PID}" ]]; then
-    main_pid="${WORKER_MAIN_PID}"
+  # In ATS 1.0, serve.sh acts as the primary controller process.
+  if [[ -z "${CONTROLLER_MAIN_PID}" && -z "${IS_OMNILAB_BASED}" && "${ENABLE_CONTROLLER_FEATURES}" == "true" ]]; then
+    CONTROLLER_MAIN_PID="${COMMON_SERVICE_MAIN_PID}"
   fi
 
-  if [[ -z "${main_pid}" ]]; then
-    echo "Error: No main process was started. Exiting..." >&2
+  local target_pids=()
+  if [[ "${ENABLE_CONTROLLER_FEATURES}" == "true" && "${ENABLE_WORKER_FEATURES}" == "true" ]]; then
+    if [[ -z "${CONTROLLER_MAIN_PID}" || -z "${WORKER_MAIN_PID}" ]]; then
+      echo "Error: Standalone mode requires both controller and worker processes, but missing PID (controller: ${CONTROLLER_MAIN_PID:-none}, worker: ${WORKER_MAIN_PID:-none}). Exiting..." >&2
+      exit 1
+    fi
+    target_pids=("${CONTROLLER_MAIN_PID}" "${WORKER_MAIN_PID}")
+    echo "Waiting for controller (PID: ${CONTROLLER_MAIN_PID}) and worker (PID: ${WORKER_MAIN_PID}) in standalone mode..."
+  elif [[ "${ENABLE_WORKER_FEATURES}" == "true" ]]; then
+    if [[ -z "${WORKER_MAIN_PID}" ]]; then
+      echo "Error: Worker mode requires worker process, but WORKER_MAIN_PID is not set. Exiting..." >&2
+      exit 1
+    fi
+    target_pids=("${WORKER_MAIN_PID}")
+    echo "Waiting for worker process (PID: ${WORKER_MAIN_PID})..."
+  elif [[ "${ENABLE_CONTROLLER_FEATURES}" == "true" ]]; then
+    if [[ -z "${CONTROLLER_MAIN_PID}" ]]; then
+      echo "Error: Controller mode requires controller process, but CONTROLLER_MAIN_PID is not set. Exiting..." >&2
+      exit 1
+    fi
+    target_pids=("${CONTROLLER_MAIN_PID}")
+    echo "Waiting for controller process (PID: ${CONTROLLER_MAIN_PID})..."
+  else
+    echo "Error: Neither controller nor worker features are enabled. Exiting..." >&2
     exit 1
   fi
 
-  echo "Waiting for main process (PID: ${main_pid})..."
-  wait "${main_pid}"
-  exit $?
+  # Exit on first failure in standalone mode, or wait for the single service.
+  if [[ ${#target_pids[@]} -gt 1 ]]; then
+    wait -n "${target_pids[@]}"
+    exit $?
+  else
+    wait "${target_pids[0]}"
+    exit $?
+  fi
 }
 
 # --- Main Execution Flow ---

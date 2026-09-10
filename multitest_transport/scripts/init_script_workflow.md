@@ -89,15 +89,9 @@ The script dictates which feature sets (`ENABLE_CONTROLLER_FEATURES` and
 -   **Post-Run Hook:** Executes `/mtt/scripts/init_post_run.sh` if present after
     all services (controller, common, and worker test runner) have started,
     allowing post-startup configuration (such as starting the Wrangler agent).
--   **Primary Process Arbitration:** Arbitrates the primary service process to
-    wait on, prioritizing `CONTROLLER_MAIN_PID` (Controller and Standalone
-    modes) over `WORKER_MAIN_PID` (Worker mode).
--   **Fail-Fast Error Handling:** If no primary service was started (both
-    `CONTROLLER_MAIN_PID` and `WORKER_MAIN_PID` are unset), logs an error and
-    immediately exits with code 1, preventing zombie or headless containers.
--   **Lifecycle Monitoring:** Waits for the arbitrated primary process using
-    `wait "${main_pid}"` and propagates its exit code (`exit $?`), ensuring
-    container runtimes accurately track service health.
+-   **Service Lifecycle Management (`wait_for_services`):** Waits for the
+    controller process, worker process, or both (in Standalone mode) to finish,
+    and propagates the exit code.
 
 ---
 
