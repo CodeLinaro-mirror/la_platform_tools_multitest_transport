@@ -3,9 +3,9 @@ flowchart TD
     Start(["Start init.sh"]) --> Env["Load Environment & Local Variables"]
     Env --> ModeDet{"Determine Mode<br/>(MTT_CONTROL_SERVER_URL<br/>& OPERATION_MODE)"}
 
-    ModeDet -->|Worker Mode| SetWorker["ENABLE_CONTROLLER_FEATURES = false<br/>Configure Remote Targets"]
-    ModeDet -->|Controller Mode| SetCtrl["ENABLE_WORKER_FEATURES = false"]
-    ModeDet -->|Standalone / Default| SetBoth["Both Features Enabled"]
+    ModeDet -->|Worker Mode| SetWorker["ENABLE_CONTROLLER_FEATURES = false<br/>Configure Remote Targets<br/>Set RUNNING_MODE = worker"]
+    ModeDet -->|Controller Mode| SetCtrl["ENABLE_WORKER_FEATURES = false<br/>Set RUNNING_MODE = controller"]
+    ModeDet -->|Standalone / Default| SetBoth["Both Features Enabled<br/>Set RUNNING_MODE = standalone"]
 
     SetWorker --> Certs["Import CA Certificates &<br/>Configure Proxy Settings"]
     SetCtrl --> Certs

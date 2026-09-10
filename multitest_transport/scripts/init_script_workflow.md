@@ -21,13 +21,16 @@ and worker services depending on the container's operational mode.
 
 The script dictates which feature sets (`ENABLE_CONTROLLER_FEATURES` and
 `ENABLE_WORKER_FEATURES`) activate based on two main variables:
-`MTT_CONTROL_SERVER_URL` and `OPERATION_MODE`.
+`MTT_CONTROL_SERVER_URL` and `OPERATION_MODE`. It resolves the mutually
+exclusive `RUNNING_MODE` (`standalone`, `controller`, or `worker`) and sets the
+corresponding boolean flags (`IS_STANDALONE_MODE`, `IS_CONTROLLER_ONLY_MODE`,
+`IS_WORKER_ONLY_MODE`).
 
-| Mode | `MTT_CONTROL_SERVER_URL` | `OPERATION_MODE` | Controller Features | Worker Features | Description |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Standalone** | Unset | Unset / Default | **Enabled** | **Enabled** | Runs both Controller (RabbitMQ, OLC, DB) and Worker (ADB, CVD, Lab Server/TF) locally. |
-| **Controller** | Unset | `on_premise` | **Enabled** | Disabled | Operates exclusively as the central control plane. |
-| **Worker** | Set (Remote URL) | `on_premise` / Any | Disabled | **Enabled** | Operates as a remote worker node connecting back to the specified Controller. |
+| Mode | `RUNNING_MODE` | `MTT_CONTROL_SERVER_URL` | `OPERATION_MODE` | Controller Features | Worker Features | Description |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **Standalone** | `standalone` | Unset | Unset / Default | **Enabled** | **Enabled** | Runs both Controller (RabbitMQ, OLC, DB) and Worker (ADB, CVD, Lab Server/TF) locally. |
+| **Controller** | `controller` | Unset | `on_premise` | **Enabled** | Disabled | Operates exclusively as the central control plane. |
+| **Worker** | `worker` | Set (Remote URL) | `on_premise` / Any | Disabled | **Enabled** | Operates as a remote worker node connecting back to the specified Controller. |
 
 ---
 

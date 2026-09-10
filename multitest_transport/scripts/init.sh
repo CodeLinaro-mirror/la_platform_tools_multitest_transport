@@ -17,12 +17,6 @@ set -e
 
 # LINT.IfChange
 
-# TODO Better differentiate different running mode
-IS_CONTROLLER="false"
-if [[ -z "${MTT_CONTROL_SERVER_URL}" ]]; then
-  IS_CONTROLLER="true"
-fi
-
 # --- Environment Variables from MTT CLI ---
 # Enables persistent caching if set to 'true'.
 ENABLE_PERSISTENT_CACHE="${ENABLE_PERSISTENT_CACHE:-}"
@@ -118,10 +112,6 @@ ATS_WORKER_GRPC_PORT="${ATS_WORKER_GRPC_PORT:-7031}"
 # URLs correctly.
 BIND_ADDRESS="0.0.0.0"
 
-# Enable controller and worker features by default.
-ENABLE_CONTROLLER_FEATURES="true"
-ENABLE_WORKER_FEATURES="true"
-
 # Process ID of the primary controller service (OLC server in ATS 2.0 or
 # serve.sh in ATS 1.0).
 CONTROLLER_MAIN_PID=""
@@ -163,24 +153,45 @@ function configure_operation_mode {
   # Standalone mode: mtt start
   # Worker mode: mtt start --mtt_control_server_url=... --operation_mode=on_premise
   # Controller mode: mtt start --operation_mode=on_premise
-  # If the controller URL is set, we are in worker mode.
-  if [[ ! -z "${MTT_CONTROL_SERVER_URL}" ]]; then
-    # Disable controller features in worker mode.
+  if [[ -n "${MTT_CONTROL_SERVER_URL}" ]]; then
+    # Worker mode (remote worker node connecting to a central controller).
     ENABLE_CONTROLLER_FEATURES="false"
+    ENABLE_WORKER_FEATURES="true"
+    RUNNING_MODE="worker"
+    IS_STANDALONE_MODE="false"
+    IS_CONTROLLER_ONLY_MODE="false"
+    IS_WORKER_ONLY_MODE="true"
+    IS_CONTROLLER="false"
 
     # Only initialize the ATS file server if the controller URL is set.
     OLC_SERVER_GRPC_TARGET="$(echo ${MTT_CONTROL_SERVER_URL} | sed 's,^\([^:/]\+://\)\?\([^:/]\+\)\(:\([0-9]\{1\,5\}\)\)\?\+.*$,\2,g'):${ATS_WORKER_GRPC_PORT}"
     local remotes_control_server_port="$(echo ${MTT_CONTROL_SERVER_URL} | sed 's,^\([^:/]\+://\)\?\([^:/]\+:\)\(\([0-9]\{1\,5\}\)\)\?\+.*$,\3,g')"
     local ats_file_server_port="$((${remotes_control_server_port}+6))"
     ATS_FILE_SERVER="$(echo ${MTT_CONTROL_SERVER_URL} | sed 's,^\(\([^:/]\+://\)\?\([^:/]\+\)\)\(:\([0-9]\{1\,5\}\)\)\?\+.*$,\1,g'):${ats_file_server_port}"
+  elif [[ "${OPERATION_MODE}" == "on_premise" ]]; then
+    # Controller mode (cluster central control plane).
+    ENABLE_CONTROLLER_FEATURES="true"
+    ENABLE_WORKER_FEATURES="false"
+    RUNNING_MODE="controller"
+    IS_STANDALONE_MODE="false"
+    IS_CONTROLLER_ONLY_MODE="true"
+    IS_WORKER_ONLY_MODE="false"
+    IS_CONTROLLER="true"
+  else
+    # Standalone mode (runs both controller and worker features locally).
+    ENABLE_CONTROLLER_FEATURES="true"
+    ENABLE_WORKER_FEATURES="true"
+    RUNNING_MODE="standalone"
+    IS_STANDALONE_MODE="true"
+    IS_CONTROLLER_ONLY_MODE="false"
+    IS_WORKER_ONLY_MODE="false"
+    IS_CONTROLLER="true"
   fi
 
-  # If we are in on-premise mode but the controller URL is not set, we are in
-  # controller mode.
-  if [[ -z "${MTT_CONTROL_SERVER_URL}" ]] && [[ "${OPERATION_MODE}" == "on_premise" ]]; then
-    # Disable worker features in controller mode.
-    ENABLE_WORKER_FEATURES="false"
-  fi
+  readonly RUNNING_MODE IS_STANDALONE_MODE IS_CONTROLLER_ONLY_MODE IS_WORKER_ONLY_MODE
+  readonly ENABLE_CONTROLLER_FEATURES ENABLE_WORKER_FEATURES IS_CONTROLLER
+  export RUNNING_MODE IS_STANDALONE_MODE IS_CONTROLLER_ONLY_MODE IS_WORKER_ONLY_MODE
+  export ENABLE_CONTROLLER_FEATURES ENABLE_WORKER_FEATURES IS_CONTROLLER
 }
 
 function import_ca_certificates {
@@ -612,21 +623,21 @@ function wait_for_services {
   fi
 
   local target_pids=()
-  if [[ "${ENABLE_CONTROLLER_FEATURES}" == "true" && "${ENABLE_WORKER_FEATURES}" == "true" ]]; then
+  if [[ "${IS_STANDALONE_MODE}" == "true" ]]; then
     if [[ -z "${CONTROLLER_MAIN_PID}" || -z "${WORKER_MAIN_PID}" ]]; then
       echo "Error: Standalone mode requires both controller and worker processes, but missing PID (controller: ${CONTROLLER_MAIN_PID:-none}, worker: ${WORKER_MAIN_PID:-none}). Exiting..." >&2
       exit 1
     fi
     target_pids=("${CONTROLLER_MAIN_PID}" "${WORKER_MAIN_PID}")
     echo "Waiting for controller (PID: ${CONTROLLER_MAIN_PID}) and worker (PID: ${WORKER_MAIN_PID}) in standalone mode..."
-  elif [[ "${ENABLE_WORKER_FEATURES}" == "true" ]]; then
+  elif [[ "${IS_WORKER_ONLY_MODE}" == "true" ]]; then
     if [[ -z "${WORKER_MAIN_PID}" ]]; then
       echo "Error: Worker mode requires worker process, but WORKER_MAIN_PID is not set. Exiting..." >&2
       exit 1
     fi
     target_pids=("${WORKER_MAIN_PID}")
     echo "Waiting for worker process (PID: ${WORKER_MAIN_PID})..."
-  elif [[ "${ENABLE_CONTROLLER_FEATURES}" == "true" ]]; then
+  elif [[ "${IS_CONTROLLER_ONLY_MODE}" == "true" ]]; then
     if [[ -z "${CONTROLLER_MAIN_PID}" ]]; then
       echo "Error: Controller mode requires controller process, but CONTROLLER_MAIN_PID is not set. Exiting..." >&2
       exit 1
