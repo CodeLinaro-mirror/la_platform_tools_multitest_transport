@@ -675,15 +675,6 @@ def _StartMttNode(args, host):
             f'{args.bind_address}:{config_service_grpc_port}',
             config_service_grpc_port,
         )
-    if args.config_service_storage_type:
-      docker_helper.AddEnv(
-          'MTT_CONFIG_SERVICE_STORAGE_TYPE', args.config_service_storage_type
-      )
-    if args.config_service_local_storage_dir:
-      docker_helper.AddEnv(
-          'MTT_CONFIG_SERVICE_LOCAL_STORAGE_DIR',
-          args.config_service_local_storage_dir,
-      )
 
   if args.connect_labserver_to_config_server:
     docker_helper.AddEnv(
@@ -1691,17 +1682,6 @@ def _CreateStartArgParser():
       type=int,
       default=8081,
       help='Device config service gRPC port exposed by the container',
-  )
-  parser.add_argument(
-      '--config_service_storage_type',
-      help='Device config service storage type',
-      default='LOCAL_FILE',
-      choices=['LOCAL_FILE', 'JDBC_CONNECTOR'],
-  )
-  parser.add_argument(
-      '--config_service_local_storage_dir',
-      help='Device config service local storage directory',
-      default='/data/config_service',
   )
   parser.add_argument(
       '--connect_labserver_to_config_server',

@@ -42,10 +42,6 @@ MAX_ORCHESTRATION_VIRTUAL_DEVICES="${MAX_ORCHESTRATION_VIRTUAL_DEVICES:-0}"
 MTT_CLI_VERSION="${MTT_CLI_VERSION:-}"
 # gRPC port for the Config Service.
 MTT_CONFIG_SERVICE_GRPC_PORT="${MTT_CONFIG_SERVICE_GRPC_PORT:-8081}"
-# Local storage directory for the Config Service.
-MTT_CONFIG_SERVICE_LOCAL_STORAGE_DIR="${MTT_CONFIG_SERVICE_LOCAL_STORAGE_DIR:-/data/config_service}"
-# Storage type for the Config Service (e.g., LOCAL_FILE).
-MTT_CONFIG_SERVICE_STORAGE_TYPE="${MTT_CONFIG_SERVICE_STORAGE_TYPE:-LOCAL_FILE}"
 # Flag to indicate if the lab server should connect to the config server.
 MTT_CONNECT_LABSERVER_TO_CONFIG_SERVER="${MTT_CONNECT_LABSERVER_TO_CONFIG_SERVER:-false}"
 # URL of the file server on the control server.
@@ -262,20 +258,18 @@ function init_omnilab_workdir {
 
 function start_config_service {
   echo "Starting Config Service on port ${MTT_CONFIG_SERVICE_GRPC_PORT}..."
-  local -a config_service_args=(
+  local -a config_server_opts=(
     --config_service_grpc_port="${MTT_CONFIG_SERVICE_GRPC_PORT}"
-    --config_service_storage_type="${MTT_CONFIG_SERVICE_STORAGE_TYPE}"
+    --config_service_storage_type="JDBC_CONNECTOR"
+    --config_service_jdbc_url="jdbc:mysql:///ats_db"
+    --config_service_jdbc_properties="socketFactory=org.newsclub.net.mysql.AFUNIXDatabaseSocketFactory&junixsocket.file=/data/ats_db/mysqld.sock"
   )
-  if [[ "${MTT_CONFIG_SERVICE_STORAGE_TYPE}" == "LOCAL_FILE" ]]; then
-    mkdir -p "${MTT_CONFIG_SERVICE_LOCAL_STORAGE_DIR}"
-    config_service_args+=(--config_service_local_storage_dir="${MTT_CONFIG_SERVICE_LOCAL_STORAGE_DIR}")
-  fi
-  # TODO: add flag for sql config service storage type.
 
   mkdir -p "${MTT_CONFIG_SERVICE_LOG_DIR}"
   java -XX:+HeapDumpOnOutOfMemoryError \
       -jar /deviceinfra/device_config_server_deploy.jar \
-      "${config_service_args[@]}" \
+      "${config_server_opts[@]}" \
+      ${CONFIG_SERVER_OPTS} \
       &> "${MTT_CONFIG_SERVICE_LOG_DIR}/log.txt" &
   echo "Config Service started."
 }

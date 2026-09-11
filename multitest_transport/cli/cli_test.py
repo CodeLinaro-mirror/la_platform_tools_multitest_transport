@@ -693,6 +693,45 @@ class CliTest(parameterized.TestCase):
         docker_create_args,
     )
 
+  def testStart_enableConfigService(self):
+    """Test start with enable_config_service."""
+    args = self.arg_parser.parse_args([
+        'start',
+        '--enable_config_service',
+        '--config_service_grpc_port=8081',
+    ])
+    cli.Start(args, self._CreateHost(cluster_name='acluster', lab_name='alab'))
+
+    docker_create_args = None
+    for call in self.mock_context.Run.call_args_list:
+      call_args, _ = call
+      command_args = call_args[0]
+      if command_args[:2] == ['docker', 'create']:
+        docker_create_args = command_args
+        break
+
+    self.assertIsNotNone(docker_create_args, 'docker create call not found')
+    self.assertIn(
+        '-e',
+        docker_create_args,
+    )
+    self.assertIn(
+        'MTT_ENABLE_CONFIG_SERVICE=true',
+        docker_create_args,
+    )
+    self.assertIn(
+        'MTT_CONFIG_SERVICE_GRPC_PORT=8081',
+        docker_create_args,
+    )
+    self.assertIn(
+        '-p',
+        docker_create_args,
+    )
+    self.assertIn(
+        '0.0.0.0:8081:8081',
+        docker_create_args,
+    )
+
   @mock.patch.dict(
       os.environ, {
           'http_proxy': 'http_proxy',
