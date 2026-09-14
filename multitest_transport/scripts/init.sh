@@ -157,7 +157,6 @@ function configure_operation_mode {
     IS_STANDALONE_MODE="false"
     IS_CONTROLLER_ONLY_MODE="false"
     IS_WORKER_ONLY_MODE="true"
-    IS_CONTROLLER="false"
 
     # Only initialize the ATS file server if the controller URL is set.
     OLC_SERVER_GRPC_TARGET="$(echo ${MTT_CONTROL_SERVER_URL} | sed 's,^\([^:/]\+://\)\?\([^:/]\+\)\(:\([0-9]\{1\,5\}\)\)\?\+.*$,\2,g'):${ATS_WORKER_GRPC_PORT}"
@@ -172,7 +171,6 @@ function configure_operation_mode {
     IS_STANDALONE_MODE="false"
     IS_CONTROLLER_ONLY_MODE="true"
     IS_WORKER_ONLY_MODE="false"
-    IS_CONTROLLER="true"
   else
     # Standalone mode (runs both controller and worker features locally).
     ENABLE_CONTROLLER_FEATURES="true"
@@ -181,13 +179,12 @@ function configure_operation_mode {
     IS_STANDALONE_MODE="true"
     IS_CONTROLLER_ONLY_MODE="false"
     IS_WORKER_ONLY_MODE="false"
-    IS_CONTROLLER="true"
   fi
 
   readonly RUNNING_MODE IS_STANDALONE_MODE IS_CONTROLLER_ONLY_MODE IS_WORKER_ONLY_MODE
-  readonly ENABLE_CONTROLLER_FEATURES ENABLE_WORKER_FEATURES IS_CONTROLLER
+  readonly ENABLE_CONTROLLER_FEATURES ENABLE_WORKER_FEATURES
   export RUNNING_MODE IS_STANDALONE_MODE IS_CONTROLLER_ONLY_MODE IS_WORKER_ONLY_MODE
-  export ENABLE_CONTROLLER_FEATURES ENABLE_WORKER_FEATURES IS_CONTROLLER
+  export ENABLE_CONTROLLER_FEATURES ENABLE_WORKER_FEATURES
 }
 
 function import_ca_certificates {
