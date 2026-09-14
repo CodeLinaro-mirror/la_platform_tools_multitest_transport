@@ -355,6 +355,7 @@ py_test(
     strict_deps = False,
     tags = ["local"],
     deps = [
+        "//third_party/py/absl/flags",
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         third_party("absl/testing:absltest"),
         # TODO: remove six

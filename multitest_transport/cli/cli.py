@@ -151,17 +151,31 @@ class ActionableError(Exception):
     self.message = message
 
 
-def _WaitForServer(url, timeout):
+def _WaitForServer(
+    docker_helper, container_name, url, timeout, fail_fast=False
+):
   """Wait for a server to be ready.
 
   Args:
+    docker_helper: a DockerHelper instance used to check container status.
+    container_name: name of the container.
     url: a server url.
     timeout: max wait time.
+    fail_fast: if True, fail fast if container exits during startup.
+
   Returns:
     True if the service is ready. Otherwise False.
   """
   end_time = time.time() + timeout
   while True:
+    if (
+        fail_fast
+        and docker_helper
+        and container_name
+        and not docker_helper.IsContainerRunning(container_name)
+    ):
+      logger.error('Container is no longer running; failing fast.')
+      return False
     remaining_time = end_time - time.time()
     if remaining_time <= 0:
       break
@@ -923,7 +937,13 @@ def _StartMttNode(args, host):
       logger.info('ATS replica is running.')
   else:
     url = 'http://%s:%s' % (hostname, args.port)
-    if not _WaitForServer(url, timeout=_MTT_SERVER_WAIT_TIME_SECONDS):
+    if not _WaitForServer(
+        docker_helper,
+        args.name,
+        url,
+        timeout=_MTT_SERVER_WAIT_TIME_SECONDS,
+        fail_fast=getattr(args, 'fail_fast', False),
+    ):
       docker_helper.Logs(args.name)
       docker_helper.Cat(args.name, _MTT_SERVER_LOG_PATH)
       raise RuntimeError(
@@ -1489,6 +1509,12 @@ def _CreateStartArgParser():
   """Create argparser for Start."""
   parser = argparse.ArgumentParser(add_help=False)
   parser.add_argument('--force_update', action='store_true')
+  parser.add_argument(
+      '--fail_fast',
+      default=False,
+      action='store_true',
+      help='Fail fast if container exits during startup.',
+  )
   parser.add_argument('--port', type=int, default=_MTT_CONTROL_SERVER_PORT)
   parser.add_argument(
       '--bind_address',

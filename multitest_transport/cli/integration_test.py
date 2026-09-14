@@ -28,7 +28,6 @@ flags.mark_flag_as_required('docker_image')
 flags.DEFINE_string('mtt_lab_path', None, 'Path of MTT Lab CLI binary.')
 
 RUNNING = 'running'
-PROD_DOCKER_IMAGE = 'gcr.io/android-mtt/mtt:prod'
 
 
 class CommandError(Exception):
@@ -53,10 +52,16 @@ class CliIntegrationTest(absltest.TestCase):
 
   def setUp(self):
     super(CliIntegrationTest, self).setUp()
+    self._temp_tags = []
     self._Stop()
 
   def tearDown(self):
     self._Stop()
+    for tag in getattr(self, '_temp_tags', []):
+      try:
+        _RunCmd(['docker', 'rmi', '-f', tag])
+      except CommandError:
+        pass
     super(CliIntegrationTest, self).tearDown()
 
   def _Start(self, image=None, args=None):
@@ -70,6 +75,7 @@ class CliIntegrationTest(absltest.TestCase):
         '--image_name',
         image or FLAGS.docker_image,
         '--no-mount_host_android_dir',
+        '--fail_fast',
     ]
     _RunCmd(cmd + (args or []))
 
@@ -88,6 +94,7 @@ class CliIntegrationTest(absltest.TestCase):
         '--image_name',
         image or FLAGS.docker_image,
         '--no-mount_host_android_dir',
+        '--fail_fast',
     ]
     _RunCmd(cmd + (args or []))
 
@@ -148,24 +155,42 @@ class CliIntegrationTest(absltest.TestCase):
       self._GetStatus()
 
   def testUpdate(self):
-    cmd = ['docker', 'run', '-d', '--entrypoint', 'yes',
-           '--name', 'mtt', 'ubuntu']
+    """Verify that updating from a different version restarts container."""
+    # Hermetically simulate an older/distinct version by tagging the local test
+    # image.
+    if ':' in FLAGS.docker_image and not FLAGS.docker_image.endswith(':'):
+      prev_image = '%s_test_prev' % FLAGS.docker_image
+    else:
+      prev_image = '%s:test_prev' % FLAGS.docker_image
+    _RunCmd(['docker', 'tag', FLAGS.docker_image, prev_image])
+    self._temp_tags.append(prev_image)
+
+    # Launch container with the simulated previous version and entrypoint 'yes'
+    # so startup is immediate and we can assert entrypoint replacement.
+    cmd = [
+        'docker', 'run', '-d', '--entrypoint', 'yes',
+        '--name', 'mtt', prev_image,
+    ]
     _RunCmd(cmd)
     self.assertEqual(RUNNING, self._GetStatus())
     self.assertEqual('yes', self._GetEntryPoint())
     container_id = self._GetContainerId()
-    # Update container
-    self._Update(image=PROD_DOCKER_IMAGE)
+
+    # Update container to current version using --force_update to trigger
+    # upgrade without depending on remote image registry network calls.
+    self._Update(image=FLAGS.docker_image, args=['--force_update'])
     self.assertEqual(RUNNING, self._GetStatus())
     self.assertNotEqual('yes', self._GetEntryPoint())
     self.assertNotEqual(container_id, self._GetContainerId())
 
   def testUpdate_sameImage(self):
-    self._Start(image=PROD_DOCKER_IMAGE)
+    """Verify that updating to the same image skips update."""
+    self._Start(image=FLAGS.docker_image)
     self.assertEqual(RUNNING, self._GetStatus())
     container_id = self._GetContainerId()
+
     # Update skipped if already running the same version
-    self._Update(image=PROD_DOCKER_IMAGE)
+    self._Update(image=FLAGS.docker_image)
     self.assertEqual(RUNNING, self._GetStatus())
     self.assertEqual(container_id, self._GetContainerId())
 
