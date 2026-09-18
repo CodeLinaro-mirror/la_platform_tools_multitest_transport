@@ -25,9 +25,8 @@ flowchart TD
     CheckCfg -->|Yes| StartCfg["Start Config Service<br/>(device_config_server_deploy.jar)"]
     CheckCfg -->|No| StartOLC["Start OLC Server<br/>(Record CONTROLLER_MAIN_PID)"]
     StartCfg --> StartOLC
-    StartOLC --> CheckOLCOpts["Check OLC Credential Type"]
-    CheckOmniCtrl -->|No| CheckOLCOpts
-    CheckOLCOpts --> StartATS["Start ATS Server<br/>(/mtt/serve.sh in Background,<br/>Record COMMON_SERVICE_MAIN_PID)"]
+    StartOLC --> StartATS["Start ATS Server<br/>(/mtt/serve.sh in Background,<br/>Record COMMON_SERVICE_MAIN_PID)"]
+    CheckOmniCtrl -->|No| StartATS
 
     CheckCtrl -->|No| StartATS
 

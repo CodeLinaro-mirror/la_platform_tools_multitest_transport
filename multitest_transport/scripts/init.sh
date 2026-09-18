@@ -129,6 +129,7 @@ MTT_CONFIG_SERVICE_LOG_DIR="${MTT_LOG_DIR}/config_service"
 
 # Credential type for the OLC server.
 OLCS_CREDENTIAL_TYPE="no_credential"
+export OLCS_CREDENTIAL_TYPE
 
 # SQL database URI.
 SQL_DATABASE_URI=""
@@ -307,6 +308,10 @@ function start_olc_server {
     java_loader_args=(-jar "/deviceinfra/ats_olc_server_deploy.jar")
   fi
 
+  if [[ "${OLCS_CREDENTIAL_TYPE}" == "alts" ]]; then
+    olc_server_default_opts+=("--use_alts=true")
+  fi
+
   # Start OLC server on the controller
   java -XX:+HeapDumpOnOutOfMemoryError \
     "${java_loader_args[@]}" \
@@ -349,11 +354,6 @@ function start_controller_features {
     fi
 
     start_olc_server
-  fi
-
-  # Set the credential type for the OLC server.
-  if [[ "${OLC_SERVER_OPTS}" == *"--use_alts=true"* ]]; then
-    OLCS_CREDENTIAL_TYPE="alts"
   fi
 }
 

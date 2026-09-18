@@ -47,8 +47,8 @@ corresponding boolean flags (`IS_STANDALONE_MODE`, `IS_CONTROLLER_ONLY_MODE`,
     `NO_PROXY` into Java system properties (`JAVA_TOOL_OPTIONS`).
 -   **Temporary Mounts:** Symlinks temporarily mounted files from `/tmp/.mnt`
     into the persistent ` local_file_store`.
--   **Pre-Run Hooks:** Executes `/mtt/scripts/init_pre_run.sh` and
-    `/mtt/scripts/mysql.sh` if present.
+-   **Pre-Run Hooks:** Executes `/mtt/scripts/init_pre_run.sh` (which resolves
+    and exports `OLCS_CREDENTIAL_TYPE`) and `/mtt/scripts/mysql.sh` if present.
 
 ### Stage 2: Controller Features (If Enabled)
 
@@ -59,7 +59,8 @@ corresponding boolean flags (`IS_STANDALONE_MODE`, `IS_CONTROLLER_ONLY_MODE`,
     -   Optionally launches the Device Config Server
         (`device_config_server_deploy.jar`).
     -   Launches the OmniLab Client (OLC) Server (`ats_olc_server_deploy.jar`)
-        and records its process ID as `CONTROLLER_MAIN_PID`.
+        with matching transport credentials, and records its process ID as
+        `CONTROLLER_MAIN_PID`.
 
 ### Stage 3: ATS Serve Script (Always Executed)
 
