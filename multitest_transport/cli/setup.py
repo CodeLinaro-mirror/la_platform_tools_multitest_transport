@@ -31,7 +31,11 @@ setuptools.setup(
     ],
     packages=setuptools.find_packages(),
     package_data={
-        'multitest_transport.cli': ['seccomp.json'],
+        'multitest_transport.cli': [
+            'seccomp.json',
+            'compose/*.yml',
+            'compose/infra/*.yml',
+        ],
     },
     # The package works for 3.10 and up, but not for python 4 yet.
     python_requires='~=3.10',

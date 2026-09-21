@@ -1,0 +1,59 @@
+services:
+  # Controller profile services
+  acceptor:
+    image: ${DCON_REPO:-us-docker.pkg.dev/android-mtt}/dualconduit/acceptor:latest
+    container_name: acceptor
+    profiles:
+      - controller
+    networks:
+      - mtt-net
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT
+      - OTEL_RESOURCE_ATTRIBUTES
+    volumes:
+      - /var/log:/logs
+    command:
+      - "--transport=websocket"
+      - "--reverse_forward_address=acceptor"
+
+  # Worker profile services
+  dialer:
+    image: ${DCON_REPO:-us-docker.pkg.dev/android-mtt}/dualconduit/dialer:latest
+    container_name: dialer
+    hostname: ${HOSTNAME:-}
+    profiles:
+      - worker
+    networks:
+      - mtt-net
+    ports:
+      - "50051:50051"
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT
+      - OTEL_RESOURCE_ATTRIBUTES
+    volumes:
+      - /var/log:/logs
+      # Host bind mount. The directory and the key inside it are group-owned
+      # by MTT_GID, set by `mtt node <role> init`, so group_add below is what
+      # makes the key readable. Numeric on purpose: a group *name* would be
+      # resolved against this image's /etc/group, which distroless has no
+      # useful entries in.
+      - ${SECRETS_DIR:-/etc/mtt/secrets}:/etc/secrets:ro
+    group_add:
+      - "${MTT_GID:-0}"
+    command: >
+      --acceptor_target=${ACCEPTOR_TARGET}
+      --hostname=${HOSTNAME:-}
+      --use_sa_token=${USE_SA_TOKEN:-false}
+      --sa_key_file=${SA_KEY_FILE:-}
+      --debug
+      --forward_address=0.0.0.0
+      -L=8000:mtt:8000
+      -L=8006:mtt:8006
+      -L=8008:mtt:8008
+      -L=7031:mtt:7031
+    healthcheck:
+      test: ["CMD", "/bin/grpc_health_probe", "-addr=:50051"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s

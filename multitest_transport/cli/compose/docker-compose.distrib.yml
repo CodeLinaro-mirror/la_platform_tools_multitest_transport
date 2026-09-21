@@ -1,0 +1,5 @@
+include:
+  - path: ./infra/network.yml
+  - path: ./infra/dcon.yml
+  - path: ./infra/otel.yml
+  - path: ./infra/esp.yml

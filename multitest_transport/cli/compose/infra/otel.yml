@@ -1,0 +1,59 @@
+services:
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.157.0
+    container_name: otel-collector
+    profiles:
+      - otel
+    networks:
+      - mtt-net
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=${SA_KEY_FILE:-}
+      - OTEL_RESOURCE_ATTRIBUTES
+    volumes:
+      # Host bind mount, group-owned by MTT_GID via `mtt node <role> init`.
+      # This image runs as uid 10001, not root, so group_add below is the only
+      # thing that lets it read the key. Numeric on purpose: a group *name*
+      # would be resolved against this image's /etc/group.
+      - ${SECRETS_DIR:-/etc/mtt/secrets}:/etc/secrets:ro
+    group_add:
+      - "${MTT_GID:-0}"
+    configs:
+      - source: otel-collector-config
+        target: /etc/otelcol-contrib/config.yaml
+
+configs:
+  otel-collector-config:
+    content: |
+      receivers:
+        otlp:
+          protocols:
+            grpc:
+              endpoint: 0.0.0.0:4317
+
+      processors:
+        resourcedetection:
+          detectors: [gcp, env]
+          timeout: 2s
+        batch:
+          timeout: 1s
+          send_batch_size: 1024
+
+      exporters:
+        googlecloud:
+          log:
+            default_log_name: dualconduit-logs
+
+      service:
+        pipelines:
+          traces:
+            receivers: [otlp]
+            processors: [resourcedetection, batch]
+            exporters: [googlecloud]
+          metrics:
+            receivers: [otlp]
+            processors: [resourcedetection, batch]
+            exporters: [googlecloud]
+          logs:
+            receivers: [otlp]
+            processors: [resourcedetection, batch]
+            exporters: [googlecloud]

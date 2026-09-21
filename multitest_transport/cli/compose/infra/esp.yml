@@ -1,0 +1,15 @@
+services:
+  # Endpoints Service Proxy for Controller
+  esp:
+    image: gcr.io/endpoints-release/endpoints-runtime:2
+    container_name: esp
+    profiles:
+      - esp
+    networks:
+      - mtt-net
+    ports:
+      - "80:18080"
+    command:
+      - "--service=${DCON_ACCEPTOR_ADDR:-}"
+      - "--rollout_strategy=managed"
+      - "--listener_port=18080"

@@ -1,0 +1,4 @@
+networks:
+  mtt-net:
+    name: mtt-net
+    driver: bridge

@@ -22,7 +22,7 @@ py_library(
     ],
     data = [
         "seccomp.json",
-    ],
+    ] + glob(["compose/**"]),
     strict_deps = False,
     deps = [
         ":cli_util_lib",
@@ -203,6 +203,15 @@ py_library(
     strict_deps = False,
 )
 
+py_library(
+    name = "compose_directory_lib",
+    srcs = [
+        "compose_directory.py",
+    ],
+    data = glob(["compose/**"]),
+    strict_deps = False,
+)
+
 # Test
 
 py_test(
@@ -339,6 +348,19 @@ py_test(
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         third_party("absl/testing:absltest"),
         third_party("absl/testing:parameterized"),
+    ],
+)
+
+py_test(
+    name = "compose_directory_test",
+    srcs = [
+        "compose_directory_test.py",
+    ],
+    data = glob(["compose/**"]),
+    strict_deps = False,
+    deps = [
+        ":compose_directory_lib",
+        third_party("absl/testing:absltest"),
     ],
 )
 
