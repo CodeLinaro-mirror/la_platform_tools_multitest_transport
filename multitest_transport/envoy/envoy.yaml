@@ -36,6 +36,7 @@ static_resources:
               "@type": type.googleapis.com/envoy.extensions.filters.http.grpc_json_transcoder.v3.GrpcJsonTranscoder
               proto_descriptor: "/etc/envoy/api_descriptor.pb"
               services:
+              - devtools.mobileharness.fe.v6.service.proto.search.SearchService
               - devtools.mobileharness.fe.v6.service.proto.config.ConfigService
               - devtools.mobileharness.fe.v6.service.proto.device.DeviceService
               - devtools.mobileharness.fe.v6.service.proto.host.HostService
