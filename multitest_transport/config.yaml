@@ -241,7 +241,7 @@ device_actions:
   name:  Cloud Orchestrator Device Setup
   description: >
     Setup a local virtual device via Cloud Orchestrator. The device type is Cuttlefish.
-  device_spec: '\b(device_serial:\S+:\d+)\b'
+  device_spec: '\b(device_serial:[^:\s]+:(?:65[2-9]\d|66[01]\d))\b'
   test_resource_defs:
   - name: cvd_host_package
     test_resource_type: UNKNOWN
