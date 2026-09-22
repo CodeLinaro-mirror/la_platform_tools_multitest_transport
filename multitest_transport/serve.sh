@@ -73,6 +73,7 @@ IS_OMNILAB_BASED="false"
 OLCS_SERVER_ADDRESS="localhost:7030"
 OLCS_CREDENTIAL_TYPE="no_credential"
 ENABLE_LAB_CONSOLE_UI="true"
+ENABLE_LAB_CONSOLE_SEARCH_PAGE="false"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --bind_address) MTT_HOST="$2";;
@@ -94,6 +95,7 @@ while [[ $# -gt 0 ]]; do
     --control_server_url) MTT_CONTROL_SERVER_URL="$2";;
     --report_generator_jar) REPORT_GENERATOR_JAR="$2";;
     --enable_lab_console_ui) ENABLE_LAB_CONSOLE_UI="$2";;
+    --enable_lab_console_search_page) ENABLE_LAB_CONSOLE_SEARCH_PAGE="$2";;
     *) echo "Unknown argument $1"; exit 1; # fail-fast on unknown key
   esac
   shift # skip key
@@ -277,6 +279,7 @@ function start_main_server {
   LABCONSOLE_SERVER_REST_PORT="$LABCONSOLE_SERVER_REST_PORT" \
   LAB_CONSOLE_PORT="$LAB_CONSOLE_PORT" \
   MTT_ENABLE_LAB_CONSOLE_UI="$ENABLE_LAB_CONSOLE_UI" \
+  MTT_ENABLE_LAB_CONSOLE_SEARCH_PAGE="$ENABLE_LAB_CONSOLE_SEARCH_PAGE" \
   MTT_GOOGLE_OAUTH2_CLIENT_ID="$MTT_GOOGLE_OAUTH2_CLIENT_ID" \
   MTT_GOOGLE_OAUTH2_CLIENT_SECRET="$MTT_GOOGLE_OAUTH2_CLIENT_SECRET" \
   MTT_VERSION="$MTT_VERSION" \
@@ -430,7 +433,7 @@ then
   start_local_file_server
   start_mysql_database "${STORAGE_PATH}"
   start_rabbitmq_puller
-  if [[ "${ENABLE_LAB_CONSOLE_UI}" == "true" ]]; then
+  if [[ "${ENABLE_LAB_CONSOLE_UI}" == "true" ]] || [[ "${ENABLE_LAB_CONSOLE_SEARCH_PAGE}" == "true" ]]; then
     start_oss_fe_server
   fi
   start_main_server

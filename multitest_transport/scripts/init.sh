@@ -54,6 +54,8 @@ MTT_CONTROL_SERVER_URL="${MTT_CONTROL_SERVER_URL:-}"
 MTT_ENABLE_CONFIG_SERVICE="${MTT_ENABLE_CONFIG_SERVICE:-}"
 # Flag to enable the Lab Console UI.
 MTT_ENABLE_LAB_CONSOLE_UI="${MTT_ENABLE_LAB_CONSOLE_UI:-true}"
+# Flag to enable the Lab Console Search Page.
+MTT_ENABLE_LAB_CONSOLE_SEARCH_PAGE="${MTT_ENABLE_LAB_CONSOLE_SEARCH_PAGE:-false}"
 # Proxy settings for no_proxy.
 NO_PROXY="${NO_PROXY:-}"
 # Port for the OLC server.
@@ -381,6 +383,7 @@ function start_common_services {
       --report_generator_jar "${MTT_REPORT_GENERATOR_JAR}" \
       --is_omnilab_based "${IS_OMNILAB_BASED}" \
       --enable_lab_console_ui "${MTT_ENABLE_LAB_CONSOLE_UI}" \
+      --enable_lab_console_search_page "${MTT_ENABLE_LAB_CONSOLE_SEARCH_PAGE}" \
       > >(multilog s10485760 n10 "${MTT_CONTROL_SERVER_LOG_DIR}") 2>&1 &
   COMMON_SERVICE_MAIN_PID=$!
 }

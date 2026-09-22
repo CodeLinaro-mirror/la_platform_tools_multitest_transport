@@ -845,6 +845,11 @@ def _StartMttNode(args, host):
     docker_helper.AddEnv('LAB_CONSOLE_PORT', str(lab_console_port))
     logger.debug('labconsole grpc port=%d, rest port=%d, ui port=%d',
                  labconsole_grpc_port, labconsole_rest_port, lab_console_port)
+    if args.enable_lab_console_search_page:
+      docker_helper.AddEnv(
+          'MTT_ENABLE_LAB_CONSOLE_SEARCH_PAGE',
+          'true',
+      )
   else:
     docker_helper.AddEnv(
         'MTT_ENABLE_LAB_CONSOLE_UI',
@@ -1545,6 +1550,16 @@ def _CreateStartArgParser():
       action=argparse.BooleanOptionalAction,
       default=True,
       help='Enable Lab Console UI and backend services. Default is true.',
+  )
+  parser.add_argument(
+      '--enable_lab_console_search_page',
+      dest='enable_lab_console_search_page',
+      action=argparse.BooleanOptionalAction,
+      default=False,
+      help=(
+          'Enable Lab Console Search Page. Default is false. Note: this is only'
+          ' applicable when --enable_lab_console_ui is set.'
+      ),
   )
   parser.add_argument(
       '--connect_labconsole_to_config_server',
