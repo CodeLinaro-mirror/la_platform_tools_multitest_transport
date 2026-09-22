@@ -278,11 +278,108 @@ py_library(
 )
 
 py_library(
+    name = "release_directory_lib",
+    srcs = [
+        "release_directory.py",
+    ],
+    strict_deps = False,
+    deps = [
+        ":node_permissions_lib",
+        third_party("yaml"),
+    ],
+)
+
+py_library(
+    name = "node_state_lib",
+    srcs = [
+        "node_state.py",
+    ],
+    strict_deps = False,
+    deps = [
+        ":compose_directory_lib",
+        ":docker_image_lib",
+        ":host_env_lib",
+        ":node_config_lib",
+        ":node_permissions_lib",
+        ":process_executor_lib",
+        ":release_directory_lib",
+        third_party("yaml"),
+    ],
+)
+
+py_library(
     name = "host_env_lib",
     srcs = [
         "host_env.py",
     ],
     strict_deps = False,
+)
+
+py_library(
+    name = "node_init_lib",
+    srcs = [
+        "node_init.py",
+    ],
+    strict_deps = False,
+    deps = [
+        ":host_env_lib",
+        ":node_permissions_lib",
+        third_party("yaml"),
+    ],
+)
+
+py_library(
+    name = "node_join_lib",
+    srcs = [
+        "node_join.py",
+    ],
+    strict_deps = False,
+    deps = [
+        ":gcp_endpoints_client_lib",
+        ":gcp_param_manager_lib",
+        ":node_config_lib",
+        ":node_permissions_lib",
+        third_party("yaml"),
+    ],
+)
+
+py_library(
+    name = "node_lib",
+    srcs = [
+        "node.py",
+    ],
+    strict_deps = False,
+    deps = [
+        ":host_env_lib",
+        ":node_init_lib",
+        ":node_join_lib",
+        ":node_permissions_lib",
+        ":node_state_lib",
+    ],
+)
+
+py_library(
+    name = "docker_image_lib",
+    srcs = [
+        "docker_image.py",
+    ],
+    strict_deps = False,
+    deps = [
+        ":command_util_lib",
+    ],
+)
+
+py_library(
+    name = "process_executor_lib",
+    srcs = [
+        "process_executor.py",
+    ],
+    strict_deps = False,
+    deps = [
+        ":command_util_lib",
+        ":common",
+        third_party("yaml"),
+    ],
 )
 
 # Test
@@ -493,6 +590,41 @@ py_test(
 )
 
 py_test(
+    name = "release_directory_test",
+    srcs = [
+        "release_directory_test.py",
+    ],
+    strict_deps = False,
+    deps = [
+        ":node_permissions_lib",
+        ":release_directory_lib",
+        third_party("absl/testing:absltest"),
+        third_party("yaml"),
+    ],
+)
+
+py_test(
+    name = "node_state_test",
+    srcs = [
+        "node_state_test.py",
+    ],
+    strict_deps = False,
+    deps = [
+        ":common",
+        ":compose_directory_lib",
+        ":docker_image_lib",
+        ":host_env_lib",
+        ":node_config_lib",
+        ":node_permissions_lib",
+        ":node_state_lib",
+        ":process_executor_lib",
+        ":release_directory_lib",
+        third_party("absl/testing:absltest"),
+        third_party("yaml"),
+    ],
+)
+
+py_test(
     name = "host_env_test",
     srcs = [
         "host_env_test.py",
@@ -500,6 +632,38 @@ py_test(
     strict_deps = False,
     deps = [
         ":host_env_lib",
+        third_party("absl/testing:absltest"),
+    ],
+)
+
+py_test(
+    name = "node_init_test",
+    srcs = [
+        "node_init_test.py",
+    ],
+    strict_deps = False,
+    deps = [
+        ":host_env_lib",
+        ":node_init_lib",
+        ":node_permissions_lib",
+        third_party("absl/testing:absltest"),
+        third_party("yaml"),
+    ],
+)
+
+py_test(
+    name = "node_test",
+    srcs = [
+        "node_test.py",
+    ],
+    strict_deps = False,
+    deps = [
+        ":host_env_lib",
+        ":node_init_lib",
+        ":node_join_lib",
+        ":node_lib",
+        ":node_permissions_lib",
+        ":node_state_lib",
         third_party("absl/testing:absltest"),
     ],
 )
@@ -513,6 +677,52 @@ py_test(
     deps = [
         ":gcp_api_util_lib",
         third_party("absl/testing:absltest"),
+    ],
+)
+
+py_test(
+    name = "node_join_test",
+    srcs = [
+        "node_join_test.py",
+    ],
+    strict_deps = False,
+    deps = [
+        ":gcp_endpoints_client_lib",
+        ":gcp_param_manager_lib",
+        ":node_config_lib",
+        ":node_join_lib",
+        ":node_permissions_lib",
+        third_party("absl/testing:absltest"),
+        third_party("yaml"),
+    ],
+)
+
+py_test(
+    name = "docker_image_test",
+    srcs = [
+        "docker_image_test.py",
+    ],
+    strict_deps = False,
+    deps = [
+        ":command_util_lib",
+        ":common",
+        ":docker_image_lib",
+        third_party("absl/testing:absltest"),
+    ],
+)
+
+py_test(
+    name = "process_executor_test",
+    srcs = [
+        "process_executor_test.py",
+    ],
+    strict_deps = False,
+    deps = [
+        ":command_util_lib",
+        ":common",
+        ":process_executor_lib",
+        third_party("absl/testing:absltest"),
+        third_party("yaml"),
     ],
 )
 
