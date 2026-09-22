@@ -54,6 +54,7 @@ _PARAM_PREFIX_MAX_LEN = (
     _PARAM_ID_MAX_LEN - len(_NODE_PARAM_SUFFIX) - _PARAM_DIGEST_LEN - 1
 )
 _SA_KEY_FILENAME = "sa-key.json"
+_ANDROID_SA_KEY_FILENAME = "android-sa-key.json"
 # Path of the service account key as seen from inside the dialer container,
 # which mounts ${SECRETS_DIR:-/etc/mtt/secrets} at /etc/secrets.
 _CONTAINER_SA_KEY_PATH = f"/etc/secrets/{_SA_KEY_FILENAME}"
@@ -264,6 +265,8 @@ def Join(
     var_config_dir: str = DEFAULT_VAR_CONFIG_DIR,
     base_dir: str = DEFAULT_BASE_DIR,
     mtt_group: str = node_permissions.DEFAULT_MTT_GROUP,
+    tag: Optional[str] = None,
+    android_service_account_key_path: Optional[str] = None,
     prompter: Optional[Prompter] = None,
     endpoints_client_factory: Optional[Callable[[str], Any]] = None,
     param_manager_client_factory: Optional[Callable[[str], Any]] = None,
@@ -275,8 +278,12 @@ def Join(
     var_config_dir: Destination runtime directory (default
       /var/lib/mttnode/config).
     base_dir: Runtime base directory (default /var/lib/mttnode).
-    mtt_group: Existing host group that owns both directories. A flag only;
-      the wizard never prompts for it.
+    mtt_group: Existing host group that owns both directories. A flag only; the
+      wizard never prompts for it.
+    tag: Optional node-scope MTT image tag override stored in Parameter Manager.
+    android_service_account_key_path: Optional path to Android service account
+      JSON key file. Copied to <static_dir>/secrets/android-sa-key.json and
+      referenced in node-scope mtt_args.
     prompter: Optional Prompter instance for dependency injection.
     endpoints_client_factory: Factory for GcpEndpointsClient (for testing).
     param_manager_client_factory: Factory for GcpParamManagerClient (for
@@ -287,6 +294,7 @@ def Join(
       written to the host or to Parameter Manager when this propagates.
     RuntimeError: If GCP resources are missing, auth is invalid, the terminal
       is non-interactive, or a prompt exhausts its retry budget.
+    FileNotFoundError: If android_service_account_key_path does not exist.
     node_permissions.PermissionPolicyError: If mtt_group does not exist.
   """
   ui = prompter or Prompter()
@@ -296,6 +304,16 @@ def Join(
   # the operator has answered everything and a parameter version has already
   # been written to GCP.
   gid = node_permissions.ResolveGroupGid(mtt_group)
+
+  android_sa_key_content: Optional[str] = None
+  if android_service_account_key_path:
+    if not os.path.isfile(android_service_account_key_path):
+      raise FileNotFoundError(
+          "Android service account key file not found:"
+          f" {android_service_account_key_path}"
+      )
+    with open(android_service_account_key_path, "r", encoding="utf-8") as f:
+      android_sa_key_content = f.read()
 
   # =========================================================================
   # Phase 1: In-Memory Collection (Zero Local/Remote Side Effects)
@@ -396,6 +414,14 @@ def Join(
   hostname = socket.gethostname()
   node_param_name = HostnameToNodeParamName(hostname)
   wifi_host_path = os.path.join(static_dir, "config", "wifi.yaml")
+  android_sa_key_dest = os.path.join(
+      static_dir, "secrets", _ANDROID_SA_KEY_FILENAME
+  )
+  mtt_args = (
+      {"android_service_account_key_path": android_sa_key_dest}
+      if android_service_account_key_path
+      else {}
+  )
 
   node_dto = node_config.ConfigDTO(
       docker_compose_env={
@@ -413,6 +439,8 @@ def Join(
       host_config_mount_local_path=[
           f"{wifi_host_path}:/lab_config_values.yaml"
       ],
+      mtt_args=mtt_args,
+      tag=tag,
   )
 
   # Check existence first, create only if missing
@@ -457,7 +485,7 @@ def Join(
     created_files.append(path)
 
   try:
-    # 1. Copy Service Account Key
+    # 1. Copy Service Account Key(s)
     # The path is tracked before the file is opened so that a failure while
     # serializing the payload still leaves the partial file eligible for
     # cleanup below.
@@ -470,6 +498,16 @@ def Join(
     )
     with open(fd, "w", encoding="utf-8") as f:
       json.dump(sa_key_json_data, f, indent=2)
+
+    if android_sa_key_content is not None:
+      _TrackWrite(android_sa_key_dest)
+      fd = os.open(
+          android_sa_key_dest,
+          os.O_WRONLY | os.O_CREAT | os.O_TRUNC,
+          node_permissions.STATIC_FILE_MODE,
+      )
+      with open(fd, "w", encoding="utf-8") as f:
+        f.write(android_sa_key_content)
 
     # 2. Write WiFi Configuration
     wifi_data = {

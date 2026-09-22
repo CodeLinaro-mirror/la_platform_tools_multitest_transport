@@ -29,6 +29,7 @@ py_library(
         ":command_util_lib",
         ":google_auth_util_lib",
         ":host_util_lib",
+        ":node_lib",
         ":ssh_util_lib",
         "@com_google_deviceinfra//src/devtools/deviceinfra/host/daemon/proto:health_service_py_proto",
         "//multitest_transport/util:env_lib",

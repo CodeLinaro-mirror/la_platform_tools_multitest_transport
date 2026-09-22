@@ -411,6 +411,7 @@ class NodeJoinTest(absltest.TestCase):
     # empty collections, so the keys are absent entirely.
     self.assertNotIn("mtt_args", payload_dict)
     self.assertNotIn("mtt_bool_args", payload_dict)
+    self.assertNotIn("tag", payload_dict)
     # These keys must match the variables read by compose/infra/dcon.yml;
     # anything else leaves the dialer with an empty acceptor target.
     self.assertEqual(
@@ -452,6 +453,50 @@ class NodeJoinTest(absltest.TestCase):
     mock_materialize.assert_called_once_with(
         static_dir=self.static_dir,
         var_config_dir=self.var_config_dir,
+    )
+
+    # Verify passing tag and android_service_account_key_path writes node-scope
+    # overrides into Parameter Manager and copies android-sa-key.json.
+    android_key_src = os.path.join(self.test_dir, "src_android_key.json")
+    with open(android_key_src, "w", encoding="utf-8") as f:
+      f.write('{"type": "service_account", "project_id": "android-proj"}')
+    fake_prompter_tag = FakePrompter(
+        text_responses=[self.sa_key_file, "MyTestWifi"],
+        password_responses=["MySecretPassword"],
+        choice_responses=[
+            "acceptor.endpoints.test-project-123.cloud.goog",
+            "private_usage",
+        ],
+    )
+    node_join.Join(
+        static_dir=self.static_dir,
+        var_config_dir=self.var_config_dir,
+        base_dir=self.base_dir,
+        mtt_group=self.mtt_group,
+        tag="custom_node_tag",
+        android_service_account_key_path=android_key_src,
+        prompter=fake_prompter_tag,
+        endpoints_client_factory=lambda _: mock_ep_client,
+        param_manager_client_factory=lambda _: mock_pm_client,
+    )
+    _, stored_payload_with_tag = mock_pm_client.StoreUnformatted.call_args[0]
+    payload_with_overrides = yaml.safe_load(stored_payload_with_tag)
+    self.assertEqual(payload_with_overrides["tag"], "custom_node_tag")
+    expected_android_key_dest = os.path.join(
+        self.static_dir, "secrets", "android-sa-key.json"
+    )
+    self.assertEqual(
+        payload_with_overrides["mtt_args"],
+        {"android_service_account_key_path": expected_android_key_dest},
+    )
+    self.assertTrue(os.path.exists(expected_android_key_dest))
+    with open(expected_android_key_dest, "r", encoding="utf-8") as f:
+      self.assertEqual(
+          f.read(), '{"type": "service_account", "project_id": "android-proj"}'
+      )
+    self.assertEqual(
+        stat.S_IMODE(os.stat(expected_android_key_dest).st_mode),
+        node_permissions.STATIC_FILE_MODE,
     )
 
   def testJoin_tenantConfigMissing(self):

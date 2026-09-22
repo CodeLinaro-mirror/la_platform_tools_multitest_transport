@@ -40,6 +40,7 @@ from multitest_transport.cli import cli_util
 from multitest_transport.cli import command_util
 from multitest_transport.cli import google_auth_util
 from multitest_transport.cli import host_util
+from multitest_transport.cli import node
 from multitest_transport.cli import ssh_util
 from multitest_transport.util import env
 from multitest_transport.util import worker_lab_health_client
@@ -2059,6 +2060,9 @@ def CreateParser():
   subparser = subparsers.add_parser(
       'version', help='Print the version of MTT CLI.')
   subparser.set_defaults(func=cli_util.PrintVersion)
+
+  # Node management commands (Worker & Controller)
+  node.AddNodeSubparsers(subparsers)
   return parser
 
 
@@ -2083,7 +2087,9 @@ def Main():
     if args.action == 'version':
       cli_util.PrintVersion()
     elif hasattr(args, 'func'):
-      args.func(args)
+      res = args.func(args)
+      if isinstance(res, int) and res != 0:
+        sys.exit(res)
     else:
       parser.print_usage()
   except command_util.DockerNotFoundError:

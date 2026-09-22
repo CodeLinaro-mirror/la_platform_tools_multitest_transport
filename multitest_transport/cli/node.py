@@ -370,6 +370,13 @@ def _HandleWorkerJoin(
       else node_join.DEFAULT_VAR_CONFIG_DIR
   )
   ui = prompter or node_join.Prompter()
+  tag = getattr(args, "tag", None)
+  android_sa_key_path = getattr(args, "android_service_account_key_path", None)
+  join_kwargs: dict[str, Any] = {}
+  if tag:
+    join_kwargs["tag"] = tag
+  if android_sa_key_path:
+    join_kwargs["android_service_account_key_path"] = android_sa_key_path
   try:
     node_join.Join(
         static_dir=static_dir,
@@ -377,6 +384,7 @@ def _HandleWorkerJoin(
         base_dir=base_dir,
         mtt_group=mtt_group,
         prompter=ui,
+        **join_kwargs,
     )
   except node_join.UserAbortError:
     logger.info("Worker join cancelled by user; no changes were applied.")
@@ -578,6 +586,25 @@ def AddNodeSubparsers(subparsers: Any) -> None:
           " commands run without sudo (default:"
           f" {node_permissions.DEFAULT_MTT_GROUP}). The group is never"
           " created."
+      ),
+  )
+  worker_join.add_argument(
+      "--tag",
+      type=str,
+      default=None,
+      help=(
+          "Optional node-scope MTT container image tag to override the pool"
+          " scope tag."
+      ),
+  )
+  worker_join.add_argument(
+      "--android_service_account_key_path",
+      type=str,
+      default=None,
+      help=(
+          "Optional path to Android service account JSON key file. Copied to"
+          " /etc/mtt/secrets/android-sa-key.json and added to node-scope"
+          " mtt_args."
       ),
   )
   worker_join.set_defaults(func=_HandleWorkerJoin)

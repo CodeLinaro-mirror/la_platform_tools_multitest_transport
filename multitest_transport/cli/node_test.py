@@ -215,6 +215,31 @@ class NodeCliTest(absltest.TestCase):
 
   @mock.patch.object(os, "geteuid", return_value=0)
   @mock.patch.object(node_join, "Join")
+  def testHandleWorkerJoin_withOptionalFlags(self, mock_join, unused_geteuid):
+    argv = [
+        "node",
+        "worker",
+        "join",
+        "--tag=canary",
+        "--android_service_account_key_path=/tmp/android-key.json",
+    ]
+    args = self.parser.parse_args(argv)
+    prompter = self._MakePrompter(confirm=False)
+
+    exit_code = args.func(args, prompter)
+    self.assertEqual(exit_code, 0)
+    mock_join.assert_called_once_with(
+        static_dir=node_init.DEFAULT_STATIC_DIR,
+        var_config_dir="/var/lib/mttnode/config",
+        base_dir="/var/lib/mttnode",
+        mtt_group=node_permissions.DEFAULT_MTT_GROUP,
+        prompter=prompter,
+        tag="canary",
+        android_service_account_key_path="/tmp/android-key.json",
+    )
+
+  @mock.patch.object(os, "geteuid", return_value=0)
+  @mock.patch.object(node_join, "Join")
   def testHandleWorkerJoin_userAbortReturnsErrorCode(
       self, mock_join, unused_geteuid
   ):
