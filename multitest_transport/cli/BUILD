@@ -212,6 +212,79 @@ py_library(
     strict_deps = False,
 )
 
+py_library(
+    name = "gcp_api_util_lib",
+    srcs = [
+        "gcp_api_util.py",
+    ],
+    strict_deps = False,
+)
+
+py_library(
+    name = "gcp_param_manager_lib",
+    srcs = [
+        "gcp_param_manager.py",
+    ],
+    strict_deps = False,
+    deps = [
+        ":gcp_api_util_lib",
+        ":google_auth_util_lib",
+        third_party("apiclient"),
+        "//third_party/py/google/auth:credentials",
+    ],
+)
+
+py_library(
+    name = "gcp_endpoints_client_lib",
+    srcs = [
+        "gcp_endpoints_client.py",
+    ],
+    strict_deps = False,
+    deps = [
+        ":gcp_api_util_lib",
+        ":google_auth_util_lib",
+        third_party("apiclient"),
+        "//third_party/py/google/auth:credentials",
+    ],
+)
+
+py_library(
+    name = "node_permissions_lib",
+    srcs = [
+        "node_permissions.py",
+    ],
+    strict_deps = False,
+)
+
+py_library(
+    name = "node_config_lib",
+    srcs = [
+        "node_config.py",
+    ],
+    strict_deps = False,
+    deps = [
+        ":command_util_lib",
+        ":gcp_param_manager_lib",
+        ":google_auth_util_lib",
+        ":host_env_lib",
+        ":node_permissions_lib",
+        "//third_party/py/google/protobuf",
+        "@tradefed_cluster//tradefed_cluster/configs:lab_config_lib",
+        "@tradefed_cluster//tradefed_cluster/configs:lab_config_py_pb2",
+        third_party("jinja2"),
+        third_party("strictyaml"),
+        third_party("yaml"),
+    ],
+)
+
+py_library(
+    name = "host_env_lib",
+    srcs = [
+        "host_env.py",
+    ],
+    strict_deps = False,
+)
+
 # Test
 
 py_test(
@@ -360,6 +433,85 @@ py_test(
     strict_deps = False,
     deps = [
         ":compose_directory_lib",
+        third_party("absl/testing:absltest"),
+    ],
+)
+
+py_test(
+    name = "node_permissions_test",
+    srcs = [
+        "node_permissions_test.py",
+    ],
+    strict_deps = False,
+    deps = [
+        ":node_permissions_lib",
+        third_party("absl/testing:absltest"),
+    ],
+)
+
+py_test(
+    name = "node_config_test",
+    srcs = [
+        "node_config_test.py",
+    ],
+    strict_deps = False,
+    deps = [
+        ":gcp_param_manager_lib",
+        ":node_config_lib",
+        "@tradefed_cluster//tradefed_cluster/configs:lab_config_lib",
+        third_party("absl/testing:absltest"),
+        third_party("yaml"),
+    ],
+)
+
+py_test(
+    name = "gcp_param_manager_test",
+    srcs = [
+        "gcp_param_manager_test.py",
+    ],
+    strict_deps = False,
+    deps = [
+        ":gcp_param_manager_lib",
+        ":google_auth_util_lib",
+        third_party("absl/testing:absltest"),
+        third_party("apiclient"),
+    ],
+)
+
+py_test(
+    name = "gcp_endpoints_client_test",
+    srcs = [
+        "gcp_endpoints_client_test.py",
+    ],
+    strict_deps = False,
+    deps = [
+        ":gcp_endpoints_client_lib",
+        ":google_auth_util_lib",
+        third_party("absl/testing:absltest"),
+        third_party("apiclient"),
+    ],
+)
+
+py_test(
+    name = "host_env_test",
+    srcs = [
+        "host_env_test.py",
+    ],
+    strict_deps = False,
+    deps = [
+        ":host_env_lib",
+        third_party("absl/testing:absltest"),
+    ],
+)
+
+py_test(
+    name = "gcp_api_util_test",
+    srcs = [
+        "gcp_api_util_test.py",
+    ],
+    strict_deps = False,
+    deps = [
+        ":gcp_api_util_lib",
         third_party("absl/testing:absltest"),
     ],
 )
