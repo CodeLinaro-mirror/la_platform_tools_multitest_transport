@@ -48,7 +48,7 @@ flowchart TD
 
     PrepWork --> CheckOmniWorker{"IS_OMNILAB_BASED?"}
 
-    CheckOmniWorker -->|No| RunTF["Start TradeFed in Background<br/>(Record WORKER_MAIN_PID)"]
+    CheckOmniWorker -->|No| RunTF["Start TradeFed in Background<br/>(Inherit stdin via fd 3,<br/>Record WORKER_MAIN_PID)"]
     CheckOmniWorker -->|Yes| CheckCache{"Persistent Cache<br/>Enabled?"}
 
     CheckCache -->|Yes| StartCache["Start Cache Manager<br/>(cache_manager_server_deploy.jar)"]

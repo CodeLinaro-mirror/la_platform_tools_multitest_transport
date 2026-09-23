@@ -529,11 +529,16 @@ function start_test_runner {
     # Start TF with the modified global config and at least 6GB of heap space (can
     # be adjusted by setting the -Xmx flag in the TRADEFED_OPTS variable).
     local mtt_tradefed_opts="-Djava.io.tmpdir=${MTT_TEST_WORK_DIR} -Xmx${max_heap_mb}m"
+    # Bash assigns /dev/null to the stdin of a background job, but the TF console
+    # shuts the scheduler down right after startup when stdin is not a terminal.
+    # Preserve the container's stdin on fd 3 and pass it in explicitly, which
+    # takes precedence over the /dev/null default.
+    exec 3<&0
     TF_GLOBAL_CONFIG="${TF_CONFIG_FILE}" \
       MTT_CONTROL_SERVER_URL="${MTT_CONTROL_SERVER_URL}" \
       MTT_CONTROL_FILE_SERVER_URL="${MTT_CONTROL_FILE_SERVER_URL}" \
       TRADEFED_OPTS="${mtt_tradefed_opts} ${TRADEFED_OPTS}" \
-      tradefed.sh &
+      tradefed.sh <&3 &
     WORKER_MAIN_PID=$!
   else
     # Start OSS lab server

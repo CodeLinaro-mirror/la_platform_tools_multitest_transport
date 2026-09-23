@@ -78,7 +78,11 @@ corresponding boolean flags (`IS_STANDALONE_MODE`, `IS_CONTROLLER_ONLY_MODE`,
     `cuttlefish-common`, and launches `ndppd`.
 -   **Test Execution Engine:**
     -   *TradeFed Mode (Non-OmniLab):* Launches `tradefed.sh` in the background
-        and records its process ID as `WORKER_MAIN_PID`.
+        and records its process ID as `WORKER_MAIN_PID`. The container's stdin
+        is preserved on file descriptor 3 and passed to `tradefed.sh`
+        explicitly, because Bash would otherwise assign `/dev/null` to a
+        background job and the TF console shuts the scheduler down when stdin
+        is not a terminal.
     -   *OmniLab Mode:* Sets up persistent caching
         (`cache_manager_server_deploy.jar`) if enabled, configures JIT emulator
         flags, and launches the Mobile Harness OSS Lab Server
