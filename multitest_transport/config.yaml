@@ -890,4 +890,4 @@ tests:
   - max_retry_on_test_failures: 3
   module_config_pattern: 'android-cts/testcases/.*\.config'
   module_execution_args: '-m ${MODULE_NAME}'
-  use_dynamic_download_mcts: false
+  use_dynamic_download_mcts: true
