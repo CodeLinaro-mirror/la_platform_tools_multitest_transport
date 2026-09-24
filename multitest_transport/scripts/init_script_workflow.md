@@ -49,6 +49,10 @@ corresponding boolean flags (`IS_STANDALONE_MODE`, `IS_CONTROLLER_ONLY_MODE`,
     into the persistent ` local_file_store`.
 -   **Pre-Run Hooks:** Executes `/mtt/scripts/init_pre_run.sh` (which resolves
     and exports `OLCS_CREDENTIAL_TYPE`) and `/mtt/scripts/mysql.sh` if present.
+-   **ADB Directory:** Creates `/root/.android` before any service runs `adb`.
+    Concurrent `adb` processes abort if another process creates this directory
+    at the same time. This must run after the pre-run hooks, which only download
+    adb keys when the directory does not exist yet.
 
 ### Stage 2: Controller Features (If Enabled)
 

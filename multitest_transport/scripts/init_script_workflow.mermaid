@@ -15,8 +15,9 @@ flowchart TD
     Mounts --> PreRun{"Check Pre-run Scripts"}
 
     PreRun -->|Exists| RunPreRun["Source init_pre_run.sh<br/>& mysql.sh"]
-    PreRun -->|None| CheckCtrl{"ENABLE_CONTROLLER_FEATURES<br/>== true?"}
-    RunPreRun --> CheckCtrl
+    PreRun -->|None| AndroidDir["Create /root/.android<br/>(before any adb call)"]
+    RunPreRun --> AndroidDir
+    AndroidDir --> CheckCtrl{"ENABLE_CONTROLLER_FEATURES<br/>== true?"}
 
     CheckCtrl -->|Yes| StartRabbit["Start RabbitMQ Server"]
     StartRabbit --> CheckOmniCtrl{"IS_OMNILAB_BASED?"}

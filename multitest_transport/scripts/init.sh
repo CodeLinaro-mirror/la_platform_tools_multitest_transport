@@ -256,6 +256,11 @@ function init_omnilab_workdir {
   fi
 }
 
+function create_android_dir {
+  [[ -e /root/.android && ! -d /root/.android ]] && rm -f /root/.android
+  mkdir -p /root/.android
+}
+
 function start_config_service {
   echo "Starting Config Service on port ${MTT_CONFIG_SERVICE_GRPC_PORT}..."
   local -a config_server_opts=(
@@ -435,9 +440,7 @@ function configure_tradefed {
 function start_adb {
   if [[ -z "${MTT_USE_HOST_ADB}" ]]
   then
-    # Start ADB and load keys
-    [[ -e /root/.android && ! -d /root/.android ]] && rm -f /root/.android
-    mkdir -p /root/.android
+    # Start ADB and load keys. /root/.android is created by create_android_dir.
     export ADB_VENDOR_KEYS="$(ls -1 /root/.android/*.adb_key 2>/dev/null | paste -sd ":" - || echo "")"
     adb start-server || echo "adb start-server returned non-zero code."
     # If IPv6 is enabled, the hostname command prints IPv6 and IPv4 addresses
@@ -669,6 +672,11 @@ configure_proxies
 link_temporary_mounts
 run_prerun_hook
 init_omnilab_workdir
+# adb creates /root/.android if it is missing and aborts if another process
+# creates it at the same time. Create it before serve.sh and start_adb run adb.
+# Must run after run_prerun_hook, which only downloads adb keys when this
+# directory does not exist yet.
+create_android_dir
 
 # Start controller features first.
 if [[ "${ENABLE_CONTROLLER_FEATURES}" == "true" ]]
