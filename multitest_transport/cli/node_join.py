@@ -549,7 +549,9 @@ def Join(
 
     # 4. Materialize Node Configuration
     node_config.MaterializeNodeConfig(
-        static_dir=static_dir, var_config_dir=var_config_dir
+        static_dir=static_dir,
+        var_config_dir=var_config_dir,
+        role=node_config.NodeRole.WORKER,
     )
     logger.info(
         "Worker node '%s' joined and materialized successfully.", hostname

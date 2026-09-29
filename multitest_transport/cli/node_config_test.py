@@ -451,6 +451,7 @@ service_account_key_path: {key_path}
     node_config.MaterializeNodeConfig(
         static_dir=self.test_dir,
         var_config_dir=var_config_dir,
+        role=node_config.NodeRole.WORKER,
     )
 
     # Verify materialized files on disk
@@ -654,6 +655,7 @@ service_account_key_path: {key_path}
     node_config.MaterializeNodeConfig(
         static_dir=self.test_dir,
         var_config_dir=var_config_dir,
+        role=node_config.NodeRole.WORKER,
     )
 
     # Verify GCP took precedence
@@ -702,7 +704,9 @@ service_account_key_path: {key_path}
 
     var_config_dir = os.path.join(self.test_dir, "var_config")
     node_config.MaterializeNodeConfig(
-        static_dir=self.test_dir, var_config_dir=var_config_dir
+        static_dir=self.test_dir,
+        var_config_dir=var_config_dir,
+        role=node_config.NodeRole.WORKER,
     )
 
     self.assertTrue(
@@ -741,7 +745,9 @@ service_account_key_path: {key_path}
 
     var_config_dir = os.path.join(self.test_dir, "var_config")
     node_config.MaterializeNodeConfig(
-        static_dir=self.test_dir, var_config_dir=var_config_dir
+        static_dir=self.test_dir,
+        var_config_dir=var_config_dir,
+        role=node_config.NodeRole.CONTROLLER,
     )
 
     self.assertFalse(
@@ -769,7 +775,9 @@ service_account_key_path: {key_path}
     var_config_dir = os.path.join(self.test_dir, "var_config")
     with self.assertRaises(FileNotFoundError):
       node_config.MaterializeNodeConfig(
-          static_dir=self.test_dir, var_config_dir=var_config_dir
+          static_dir=self.test_dir,
+          var_config_dir=var_config_dir,
+          role=node_config.NodeRole.WORKER,
       )
 
   def testMaterializeNodeConfig_staticMissingMttFlagsRaisesError(self):
@@ -786,14 +794,18 @@ service_account_key_path: {key_path}
     var_config_dir = os.path.join(self.test_dir, "var_config")
     with self.assertRaises(FileNotFoundError):
       node_config.MaterializeNodeConfig(
-          static_dir=self.test_dir, var_config_dir=var_config_dir
+          static_dir=self.test_dir,
+          var_config_dir=var_config_dir,
+          role=node_config.NodeRole.WORKER,
       )
 
   def testMaterializeNodeConfig_neitherFoundRaisesError(self):
     var_config_dir = os.path.join(self.test_dir, "var_config")
     with self.assertRaises(FileNotFoundError):
       node_config.MaterializeNodeConfig(
-          static_dir=self.test_dir, var_config_dir=var_config_dir
+          static_dir=self.test_dir,
+          var_config_dir=var_config_dir,
+          role=node_config.NodeRole.WORKER,
       )
 
   def _WriteStaticConfig(self, lab_config_yaml=None, mtt_flags_yaml=None):
@@ -826,7 +838,9 @@ service_account_key_path: {key_path}
     )
     with self.assertRaises(node_config.ConfigValidationError) as ctx:
       node_config.MaterializeNodeConfig(
-          static_dir=self.test_dir, var_config_dir=var_config_dir
+          static_dir=self.test_dir,
+          var_config_dir=var_config_dir,
+          role=node_config.NodeRole.WORKER,
       )
     self.assertIn("enable_autoupdate", str(ctx.exception))
     self.assertIn("host level", str(ctx.exception))
@@ -837,7 +851,9 @@ service_account_key_path: {key_path}
     )
     with self.assertRaises(node_config.ConfigValidationError) as ctx:
       node_config.MaterializeNodeConfig(
-          static_dir=self.test_dir, var_config_dir=var_config_dir
+          static_dir=self.test_dir,
+          var_config_dir=var_config_dir,
+          role=node_config.NodeRole.WORKER,
       )
     self.assertIn("enable_ui_update", str(ctx.exception))
     self.assertIn("lab level", str(ctx.exception))
@@ -852,7 +868,9 @@ service_account_key_path: {key_path}
         )
     )
     node_config.MaterializeNodeConfig(
-        static_dir=self.test_dir, var_config_dir=var_config_dir
+        static_dir=self.test_dir,
+        var_config_dir=var_config_dir,
+        role=node_config.NodeRole.WORKER,
     )
     self.assertTrue(
         os.path.exists(os.path.join(var_config_dir, "lab_config.yaml"))
@@ -870,7 +888,9 @@ service_account_key_path: {key_path}
     )
     with self.assertRaises(node_config.ConfigValidationError) as ctx:
       node_config.MaterializeNodeConfig(
-          static_dir=self.test_dir, var_config_dir=var_config_dir
+          static_dir=self.test_dir,
+          var_config_dir=var_config_dir,
+          role=node_config.NodeRole.WORKER,
       )
     self.assertIn("--tag", str(ctx.exception))
     self.assertNotIn("--port", str(ctx.exception))
@@ -883,7 +903,9 @@ service_account_key_path: {key_path}
     )
     with self.assertRaises(node_config.ConfigValidationError) as ctx:
       node_config.MaterializeNodeConfig(
-          static_dir=self.test_dir, var_config_dir=var_config_dir
+          static_dir=self.test_dir,
+          var_config_dir=var_config_dir,
+          role=node_config.NodeRole.WORKER,
       )
     self.assertIn("--enable_auto_update", str(ctx.exception))
 
@@ -923,7 +945,9 @@ service_account_key_path: {key_path}
     )
     with self.assertRaises(node_config.ConfigValidationError) as ctx:
       node_config.MaterializeNodeConfig(
-          static_dir=self.test_dir, var_config_dir=var_config_dir
+          static_dir=self.test_dir,
+          var_config_dir=var_config_dir,
+          role=node_config.NodeRole.WORKER,
       )
     self.assertIn("enable_autoupdate", str(ctx.exception))
 
@@ -948,7 +972,9 @@ service_account_key_path: {key_path}
     )
     with self.assertRaises(node_config.ConfigValidationError) as ctx:
       node_config.MaterializeNodeConfig(
-          static_dir=self.test_dir, var_config_dir=var_config_dir
+          static_dir=self.test_dir,
+          var_config_dir=var_config_dir,
+          role=node_config.NodeRole.WORKER,
       )
     self.assertIn("mtt_args", str(ctx.exception))
     self.assertFalse(
@@ -966,7 +992,9 @@ service_account_key_path: {key_path}
         "image_name: gcp_img\ntag: v1\nlab_config_args:\n  lab_name: gcp_lab\n",
     )
     node_config.MaterializeNodeConfig(
-        static_dir=self.test_dir, var_config_dir=var_config_dir
+        static_dir=self.test_dir,
+        var_config_dir=var_config_dir,
+        role=node_config.NodeRole.WORKER,
     )
     with open(
         os.path.join(var_config_dir, "lab_config.yaml"), "r", encoding="utf-8"
@@ -990,7 +1018,9 @@ service_account_key_path: {key_path}
         "  PROJECT_ID: proj\n",
     )
     node_config.MaterializeNodeConfig(
-        static_dir=self.test_dir, var_config_dir=var_config_dir
+        static_dir=self.test_dir,
+        var_config_dir=var_config_dir,
+        role=node_config.NodeRole.WORKER,
     )
     self.assertFalse(
         os.path.exists(os.path.join(var_config_dir, "lab_config.yaml"))
@@ -1014,7 +1044,9 @@ service_account_key_path: {key_path}
       f.write("lab_name: previously_resolved\n")
 
     node_config.MaterializeNodeConfig(
-        static_dir=self.test_dir, var_config_dir=var_config_dir
+        static_dir=self.test_dir,
+        var_config_dir=var_config_dir,
+        role=node_config.NodeRole.WORKER,
     )
     self.assertFalse(os.path.exists(stale_path))
 
@@ -1026,7 +1058,9 @@ service_account_key_path: {key_path}
       f.write("lab_name: previously_static\n")
 
     node_config.MaterializeNodeConfig(
-        static_dir=self.test_dir, var_config_dir=var_config_dir
+        static_dir=self.test_dir,
+        var_config_dir=var_config_dir,
+        role=node_config.NodeRole.WORKER,
     )
     self.assertFalse(os.path.exists(stale_path))
 
@@ -1065,7 +1099,9 @@ service_account_key_path: {key_path}
     var_config_dir = self._WriteStaticConfig()
     self._WriteStaticEnv("KEY=VAL\n")
     node_config.MaterializeNodeConfig(
-        static_dir=self.test_dir, var_config_dir=var_config_dir
+        static_dir=self.test_dir,
+        var_config_dir=var_config_dir,
+        role=node_config.NodeRole.WORKER,
     )
     env = self._ReadEnv(var_config_dir)
     # Follows --static_dir rather than the compose file's /etc/mtt/secrets
@@ -1085,7 +1121,9 @@ service_account_key_path: {key_path}
     var_config_dir = self._WriteStaticConfig()
     self._WriteStaticEnv("KEY=VAL\n")
     node_config.MaterializeNodeConfig(
-        static_dir=self.test_dir, var_config_dir=var_config_dir
+        static_dir=self.test_dir,
+        var_config_dir=var_config_dir,
+        role=node_config.NodeRole.WORKER,
     )
     env = self._ReadEnv(var_config_dir)
     self.assertNotIn("OTEL_RESOURCE_ATTRIBUTES", env)
@@ -1094,10 +1132,14 @@ service_account_key_path: {key_path}
     var_config_dir = self._WriteStaticConfig()
     self._WriteStaticEnv("KEY=VAL\n")
     node_config.MaterializeNodeConfig(
-        static_dir=self.test_dir, var_config_dir=var_config_dir
+        static_dir=self.test_dir,
+        var_config_dir=var_config_dir,
+        role=node_config.NodeRole.WORKER,
     )
     node_config.MaterializeNodeConfig(
-        static_dir=self.test_dir, var_config_dir=var_config_dir
+        static_dir=self.test_dir,
+        var_config_dir=var_config_dir,
+        role=node_config.NodeRole.WORKER,
     )
     with open(
         os.path.join(var_config_dir, "docker-compose.env"),
@@ -1119,7 +1161,9 @@ service_account_key_path: {key_path}
         "  hostname: gcp_host\n",
     )
     node_config.MaterializeNodeConfig(
-        static_dir=self.test_dir, var_config_dir=var_config_dir
+        static_dir=self.test_dir,
+        var_config_dir=var_config_dir,
+        role=node_config.NodeRole.WORKER,
     )
     env = self._ReadEnv(var_config_dir)
     # The GCP branch matters most: its docker-compose.env is regenerated from
@@ -1140,86 +1184,112 @@ service_account_key_path: {key_path}
     ) as f:
       return [str(flag) for flag in (yaml.safe_load(f) or {}).get("flags", [])]
 
-  def testMaterializeNodeConfig_staticEnablesCacheWhenVolumeExists(self):
+  def _MaterializeStaticFlags(
+      self, role: node_config.NodeRole, flags: list[str]
+  ) -> list[str]:
+    """Materializes a static config with the given flags and reads them back."""
+    var_config_dir = self._WriteStaticConfig(
+        mtt_flags_yaml=yaml.safe_dump(
+            {"image_name": "static_img", "tag": "v1", "flags": flags}
+        )
+    )
+    node_config.MaterializeNodeConfig(
+        static_dir=self.test_dir, var_config_dir=var_config_dir, role=role
+    )
+    return self._ReadFlags(var_config_dir)
+
+  def testMaterializeNodeConfig_workerEnablesCacheWhenVolumeExists(self):
     self.mock_has_cache.return_value = True
-    var_config_dir = self._WriteStaticConfig(
-        mtt_flags_yaml=(
-            "image_name: static_img\ntag: v1\nflags:\n- --port=8000\n"
-        )
+
+    flags = self._MaterializeStaticFlags(
+        node_config.NodeRole.WORKER, ["--port=8000"]
     )
 
-    node_config.MaterializeNodeConfig(
-        static_dir=self.test_dir, var_config_dir=var_config_dir
+    self.assertEqual(
+        flags,
+        [
+            "--port=8000",
+            "--bind_jfs_volume=mtt-jfs",
+            "--enable_persistent_cache",
+        ],
     )
 
-    flags = self._ReadFlags(var_config_dir)
-    self.assertIn("--bind_jfs_volume=mtt-jfs", flags)
-    self.assertIn("--enable_persistent_cache", flags)
-    # Unrelated flags survive.
-    self.assertIn("--port=8000", flags)
+  def testMaterializeNodeConfig_workerOmitsCacheWhenVolumeAbsent(self):
+    flags = self._MaterializeStaticFlags(node_config.NodeRole.WORKER, [])
 
-  def testMaterializeNodeConfig_staticOmitsCacheWhenVolumeAbsent(self):
-    var_config_dir = self._WriteStaticConfig()
+    self.assertEmpty(flags)
 
-    node_config.MaterializeNodeConfig(
-        static_dir=self.test_dir, var_config_dir=var_config_dir
+  def testMaterializeNodeConfig_staleJfsBindIsStripped(self):
+    # The mtt-jfs bind must not outlive the volume, but the user's own
+    # --enable_persistent_cache is passed through untouched.
+    flags = self._MaterializeStaticFlags(
+        node_config.NodeRole.WORKER,
+        [
+            "--bind_jfs_volume=mtt-jfs",
+            "--enable_persistent_cache",
+            "--port=8000",
+        ],
     )
 
-    self.assertEmpty(self._ReadFlags(var_config_dir))
+    self.assertEqual(flags, ["--enable_persistent_cache", "--port=8000"])
 
-  def testMaterializeNodeConfig_staleCacheFlagIsStripped(self):
-    # An operator-authored flag, or one inherited from a payload written
-    # before the cache became host state, must not outlive the volume.
-    var_config_dir = self._WriteStaticConfig(
-        mtt_flags_yaml=(
-            "image_name: static_img\n"
-            "tag: v1\n"
-            "flags:\n"
-            "- --bind_jfs_volume=mtt-jfs\n"
-            "- --enable_persistent_cache\n"
-            "- --port=8000\n"
-        )
-    )
-
-    node_config.MaterializeNodeConfig(
-        static_dir=self.test_dir, var_config_dir=var_config_dir
-    )
-
-    flags = self._ReadFlags(var_config_dir)
-    self.assertEqual(flags, ["--port=8000"])
-
-  def testMaterializeNodeConfig_negatedCacheFlagIsStripped(self):
+  def testMaterializeNodeConfig_workerUserCacheFlagIsNotDuplicated(self):
     self.mock_has_cache.return_value = True
-    var_config_dir = self._WriteStaticConfig(
-        mtt_flags_yaml=(
-            "image_name: static_img\n"
-            "tag: v1\n"
-            "flags:\n"
-            "- --no-enable_persistent_cache\n"
-        )
+
+    flags = self._MaterializeStaticFlags(
+        node_config.NodeRole.WORKER, ["--enable_persistent_cache"]
     )
 
-    node_config.MaterializeNodeConfig(
-        static_dir=self.test_dir, var_config_dir=var_config_dir
+    self.assertEqual(
+        flags, ["--enable_persistent_cache", "--bind_jfs_volume=mtt-jfs"]
     )
 
-    flags = self._ReadFlags(var_config_dir)
-    self.assertNotIn("--no-enable_persistent_cache", flags)
-    self.assertIn("--enable_persistent_cache", flags)
+  def testMaterializeNodeConfig_userBindToOtherVolumeIsKept(self):
+    self.mock_has_cache.return_value = True
+
+    flags = self._MaterializeStaticFlags(
+        node_config.NodeRole.WORKER, ["--bind_jfs_volume=other"]
+    )
+
+    # The user's bind wins: mtt-jfs is not bound over it, and the cache flag
+    # that would accompany the mtt-jfs bind is not added either.
+    self.assertEqual(flags, ["--bind_jfs_volume=other"])
+
+  def testMaterializeNodeConfig_controllerBindsVolumeWithoutCacheFlag(self):
+    self.mock_has_cache.return_value = True
+
+    flags = self._MaterializeStaticFlags(node_config.NodeRole.CONTROLLER, [])
+
+    self.assertEqual(flags, ["--bind_jfs_volume=mtt-jfs"])
+
+  def testMaterializeNodeConfig_controllerCacheFlagIsPassthrough(self):
+    # On a controller the flag drives OLC behavior, so it is up to the user
+    # and independent of the volume.
+    flags = self._MaterializeStaticFlags(
+        node_config.NodeRole.CONTROLLER,
+        ["--bind_jfs_volume=mtt-jfs", "--enable_persistent_cache"],
+    )
+
+    self.assertEqual(flags, ["--enable_persistent_cache"])
 
   def testMaterializeNodeConfig_cacheFlagsAreNotDuplicated(self):
     self.mock_has_cache.return_value = True
     var_config_dir = self._WriteStaticConfig()
 
     node_config.MaterializeNodeConfig(
-        static_dir=self.test_dir, var_config_dir=var_config_dir
+        static_dir=self.test_dir,
+        var_config_dir=var_config_dir,
+        role=node_config.NodeRole.WORKER,
     )
     node_config.MaterializeNodeConfig(
-        static_dir=self.test_dir, var_config_dir=var_config_dir
+        static_dir=self.test_dir,
+        var_config_dir=var_config_dir,
+        role=node_config.NodeRole.WORKER,
     )
 
     flags = self._ReadFlags(var_config_dir)
     self.assertLen([f for f in flags if f.startswith("--bind_jfs_volume")], 1)
+    self.assertLen([f for f in flags if f == "--enable_persistent_cache"], 1)
 
   @mock.patch.object(
       gcp_param_manager.GcpParamManagerClient, "FromServiceAccountKeyFile"
@@ -1234,7 +1304,9 @@ service_account_key_path: {key_path}
     )
 
     node_config.MaterializeNodeConfig(
-        static_dir=self.test_dir, var_config_dir=var_config_dir
+        static_dir=self.test_dir,
+        var_config_dir=var_config_dir,
+        role=node_config.NodeRole.WORKER,
     )
 
     self.assertIn("--bind_jfs_volume=mtt-jfs", self._ReadFlags(var_config_dir))

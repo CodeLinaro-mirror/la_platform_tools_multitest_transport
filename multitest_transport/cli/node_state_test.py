@@ -930,6 +930,7 @@ class NodeStateTest(absltest.TestCase):
     node_config.MaterializeNodeConfig(
         static_dir=self.static_dir,
         var_config_dir=self.release_mgr.config_dir,
+        role=NodeRole.WORKER,
     )
 
     self.state_mgr._StartTunnel()  
@@ -960,6 +961,7 @@ class NodeStateTest(absltest.TestCase):
     node_config.MaterializeNodeConfig(
         static_dir=self.static_dir,
         var_config_dir=self.release_mgr.config_dir,
+        role=NodeRole.CONTROLLER,
     )
 
     controller_mgr._StartTunnel()  

@@ -52,6 +52,13 @@ class ConfigValidationError(Exception):
   """Raised when materialized configuration violates MTT node invariants."""
 
 
+class NodeRole(enum.Enum):
+  """Operational roles for MTT Node."""
+
+  WORKER = "worker"
+  CONTROLLER = "controller"
+
+
 class _ConfigScope(enum.Enum):
   """Hierarchical configuration scopes."""
 
@@ -971,9 +978,12 @@ def _InjectHostSpecificEnv(static_dir: str, var_config_dir: str) -> None:
 # persistent cache is available on this host.
 _JFS_CACHE_VOLUME = "mtt-jfs"
 
-# Flag names that describe the persistent cache. They are derived from the
-# live host on every materialization, so any inherited copy is dropped first.
-_CACHE_FLAG_NAMES = ("bind_jfs_volume", "enable_persistent_cache")
+# The only token MTT node owns. It is derived from the live host on every
+# materialization, so an inherited copy is always dropped first. Any other
+# `--bind_jfs_volume` token is the user's and is passed through untouched.
+_JFS_BIND_FLAG = f"--bind_jfs_volume={_JFS_CACHE_VOLUME}"
+_BIND_JFS_VOLUME_FLAG_NAME = "bind_jfs_volume"
+_ENABLE_PERSISTENT_CACHE_FLAG_NAME = "enable_persistent_cache"
 
 
 def _HasCacheVolume() -> bool:
@@ -999,29 +1009,31 @@ def _HasCacheVolume() -> bool:
   return res.return_code == 0
 
 
-def _IsCacheFlag(token: str) -> bool:
-  """Matches either polarity of the cache flags, e.g. --no-enable_...."""
-  name = _ParseFlagName(token)
-  return name.removeprefix("no-") in _CACHE_FLAG_NAMES
-
-
-def _InjectHostSpecificFlags(var_config_dir: str) -> None:
-  """Rewrites the persistent cache flags from this host's Docker volumes.
+def _InjectHostSpecificFlags(var_config_dir: str, role: NodeRole) -> None:
+  """Adds the persistent cache flags derived from this host's Docker volumes.
 
   The cache is backed by the `mtt-jfs` Docker volume, which the JuiceFS
-  deployment creates and removes independently of MTT node. That makes it host
-  state, not pool state, so it is resolved here rather than recorded at
-  `init`/`join`: a decision frozen at provisioning time would keep passing
-  `--bind_jfs_volume` after the volume was removed, and Docker silently
-  auto-creates a missing named volume, leaving the node running against an
-  empty local directory that only looks like the shared cache.
+  deployment creates and removes independently of MTT node. That makes the
+  bind host state, not pool state, so it is resolved here rather than recorded
+  at `init`/`join`: a bind frozen at provisioning time would outlive the
+  volume, and Docker silently auto-creates a missing named volume, leaving the
+  node running against an empty local directory that only looks like the
+  shared cache.
 
-  Any inherited cache flag is dropped before the current state is applied, so
-  an operator-authored flag in static_dir and a stale flag in a Parameter
-  Manager payload are both overridden rather than duplicated.
+  MTT node stays transparent to user-authored flags. It only removes the exact
+  `--bind_jfs_volume=mtt-jfs` token it owns, and only adds flags when the user
+  has not expressed a choice:
+
+  - Both roles: `--bind_jfs_volume=mtt-jfs` is added if the volume exists and
+    the user has not bound another volume.
+  - Worker: `--enable_persistent_cache` is added alongside that bind, unless it
+    is already present.
+  - Controller: `--enable_persistent_cache` controls OLC behavior, not local
+    caching, so it is never added or removed here.
 
   Args:
     var_config_dir: Destination runtime configuration directory.
+    role: Role of the node being materialized.
   """
   target_path = os.path.join(var_config_dir, "mtt_flags.yaml")
   if not os.path.exists(target_path):
@@ -1034,15 +1046,22 @@ def _InjectHostSpecificFlags(var_config_dir: str) -> None:
   flags = [
       str(flag)
       for flag in flags_data.get("flags") or []
-      if not _IsCacheFlag(str(flag))
+      if str(flag).strip() != _JFS_BIND_FLAG
   ]
-  if _HasCacheVolume():
+  flag_names = {_ParseFlagName(flag) for flag in flags}
+  if _BIND_JFS_VOLUME_FLAG_NAME in flag_names:
     logger.info(
-        "Found Docker volume %s; enabling the persistent cache.",
+        "mtt_flags.yaml already binds a volume; not binding %s.",
         _JFS_CACHE_VOLUME,
     )
-    flags.append(f"--bind_jfs_volume={_JFS_CACHE_VOLUME}")
-    flags.append("--enable_persistent_cache")
+  elif _HasCacheVolume():
+    logger.info("Found Docker volume %s; binding it.", _JFS_CACHE_VOLUME)
+    flags.append(_JFS_BIND_FLAG)
+    if (
+        role == NodeRole.WORKER
+        and _ENABLE_PERSISTENT_CACHE_FLAG_NAME not in flag_names
+    ):
+      flags.append(f"--{_ENABLE_PERSISTENT_CACHE_FLAG_NAME}")
 
   flags_data["flags"] = flags
   with open(target_path, "w", encoding="utf-8") as f:
@@ -1185,6 +1204,8 @@ def _ValidateMaterializedConfig(var_config_dir: str) -> None:
 def MaterializeNodeConfig(
     static_dir: str = "/etc/mtt",
     var_config_dir: str = "/var/lib/mttnode/config",
+    *,
+    role: NodeRole,
 ) -> None:
   """Materializes node configuration into var_config_dir from static_dir.
 
@@ -1204,6 +1225,9 @@ def MaterializeNodeConfig(
     static_dir: Static host configuration root (e.g. /etc/mtt).
     var_config_dir: Destination runtime directory (e.g.
       /var/lib/mttnode/config).
+    role: Role of the node being materialized. It decides whether the
+      persistent cache flag follows the `mtt-jfs` bind (worker) or is left to
+      the user (controller).
 
   Raises:
     FileNotFoundError: If neither manifest.yaml nor a static config directory
@@ -1231,7 +1255,7 @@ def MaterializeNodeConfig(
         config_dto.lab_config_args.get("lab_name"),
     )
     _InjectHostSpecificEnv(static_dir, var_config_dir)
-    _InjectHostSpecificFlags(var_config_dir)
+    _InjectHostSpecificFlags(var_config_dir, role)
     _ValidateMaterializedConfig(var_config_dir)
     return
 
@@ -1251,7 +1275,7 @@ def MaterializeNodeConfig(
     )
     _CopyMaterializedConfig(static_config_dir, var_config_dir)
     _InjectHostSpecificEnv(static_dir, var_config_dir)
-    _InjectHostSpecificFlags(var_config_dir)
+    _InjectHostSpecificFlags(var_config_dir, role)
     _ValidateMaterializedConfig(var_config_dir)
     return
 
@@ -1267,4 +1291,5 @@ __all__ = [
     "ConfigDTO",
     "ConfigValidationError",
     "MaterializeNodeConfig",
+    "NodeRole",
 ]

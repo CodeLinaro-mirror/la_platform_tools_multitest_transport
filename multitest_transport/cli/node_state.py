@@ -66,11 +66,9 @@ class TerminalAbortError(Exception):
   """Raised internally to immediately abort pipeline execution on failure."""
 
 
-class NodeRole(enum.Enum):
-  """Operational roles for MTT Node."""
-
-  WORKER = "worker"
-  CONTROLLER = "controller"
+# Defined in node_config so materialization can take a role without importing
+# this module; re-exported here for existing callers.
+NodeRole = node_config.NodeRole
 
 
 class TunnelCondition(enum.Enum):
@@ -535,6 +533,7 @@ class NodeStateManager:
       node_config.MaterializeNodeConfig(
           static_dir=self._static_dir,
           var_config_dir=self._release_mgr.config_dir,
+          role=self._role,
       )
     except Exception as e:  
       logger.exception("Failed to materialize node configuration: %s", e)

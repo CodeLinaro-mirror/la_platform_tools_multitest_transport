@@ -453,6 +453,7 @@ class NodeJoinTest(absltest.TestCase):
     mock_materialize.assert_called_once_with(
         static_dir=self.static_dir,
         var_config_dir=self.var_config_dir,
+        role=node_config.NodeRole.WORKER,
     )
 
     # Verify passing tag and android_service_account_key_path writes node-scope
