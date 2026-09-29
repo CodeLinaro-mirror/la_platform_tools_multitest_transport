@@ -52,16 +52,10 @@ class CliIntegrationTest(absltest.TestCase):
 
   def setUp(self):
     super(CliIntegrationTest, self).setUp()
-    self._temp_tags = []
     self._Stop()
 
   def tearDown(self):
     self._Stop()
-    for tag in getattr(self, '_temp_tags', []):
-      try:
-        _RunCmd(['docker', 'rmi', '-f', tag])
-      except CommandError:
-        pass
     super(CliIntegrationTest, self).tearDown()
 
   def _Start(self, image=None, args=None):
@@ -154,43 +148,50 @@ class CliIntegrationTest(absltest.TestCase):
     with six.assertRaisesRegex(self, CommandError, r'(?i)No such object: mtt'):
       self._GetStatus()
 
+  def _GetRemoteImage(self):
+    """Returns the `:cache` tag in FLAGS.docker_image's repository.
+
+    `mtt update` pulls from the registry, so update tests need a pushed image.
+    release/kokoro.sh pre-pulls `:cache` and re-tags it on every release.
+    """
+    repo = FLAGS.docker_image
+    if ':' in repo.rsplit('/', 1)[-1]:  # Strip the tag, keep registry ports.
+      repo = repo.rsplit(':', 1)[0]
+    return '%s:cache' % repo
+
   def testUpdate(self):
     """Verify that updating from a different version restarts container."""
-    # Hermetically simulate an older/distinct version by tagging the local test
-    # image.
-    if ':' in FLAGS.docker_image and not FLAGS.docker_image.endswith(':'):
-      prev_image = '%s_test_prev' % FLAGS.docker_image
-    else:
-      prev_image = '%s:test_prev' % FLAGS.docker_image
-    _RunCmd(['docker', 'tag', FLAGS.docker_image, prev_image])
-    self._temp_tags.append(prev_image)
-
-    # Launch container with the simulated previous version and entrypoint 'yes'
-    # so startup is immediate and we can assert entrypoint replacement.
+    # Entrypoint 'yes' starts instantly and lets us assert it gets replaced.
     cmd = [
-        'docker', 'run', '-d', '--entrypoint', 'yes',
-        '--name', 'mtt', prev_image,
+        'docker',
+        'run',
+        '-d',
+        '--entrypoint',
+        'yes',
+        '--name',
+        'mtt',
+        FLAGS.docker_image,
     ]
     _RunCmd(cmd)
     self.assertEqual(RUNNING, self._GetStatus())
     self.assertEqual('yes', self._GetEntryPoint())
     container_id = self._GetContainerId()
 
-    # Update container to current version using --force_update to trigger
-    # upgrade without depending on remote image registry network calls.
-    self._Update(image=FLAGS.docker_image, args=['--force_update'])
+    self._Update(image=self._GetRemoteImage(), args=['--force_update'])
     self.assertEqual(RUNNING, self._GetStatus())
     self.assertNotEqual('yes', self._GetEntryPoint())
     self.assertNotEqual(container_id, self._GetContainerId())
 
   def testUpdate_sameImage(self):
     """Verify that updating to the same image skips update."""
-    self._Start(image=FLAGS.docker_image)
+    remote_image = self._GetRemoteImage()
+    # Pull first so the container runs the registry's current digest.
+    self._Start(image=remote_image, args=['--force_update'])
     self.assertEqual(RUNNING, self._GetStatus())
     container_id = self._GetContainerId()
 
     # Update skipped if already running the same version
-    self._Update(image=FLAGS.docker_image)
+    self._Update(image=remote_image)
     self.assertEqual(RUNNING, self._GetStatus())
     self.assertEqual(container_id, self._GetContainerId())
 

@@ -11,7 +11,7 @@ flowchart TD
     SetCtrl --> Certs
     SetBoth --> Certs
 
-    Certs --> Mounts["Link Temporary Mounts<br/>to Local File Store"]
+    Certs --> Mounts["Link Temporary Mounts<br/>(if /tmp/.mnt exists)<br/>to Local File Store"]
     Mounts --> PreRun{"Check Pre-run Scripts"}
 
     PreRun -->|Exists| RunPreRun["Source init_pre_run.sh<br/>& mysql.sh"]

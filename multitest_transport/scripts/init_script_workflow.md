@@ -45,8 +45,8 @@ corresponding boolean flags (`IS_STANDALONE_MODE`, `IS_CONTROLLER_ONLY_MODE`,
     ensuring secure TLS connectivity for Java daemons.
 -   **Proxy Configuration:** Converts `HTTP_PROXY`, `HTTPS_PROXY`, and
     `NO_PROXY` into Java system properties (`JAVA_TOOL_OPTIONS`).
--   **Temporary Mounts:** Symlinks temporarily mounted files from `/tmp/.mnt`
-    into the persistent ` local_file_store`.
+-   **Temporary Mounts:** If `/tmp/.mnt` is present, symlinks temporarily
+    mounted files from `/tmp/.mnt` into the persistent `local_file_store`.
 -   **Pre-Run Hooks:** Executes `/mtt/scripts/init_pre_run.sh` (which resolves
     and exports `OLCS_CREDENTIAL_TYPE`) and `/mtt/scripts/mysql.sh` if present.
 -   **ADB Directory:** Creates `/root/.android` before any service runs `adb`.

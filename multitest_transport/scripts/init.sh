@@ -231,8 +231,10 @@ function link_temporary_mounts {
   # Link temporarily mounted files/directories into the local file store
   mkdir -p "${MTT_STORAGE_PATH}/local_file_store"
   find "${MTT_STORAGE_PATH}/local_file_store" -xtype l -delete
-  [[ -d /tmp/.mnt ]] && find /tmp/.mnt -mindepth 1 -maxdepth 1 \
-    -exec ln -sf {} "${MTT_STORAGE_PATH}/local_file_store" \;
+  if [[ -d /tmp/.mnt ]]; then
+    find /tmp/.mnt -mindepth 1 -maxdepth 1 \
+      -exec ln -sf {} "${MTT_STORAGE_PATH}/local_file_store" \;
+  fi
 }
 
 function run_prerun_hook {
