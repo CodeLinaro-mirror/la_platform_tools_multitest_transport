@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Keep loading this internal base image until we have external compilation ready
-FROM us.gcr.io/android-mtt/mtt:base_candidate
+FROM us.gcr.io/android-mtt/mtt:base_latest
 MAINTAINER Android Test Station <mtt-eng@google.com>
 
 # Docker builds image by layers. If a layer changes, all the following layers
