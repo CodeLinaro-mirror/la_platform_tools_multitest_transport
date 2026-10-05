@@ -79,7 +79,7 @@ def _GenerateHashOfProtorpcObject(message):
   """
   if not isinstance(message, messages.Message):
     return None
-  serialized_message = protojson.encode_message(message)  # pytype: disable=module-attr
+  serialized_message = protojson.encode_message(message)
   hash_object = hashlib.sha256()
   hash_object.update(serialized_message.encode('utf-8'))
   hex_digest = hash_object.hexdigest()
@@ -261,7 +261,7 @@ def ProcessRequestEvent(message: api_messages.RequestEventMessage):
         task_scheduler.AddCallableTask(
             _SendNotification,
             test_run.key.id(),
-            protojson.encode_message(attempts[0]),  # pytype: disable=module-attr
+            protojson.encode_message(attempts[0]),
             ndb_models.NotificationEvent.TEST_RUN_FINISHED,
             _transactional=True,
         )
@@ -392,7 +392,7 @@ def _ProcessCommandAttemptResult(test_run_id, test_run, request):
       task_scheduler.AddCallableTask(
           _SendNotification,
           test_run_id,
-          protojson.encode_message(attempt),  # pytype: disable=module-attr
+          protojson.encode_message(attempt),
           ndb_models.NotificationEvent.TEST_RUN_ATTEMPT_FINISHED,
           _transactional=True,
       )
@@ -446,7 +446,7 @@ def _SendNotification(test_run_id, attempt_json, event_type):
     logging.warning('Sender email address or password not configured.')
     return
 
-  attempt = protojson.decode_message(  # pytype: disable=module-attr
+  attempt = protojson.decode_message(
       api_messages.CommandAttemptMessage, attempt_json
   )
 
@@ -743,6 +743,6 @@ def HandleTask(fake=None):
   message_cls, handler = _EVENT_HANDLERS[message_type]
   if not message_cls or not handler:
     raise ValueError('Unknown TFC event type %s' % message_type)
-  message = protojson.decode_message(message_cls, body)  # pytype: disable=module-attr
+  message = protojson.decode_message(message_cls, body)
   handler(message)
   return common.HTTP_OK

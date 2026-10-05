@@ -191,7 +191,7 @@ class ModuleApplication(gunicorn.app.base.BaseApplication):
 
   def get_log_config(self):
     log_config = LOG_CONFIG.copy()
-    log_config['root']['level'] = self.log_level  # pytype: disable=unsupported-operands
+    log_config['root']['level'] = self.log_level  # pyrefly: ignore[unsupported-operation]
     log_format = LOG_FORMAT.format(module=self.module.name)
     log_config['formatters']['default']['format'] = log_format  # pyrefly: ignore[bad-index, unsupported-operation]
     return log_config

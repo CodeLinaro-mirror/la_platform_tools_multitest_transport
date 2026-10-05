@@ -224,7 +224,7 @@ class TestRunApi(remote.Service):
     Body:
       Test run request data
     """
-    logging.info('New test run request: %s', protojson.encode_message(request))  # pytype: disable=module-attr
+    logging.info('New test run request: %s', protojson.encode_message(request))
     labels = request.labels
     test_run_config = mtt_messages.Convert(
         request.test_run_config, ndb_models.TestRunConfig
@@ -321,7 +321,7 @@ class TestRunApi(remote.Service):
 
     # Delete test results database
     with sql_models.db.Session() as session:
-      session.query(sql_models.TestModuleResult).filter_by(  # pyrefly: ignore[missing-attribute]
+      session.query(sql_models.TestModuleResult).filter_by(
           test_run_id=test_run_id
       ).delete()
 
@@ -477,7 +477,7 @@ class TestRunApi(remote.Service):
         if not metadata_file:
           logging.warning('Metadata file not found')
           return []  # ignore file not found
-        metadata_list = protojson.decode_message(  # pytype: disable=module-attr
+        metadata_list = protojson.decode_message(
             mtt_messages.TestRunMetadataList, zf.read(metadata_file)
         )
         # TODO: last command attempt is missing

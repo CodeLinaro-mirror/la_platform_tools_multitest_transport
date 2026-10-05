@@ -158,13 +158,11 @@ def NewRequest(
     )
     return api_messages.RequestMessage(id=request_id)
   else:
-    body = json.loads(protojson.encode_message(new_request_msg))  # pytype: disable=module-attr
+    body = json.loads(protojson.encode_message(new_request_msg))
     res = _GetAPIClient().requests().newMultiCommandRequest(body=body).execute()
-    # pytype: disable=module-attr
     return protojson.decode_message(
         api_messages.RequestMessage, json.dumps(res)
     )
-    # pytype: enable=module-attr
 
 
 def ResumeRequest(request_id: str):
@@ -198,11 +196,9 @@ def GetRequest(request_id: str) -> api_messages.RequestMessage:
   else:
     request_id = int(request_id)  # pyrefly: ignore[bad-assignment]
     res = _GetAPIClient().requests().get(request_id=request_id).execute()
-    # pytype: disable=module-attr
     return protojson.decode_message(
         api_messages.RequestMessage, json.dumps(res)
     )
-    # pytype: enable=module-attr
 
 
 def CancelRequest(request_id: str):
@@ -241,7 +237,7 @@ def GetTestContext(
       .get(request_id=request_id, command_id=command_id)
   )
   res = req.execute()
-  return protojson.decode_message(api_messages.TestContext, json.dumps(res))  # pytype: disable=module-attr
+  return protojson.decode_message(api_messages.TestContext, json.dumps(res))
 
 
 def GetAttempt(
@@ -313,7 +309,7 @@ def ListDevices() -> Optional[api_messages.DeviceInfoCollection]:
         prev_cursor='',
     )
   res = _GetAPIClient().devices().list().execute()
-  return protojson.decode_message(  # pytype: disable=module-attr
+  return protojson.decode_message(
       api_messages.DeviceInfoCollection, json.dumps(res)
   )
 
@@ -331,7 +327,7 @@ def GetDeviceInfo(serial_num: str) -> Optional[api_messages.DeviceInfo]:
     return olcs_lab_info_stub.GetSharedStub().GetDevice(serial_num)
   try:
     res = _GetAPIClient().devices().get(device_serial=serial_num).execute()
-    return protojson.decode_message(api_messages.DeviceInfo, json.dumps(res))  # pytype: disable=module-attr
+    return protojson.decode_message(api_messages.DeviceInfo, json.dumps(res))
   except apiclient.errors.HttpError as e:
     if e.resp.status == 404:
       return None
@@ -355,6 +351,6 @@ def GetRequestInvocationStatus(
         .get(request_id=request_id)
         .execute()
     )
-    return protojson.decode_message(  # pytype: disable=module-attr
+    return protojson.decode_message(
         api_messages.InvocationStatus, json.dumps(res)
     )

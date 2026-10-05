@@ -36,7 +36,7 @@ def Encode(config_set):
     Configuration set serialized as a YAML string
   """
   msg = messages.Convert(config_set, _ConfigSetMessage)
-  return _JsonToYaml(protojson.encode_message(msg))  # pytype: disable=module-attr
+  return _JsonToYaml(protojson.encode_message(msg))
 
 
 def Decode(string):
@@ -48,7 +48,7 @@ def Decode(string):
     MTT configuration set
   """
   data = yaml.safe_load(string)
-  msg = protojson.decode_message(_ConfigSetMessage, json.dumps(data))  # pytype: disable=module-attr
+  msg = protojson.decode_message(_ConfigSetMessage, json.dumps(data))
 
   # If url is provided, add it as a namespace to the id to dedupe objects from
   # different configs with the same id and identify which config set each

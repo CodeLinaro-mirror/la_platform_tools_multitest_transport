@@ -40,7 +40,7 @@ class CredentialsProperty(ndb.BlobProperty):
     # Using protocol 2 to ensure compatibility with Python 2.
     return pickle.dumps(value, protocol=2)
 
-  def _from_base_type(self,  # pytype: disable=signature-mismatch  # overriding-return-type-checks
+  def _from_base_type(self,
                       value: bytes) -> Optional[ga_credentials.Credentials]:
     try:
       # Use UTF-8 encoding for backwards compatibility with Python 2

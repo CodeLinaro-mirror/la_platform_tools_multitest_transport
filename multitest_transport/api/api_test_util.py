@@ -22,7 +22,7 @@ import webtest
 class TestCase(testbed_dependent_test.TestbedDependentTest):
   """A base class for API test classes."""
 
-  def setUp(self, api_class):  # pytype: disable=signature-mismatch  # overriding-parameter-count-checks
+  def setUp(self, api_class):  # pyrefly: ignore[bad-override]
     super(TestCase, self).setUp()
     self.api_server = endpoints.api_server([api_class])
     self.app = webtest.TestApp(self.api_server)

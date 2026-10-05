@@ -33,7 +33,7 @@ class BasicAuthHttpProvider(base.BuildProvider):
   def _GetOpener(self, path):
     password_mgr = urllib.request.HTTPPasswordMgrWithDefaultRealm()
     options = self.GetOptions()
-    password_mgr.add_password(None, path, options.user, options.password)  # pytype: disable=attribute-error
+    password_mgr.add_password(None, path, options.user, options.password)  # pyrefly: ignore[missing-attribute]
     handler = urllib.request.HTTPBasicAuthHandler(password_mgr)
     return urllib.request.build_opener(handler)
 

@@ -110,7 +110,7 @@ class ApfeClient(object):
         )
         .execute(http=self._GetHttp(), num_retries=constant.NUM_RETRIES)
     )
-    apfe_report = protojson.decode_message(ApfeReport, res)  # pytype: disable=module-attr
+    apfe_report = protojson.decode_message(ApfeReport, res)
     return apfe_report
 
   def GetLatestApfeBuild(self, fingerprint):
@@ -129,7 +129,7 @@ class ApfeClient(object):
         )
         .execute(http=self._GetHttp(), num_retries=constant.NUM_RETRIES)
     )
-    apfe_build = protojson.decode_message(ApfeBuild, res)  # pytype: disable=module-attr
+    apfe_build = protojson.decode_message(ApfeBuild, res)
     return apfe_build
 
   def GetLatestApfeReport(self, report_name):
@@ -145,7 +145,7 @@ class ApfeClient(object):
         .get(name=report_name)
         .execute(http=self._GetHttp(), num_retries=constant.NUM_RETRIES)
     )
-    apfe_report = protojson.decode_message(ApfeReport, res)  # pytype: disable=module-attr
+    apfe_report = protojson.decode_message(ApfeReport, res)
     return apfe_report
 
   def GetRequiredReports(self, fingerprint):
@@ -164,7 +164,7 @@ class ApfeClient(object):
         )
         .execute(http=self._GetHttp(), num_retries=constant.NUM_RETRIES)
     )
-    required_report_info = protojson.decode_message(RequiredReportInfo, res)  # pytype: disable=module-attr
+    required_report_info = protojson.decode_message(RequiredReportInfo, res)
     return required_report_info
 
 
