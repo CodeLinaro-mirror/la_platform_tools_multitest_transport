@@ -26,61 +26,60 @@
 
 <mat-horizontal-stepper linear="true" #stepper>
   <mat-step>
-    <ng-template matStepLabel>Edit Custom Schedules</ng-template>
-    <div *ngIf="customScheduleTestPlans.length > 0; else noCustomSchedules">
+    <ng-template matStepLabel>Edit Schedules</ng-template>
+    <div *ngIf="testPlans.length > 0; else noTestPlans">
       <div class="summary-text">
-        Editing {{customScheduleTestPlans.length}} test plans with custom schedules.
+        Editing {{testPlans.length}} test plans.
       </div>
 
-      <div fxLayout="row" fxLayoutAlign="start baseline" fxLayoutGap="15px">
-        <mat-form-field appearance="outline" floatLabel="always" fxFlex>
-          <mat-label>Cron Expression</mat-label>
-          <input matInput type="text" [(ngModel)]="batchCronExp"
-                 (ngModelChange)="updateBatchSchedule()"
-                 placeholder="Leave empty to keep original values"/>
-        </mat-form-field>
-        <a href="https://en.wikipedia.org/wiki/Cron" target="_blank" aria-label="Help">
-          <mat-icon>help</mat-icon>
-        </a>
-      </div>
-
-      <div fxLayout="row" fxLayoutAlign="start baseline" fxLayoutGap="15px">
-        <mat-form-field appearance="outline" floatLabel="always">
-          <mat-label>Time Zone</mat-label>
-          <mat-select [(ngModel)]="batchTimezone" (selectionChange)="updateBatchSchedule()"
-                      placeholder="Leave empty to keep original values">
-            <mat-option value="">-- Keep Original --</mat-option>
-            <mat-option *ngFor="let option of timezoneOptions" [value]="option">
-              {{ option }}
-            </mat-option>
-          </mat-select>
-        </mat-form-field>
+      <schedule-time-form
+          [allowKeepOriginal]="true"
+          [ngModel]="batchCronExp"
+          (ngModelChange)="batchCronExp = $event; updateBatchSchedule()"
+          [timezone]="batchTimezone"
+          [extraTimezones]="originalTimezoneOptions"
+          (timezoneChange)="batchTimezone = $event; updateBatchSchedule()"
+          (scheduleTypeChange)="selectedScheduleType = $event; updateBatchSchedule()">
+      </schedule-time-form>
+      <div class="muted-text empty-cron-hint" *ngIf="showEmptyCronHint">
+        Empty cron expression: original schedules will be kept.
       </div>
     </div>
-    <ng-template #noCustomSchedules>
-      <div>No test plans with custom schedules found for this label.</div>
+    <ng-template #noTestPlans>
+      <div>No test plans found for this label.</div>
     </ng-template>
     <div>
       <button mat-flat-button matStepperNext color="accent" type="button">Next</button>
       <button mat-button (click)="back()" color="accent" type="button">Cancel</button>
     </div>
   </mat-step>
+
   <mat-step [stepControl]="actionsFormGroup">
     <ng-template matStepLabel>Edit Test Run Actions</ng-template>
     <form [formGroup]="actionsFormGroup">
       <div *ngFor="let action of referencedActions">
-        <div *ngIf="getActionGroup(action.id); else noOptions" 
-            [formGroup]="getActionGroup(action.id)"> <h4 class="action-header">{{action.name}}</h4>
-          <ng-container *ngIf="effectiveOptionDefs[action.id] as optionDefs">
-            <mat-form-field *ngFor="let optionDef of optionDefs" appearance="outline">
-              <mat-label>{{optionDef.name}}</mat-label>
-              <input matInput formControlName="{{optionDef.name}}"
-                      (change)="updateActionOption(action.id, optionDef.name, getActionGroup(action.id)?.get(optionDef.name)?.value || '')">
-            </mat-form-field>
-          </ng-container>
+        <h4 class="action-header">{{action.name}}</h4>
+        <div *ngIf="getActionGroup(action.id) as actionGroup; else noOptions"
+             [formGroup]="actionGroup">
+          <mat-form-field *ngFor="let optionDef of effectiveOptionDefs[action.id]"
+                          appearance="outline" floatLabel="always">
+            <mat-label>{{optionDef.name}}</mat-label>
+            <input matInput [formControlName]="optionDef.name"
+                   placeholder="Leave empty to keep current value">
+            <mat-hint *ngIf="currentValueHints[action.id][optionDef.name] as hint">
+              {{hint}}
+            </mat-hint>
+          </mat-form-field>
         </div>
         <ng-template #noOptions>
-          </ng-template>
+          <div class="muted-text no-options">No configurable parameters.</div>
+        </ng-template>
+      </div>
+      <div *ngFor="let actionId of unknownActionIds">
+        <h4 class="action-header">Unknown action ({{actionId}})</h4>
+        <div class="muted-text no-options">
+          Action no longer exists; its parameters can't be edited.
+        </div>
       </div>
     </form>
     <div>

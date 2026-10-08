@@ -35,7 +35,7 @@ import {
   testResourceDefToObj,
 } from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
-import {getPeriodicType} from '../shared/schedule_time_form';
+import {getLocalTimezone, ScheduleType} from '../shared/schedule_time_form';
 import {buildApiErrorMessage} from '../shared/util';
 
 interface TestResourceGroup {
@@ -61,7 +61,12 @@ export class EditTestSuitesPage implements OnInit {
   allActions: {[id: string]: TestRunAction} = {};
   allHooks: {[name: string]: TestRunHook} = {};
   referencedActions: TestRunAction[] = [];
+  /** IDs of referenced actions which no longer exist. */
+  unknownActionIds: string[] = [];
   effectiveOptionDefs: {[actionId: string]: OptionDef[]} = {};
+  /** Current value hint per action and option name (empty if not set). */
+  currentValueHints: {[actionId: string]: {[optionName: string]: string}} =
+      {};
   actionRefsMap = new Map<string, TestRunActionRef[]>();
 
   buildChannels: BuildChannel[] = [];
@@ -69,12 +74,20 @@ export class EditTestSuitesPage implements OnInit {
   readonly TestResourceClassType = TestResourceClassType;
   currentLabel = '';
 
-  customScheduleTestPlans: TestPlan[] = [];
-  batchCronExp = '';
-  batchTimezone = '';
-  originalCronExps = new Map<string, string>();
-  originalTimezones = new Map<string, string>();
-  timezoneOptions: string[] = [];
+  /** Client-side local timezone, used as the default for new schedules. */
+  localTimezone = getLocalTimezone();
+
+  /** Selected schedule type, '' means keep the original schedules. */
+  selectedScheduleType: ScheduleType|'' = '';
+  /** Cron expression to apply, null means keep the original schedules. */
+  batchCronExp: string|null = null;
+  /** Time zone to apply to all test plans that get a new schedule. */
+  batchTimezone = this.localTimezone;
+  /** Original schedule values by test plan ID (undefined if not set). */
+  readonly originalCronExps = new Map<string, string|undefined>();
+  readonly originalTimezones = new Map<string, string|undefined>();
+  /** Distinct timezones used by the loaded test plans. */
+  originalTimezoneOptions: string[] = [];
 
   private readonly route = inject(ActivatedRoute);
   private readonly mttClient = inject(MttClient);
@@ -134,26 +147,25 @@ export class EditTestSuitesPage implements OnInit {
                                .filter(
                                    (tp: TestPlan) => tp.labels &&
                                        tp.labels.includes(label));
-          this.customScheduleTestPlans = this.testPlans.filter(
-              (tp) => tp.cron_exp && !getPeriodicType(tp.cron_exp));
 
-          const localTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-          const timezones = new Set(['UTC', localTz]);
+          this.originalCronExps.clear();
+          this.originalTimezones.clear();
 
-          for (const plan of this.customScheduleTestPlans) {
+          const timezones = new Set<string>();
+          for (const plan of this.testPlans) {
             if (plan.id) {
-              this.originalCronExps.set(plan.id, plan.cron_exp || '');
-              this.originalTimezones.set(
-                  plan.id, plan.cron_exp_timezone || '');
+              this.originalCronExps.set(plan.id, plan.cron_exp);
+              this.originalTimezones.set(plan.id, plan.cron_exp_timezone);
             }
             if (plan.cron_exp_timezone) {
               timezones.add(plan.cron_exp_timezone);
             }
           }
-          this.timezoneOptions = Array.from(timezones).sort();
+          this.originalTimezoneOptions = Array.from(timezones).sort();
 
-          this.batchCronExp = '';
-          this.batchTimezone = '';
+          this.selectedScheduleType = '';
+          this.batchCronExp = null;
+          this.batchTimezone = this.localTimezone;
 
           this.initActionSettings();
           this.initResourceSettings();
@@ -169,6 +181,8 @@ export class EditTestSuitesPage implements OnInit {
   initActionSettings() {
     this.actionRefsMap.clear();
     this.effectiveOptionDefs = {};
+    this.currentValueHints = {};
+    this.unknownActionIds = [];
     this.actionsFormGroup = this.formBuilder.group({});
 
     const uniqueActionIds = new Set<string>();
@@ -192,16 +206,20 @@ export class EditTestSuitesPage implements OnInit {
 
     this.referencedActions = Array.from(uniqueActionIds, id => this.allActions[id])
       .filter(action => !!action);
+    this.unknownActionIds =
+        Array.from(uniqueActionIds).filter(id => !this.allActions[id]);
 
     for (const action of this.referencedActions) {
-      const optionDefs: OptionDef[] = (action.options || []).map(opt => ({
-        name: opt.name,
-        value_type: 'STRING',
-        choices: [],
-        default: ''
-      }));
-
+      const refs = this.actionRefsMap.get(action.id) || [];
+      const optionDefs = this.getActionOptionDefs(action, refs);
       this.effectiveOptionDefs[action.id] = optionDefs;
+
+      const hints: {[optionName: string]: string} = {};
+      for (const def of optionDefs) {
+        hints[def.name] = this.getCurrentValueHint(action, refs, def.name);
+      }
+      this.currentValueHints[action.id] = hints;
+
       if (optionDefs.length > 0) {
         const fields: {[key: string]: string} = {};
         for (const def of optionDefs) {
@@ -213,6 +231,60 @@ export class EditTestSuitesPage implements OnInit {
         );
       }
     }
+  }
+
+  /**
+   * Returns the configurable options of an action: all options supported by
+   * its hook (in definition order), followed by any additional options set on
+   * the action or on its references.
+   */
+  private getActionOptionDefs(
+      action: TestRunAction, refs: TestRunActionRef[]): OptionDef[] {
+    const optionDefs: OptionDef[] = [];
+    const names = new Set<string>();
+    const addOptionDef = (def: OptionDef) => {
+      if (def.name && !names.has(def.name)) {
+        names.add(def.name);
+        optionDefs.push(def);
+      }
+    };
+    const toStringOptionDef = (name: string): OptionDef =>
+        ({name, value_type: 'STRING', choices: [], default: ''});
+
+    for (const def of this.allHooks[action.hook_class_name]?.option_defs ||
+         []) {
+      addOptionDef(def);
+    }
+    for (const option of action.options || []) {
+      addOptionDef(toStringOptionDef(option.name));
+    }
+    for (const ref of refs) {
+      for (const option of ref.options || []) {
+        addOptionDef(toStringOptionDef(option.name));
+      }
+    }
+    return optionDefs;
+  }
+
+  /**
+   * Returns a hint describing the current value of an action option across all
+   * references. A reference option overrides the action option, which matches
+   * how the backend resolves action references.
+   */
+  private getCurrentValueHint(
+      action: TestRunAction, refs: TestRunActionRef[],
+      optionName: string): string {
+    const actionOption = (action.options || []).find(o => o.name === optionName);
+    const values = new Set<string>();
+    for (const ref of refs) {
+      const refOption = (ref.options || []).find(o => o.name === optionName);
+      values.add((refOption ?? actionOption)?.value ?? '');
+    }
+    if (values.size > 1) {
+      return 'Current: varies';
+    }
+    const [value] = Array.from(values);
+    return value ? `Current: ${value}` : '';
   }
 
   initResourceSettings() {
@@ -243,21 +315,52 @@ export class EditTestSuitesPage implements OnInit {
     }
   }
 
+  /**
+   * Applies the selected batch schedule to all test plans.
+   *
+   * - Keep Original: original cron expression and time zone.
+   * - Manual: no cron expression, original time zone left untouched.
+   * - Periodic/Custom: the batch cron expression and time zone (defaults to
+   *   the local time zone) are applied to every test plan. If no cron
+   *   expression was entered yet, the original schedule is kept.
+   */
   updateBatchSchedule() {
-    for (const plan of this.customScheduleTestPlans) {
+    for (const plan of this.testPlans) {
       if (!plan.id) continue;
-      if (this.batchCronExp) {
-        plan.cron_exp = this.batchCronExp;
-      } else {
-        plan.cron_exp = this.originalCronExps.get(plan.id) || '';
-      }
+      const originalCron = this.originalCronExps.get(plan.id);
+      const originalTimezone = this.originalTimezones.get(plan.id);
 
-      if (this.batchTimezone) {
-        plan.cron_exp_timezone = this.batchTimezone;
-      } else {
-        plan.cron_exp_timezone = this.originalTimezones.get(plan.id) || '';
+      switch (this.selectedScheduleType) {
+        case ScheduleType.MANUAL: {
+          plan.cron_exp = '';
+          plan.cron_exp_timezone = originalTimezone;
+          break;
+        }
+        case ScheduleType.PERIODIC:
+        case ScheduleType.CUSTOM: {
+          if (this.batchCronExp) {
+            plan.cron_exp = this.batchCronExp;
+            plan.cron_exp_timezone = this.batchTimezone;
+          } else {
+            plan.cron_exp = originalCron;
+            plan.cron_exp_timezone = originalTimezone;
+          }
+          break;
+        }
+        default: {
+          // Keep original
+          plan.cron_exp = originalCron;
+          plan.cron_exp_timezone = originalTimezone;
+          break;
+        }
       }
     }
+  }
+
+  /** Whether Custom was selected without a cron expression. */
+  get showEmptyCronHint(): boolean {
+    return this.selectedScheduleType === ScheduleType.CUSTOM &&
+        !this.batchCronExp;
   }
 
   combineResources(
@@ -289,6 +392,24 @@ export class EditTestSuitesPage implements OnInit {
     return Object.values(updatedObjsMap);
   }
 
+  /**
+   * Applies the entered action option values to all references of each action.
+   * Blank inputs keep the current values of each test plan.
+   */
+  applyActionOptions() {
+    for (const actionId of Object.keys(this.actionsFormGroup.controls)) {
+      const group = this.getActionGroup(actionId);
+      if (!group) {
+        continue;
+      }
+      for (const [optionName, control] of Object.entries(group.controls)) {
+        const value = String(control.value ?? '').trim();
+        this.updateActionOption(actionId, optionName, value);
+      }
+    }
+  }
+
+  /** Sets an option on all references of an action, ignoring empty values. */
   updateActionOption(actionId: string, optionName: string, value: string) {
     const refs = this.actionRefsMap.get(actionId);
     if (!refs || value === '') {
@@ -341,6 +462,8 @@ export class EditTestSuitesPage implements OnInit {
     }
 
     this.isLoading = true;
+
+    this.applyActionOptions();
 
     const resourcesByTestId = new Map<string, TestResourceObj[]>();
     for (const group of this.testResourceGroups) {

@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import {WeekDay} from '@angular/common';
 import {Component, EventEmitter, forwardRef, Input, OnChanges, Output, ChangeDetectionStrategy} from '@angular/core';
 import {ControlValueAccessor, NG_VALUE_ACCESSOR} from '@angular/forms';
 
@@ -32,6 +31,14 @@ export enum PeriodicType {
   WEEK = 'Week',    // Triggered once per week
   MONTH = 'Month',  // Triggered once per month
 }
+
+/** Week day names, indexed by their cron day-of-week value (0 = Sunday). */
+const WEEK_DAYS = [
+  'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'
+];
+
+/** Cron day-of-week value for Monday. */
+const MONDAY = 1;
 
 /** Regular expressions corresponding to each periodic type. */
 const PERIODIC_TYPE_REGEXPS = new Map<PeriodicType, RegExp>();
@@ -57,8 +64,19 @@ export function getPeriodicType(cron: string): undefined|PeriodicType {
   return undefined;
 }
 
-/** Client-side local timezone. */
-const LOCAL_TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
+/**
+ * Converts a number input value to an integer within [min, max]. Empty or
+ * non-numeric values (e.g. a cleared number input) are replaced by fallback.
+ */
+function clampNumber(
+    value: unknown, min: number, max: number, fallback: number): number {
+  return Math.min(max, Math.max(min, Math.round(Number(value)) || fallback));
+}
+
+/** Returns the client-side local timezone. */
+export function getLocalTimezone(): string {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone;
+}
 
 /** Manages scheduling times using simple fields or cron expressions. */
 @Component({
@@ -77,27 +95,43 @@ export class ScheduleTimeForm implements ControlValueAccessor, OnChanges {
   readonly PeriodicTimeType = PeriodicType;
   readonly scheduleOptions = Object.values(ScheduleType);
   readonly periodicOptions = Object.values(PeriodicType);
-  readonly weekDayOptions = Array.from({length: 7}, (v, i) => WeekDay[i]);
+  readonly weekDayOptions = WEEK_DAYS;
+
+  /**
+   * If true, an additional "Keep Original" schedule option is shown. It is
+   * represented by an empty schedule type and a null cron expression, and
+   * allows callers (e.g. batch editors) to leave existing schedules untouched.
+   */
+  @Input() allowKeepOriginal = false;
+
+  /**
+   * Emitted whenever the user selects a schedule type, before the resulting
+   * cron expression is propagated to the model. Not emitted for programmatic
+   * changes (e.g. writeValue).
+   */
+  @Output() readonly scheduleTypeChange = new EventEmitter<ScheduleType|''>();
 
   // Managed model and change callback (to handle external changes separately)
-  cronExpression!: string;
-  onChange = (value: string) => {};
+  cronExpression: string|null = null;
+  onChange = (value: string|null) => {};
 
   // Timezone value and options
-  @Input() timezone = LOCAL_TZ;
+  @Input() timezone = getLocalTimezone();
   @Output() readonly timezoneChange = new EventEmitter<string>();
+  /** Additional timezones to offer (e.g. timezones already in use). */
+  @Input() extraTimezones: string[] = [];
   timezoneOptions: string[] = [];
 
   // Selected parameters
-  selectedScheduleType = ScheduleType.MANUAL;
+  selectedScheduleType: ScheduleType|'' = ScheduleType.MANUAL;
   selectedPeriodicType = PeriodicType.HOUR;
   selectedMonthDay = 1;
-  selectedWeekDay = WeekDay.Monday;
+  selectedWeekDay = MONDAY;
   selectedHour = 0;
   selectedMinute = 0;
 
   /** Registers a change callback. */
-  registerOnChange(fn: (value: string) => void): void {
+  registerOnChange(fn: (value: string|null) => void): void {
     this.onChange = fn;
   }
 
@@ -105,9 +139,14 @@ export class ScheduleTimeForm implements ControlValueAccessor, OnChanges {
   registerOnTouched(fn: () => void): void {}
 
   /** Re-initializes the managed cron expression. */
-  writeValue(value: string): void {
-    this.cronExpression = value;
+  writeValue(value: string|null|undefined): void {
+    this.cronExpression = value ?? null;
     if (!this.cronExpression) {
+      if (this.allowKeepOriginal && value == null) {
+        // No value provided, keep the original schedules
+        this.selectedScheduleType = '';
+        return;
+      }
       // No expression, will have to be triggered manually
       this.selectedScheduleType = ScheduleType.MANUAL;
       return;
@@ -124,28 +163,39 @@ export class ScheduleTimeForm implements ControlValueAccessor, OnChanges {
 
   /** Recalculates possible timezone options when the timezone changes. */
   ngOnChanges(): void {
-    this.timezone = this.timezone || LOCAL_TZ;
-    const timezones = ['UTC', LOCAL_TZ, this.timezone].filter(tz => !!tz);
+    const localTimezone = getLocalTimezone();
+    this.timezone = this.timezone || localTimezone;
+    // UTC, local and current timezones first, followed by sorted extras
+    const timezones = [
+      'UTC', localTimezone, this.timezone, ...[...this.extraTimezones].sort()
+    ].filter(tz => !!tz);
     this.timezoneOptions = [...new Set(timezones)];
   }
 
   /** Change schedule type and update cron expression. */
-  changeScheduleType(scheduleType: ScheduleType) {
+  changeScheduleType(scheduleType: ScheduleType|'') {
+    this.scheduleTypeChange.emit(scheduleType);
     switch (scheduleType) {
+      case '': {
+        // Keep original
+        this.onChange(null);
+        break;
+      }
       case ScheduleType.MANUAL: {
         this.onChange('');
         break;
       }
       case ScheduleType.PERIODIC: {
-        const periodicType = getPeriodicType(this.cronExpression);
+        const cron = this.cronExpression || '';
+        const periodicType = getPeriodicType(cron);
         if (periodicType) {
-          this.setPeriodicParameters(periodicType, this.cronExpression);
+          this.setPeriodicParameters(periodicType, cron);
         }
         this.updatePeriodicCron();
         break;
       }
       case ScheduleType.CUSTOM: {
-        this.onChange(this.cronExpression);
+        this.onChange(this.cronExpression || '');
         break;
       }
       default: {
@@ -156,6 +206,10 @@ export class ScheduleTimeForm implements ControlValueAccessor, OnChanges {
 
   /** Update cron expression using current periodic parameters. */
   updatePeriodicCron() {
+    // Normalize the inputs so that they show the values being used
+    this.selectedMinute = clampNumber(this.selectedMinute, 0, 59, 0);
+    this.selectedHour = clampNumber(this.selectedHour, 0, 23, 0);
+    this.selectedMonthDay = clampNumber(this.selectedMonthDay, 1, 31, 1);
     const cronArray: string[] = Array.from<string>({length: 5}).fill('*');
     switch (this.selectedPeriodicType) {
       case PeriodicType.HOUR: {
@@ -205,7 +259,7 @@ export class ScheduleTimeForm implements ControlValueAccessor, OnChanges {
       case PeriodicType.WEEK: {
         this.selectedMinute = Number(cronArray[0]) || 0;
         this.selectedHour = Number(cronArray[1]) || 0;
-        this.selectedWeekDay = Number(cronArray[4]) || WeekDay.Monday;
+        this.selectedWeekDay = Number(cronArray[4]);
         break;
       }
       case PeriodicType.MONTH: {

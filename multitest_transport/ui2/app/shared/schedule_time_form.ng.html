@@ -20,6 +20,7 @@
     <mat-select [(value)]="selectedScheduleType"
                 (selectionChange)="changeScheduleType($event.value)"
                 required>
+      <mat-option *ngIf="allowKeepOriginal" value="">-- Keep Original --</mat-option>
       <mat-option matInput *ngFor="let option of scheduleOptions" [value]="option">
         {{ option }}
       </mat-option>
@@ -27,7 +28,7 @@
   </mat-form-field>
 
   <mat-form-field appearance="outline" floatLabel="always"
-                  *ngIf="selectedScheduleType !== ScheduleTimeType.MANUAL">
+                  *ngIf="selectedScheduleType && selectedScheduleType !== ScheduleTimeType.MANUAL">
     <mat-label>Time Zone</mat-label>
     <mat-select [(value)]="timezone" required (selectionChange)="timezoneChange.emit(timezone)">
       <mat-option *ngFor="let option of timezoneOptions" [value]="option">
