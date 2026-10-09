@@ -31,11 +31,22 @@
   height: auto;
   min-height: 49px;
 
+  // Global styles fix cells at 48px; let them grow with wrapped label chips
+  // and long names.
+  .mat-mdc-cell {
+    height: auto;
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+
   .mat-mdc-cell.last-run-info {
+    // Keep the time, run IDs and error together when the row is tall.
+    align-content: center;
     flex-wrap: wrap;
 
     .mat-icon {
       color: $icon-danger;
+      flex-shrink: 0;
     }
 
     a,
@@ -46,8 +57,26 @@
     }
   }
 
-  .labels-preview-container {
-    display: flex;
-    align-items: center;
+  .mat-mdc-cell.labels .mat-mdc-chip {
+    cursor: pointer;
   }
+}
+
+.mat-mdc-header-cell.name,
+.mat-mdc-cell.name {
+  min-width: 120px;
+}
+
+// Room for a full run ID, but shrinks first on narrow screens.
+.mat-mdc-header-cell.last-run-info,
+.mat-mdc-cell.last-run-info {
+  flex: 0 1 300px;
+  min-width: 200px;
+}
+
+// Labels gets twice the extra space that Name gets.
+.mat-mdc-header-cell.labels,
+.mat-mdc-cell.labels {
+  flex: 2 1 0;
+  min-width: 200px;
 }

@@ -137,53 +137,54 @@ describe('TestPlanList', () => {
             {queryParams: {'label': 'label'}});
   });
 
-  describe('label expansion', () => {
-    it('should return false for shouldShowExpand when labels are few', () => {
-      expect(testPlanList.shouldShowExpand(['l1', 'l2'])).toBe(false);
+  describe('labels', () => {
+    const LABELS = ['R4', 'mini-CTS', 'weekly', 'gtw-xts-lab', 'a'.repeat(20)];
+
+    beforeEach(() => {
+      const testPlans = [
+        {
+          ...newMockTestPlan('test_plan_id_3', 'test_plan_name_3'),
+          labels: LABELS,
+        },
+        {
+          ...newMockTestPlan('test_plan_id_4', 'test_plan_name_4'),
+          labels: ['STS'],
+        },
+        newMockTestPlan('test_plan_id_5', 'test_plan_name_5'),
+      ];
+      mttClient.getTestPlans.and.returnValue(
+          observableOf({test_plans: testPlans}));
+      testPlanList.load();
+      testPlanListFixture.detectChanges();
     });
 
-    it('should return true for shouldShowExpand when labels are many', () => {
-      expect(testPlanList.shouldShowExpand([
-        'l1', 'l2', 'l3', 'l4'
-      ])).toBe(true);
+    function getChips(row: number): HTMLElement[] {
+      const rowEl = getEls(el, 'mat-row')[row];
+      return Array.from(rowEl.querySelectorAll<HTMLElement>('mat-chip-row'));
+    }
+
+    it('should show every label of each plan', () => {
+      expect(getChips(0).map(chip => chip.textContent!.trim()))
+          .toEqual(LABELS);
+      expect(getChips(1).map(chip => chip.textContent!.trim()))
+          .toEqual(['STS']);
     });
 
-    it('should return true for shouldShowExpand when total length is long',
-       () => {
-         const longLabel = 'a'.repeat(16);
-         expect(testPlanList.shouldShowExpand(['l1', longLabel])).toBe(true);
-       });
-
-    it('should return false for shouldShowExpand when total length is short',
-       () => {
-         const shortLabel = 'a'.repeat(10);
-         expect(testPlanList.shouldShowExpand(['l1', shortLabel])).toBe(false);
-       });
-
-    it('should return false for shouldShowExpand when labels is undefined',
-       () => {
-         expect(testPlanList.shouldShowExpand(undefined)).toBe(false);
-       });
-
-    it('should return preview labels correctly', () => {
-      const labels = ['l1', 'l2', 'l3', 'l4'];
-      expect(testPlanList.getPreviewLabels(labels)).toEqual(['l1', 'l2']);
+    it('should show no labels for a plan without labels', () => {
+      expect(getChips(2).length).toBe(0);
     });
 
-    it('should return empty preview labels if first label is too long', () => {
-      const longLabel = 'a'.repeat(16);
-      expect(testPlanList.getPreviewLabels([longLabel, 'l2'])).toEqual([]);
+    it('should open bulk edit for a clicked label', () => {
+      spyOn(testPlanList, 'navigateToSuites');
+      getChips(0)[1].click();
+      expect(testPlanList.navigateToSuites).toHaveBeenCalledWith('mini-CTS');
     });
 
-    it('should return partial preview labels if combined length is too long',
-       () => {
-         const l1 = 'a'.repeat(10);
-         const l2 = 'b'.repeat(10);
-         expect(testPlanList.getPreviewLabels([l1, l2])).toEqual([l1]);
-       });
-
-    it('should return empty preview labels when labels is undefined', () => {
-      expect(testPlanList.getPreviewLabels(undefined)).toEqual([]);
+    it('should open bulk edit when Enter is pressed on a label', () => {
+      spyOn(testPlanList, 'navigateToSuites');
+      getChips(1)[0].dispatchEvent(
+          new KeyboardEvent('keydown', {key: 'Enter', bubbles: true}));
+      expect(testPlanList.navigateToSuites).toHaveBeenCalledWith('STS');
     });
   });
 });

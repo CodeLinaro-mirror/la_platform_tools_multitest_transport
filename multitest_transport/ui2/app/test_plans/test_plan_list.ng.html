@@ -28,14 +28,16 @@
 <mat-table [dataSource]="dataSource" aria-label="Test plan list">
   <!-- Test plan name -->
   <ng-container matColumnDef="name">
-    <mat-header-cell *matHeaderCellDef fxFlex> Name </mat-header-cell>
-    <mat-cell *matCellDef="let testPlan" fxFlex> {{testPlan.name}} </mat-cell>
+    <mat-header-cell *matHeaderCellDef fxFlex class="name"> Name </mat-header-cell>
+    <mat-cell *matCellDef="let testPlan" fxFlex class="name">
+      {{testPlan.name}}
+    </mat-cell>
   </ng-container>
 
   <!-- Test plan next scheduled run time -->
   <ng-container matColumnDef="next_run_time">
-    <mat-header-cell *matHeaderCellDef fxFlex> Next Run </mat-header-cell>
-    <mat-cell *matCellDef="let testPlan" fxFlex>
+    <mat-header-cell *matHeaderCellDef fxFlex="150px"> Next Run </mat-header-cell>
+    <mat-cell *matCellDef="let testPlan" fxFlex="150px">
       <span *ngIf="testPlan.next_run_time"
             [title]="testPlan.next_run_time | utc | date:'MM/dd/yyyy h:mma'">
         {{testPlan.next_run_time | utc | fromNow}}
@@ -45,8 +47,8 @@
 
   <!-- Test plan last run information -->
   <ng-container matColumnDef="last_run_info">
-    <mat-header-cell *matHeaderCellDef fxFlex> Last Run </mat-header-cell>
-    <mat-cell *matCellDef="let testPlan" fxFlex class="last-run-info">
+    <mat-header-cell *matHeaderCellDef class="last-run-info"> Last Run </mat-header-cell>
+    <mat-cell *matCellDef="let testPlan" class="last-run-info">
       <span *ngIf="testPlan.last_run_time"
             [title]="testPlan.last_run_time | utc | date:'MM/dd/yyyy h:mma'">
         {{testPlan.last_run_time | utc | fromNow}}
@@ -61,41 +63,17 @@
 
   <!-- Test plan labels -->
   <ng-container matColumnDef="labels">
-    <mat-header-cell *matHeaderCellDef fxFlex="200px"> Labels </mat-header-cell>
-    <mat-cell *matCellDef="let testPlan" fxFlex="200px">
-      <ng-container *ngIf="!shouldShowExpand(testPlan.labels)">
-        <mat-chip-grid #chipGrid aria-label="Test plan labels">
-          <mat-chip-row *ngFor="let label of testPlan.labels"
-                        (click)="navigateToSuites(label)"
-                        style="cursor: pointer">
-            {{label}}
-          </mat-chip-row>
-        </mat-chip-grid>
-      </ng-container>
-      <ng-container *ngIf="shouldShowExpand(testPlan.labels)">
-        <div class="labels-preview-container">
-          <mat-chip-grid #chipGrid aria-label="Test plan labels">
-            <mat-chip-row *ngFor="let label of getPreviewLabels(testPlan.labels)"
-                          (click)="navigateToSuites(label)"
-                          style="cursor: pointer">
-              {{label}}
-            </mat-chip-row>
-          </mat-chip-grid>
-          <button mat-icon-button
-                  [matMenuTriggerFor]="labelsMenu"
-                  (click)="$event.stopPropagation()"
-                  aria-label="Show all labels"
-                  matTooltip="Show all labels">
-            <mat-icon>expand_more</mat-icon>
-          </button>
-          <mat-menu #labelsMenu="matMenu">
-            <button mat-menu-item *ngFor="let label of testPlan.labels"
-                    (click)="navigateToSuites(label)">
-              {{label}}
-            </button>
-          </mat-menu>
-        </div>
-      </ng-container>
+    <mat-header-cell *matHeaderCellDef class="labels"> Labels </mat-header-cell>
+    <mat-cell *matCellDef="let testPlan" class="labels">
+      <mat-chip-grid [attr.aria-label]="'Labels of ' + testPlan.name">
+        <mat-chip-row *ngFor="let label of testPlan.labels"
+                      [title]="label"
+                      [attr.aria-description]="'Edit test suites labeled ' + label"
+                      (click)="navigateToSuites(label)"
+                      (keydown.enter)="navigateToSuites(label)">
+          {{label}}
+        </mat-chip-row>
+      </mat-chip-grid>
     </mat-cell>
   </ng-container>
 
