@@ -14,7 +14,6 @@
 
 """Interactive onboarding join workflow for GCP-managed MTT Worker nodes."""
 
-import getpass
 import hashlib
 import json
 import logging
@@ -118,12 +117,10 @@ class Prompter:
   def __init__(
       self,
       input_fn: Callable[[str], str] = input,
-      getpass_fn: Callable[[str], str] = getpass.getpass,
       output_fn: Callable[[str], None] = print,
       isatty_check: bool = True,
   ):
     self._input_fn = input_fn
-    self._getpass_fn = getpass_fn
     self._output_fn = output_fn
     self._isatty_check = isatty_check
 
@@ -155,28 +152,6 @@ class Prompter:
       self._output_fn(f"Error: {error_message}")
     raise RuntimeError(
         f"Maximum retry limit exceeded ({max_retries}) for input."
-    )
-
-  def Password(
-      self,
-      message: str,
-      validator: Optional[Callable[[str], bool]] = None,
-      error_message: str = "Password cannot be empty.",
-      max_retries: int = 3,
-  ) -> str:
-    """Prompts for masked password input with validation."""
-    for _ in range(max_retries):
-      try:
-        val = self._getpass_fn(message)
-      except (KeyboardInterrupt, EOFError) as e:
-        self._output_fn("\nJoin cancelled by user.")
-        raise UserAbortError("Join cancelled by user.") from e
-
-      if validator is None or validator(val):
-        return val
-      self._output_fn(f"Error: {error_message}")
-    raise RuntimeError(
-        f"Maximum retry limit exceeded ({max_retries}) for password."
     )
 
   def Confirm(
@@ -402,7 +377,7 @@ def Join(
       validator=lambda s: bool(s.strip()),
       error_message="WiFi SSID cannot be empty.",
   )
-  wifi_psk = ui.Password(
+  wifi_psk = ui.Text(
       "Enter WiFi Password (PSK): ",
       validator=lambda s: bool(s.strip()),
       error_message="WiFi Password cannot be empty.",

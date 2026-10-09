@@ -41,12 +41,10 @@ class FakePrompter(node_join.Prompter):
   def __init__(
       self,
       text_responses: Optional[list[str]] = None,
-      password_responses: Optional[list[str]] = None,
       choice_responses: Optional[list[str]] = None,
   ):
     super().__init__(isatty_check=False)
     self._text_queue = list(text_responses or [])
-    self._password_queue = list(password_responses or [])
     self._choice_queue = list(choice_responses or [])
     self.printed_messages: list[str] = []
 
@@ -62,19 +60,6 @@ class FakePrompter(node_join.Prompter):
   ) -> str:
     del error_message, max_retries
     val = self._text_queue.pop(0)
-    if validator and not validator(val):
-      raise ValueError(f"Validation failed for '{val}'")
-    return val
-
-  def Password(
-      self,
-      message: str,
-      validator=None,
-      error_message: str = "",
-      max_retries: int = 3,
-  ) -> str:
-    del error_message, max_retries
-    val = self._password_queue.pop(0)
     if validator and not validator(val):
       raise ValueError(f"Validation failed for '{val}'")
     return val
@@ -183,7 +168,6 @@ class NodeJoinTest(absltest.TestCase):
 
     prompter = node_join.Prompter(
         input_fn=RaiseInterrupt,
-        getpass_fn=RaiseEof,
         output_fn=lambda _: None,
         isatty_check=False,
     )
@@ -193,8 +177,14 @@ class NodeJoinTest(absltest.TestCase):
       prompter.Confirm("Confirm")
     with self.assertRaises(node_join.UserAbortError):
       prompter.Choice("Select:", options=["a", "b"])
+
+    eof_prompter = node_join.Prompter(
+        input_fn=RaiseEof,
+        output_fn=lambda _: None,
+        isatty_check=False,
+    )
     with self.assertRaises(node_join.UserAbortError):
-      prompter.Password("Enter password: ")
+      eof_prompter.Text("Enter val: ")
 
   def testHostnameToNodeParamName(self):
     test_cases = [
@@ -293,8 +283,7 @@ class NodeJoinTest(absltest.TestCase):
       f.write("PREEXISTING_WIFI")
 
     fake_prompter = FakePrompter(
-        text_responses=[self.sa_key_file, "MyTestWifi"],
-        password_responses=["MySecretPassword"],
+        text_responses=[self.sa_key_file, "MyTestWifi", "MySecretPassword"],
         choice_responses=[
             "acceptor.endpoints.test-project-123.cloud.goog",
             "private_usage",
@@ -346,8 +335,7 @@ class NodeJoinTest(absltest.TestCase):
   ):
     del mock_hostname
     fake_prompter = FakePrompter(
-        text_responses=[self.sa_key_file, "MyTestWifi"],
-        password_responses=["MySecretPassword"],
+        text_responses=[self.sa_key_file, "MyTestWifi", "MySecretPassword"],
         choice_responses=[
             "acceptor.endpoints.test-project-123.cloud.goog",
             "private_usage",
@@ -462,8 +450,7 @@ class NodeJoinTest(absltest.TestCase):
     with open(android_key_src, "w", encoding="utf-8") as f:
       f.write('{"type": "service_account", "project_id": "android-proj"}')
     fake_prompter_tag = FakePrompter(
-        text_responses=[self.sa_key_file, "MyTestWifi"],
-        password_responses=["MySecretPassword"],
+        text_responses=[self.sa_key_file, "MyTestWifi", "MySecretPassword"],
         choice_responses=[
             "acceptor.endpoints.test-project-123.cloud.goog",
             "private_usage",
