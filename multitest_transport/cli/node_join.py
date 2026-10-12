@@ -57,6 +57,13 @@ _ANDROID_SA_KEY_FILENAME = "android-sa-key.json"
 # Path of the service account key as seen from inside the dialer container,
 # which mounts ${SECRETS_DIR:-/etc/mtt/secrets} at /etc/secrets.
 _CONTAINER_SA_KEY_PATH = f"/etc/secrets/{_SA_KEY_FILENAME}"
+# Unformatted YAML parameter, maintained by Google OmniLab, holding a flat map
+# from Cloud Endpoints service name (exactly as returned by ListServiceNames,
+# without "wss://") to the ATS Web UI URL of the controller behind it, e.g.
+#   testing-dev.endpoints.<project>.cloud.goog: "https://<ui>.omnilab-ats.dev/"
+# The UI domain cannot be derived from the endpoint name, hence the manual map.
+ATS_UI_CONFIG_PARAM = "ats_ui_config"
+_CONTACT_OMNILAB = "Contact Google OmniLab for the URL."
 
 
 class UserAbortError(Exception):
@@ -131,6 +138,10 @@ class Prompter:
           "Interactive terminal (TTY) required for join. For"
           " non-interactive automated provisioning, use 'mtt node worker init'."
       )
+
+  def Info(self, message: str) -> None:
+    """Shows a message to the operator without waiting for input."""
+    self._output_fn(message)
 
   def Text(
       self,
@@ -235,6 +246,119 @@ class Prompter:
     )
 
 
+class _AtsWebUiLookupError(Exception):
+  """Raised when the ATS Web UI URL cannot be determined.
+
+  The message is shown to the operator verbatim and says whom to contact.
+  """
+
+
+def _LookUpAtsWebUiUrl(
+    pm_client: Any,
+    project_id: str,
+    endpoint: str,
+    all_parameters: Sequence[str],
+) -> str:
+  """Returns the ATS Web UI URL of an acceptor endpoint from ats_ui_config.
+
+  Args:
+    pm_client: Parameter Manager client for the project.
+    project_id: GCP project ID.
+    endpoint: Cloud Endpoints service name the operator selected.
+    all_parameters: Parameter IDs already listed by the join. Used to report a
+      missing parameter without another API call.
+
+  Returns:
+    The URL, with surrounding whitespace removed.
+
+  Raises:
+    _AtsWebUiLookupError: If the URL cannot be determined.
+  """
+  param = ATS_UI_CONFIG_PARAM
+  if param not in all_parameters:
+    raise _AtsWebUiLookupError(
+        f"parameter '{param}' does not exist in project '{project_id}'."
+        f" {_CONTACT_OMNILAB}"
+    )
+
+  version_path = (
+      f"projects/{project_id}/locations/global/parameters/{param}"
+      "/versions/latest"
+  )
+  try:
+    payload = pm_client.FetchUnformatted(version_path)
+  except (RuntimeError, ValueError) as e:
+    # RuntimeError: the API call failed. ValueError: empty or non-UTF-8
+    # payload.
+    raise _AtsWebUiLookupError(
+        f"could not read parameter '{param}': {e}. {_CONTACT_OMNILAB}"
+    ) from e
+
+  try:
+    url_by_endpoint = yaml.safe_load(payload)
+  except yaml.YAMLError as e:
+    raise _AtsWebUiLookupError(
+        f"parameter '{param}' is not valid YAML. {_CONTACT_OMNILAB}"
+    ) from e
+  if not isinstance(url_by_endpoint, dict):
+    # Most likely cause: `endpoint:"url"` without a space after the colon,
+    # which YAML reads as one plain string.
+    raise _AtsWebUiLookupError(
+        f"parameter '{param}' must be a YAML map of endpoint to URL"
+        " ('<endpoint>: <url>', with a space after the colon)."
+        f" {_CONTACT_OMNILAB}"
+    )
+  if endpoint not in url_by_endpoint:
+    raise _AtsWebUiLookupError(
+        f"parameter '{param}' has no entry for '{endpoint}'. {_CONTACT_OMNILAB}"
+    )
+  url = url_by_endpoint[endpoint]
+  if not isinstance(url, str) or not url.strip().startswith(
+      ("https://", "http://")
+  ):
+    raise _AtsWebUiLookupError(
+        f"the '{param}' entry for '{endpoint}' must be an http(s) URL string,"
+        f" got {url!r}. {_CONTACT_OMNILAB}"
+    )
+  return url.strip()
+
+
+def _ShowAtsWebUiUrl(
+    ui: Prompter,
+    pm_client: Any,
+    project_id: str,
+    endpoint: str,
+    all_parameters: Sequence[str],
+) -> None:
+  """Shows the ATS Web UI URL of the selected controller, or a warning.
+
+  Runs after the join is committed and never raises: the URL only informs the
+  operator, so failing to find it must neither roll back the join nor change
+  its exit code.
+
+  Args:
+    ui: Prompter used to show the result.
+    pm_client: Parameter Manager client for the project.
+    project_id: GCP project ID.
+    endpoint: Cloud Endpoints service name the operator selected.
+    all_parameters: Parameter IDs already listed by the join.
+  """
+  warning_prefix = (
+      "\nWARNING: The join succeeded, but the ATS Web UI URL for"
+      f" '{endpoint}' is unavailable:"
+  )
+  try:
+    url = _LookUpAtsWebUiUrl(pm_client, project_id, endpoint, all_parameters)
+  except _AtsWebUiLookupError as e:
+    ui.Info(f"{warning_prefix} {e}")
+    return
+  except Exception as e:  
+    logger.debug("ATS Web UI URL lookup failed", exc_info=True)
+    ui.Info(f"{warning_prefix} unexpected error: {e}. {_CONTACT_OMNILAB}")
+    return
+  ui.Info(f"\nATS Web UI for controller '{endpoint}': {url}")
+
+
 def Join(
     static_dir: str = DEFAULT_STATIC_DIR,
     var_config_dir: str = DEFAULT_VAR_CONFIG_DIR,
@@ -247,6 +371,10 @@ def Join(
     param_manager_client_factory: Optional[Callable[[str], Any]] = None,
 ) -> None:
   """Executes the interactive onboarding wizard for MTT worker nodes.
+
+  After the join is committed, shows the ATS Web UI URL of the selected
+  controller from the `ats_ui_config` parameter, or a warning if it cannot be
+  determined. That lookup never raises.
 
   Args:
     static_dir: Root static directory (default /etc/mtt).
@@ -563,3 +691,7 @@ def Join(
     # Re-applied after the backups are gone, so the policy covers the
     # committed tree without touching transient .join_bak files.
     node_permissions.FinalizeProvisioning(gid, static_dir, base_dir)
+
+  # Outside the transaction above: the join is committed by now, and this
+  # lookup only informs the operator.
+  _ShowAtsWebUiUrl(ui, pm_client, project_id, chosen_endpoint, all_parameters)

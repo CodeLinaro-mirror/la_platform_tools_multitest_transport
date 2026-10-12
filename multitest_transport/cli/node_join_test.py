@@ -33,6 +33,11 @@ import yaml
 
 # Parameter ID derived from the hostname the join tests mock out.
 _WORKER_HOST_PARAM = "worker-host-1-69c3d3a75a60_node_config"
+_ENDPOINT = "acceptor.endpoints.test-project-123.cloud.goog"
+_ATS_UI_CONFIG_PATH = (
+    "projects/test-project-123/locations/global/parameters/ats_ui_config"
+    "/versions/latest"
+)
 
 
 class FakePrompter(node_join.Prompter):
@@ -43,10 +48,12 @@ class FakePrompter(node_join.Prompter):
       text_responses: Optional[list[str]] = None,
       choice_responses: Optional[list[str]] = None,
   ):
-    super().__init__(isatty_check=False)
+    self.printed_messages: list[str] = []
+    super().__init__(
+        output_fn=self.printed_messages.append, isatty_check=False
+    )
     self._text_queue = list(text_responses or [])
     self._choice_queue = list(choice_responses or [])
-    self.printed_messages: list[str] = []
 
   def CheckTty(self) -> None:
     pass
@@ -544,6 +551,157 @@ class NodeJoinTest(absltest.TestCase):
       )
 
     self._AssertNoSideEffects(mock_pm_client)
+
+  def _JoinWithAtsUiConfig(
+      self,
+      extra_parameters: list[str],
+      fetch_result: Optional[str] = None,
+      fetch_error: Optional[Exception] = None,
+  ) -> tuple[str, mock.MagicMock]:
+    """Runs a join that commits, then returns its output and PM client mock.
+
+    Args:
+      extra_parameters: Parameter IDs listed besides tenant and pool config.
+      fetch_result: Payload FetchUnformatted returns.
+      fetch_error: Error FetchUnformatted raises; overrides fetch_result.
+
+    Returns:
+      All operator-facing output joined by newlines, and the PM client mock.
+    """
+    fake_prompter = FakePrompter(
+        text_responses=[self.sa_key_file, "MyTestWifi", "MySecretPassword"],
+        choice_responses=[_ENDPOINT, "private_usage"],
+    )
+    mock_ep_client = mock.create_autospec(
+        gcp_endpoints_client.GcpEndpointsClient, instance=True, spec_set=True
+    )
+    mock_ep_client.ListServiceNames.return_value = [_ENDPOINT]
+    mock_pm_client = mock.create_autospec(
+        gcp_param_manager.GcpParamManagerClient, instance=True, spec_set=True
+    )
+    mock_pm_client.ListParameters.return_value = [
+        "tenant_config",
+        "private_usage_pool_config",
+    ] + extra_parameters
+    mock_pm_client.ParameterExists.return_value = True
+    mock_pm_client.StoreUnformatted.return_value = "version_1"
+    if fetch_error is not None:
+      mock_pm_client.FetchUnformatted.side_effect = fetch_error
+    else:
+      mock_pm_client.FetchUnformatted.return_value = fetch_result
+
+    with mock.patch.object(node_config, "MaterializeNodeConfig"), mock.patch(
+        "socket.gethostname", return_value="worker-host-1"
+    ):
+      node_join.Join(
+          static_dir=self.static_dir,
+          var_config_dir=self.var_config_dir,
+          base_dir=self.base_dir,
+          mtt_group=self.mtt_group,
+          prompter=fake_prompter,
+          endpoints_client_factory=lambda _: mock_ep_client,
+          param_manager_client_factory=lambda _: mock_pm_client,
+      )
+
+    # Whatever happened to the lookup, the join itself must stay committed.
+    self.assertTrue(
+        os.path.exists(os.path.join(self.static_dir, "manifest.yaml"))
+    )
+    self.assertTrue(
+        os.path.exists(os.path.join(self.static_dir, "secrets", "sa-key.json"))
+    )
+    return "\n".join(fake_prompter.printed_messages), mock_pm_client
+
+  def _AssertAtsUiWarning(self, output: str, *expected_parts: str) -> None:
+    self.assertIn("WARNING: The join succeeded", output)
+    self.assertIn(_ENDPOINT, output)
+    for part in expected_parts:
+      self.assertIn(part, output)
+    self.assertNotIn("ATS Web UI for controller", output)
+
+  def testJoin_showsAtsWebUiUrl(self):
+    output, mock_pm_client = self._JoinWithAtsUiConfig(
+        ["ats_ui_config"],
+        fetch_result=(
+            "other.endpoints.test-project-123.cloud.goog:"
+            ' "https://other.test-project-123.omnilab-ats.dev/"\n'
+            f"{_ENDPOINT}:"
+            ' "https://dp-asia.test-project-123.omnilab-ats.dev/"\n'
+        ),
+    )
+
+    mock_pm_client.FetchUnformatted.assert_called_once_with(
+        _ATS_UI_CONFIG_PATH
+    )
+    self.assertIn(
+        f"ATS Web UI for controller '{_ENDPOINT}':"
+        " https://dp-asia.test-project-123.omnilab-ats.dev/",
+        output,
+    )
+    self.assertNotIn("WARNING", output)
+
+  def testJoin_atsUiConfigMissing(self):
+    output, mock_pm_client = self._JoinWithAtsUiConfig([])
+
+    # The listing already shows the parameter is absent; no read is needed.
+    mock_pm_client.FetchUnformatted.assert_not_called()
+    self._AssertAtsUiWarning(output, "does not exist", "Google OmniLab")
+
+  def testJoin_atsUiConfigReadFailure(self):
+    cases = {
+        "api_error": RuntimeError("Failed to fetch parameter version"),
+        "empty_payload": ValueError("No payload data"),
+    }
+    for name, error in cases.items():
+      with self.subTest(name):
+        output, _ = self._JoinWithAtsUiConfig(
+            ["ats_ui_config"], fetch_error=error
+        )
+
+        self._AssertAtsUiWarning(output, "could not read", "Google OmniLab")
+
+  def testJoin_atsUiConfigNoEntryForEndpoint(self):
+    output, _ = self._JoinWithAtsUiConfig(
+        ["ats_ui_config"],
+        fetch_result=(
+            "other.endpoints.test-project-123.cloud.goog:"
+            ' "https://other.test-project-123.omnilab-ats.dev/"\n'
+        ),
+    )
+
+    self._AssertAtsUiWarning(output, "has no entry", "Google OmniLab")
+
+  def testJoin_atsUiConfigMalformed(self):
+    url = "https://dp-asia.test-project-123.omnilab-ats.dev/"
+    cases = {
+        # No space after the colon: YAML reads the whole line as one string.
+        "missing_space": (f'{_ENDPOINT}:"{url}"', "space after the colon"),
+        "invalid_yaml": (f"{_ENDPOINT}: [unclosed", "not valid YAML"),
+        "top_level_list": (f"- {_ENDPOINT}", "must be a YAML map"),
+        "struct_value": (
+            f"{_ENDPOINT}:\n  ats_web_ui_url: {url}\n",
+            "must be an http(s) URL string",
+        ),
+        "not_a_url": (
+            f"{_ENDPOINT}: dp-asia.test-project-123.omnilab-ats.dev",
+            "must be an http(s) URL string",
+        ),
+        "null_value": (f"{_ENDPOINT}:", "must be an http(s) URL string"),
+    }
+    for name, (payload, expected) in cases.items():
+      with self.subTest(name):
+        output, _ = self._JoinWithAtsUiConfig(
+            ["ats_ui_config"], fetch_result=payload
+        )
+
+        self._AssertAtsUiWarning(output, expected, "Google OmniLab")
+
+  def testJoin_atsUiLookupUnexpectedErrorDoesNotFailJoin(self):
+    output, _ = self._JoinWithAtsUiConfig(
+        ["ats_ui_config"], fetch_error=KeyError("boom")
+    )
+
+    self._AssertAtsUiWarning(output, "unexpected error")
 
 
 if __name__ == "__main__":
