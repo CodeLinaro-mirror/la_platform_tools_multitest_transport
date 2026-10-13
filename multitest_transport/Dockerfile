@@ -68,7 +68,13 @@ RUN cp -r /usr/local/lib/python3.10/dist-packages/google/android /mtt/google3/th
 # source code is only compatible with python 3.12+ and MTT still uses python
 # 3.9. Need newer cryptography/OpenSSL to support Android Build V4 APIs.
 # They are installed via pip.
-RUN python3 -m compileall -bq \
+# Fail fast if sourceless *_pb2.pyc files (outside __pycache__) are present,
+# then delete any host-compiled .pyc files before compiling with container
+# python3 (b/572740678).
+RUN test -z "$(find /mtt/google3 -path '*/__pycache__' -prune -o -type f -name '*_pb2.pyc' -print -quit)" \
+    || (echo "ERROR: Sourceless *_pb2.pyc found in /mtt/google3; build main_zip with --precompile_python=all" >&2 && exit 1) \
+    && find /mtt/google3 -type f -iname "*.pyc" -delete \
+    && python3 -m compileall -bq \
     -x "/mtt/google3/third_party/py/(absl|colour|flask|scipy|sqlalchemy_utils|sqlalchemy|numpy|cryptography|OpenSSL)" /mtt/google3 \
     && find /mtt/google3 -type f -iname "*.py" ! -iname "gunicorn_config.py" -exec rm -rf {} \;
 # Unzip the selected prebuilt TF runner
