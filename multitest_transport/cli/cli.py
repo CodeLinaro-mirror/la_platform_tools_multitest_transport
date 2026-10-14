@@ -1530,7 +1530,9 @@ def _CreateStartArgParser():
   parser.add_argument(
       '--labconsole_grpc_port',
       type=int,
-      default=8080,
+      # Do not use 8080 here: it is the default port of the Cloud Orchestrator
+      # (see --orchestration_service_url) and conflicts in host network mode.
+      default=9001,
       help='Labconsole gRPC port exposed by the container',
   )
   parser.add_argument(

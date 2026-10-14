@@ -29,7 +29,7 @@ HTTPS_PROXY="${HTTPS_PROXY:-}"
 # Flag to indicate if the node is based on OmniLab.
 IS_OMNILAB_BASED="${IS_OMNILAB_BASED:-}"
 # gRPC port for the Labconsole server.
-LABCONSOLE_SERVER_GRPC_PORT="${LABCONSOLE_SERVER_GRPC_PORT:-8080}"
+LABCONSOLE_SERVER_GRPC_PORT="${LABCONSOLE_SERVER_GRPC_PORT:-9001}"
 # REST port for the Labconsole server.
 LABCONSOLE_SERVER_REST_PORT="${LABCONSOLE_SERVER_REST_PORT:-9000}"
 # Port for the Lab Console UI.

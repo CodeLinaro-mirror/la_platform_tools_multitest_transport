@@ -636,7 +636,7 @@ class CliTest(parameterized.TestCase):
     )
     self.assertIsNotNone(create_cmd, 'docker create command not found')
     self.assertIn('MTT_ENABLE_LAB_CONSOLE_UI=true', create_cmd)
-    self.assertIn('LABCONSOLE_SERVER_GRPC_PORT=8080', create_cmd)
+    self.assertIn('LABCONSOLE_SERVER_GRPC_PORT=9001', create_cmd)
     self.assertIn('LABCONSOLE_SERVER_REST_PORT=9000', create_cmd)
     self.assertIn('LAB_CONSOLE_PORT=4200', create_cmd)
 
