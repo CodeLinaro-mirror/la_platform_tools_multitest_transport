@@ -703,6 +703,20 @@ class NodeJoinTest(absltest.TestCase):
 
     self._AssertAtsUiWarning(output, "unexpected error")
 
+  def testPrompterLink_stylesUrlWhenStdoutIsTty(self):
+    prompter = node_join.Prompter(output_fn=lambda _: None)
+    url = "https://dp-asia.test-project-123.omnilab-ats.dev/"
+
+    with mock.patch("sys.stdout.isatty", return_value=True):
+      self.assertEqual(prompter.Link(url), f"\033[4;36m{url}\033[0m")
+
+  def testPrompterLink_plainWhenStdoutIsNotTty(self):
+    prompter = node_join.Prompter(output_fn=lambda _: None)
+    url = "https://dp-asia.test-project-123.omnilab-ats.dev/"
+
+    with mock.patch("sys.stdout.isatty", return_value=False):
+      self.assertEqual(prompter.Link(url), url)
+
 
 if __name__ == "__main__":
   absltest.main()

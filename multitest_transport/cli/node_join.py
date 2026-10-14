@@ -64,6 +64,9 @@ _CONTAINER_SA_KEY_PATH = f"/etc/secrets/{_SA_KEY_FILENAME}"
 # The UI domain cannot be derived from the endpoint name, hence the manual map.
 ATS_UI_CONFIG_PARAM = "ats_ui_config"
 _CONTACT_OMNILAB = "Contact Google OmniLab for the URL."
+# ANSI escape sequences used to render a URL as an underlined cyan link.
+_LINK_STYLE = "\033[4;36m"
+_RESET_STYLE = "\033[0m"
 
 
 class UserAbortError(Exception):
@@ -142,6 +145,22 @@ class Prompter:
   def Info(self, message: str) -> None:
     """Shows a message to the operator without waiting for input."""
     self._output_fn(message)
+
+  def Link(self, url: str) -> str:
+    """Returns url styled as a link if stdout is an interactive terminal.
+
+    Output that is piped or redirected stays plain so that logs do not
+    contain raw escape sequences.
+
+    Args:
+      url: The URL to style.
+
+    Returns:
+      The URL wrapped in underlined cyan ANSI codes, or unchanged.
+    """
+    if self._isatty_check and sys.stdout.isatty():
+      return f"{_LINK_STYLE}{url}{_RESET_STYLE}"
+    return url
 
   def Text(
       self,
@@ -356,7 +375,7 @@ def _ShowAtsWebUiUrl(
     logger.debug("ATS Web UI URL lookup failed", exc_info=True)
     ui.Info(f"{warning_prefix} unexpected error: {e}. {_CONTACT_OMNILAB}")
     return
-  ui.Info(f"\nATS Web UI for controller '{endpoint}': {url}")
+  ui.Info(f"\nATS Web UI for controller '{endpoint}': {ui.Link(url)}")
 
 
 def Join(
