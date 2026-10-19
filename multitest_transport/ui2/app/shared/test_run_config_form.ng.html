@@ -41,7 +41,7 @@
     cdkTextareaAutosize
   ></textarea>
   <!-- TODO: replace with a test suite specific instruction link. -->
-  <mat-hint
+  <mat-hint *ngIf="!isRerun"
     >Find supported CTS parameters from
     <a
       href="https://source.android.com/compatibility/cts/run#ctsv2_reference"
@@ -50,6 +50,9 @@
     >
       here</a
     >.
+  </mat-hint>
+  <mat-hint *ngIf="isRerun">
+    Ignored during rerun — Retry Command and the result file are used instead.
   </mat-hint>
 </mat-form-field>
 

@@ -390,4 +390,18 @@ export class TestRunProgress implements OnInit, OnChanges {
         this.isFinished(attempt) ? moment.utc(attempt.end_time) : moment.utc();
     return millisToDuration(end.diff(start));
   }
+
+  /** Returns the display label for a command row in the progress tab. */
+  getCommandDisplayText(command: CommandNode): string {
+    const prevResourceName =
+        this.testRun?.prev_test_context?.test_resources?.[0]?.name;
+    if (!this.testRun?.prev_test_run_id && prevResourceName) {
+      const filename = prevResourceName.split('/').pop() || prevResourceName;
+      const retryCmd = this.testRun.test_run_config?.retry_command ||
+          command.name || command.command_line;
+      return `Retry Command ${command.id}: ${retryCmd} (Remote rerun from ${
+          filename})`;
+    }
+    return `Command ${command.id}: ${command.name || command.command_line}`;
+  }
 }

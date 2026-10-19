@@ -137,8 +137,7 @@
 
                 <div fxFlex class="id-text inline">
                   <span>
-                    Command {{commandNode.value.id}}: {{commandNode.value.name ||
-                                                    commandNode.value.command_line}}
+                    {{getCommandDisplayText(commandNode.value)}}
                   </span>
                 </div>
 

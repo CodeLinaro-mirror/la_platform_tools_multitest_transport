@@ -368,4 +368,9 @@ export class TestRunDetail implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  get prevContextFilename(): string|undefined {
+    const name = this.testRun?.prev_test_context?.test_resources?.[0]?.name;
+    return name ? name.split('/').pop() : undefined;
+  }
+
 }

@@ -165,6 +165,20 @@ describe('TestRunProgress', () => {
     expect(commandRow.textContent).toContain('Command command_id: name');
   });
 
+  it('can display retry command for remote rerun', () => {
+    component.testRun = {
+      test_run_config: {retry_command: 'retry --retry 0'},
+      prev_test_context: {
+        test_resources: [{name: '2026.08.14_12.00.19.925_6451.zip'}],
+      },
+    } as TestRun;
+    component.expandStatNode(CommandState.COMPLETED);
+    fixture.detectChanges();
+    const commandRow = getEl(element, '.command-row');
+    expect(commandRow.textContent).toContain(
+        'Retry Command command_id: retry --retry 0 (Remote rerun from 2026.08.14_12.00.19.925_6451.zip)');
+  });
+
   it('can display the attempts', () => {
     component.expandStatNode(CommandState.COMPLETED);
     component.expandCommandNode(CommandState.COMPLETED, 'command_id');

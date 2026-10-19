@@ -178,8 +178,11 @@ describe('TestRunConfigForm', () => {
     upload.next(new FileUploadEvent(file, 2));
     upload.complete();
     tick();
+    fixture.detectChanges();
     expect(configForm.isUploading).toBeFalsy();
     expect(configForm.isRerun).toBeTruthy();
+    expect(debugEl.nativeElement.textContent).toContain(
+        'Ignored during rerun — Retry Command and the result file are used instead.');
     expect(configForm.rerunContext.emit).toHaveBeenCalledWith({
       context_filename: '123.zip',
       context_file_url: 'file_url',

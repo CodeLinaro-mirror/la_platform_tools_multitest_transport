@@ -115,9 +115,12 @@
             <tr>
               <td>Previous Run:</td>
               <td>
-                <a href="/test_runs/{{testRun.prev_test_run_id}}">
+                <a *ngIf="testRun.prev_test_run_id" href="/test_runs/{{testRun.prev_test_run_id}}">
                   {{testRun.prev_test_run_id}}
                 </a>
+                <span *ngIf="!testRun.prev_test_run_id && prevContextFilename">
+                  {{prevContextFilename}} (Remote)
+                </span>
               </td>
             </tr>
             <tr>

@@ -151,6 +151,18 @@ describe('TestRunDetail', () => {
     expect(textContent).toContain(retryRun.id!);
   });
 
+  it('displays remote rerun context filename when prev_test_run_id is absent', () => {
+    testRunDetail.testRun!.prev_test_run_id = undefined;
+    testRunDetail.testRun!.prev_test_context = {
+      command_line: '',
+      test_resources: [{name: 'path/to/2026.08.14_12.00.19.925_6451.zip'}],
+    };
+    testRunDetailFixture.detectChanges();
+
+    const textContent = getTextContent(el);
+    expect(textContent).toContain('2026.08.14_12.00.19.925_6451.zip (Remote)');
+  });
+
   it('displays and announces a loading mask', () => {
     expect(liveAnnouncer.announce).toHaveBeenCalledWith('Loading', 'polite');
   });
