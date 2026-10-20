@@ -16,6 +16,7 @@
 import base64
 import datetime
 import enum
+import errno
 import hashlib
 import http
 import logging
@@ -233,6 +234,50 @@ def GetFileHash(path: str) -> flask.Response:
   # If not cached, calculate and cache it transactionally
   sha256_hash = _CalculateAndCacheSha256(resolved_path)
   return flask.jsonify({'sha256': sha256_hash})
+
+
+@flask_app.route('/metadata/<path:path>', methods=['GET'])
+def GetFileMetadata(path: str) -> flask.Response:
+  """Retrieve file metadata which can be used to detect file changes.
+
+  Unlike the hash, the metadata is cheap to compute and always reflects the
+  current file, so clients can use it as a version of the file (e.g., as part
+  of a cache key) to detect that a file has been replaced in place.
+
+  Args:
+    path: file path relative to the root path.
+
+  Returns:
+    JSON with the file size in bytes, and the last modification and status
+    change times in nanoseconds.
+  """
+  resolved_path = security.safe_join(flask.current_app.root_path, path)
+  if not resolved_path:
+    flask.abort(http.HTTPStatus.BAD_REQUEST, 'Path is not safe')
+  try:
+    stat_info = os.stat(resolved_path)
+  except (FileNotFoundError, NotADirectoryError):
+    flask.abort(http.HTTPStatus.NOT_FOUND, "File '%s' not found" % path)
+  except PermissionError:
+    flask.abort(
+        http.HTTPStatus.FORBIDDEN, "Permission denied for file '%s'" % path
+    )
+  except OSError as e:
+    if e.errno == errno.ENAMETOOLONG:
+      flask.abort(http.HTTPStatus.BAD_REQUEST, "Path '%s' is too long" % path)
+    flask.abort(
+        http.HTTPStatus.INTERNAL_SERVER_ERROR,
+        "Failed to get metadata for '%s': %s" % (path, e.strerror),
+    )
+  if not stat.S_ISREG(stat_info.st_mode):
+    flask.abort(
+        http.HTTPStatus.BAD_REQUEST, "Path '%s' is not a regular file" % path
+    )
+  return flask.jsonify({
+      'size': stat_info.st_size,
+      'mtime_ns': stat_info.st_mtime_ns,
+      'ctime_ns': stat_info.st_ctime_ns,
+  })
 
 
 class FileType(str, enum.Enum):

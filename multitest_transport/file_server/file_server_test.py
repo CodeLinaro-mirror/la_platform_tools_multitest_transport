@@ -14,6 +14,7 @@
 
 """Android Test Station local file server tests."""
 import datetime
+import errno
 import io
 import json
 import os
@@ -356,6 +357,108 @@ class FileServerTest(ndb_test_lib.NdbWithContextTest, absltest.TestCase):
       self.assertEqual(404, response.status_code)
       data = json.loads(response.data)
       self.assertEqual("File 'unknown.txt' not found", data['message'])
+
+  def testGetFileMetadata(self):
+    """Tests that file metadata can be retrieved."""
+    stat_info = os.stat(os.path.join(self.app.root_path, 'test.txt'))
+    with self.app.test_client() as client:
+      response = client.get('/metadata/test.txt')
+      self.assertEqual(200, response.status_code)
+      self.assertEqual(
+          {
+              'size': 11,
+              'mtime_ns': stat_info.st_mtime_ns,
+              'ctime_ns': stat_info.st_ctime_ns,
+          },
+          json.loads(response.data),
+      )
+
+  def testGetFileMetadata_fileReplaced(self):
+    """Tests that file metadata changes after the file is uploaded again."""
+    test_path = os.path.join(self.app.root_path, 'test.txt')
+    os.utime(test_path, ns=(1_000_000_000, 1_000_000_000))
+    with self.app.test_client() as client:
+      old_metadata = json.loads(client.get('/metadata/test.txt').data)
+      file = werkzeug.datastructures.FileStorage(
+          stream=io.BytesIO(b'other world'),
+          filename='/file/test.txt',
+          content_type='text/plain',
+      )
+      response = client.post(
+          '/file/test.txt',
+          data=dict(file=file),
+          content_type='multipart/form-data',
+      )
+      self.assertEqual(201, response.status_code)
+      new_metadata = json.loads(client.get('/metadata/test.txt').data)
+      self.assertEqual(11, old_metadata['size'])
+      self.assertEqual(11, new_metadata['size'])
+      self.assertGreater(new_metadata['mtime_ns'], old_metadata['mtime_ns'])
+      self.assertGreaterEqual(
+          new_metadata['ctime_ns'], old_metadata['ctime_ns']
+      )
+      self.assertNotEqual(old_metadata, new_metadata)
+
+  def testGetFileMetadata_notFound(self):
+    """Tests that file not found errors are handled when getting metadata."""
+    with self.app.test_client() as client:
+      response = client.get('/metadata/unknown.txt')
+      self.assertEqual(404, response.status_code)
+      data = json.loads(response.data)
+      self.assertEqual("File 'unknown.txt' not found", data['message'])
+
+  def testGetFileMetadata_directory(self):
+    """Tests that directories are not supported when getting metadata."""
+    os.mkdir(os.path.join(self.app.root_path, 'dir'))
+    with self.app.test_client() as client:
+      response = client.get('/metadata/dir')
+      self.assertEqual(400, response.status_code)
+      data = json.loads(response.data)
+      self.assertEqual("Path 'dir' is not a regular file", data['message'])
+
+  def testGetFileMetadata_pathNotSafe(self):
+    """Tests that unsafe paths are rejected when getting metadata."""
+    with self.app.test_client() as client:
+      response = client.get('/metadata/../../../../../../../etc/passwd')
+      self.assertEqual(400, response.status_code)
+      data = json.loads(response.data)
+      self.assertEqual('Path is not safe', data['message'])
+
+  def testGetFileMetadata_pathTooLong(self):
+    """Tests that paths exceeding the OS limit return 400."""
+    with self.app.test_client() as client:
+      long_name = 'a' * 300
+      response = client.get('/metadata/' + long_name)
+      self.assertEqual(400, response.status_code)
+      data = json.loads(response.data)
+      self.assertEqual("Path '%s' is too long" % long_name, data['message'])
+
+  def testGetFileMetadata_permissionDenied(self):
+    """Tests that permission errors return 403 when getting metadata."""
+    with mock.patch.object(
+        os, 'stat', side_effect=PermissionError(errno.EACCES, 'Denied')
+    ):
+      with self.app.test_client() as client:
+        response = client.get('/metadata/test.txt')
+        self.assertEqual(403, response.status_code)
+        data = json.loads(response.data)
+        self.assertEqual(
+            "Permission denied for file 'test.txt'", data['message']
+        )
+
+  def testGetFileMetadata_osError(self):
+    """Tests that unexpected OS errors return 500 with error details."""
+    with mock.patch.object(
+        os, 'stat', side_effect=OSError(errno.EIO, 'Input/output error')
+    ):
+      with self.app.test_client() as client:
+        response = client.get('/metadata/test.txt')
+        self.assertEqual(500, response.status_code)
+        data = json.loads(response.data)
+        self.assertEqual(
+            "Failed to get metadata for 'test.txt': Input/output error",
+            data['message'],
+        )
 
   @mock.patch.object(file_server.datetime, 'datetime', new=PatchedDateTime)
   @mock.patch.object(file_server, '_CalculateSha256')
