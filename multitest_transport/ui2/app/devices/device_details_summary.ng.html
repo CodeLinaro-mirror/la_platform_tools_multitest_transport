@@ -107,7 +107,7 @@
               <td class="title-field">
                 <mat-label>Battery</mat-label>
               </td>
-              <td class="value-field">{{ data.extraInfo.battery_level | percent: "1.0" }}</td>
+              <td class="value-field">{{ data.extraInfo.battery_level < 0 ? '-' : (data.extraInfo.battery_level | percent: "1.0") }}</td>
             </tr>
             <tr>
               <td class="title-field">

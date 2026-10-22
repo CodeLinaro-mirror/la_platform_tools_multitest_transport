@@ -317,7 +317,7 @@
     <ng-container matColumnDef="battery_level">
       <mat-header-cell *matHeaderCellDef fxFlex="150px"> Battery </mat-header-cell>
       <mat-cell *matCellDef="let device" fxFlex="150px">
-        {{ device.extraInfo.battery_level | percent: "1.0" }}
+        {{ device.extraInfo.battery_level < 0 ? '-' : (device.extraInfo.battery_level | percent: "1.0") }}
       </mat-cell>
     </ng-container>
 

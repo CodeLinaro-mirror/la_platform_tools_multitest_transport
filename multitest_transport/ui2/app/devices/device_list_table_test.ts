@@ -108,6 +108,24 @@ describe('DeviceListTable', () => {
     expect(getTextContent(el)).toContain(mockDeviceList[0].device_serial);
   });
 
+  it('displays "-" when the battery level is unknown', () => {
+    const device = mockDeviceList[0];
+    device.extraInfo.battery_level = -0.01;
+    deviceListTable.dataSource = [device];
+    deviceListTableFixture.detectChanges();
+    const batteryCell = getEl(el, 'mat-cell.mat-column-battery_level');
+    expect(batteryCell.textContent!.trim()).toEqual('-');
+  });
+
+  it('displays the battery level as a percentage', () => {
+    const device = mockDeviceList[0];
+    device.extraInfo.battery_level = 0.34;
+    deviceListTable.dataSource = [device];
+    deviceListTableFixture.detectChanges();
+    const batteryCell = getEl(el, 'mat-cell.mat-column-battery_level');
+    expect(batteryCell.textContent!.trim()).toEqual('34%');
+  });
+
   it('displays correct aria label for table', () => {
     const matTable = getEl(el, 'mat-table');
     expect(matTable).toBeTruthy();

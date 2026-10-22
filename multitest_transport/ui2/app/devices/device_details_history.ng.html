@@ -104,7 +104,7 @@
       <mat-header-cell *matHeaderCellDef fxFlex="100px"> Battery </mat-header-cell>
       <mat-cell *matCellDef="let history" fxFlex="100px">
         <ng-container *ngIf="history.extraInfo && history.extraInfo.battery_level">
-          {{ history.extraInfo.battery_level | percent: "1.0" }}
+          {{ history.extraInfo.battery_level < 0 ? '-' : (history.extraInfo.battery_level | percent: "1.0") }}
         </ng-container>
       </mat-cell>
     </ng-container>
