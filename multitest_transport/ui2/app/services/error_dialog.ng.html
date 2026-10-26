@@ -19,7 +19,7 @@
 </h1>
 
 <mat-dialog-content>
-  {{data.message}}
+  <div class="message">{{data.message}}</div>
   <pre *ngIf="data.detailedError?.message">Error detail: {{data.detailedError.message}}</pre>
 
   <div *ngIf="data.detailedError?.stacktrace" class="stacktrace">

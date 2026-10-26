@@ -29,6 +29,10 @@ mat-dialog-actions {
   justify-content: flex-end;
 }
 
+.message {
+  white-space: pre-wrap;
+}
+
 pre {
   font-family: monospace;
   white-space: pre-wrap;
