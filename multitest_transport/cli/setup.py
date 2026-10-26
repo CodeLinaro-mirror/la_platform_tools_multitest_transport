@@ -58,7 +58,6 @@ setuptools.setup(
         'grpcio-status',
         'Jinja2 >= 3.0.0',
         'packaging',
-        'packaging-legacy',
         'protobuf == 6.33.5',
         'pyOpenSSL',
         'python-dateutil',

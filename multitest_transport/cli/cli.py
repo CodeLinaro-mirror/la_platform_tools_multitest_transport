@@ -45,7 +45,6 @@ from multitest_transport.cli import ssh_util
 from multitest_transport.util import env
 from multitest_transport.util import worker_lab_health_client
 from packaging import version
-from packaging_legacy import version as legacy_version
 import requests
 import six
 from tradefed_cluster.configs import lab_config_pb2
@@ -421,6 +420,23 @@ def _CreateSeccompProfile(host):
   return _SECCOMP_PROFILE_PATH
 
 
+def _ParseVersionKey(version_str):
+  """Parses a version string into a comparable sort key."""
+  try:
+    return (1, version.parse(version_str), ())
+  except version.InvalidVersion:
+    # Fall back to LooseVersion-like comparison for non-PEP 440 strings:
+    # tokenize into numeric and alphabetic segments, wrapping each as a
+    # (type_tag, int_val, str_val) tuple so numeric and string tokens can be
+    # compared in Python 3 without TypeError. Return a 3-tuple matching the
+    # (is_pep440, Version, fallback_parts) structure of the try branch.
+    parts = tuple(
+        (0, int(p), '') if p.isdigit() else (1, 0, p)
+        for p in re.findall(r'\d+|[a-zA-Z]+', version_str.lower())
+    )
+    return (0, version.Version('0'), parts)
+
+
 def _CheckDockerImageVersion(docker_helper, container_name):
   """Check a Docker image is compatible with CLI.
 
@@ -450,8 +466,8 @@ def _CheckDockerImageVersion(docker_helper, container_name):
     return
 
   try:
-    cli_version_obj = legacy_version.parse(cli_version)
-    image_version_obj = legacy_version.parse(image_version)
+    cli_version_obj = _ParseVersionKey(cli_version)
+    image_version_obj = _ParseVersionKey(image_version)
   except version.InvalidVersion:
     logger.debug(
         'CLI or Docker image version is unrecognizable; '
