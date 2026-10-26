@@ -14,26 +14,43 @@
  limitations under the License.
 -->
 
-<mat-spinner class="loading-spinner" color="accent" *ngIf="isLoading"></mat-spinner>
+<mat-spinner class="loading-spinner" color="accent" *ngIf="isLoading && !(preferenceService.useLabConsoleSearchPageSubject$ | async)"></mat-spinner>
 
 <mat-toolbar class="device-list-toolbar">
   <mat-toolbar-row fxLayoutAlign="space-between center">
-    <h1>Devices</h1>
-    <mat-form-field appearance="outline" class="mat-select-filter" fxFlex="300px" subscriptSizing="dynamic">
-      <mat-select [(ngModel)]="selectedLab" (selectionChange)="load()">
-        <mat-select-trigger> Lab: {{ selectedLab }} </mat-select-trigger>
-        <mat-option [value]="allOptionsValue">
-          {{ allOptionsValue }}
-        </mat-option>
-        <mat-option *ngFor="let lab of labs" [value]="lab">
-          {{ lab }}
-        </mat-option>
-      </mat-select>
-    </mat-form-field>
+    <div fxLayout="row" fxLayoutAlign="start center">
+      <h1>Devices</h1>
+      <mat-form-field appearance="outline" class="mat-select-filter" fxFlex="300px" subscriptSizing="dynamic" style="margin-left: 20px;">
+        <mat-select [(ngModel)]="selectedLab" (selectionChange)="load()">
+          <mat-select-trigger> Lab: {{ selectedLab }} </mat-select-trigger>
+          <mat-option [value]="allOptionsValue">
+            {{ allOptionsValue }}
+          </mat-option>
+          <mat-option *ngFor="let lab of labs" [value]="lab">
+            {{ lab }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+    <div
+      class="lab-console-ui-switch-button"
+      *ngIf="appData.enableLabConsoleSearchPage"
+    >
+      <mat-slide-toggle
+        class="lab-console-ui-toggle"
+        [checked]="!(preferenceService.useLabConsoleUISubject$ | async)"
+        (change)="
+          preferenceService.useLabConsoleUISubject$.next(!$event.checked)
+        "
+        color="accent"
+      >
+        Back to Legacy UI
+      </mat-slide-toggle>
+    </div>
   </mat-toolbar-row>
 </mat-toolbar>
 
-<div class="filter">
+<div class="filter" [style.display]="(preferenceService.useLabConsoleSearchPageSubject$ | async) ? 'none' : null">
   <form [formGroup]="formGroup">
     <mat-form-field class="form-field" fxFlex>
       <mat-label>Filter</mat-label>
@@ -154,7 +171,7 @@
   </form>
 </div>
 
-<div class="action-row" fxLayout="row wrap" fxLayoutAlign="start center" *ngIf="notesEnabled">
+<div class="action-row" fxLayout="row wrap" fxLayoutAlign="start center" *ngIf="notesEnabled"  [style.display]="(preferenceService.useLabConsoleSearchPageSubject$ | async) ? 'none' : null">
   <add-notes-button
     buttonStyle="Stroked"
     [labName]="selectedLab"
@@ -166,7 +183,7 @@
     (click)="startBatchAddDevicesNotesHats()"
   ></add-notes-button>
 </div>
-<div [class.loading-mask]="isLoading">
+<div [class.loading-mask]="isLoading"  [style.display]="(preferenceService.useLabConsoleSearchPageSubject$ | async) ? 'none' : null">
   <mat-table
     #table
     [dataSource]="dataSource"

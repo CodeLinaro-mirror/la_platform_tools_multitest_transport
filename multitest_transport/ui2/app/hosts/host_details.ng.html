@@ -15,44 +15,33 @@
 -->
 
 <div class="header" fxLayout="row" fxLayoutAlign="space-between center">
-  <div>
-    <div class="back-button-label">Host Details</div>
-    <h1 class="subtitle">
-      <button
-        *ngIf="!isModalMode"
-        mat-icon-button
-        (click)="back()"
-        #backButton
-        id="back-button"
-        matTooltip="Return"
-        aria-label="Return"
+  <div class="header-left" fxLayout="row" fxLayoutAlign="start center">
+    <button
+      *ngIf="!isModalMode"
+      mat-icon-button
+      class="back-button"
+      (click)="back()"
+      #backButton
+      id="back-button"
+      matTooltip="Return"
+      aria-label="Return"
+    >
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <h1>Host Details</h1>
+    <mat-form-field fxFlex="300px" appearance="outline" class="mat-select-filter" subscriptSizing="dynamic" style="margin-left: 20px;">
+      <mat-select
+        placeholder="Host"
+        [(ngModel)]="id"
+        (selectionChange)="load($event.value, true)"
+        (click)="startHostNavigationHats()"
       >
-        <mat-icon class="back-button-icon">arrow_back</mat-icon>
-      </button>
-      <mat-form-field fxFlex="300px" appearance="outline" class="mat-select-filter">
-        <mat-select
-          placeholder="Host"
-          [(ngModel)]="id"
-          (selectionChange)="load($event.value, true)"
-          (click)="startHostNavigationHats()"
-        >
-          <mat-option *ngFor="let hostname of hostnames" [value]="hostname">
-            {{ hostname }}
-          </mat-option>
-        </mat-select>
-      </mat-form-field>
-    </h1>
-  </div>
-  <div class="action-buttons">
-    <div class="lab-console-ui-switch-button" *ngIf="appData.enableLabConsoleUI">
-      <mat-slide-toggle *ngIf="appData.enableLabConsoleUI" class="lab-console-ui-toggle" [checked]="!(preferenceService.useLabConsoleUISubject$ | async)" (change)="preferenceService.useLabConsoleUISubject$.next(!$event.checked)" color="accent">
-        Back to Legacy UI
-      </mat-slide-toggle>
-    </div>
-    <div class="loading-spinner-overlay" *ngIf="isLoading && !(preferenceService.useLabConsoleUISubject$ | async)">
-      <mat-spinner color="accent"></mat-spinner>
-    </div>
-    <div *ngIf="!appData.isOmniLabBased" [class.loading-mask]="isLoading">
+        <mat-option *ngFor="let hostname of hostnames" [value]="hostname">
+          {{ hostname }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+    <div class="host-actions" *ngIf="!appData.isOmniLabBased" [class.loading-mask]="isLoading" fxLayout="row" fxLayoutAlign="start center" style="margin-left: 20px;">
       <mark-host-as-fixed-button
         *ngIf="data"
         [host]="data"
@@ -76,6 +65,16 @@
       >
         {{ data?.hidden ? "Removed" : "Remove" }}
       </button>
+    </div>
+  </div>
+  <div class="action-buttons" fxLayout="row" fxLayoutAlign="end center">
+    <div class="loading-spinner-overlay" *ngIf="isLoading && !(preferenceService.useLabConsoleUISubject$ | async)">
+      <mat-spinner color="accent"></mat-spinner>
+    </div>
+    <div class="lab-console-ui-switch-button" *ngIf="appData.enableLabConsoleUI">
+      <mat-slide-toggle class="lab-console-ui-toggle" [checked]="!(preferenceService.useLabConsoleUISubject$ | async)" (change)="preferenceService.useLabConsoleUISubject$.next(!$event.checked)" color="accent">
+        Back to Legacy UI
+      </mat-slide-toggle>
     </div>
   </div>
 </div>

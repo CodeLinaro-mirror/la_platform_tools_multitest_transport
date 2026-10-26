@@ -55,6 +55,8 @@ export declare interface AppData {
   readonly isOmniLabBased?: boolean;
   /** True if Lab Console UI is enabled. */
   readonly enableLabConsoleUI?: boolean;
+  /** True if Lab Console Search Page is enabled. */
+  readonly enableLabConsoleSearchPage?: boolean;
 }
 
 /** Converts local url to real url. */

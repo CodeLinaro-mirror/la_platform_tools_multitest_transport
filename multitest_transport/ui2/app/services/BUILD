@@ -31,6 +31,7 @@ ng_module(
         "mtt_lab_models.ts",
         "mtt_models.ts",
         "mtt_object_map.ts",
+        "navigation_event_service.ts",
         "notifier.ts",
         "notifier_dialog.ts",
         "preference_service.ts",

@@ -16,21 +16,22 @@
 
 <mat-spinner class="loading-spinner" color="accent" *ngIf="isLoading && !(preferenceService?.useLabConsoleUISubject$ | async)"></mat-spinner>
 
-<div class="header">
-  <div class="back-button-label">Device Details</div>
-  <h1 class="subtitle">
+<div class="header" fxLayout="row" fxLayoutAlign="space-between center">
+  <div class="header-left" fxLayout="row" fxLayoutAlign="start center">
     <button
       *ngIf="!isModalMode"
       mat-icon-button
+      class="back-button"
       (click)="back()"
       #backButton
       id="back-button"
       matTooltip="Return"
       aria-label="Return"
     >
-      <mat-icon class="back-button-icon">arrow_back</mat-icon>
+      <mat-icon>arrow_back</mat-icon>
     </button>
-    <mat-form-field fxFlex="300px" appearance="outline" class="mat-select-filter">
+    <h1>Device Details</h1>
+    <mat-form-field fxFlex="300px" appearance="outline" class="mat-select-filter" subscriptSizing="dynamic" style="margin-left: 20px;">
       <mat-select
         placeholder="Device"
         [(ngModel)]="id"
@@ -42,10 +43,10 @@
         </mat-option>
       </mat-select>
     </mat-form-field>
-  </h1>
+  </div>
   <div class="action-buttons" *ngIf="appData?.enableLabConsoleUI">
     <div class="lab-console-ui-switch-button">
-      <mat-slide-toggle *ngIf="appData?.enableLabConsoleUI" class="lab-console-ui-toggle" [checked]="!(preferenceService?.useLabConsoleUISubject$ | async)" (change)="preferenceService?.useLabConsoleUISubject$.next(!$event.checked)" color="accent">
+      <mat-slide-toggle class="lab-console-ui-toggle" [checked]="!(preferenceService?.useLabConsoleUISubject$ | async)" (change)="preferenceService?.useLabConsoleUISubject$.next(!$event.checked)" color="accent">
         Back to Legacy UI
       </mat-slide-toggle>
     </div>

@@ -23,6 +23,7 @@ import {of as observableOf} from 'rxjs';
 import {Mtt, MttModule} from './app';
 import {AnalyticsService} from './services/analytics_service';
 import {APP_DATA} from './services/app_data';
+import {NavigationEventService, NavigationTarget} from './services/navigation_event_service';
 import {UserService} from './services/user_service';
 import {getEl} from './testing/jasmine_util';
 
@@ -81,4 +82,11 @@ describe('Mtt', () => {
     tick();
     expect(location.path()).toEqual('/test_runs');
   }));
+
+  it('should broadcast navigation target when onNavClick is called', () => {
+    const navService = TestBed.inject(NavigationEventService);
+    const notifySpy = spyOn(navService, 'notifyNavMenuClicked');
+    mtt.onNavClick(NavigationTarget.DEVICES);
+    expect(notifySpy).toHaveBeenCalledWith(NavigationTarget.DEVICES);
+  });
 });

@@ -82,6 +82,9 @@ mat-table {
   .mat-mdc-form-field-wrapper {
     padding: 0;
   }
+  .mat-mdc-form-field-subscript-wrapper {
+    display: none;
+  }
   .toolbar-spacer {
     flex: 1 1 auto;
   }

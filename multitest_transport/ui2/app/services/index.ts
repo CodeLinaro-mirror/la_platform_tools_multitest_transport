@@ -26,6 +26,10 @@ export {
 } from './analytics_service';
 export {APP_DATA, AppData} from './app_data';
 export {FeedbackService} from './feedback_service';
+export {
+  NavigationEventService,
+  NavigationTarget,
+} from './navigation_event_service';
 export {Notifier} from './notifier';
 export {PreferenceService} from './preference_service';
 export {ServicesModule} from './services_module';

@@ -15,6 +15,6 @@
 -->
 
 <router-outlet></router-outlet>
-@if (preferenceService.useLabConsoleUISubject$ | async) {
-  <iframe #iframe [src]="iframeUrl" style="width: 100%; height: calc(100% - 120px); border: none;"></iframe>
+@if (useLabConsoleIframe$ | async) {
+  <iframe #iframe [src]="iframeUrl" style="width: 100%; height: 100%; border: none;"></iframe>
 }

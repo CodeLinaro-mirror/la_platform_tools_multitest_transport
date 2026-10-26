@@ -25,6 +25,11 @@ import {ActivatedRoute, ParamMap, Router} from '@angular/router';
 import {forkJoin, Observable, of as observableOf, ReplaySubject, throwError} from 'rxjs';
 import {catchError, concatMap, delay, filter, finalize, map, mergeMap, retryWhen, switchMap, take, takeUntil} from 'rxjs/operators';
 
+import {inject} from '@angular/core';
+import {APP_DATA} from '../services/app_data';
+import {PreferenceService} from '../services/preference_service';
+import {EntityType, V6IframeContainerComponent} from '../shared/v6_iframe_container_component';
+
 import {FeedbackService} from '../services/feedback_service';
 import {FilterOption, HostQueryParams, HostSearchCriteria, LAB_STORAGE_KEY, LabHostInfo, LabHostInfosResponse, SurveyTrigger} from '../services/mtt_lab_models';
 import {TableColumn} from '../services/mtt_models';
@@ -51,6 +56,10 @@ export class HostList implements OnDestroy, OnInit {
   isLoading = false;
   private readonly destroy = new ReplaySubject<void>();
   dataSource: LabHostInfo[] = [];
+
+  readonly appData = inject(APP_DATA);
+  readonly preferenceService = inject(PreferenceService);
+  readonly container = inject(V6IframeContainerComponent, {optional: true});
 
   @ViewChild('table', {static: true, read: ElementRef}) table!: ElementRef;
   @ViewChild(MatTable, {static: true}) matTable!: MatTable<{}>;
@@ -235,6 +244,19 @@ export class HostList implements OnDestroy, OnInit {
 
     this.setFilterBarParameters();
     this.initFilterBarThenLoad();
+
+    // When the user toggles the UI switcher to return to LabConsole V6 search
+    // page, re-initialize the iframe URL so that the iframe reappears and syncs
+    // any query parameters currently present in the UI2 URL.
+    if (this.appData.enableLabConsoleSearchPage && this.container) {
+      this.preferenceService.useLabConsoleUISubject$
+          .pipe(takeUntil(this.destroy))
+          .subscribe((useLabConsoleUI) => {
+            if (useLabConsoleUI && this.container) {
+              this.container.initIframeUrl(EntityType.HOSTS);
+            }
+          });
+    }
     this.loadDisplayColumnFromLocalStorage();
     this.setDisplayColumn();
     this.valueControl.valueChanges.pipe(takeUntil(this.destroy))

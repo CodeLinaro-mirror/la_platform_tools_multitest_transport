@@ -17,23 +17,52 @@
 @import 'third_party/py/multitest_transport/ui2/constants';
 
 .action-buttons {
-  position: absolute;
-  right: 20px;
-  top: 0;
-  height: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
-.back-button-icon {
-  line-height: 44px;
-}
-
 .header {
   background-color: $background-default;
-  padding-bottom: 0;
+  border-bottom: 1px solid $border-menu;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  height: 64px;
+  min-height: 64px;
+  padding: 0 16px;
   position: sticky;
   top: 0;
   z-index: 101;
+
+  .header-left {
+    display: flex;
+    align-items: center;
+  }
+
+  h1 {
+    font-size: 20px;
+    font-weight: 500;
+    line-height: 32px;
+    margin: 0 0 0 8px;
+    display: flex;
+    align-items: center;
+  }
+
+  .back-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    .mat-icon {
+      margin: 0;
+      vertical-align: unset;
+    }
+  }
+
+  ::ng-deep {
+    .mat-mdc-form-field-subscript-wrapper {
+      display: none;
+    }
+  }
 }

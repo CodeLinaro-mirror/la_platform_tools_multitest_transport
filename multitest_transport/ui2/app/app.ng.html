@@ -92,14 +92,16 @@
           <span>Equipment</span>
         </h3>
 
-        <a mat-list-item routerLink="/devices" routerLinkActive="active" [matTooltip]="'Devices'">
+        <!-- Trigger onNavClick to notify embedded iframe to reset its search state on demand -->
+        <a mat-list-item routerLink="/devices" routerLinkActive="active" [matTooltip]="'Devices'" (click)="onNavClick(navigationTarget.DEVICES)">
           <mat-icon matListItemIcon>phone_android</mat-icon>
           <span matListItemMeta>
             <span>Devices</span>
           </span>
         </a>
 
-        <a mat-list-item routerLink="/hosts" routerLinkActive="active" [matTooltip]="'Hosts'">
+        <!-- Trigger onNavClick to notify embedded iframe to reset its search state on demand -->
+        <a mat-list-item routerLink="/hosts" routerLinkActive="active" [matTooltip]="'Hosts'" (click)="onNavClick(navigationTarget.HOSTS)">
           <mat-icon matListItemIcon>dns</mat-icon>
           <span matListItemMeta>
             <span>Hosts</span>

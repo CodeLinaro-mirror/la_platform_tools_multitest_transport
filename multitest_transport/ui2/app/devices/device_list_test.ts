@@ -18,7 +18,7 @@ import {provideHttpClientTesting} from '@angular/common/http/testing';
 import {DebugElement, LOCALE_ID, SimpleChange} from '@angular/core';
 import {ComponentFixture, discardPeriodicTasks, fakeAsync, inject, TestBed, tick} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {ActivatedRoute, convertToParamMap, Router} from '@angular/router';
+import {ActivatedRoute, convertToParamMap, provideRouter, Router} from '@angular/router';
 import {of as observableOf} from 'rxjs';
 
 import {APP_DATA} from '../services';
@@ -28,10 +28,10 @@ import {Notifier} from '../services/notifier';
 import {DEVICE_LIST_KEY} from '../services/storage_service';
 import {TfcClient} from '../services/tfc_client';
 import {DeviceRecoveryStateRequest, FilterHintType, NoteList, RecoveryState} from '../services/tfc_models';
+import {EntityType, V6IframeContainerComponent} from '../shared/v6_iframe_container_component';
 import {ActivatedRouteStub} from '../testing/activated_route_stub';
 import {getEl, getEls, getTextContent} from '../testing/jasmine_util';
 import {newMockAppData, newMockDeviceNote, newMockFilterHintList, newMockLabDeviceInfo, newMockLabDeviceInfosResponse} from '../testing/mtt_lab_mocks';
-
 import {DeviceList} from './device_list';
 import {DevicesModule} from './devices_module';
 
@@ -981,5 +981,32 @@ describe('DeviceList in ATS instance', () => {
     };
     expect(tfcClient.queryDeviceInfos).toHaveBeenCalledWith(query, 2);
     expect(deviceList.selectedSerials).toEqual(['device-2']);
+  });
+
+  it('should call container.initIframeUrl when useLabConsoleUI emits true and search page is enabled', () => {
+    TestBed.resetTestingModule();
+    const containerSpy =
+        jasmine.createSpyObj('V6IframeContainerComponent', ['initIframeUrl']);
+    TestBed.configureTestingModule({
+      imports: [DevicesModule, NoopAnimationsModule],
+      providers: [
+        provideHttpClientTesting(),
+        {provide: ActivatedRoute, useValue: activatedRouteSpy},
+        {
+          provide: APP_DATA,
+          useValue: Object.assign(newMockAppData(), {enableLabConsoleSearchPage: true}),
+        },
+        {provide: FeedbackService, useValue: feedbackService},
+        {provide: LOCALE_ID, useValue: 'en-US'},
+        provideRouter([]),
+        {provide: TfcClient, useValue: tfcClient},
+        {provide: V6IframeContainerComponent, useValue: containerSpy},
+      ],
+    });
+    const fixture = TestBed.createComponent(DeviceList);
+    fixture.detectChanges();
+    const instance = fixture.componentInstance;
+    instance.preferenceService.useLabConsoleUISubject$.next(true);
+    expect(containerSpy.initIframeUrl).toHaveBeenCalledWith(EntityType.DEVICES);
   });
 });

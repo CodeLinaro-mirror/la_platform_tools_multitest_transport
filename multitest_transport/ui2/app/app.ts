@@ -49,6 +49,7 @@ import {AnalyticsInterceptor, AnalyticsService} from './services/analytics_servi
 import {APP_DATA, AppData, convertLocalUrl} from './services/app_data';
 import {FILE_BROWSER_PATH} from './services/file_service';
 import {IapInterceptor} from './services/iap_interceptor';
+import {NavigationEventService, NavigationTarget} from './services/navigation_event_service';
 import {ServicesModule} from './services/services_module';
 import {StrictParamsInterceptor} from './services/strict_params';
 import {UserService} from './services/user_service';
@@ -115,13 +116,14 @@ export const routes: Routes = [
     component: DeviceActionEditPage,
     canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
   },
-  {path: 'devices', component: DeviceListPage},
   {path: '', redirectTo: '/test_runs', pathMatch: 'full'},
   {
     path: '',
     component: V6IframeContainerComponent,
     children: [
+      {path: 'devices', component: DeviceListPage},
       {path: 'devices/:id', component: DeviceDetailsPage},
+      {path: 'hosts', component: HostListPage},
       {path: 'hosts/:id', component: HostDetailsPage},
     ]
   },
@@ -145,7 +147,6 @@ export const routes: Routes = [
     component: FileCleanerConfigEditPage,
     canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
   },
-  {path: 'hosts', component: HostListPage},
   {
     path: 'settings',
     component: SettingPage,
@@ -233,6 +234,7 @@ export const routes: Routes = [
     {standalone: false, changeDetection: ChangeDetectionStrategy.Eager,
      selector: 'mtt', styleUrls: ['./app.css'], templateUrl: './app.ng.html'})
 export class Mtt implements OnDestroy {
+  readonly navigationTarget = NavigationTarget;
   sideNavExpanded = false;
   atsMajorVersionStr = '';
   netdataUrl: string = '';
@@ -242,6 +244,7 @@ export class Mtt implements OnDestroy {
   constructor(
       private readonly analytics: AnalyticsService,
       private readonly dialog: MatDialog,
+      private readonly navigationEventService: NavigationEventService,
       private readonly router: Router,
       readonly userService: UserService,
       @Inject(APP_DATA) readonly appData: AppData,
@@ -307,6 +310,23 @@ export class Mtt implements OnDestroy {
 
   trackPageView(path: string) {
     this.analytics.trackLocation(path);
+  }
+
+  /**
+   * Handles navigation menu item clicks by broadcasting the navigation target
+   * through NavigationEventService. This allows components (e.g. the embedded
+   * V6 iframe container) to reset filters and synchronize their state on demand
+   * when navigating to the root list page.
+   *
+   * @param target The navigation target page that was clicked (e.g. DEVICES or HOSTS).
+   * @return void
+   *
+   * Explanation:
+   * Emits the clicked target via NavigationEventService so that embedded views
+   * can react and reset active filters when the user re-clicks the main nav item.
+   */
+  onNavClick(target: NavigationTarget): void {
+    this.navigationEventService.notifyNavMenuClicked(target);
   }
 }
 

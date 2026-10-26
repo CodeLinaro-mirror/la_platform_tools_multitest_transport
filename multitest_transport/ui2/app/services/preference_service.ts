@@ -25,17 +25,33 @@ const USE_LAB_CONSOLE_UI_KEY = 'useLabConsoleUI';
 @Injectable({providedIn: 'root'})
 export class PreferenceService {
   readonly useLabConsoleUISubject$: BehaviorSubject<boolean>;
+  readonly useLabConsoleSearchPageSubject$: BehaviorSubject<boolean>;
 
   private readonly appData = inject(APP_DATA, {optional: true});
 
+  /**
+   * Initializes the PreferenceService.
+   *
+   * Explanation:
+   * Sets up the subjects for Lab Console UI and Search Page enablement.
+   * Subscribes to changes in these subjects to persist the preferences in localStorage,
+   * but only if the respective features are enabled in AppData.
+   */
   constructor() {
     this.useLabConsoleUISubject$ = new BehaviorSubject<boolean>(
       this.getInitialUseLabConsoleUiValue(),
+    );
+    this.useLabConsoleSearchPageSubject$ = new BehaviorSubject<boolean>(
+      this.getInitialUseLabConsoleSearchPageValue(),
     );
 
     if (this.appData?.enableLabConsoleUI) {
       this.useLabConsoleUISubject$.subscribe((value) => {
         window.localStorage.setItem(USE_LAB_CONSOLE_UI_KEY, String(value));
+        // If the LabConsole search page is enabled, useLabConsoleSearchPageSubject$ should match useLabConsoleUISubject$.
+        this.useLabConsoleSearchPageSubject$.next(
+          !!this.appData?.enableLabConsoleSearchPage && value,
+        );
       });
     }
   }
@@ -45,5 +61,21 @@ export class PreferenceService {
       return false;
     }
     return window.localStorage.getItem(USE_LAB_CONSOLE_UI_KEY) !== 'false';
+  }
+
+  /**
+   * Computes the initial value for the LabConsole search page preference.
+   *
+   * @return True if the search page feature is enabled in AppData and LabConsole UI is active.
+   *
+   * Explanation:
+   * Evaluates whether the search page toggle should default to enabled based on
+   * AppData configuration and the initial LabConsole UI preference state.
+   */
+  private getInitialUseLabConsoleSearchPageValue(): boolean {
+    return (
+      !!this.appData?.enableLabConsoleSearchPage &&
+      this.useLabConsoleUISubject$.value
+    );
   }
 }

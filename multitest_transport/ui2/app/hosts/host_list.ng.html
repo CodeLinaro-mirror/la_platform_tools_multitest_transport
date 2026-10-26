@@ -14,13 +14,12 @@
  limitations under the License.
 -->
 
-<mat-spinner class="loading-spinner" color="accent" *ngIf="isLoading"></mat-spinner>
+<mat-spinner class="loading-spinner" color="accent" *ngIf="isLoading && !(preferenceService.useLabConsoleSearchPageSubject$ | async)"></mat-spinner>
 
 <mat-toolbar class="host-list-toolbar">
   <mat-toolbar-row>
     <h1>Hosts</h1>
-    <span class="toolbar-spacer"></span>
-    <mat-form-field appearance="outline" fxFlex="300px" subscriptSizing="dynamic">
+    <mat-form-field appearance="outline" fxFlex="300px" subscriptSizing="dynamic" style="margin-left: 20px;">
       <mat-select placeholder="Lab" [(ngModel)]="selectedLab" (selectionChange)="load()">
         <mat-option *ngFor="let lab of labs" [value]="lab">
           {{ lab }}
@@ -36,10 +35,16 @@
       >
         Hosts Update
     </button>
+    <span class="toolbar-spacer"></span>
+    <div class="lab-console-ui-switch-button" *ngIf="appData.enableLabConsoleSearchPage">
+      <mat-slide-toggle class="lab-console-ui-toggle" [checked]="!(preferenceService.useLabConsoleUISubject$ | async)" (change)="preferenceService.useLabConsoleUISubject$.next(!$event.checked)" color="accent">
+        Back to Legacy UI
+      </mat-slide-toggle>
+    </div>
   </mat-toolbar-row>
 </mat-toolbar>
 
-<div class="filter">
+<div class="filter" [style.display]="(preferenceService.useLabConsoleSearchPageSubject$ | async) ? 'none' : null">
   <form [formGroup]="formGroup">
     <mat-form-field class="form-field" fxFlex>
       <mat-label>Filter</mat-label>
@@ -153,7 +158,7 @@
     </mat-menu>
   </form>
 </div>
-<div [class.loading-mask]="isLoading">
+<div [class.loading-mask]="isLoading" [style.display]="(preferenceService.useLabConsoleSearchPageSubject$ | async) ? 'none' : null">
   <mat-table
     #table
     [dataSource]="dataSource"

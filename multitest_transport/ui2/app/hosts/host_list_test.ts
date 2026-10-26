@@ -18,7 +18,7 @@ import {provideHttpClientTesting} from '@angular/common/http/testing';
 import {DebugElement, LOCALE_ID} from '@angular/core';
 import {ComponentFixture, inject, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {ActivatedRoute, convertToParamMap, Router} from '@angular/router';
+import {ActivatedRoute, convertToParamMap, provideRouter, Router} from '@angular/router';
 import {of as observableOf} from 'rxjs';
 
 import {APP_DATA} from '../services';
@@ -29,6 +29,7 @@ import {HOST_LIST_KEY} from '../services/storage_service';
 import {TfcClient} from '../services/tfc_client';
 import {FilterHintType} from '../services/tfc_models';
 import {DEFAULT_PAGE_SIZE} from '../shared/paginator';
+import {EntityType, V6IframeContainerComponent} from '../shared/v6_iframe_container_component';
 import {ActivatedRouteStub} from '../testing/activated_route_stub';
 import {getEl, getEls} from '../testing/jasmine_util';
 import {newMockAppData, newMockFilterHintList, newMockLabHostInfo} from '../testing/mtt_lab_mocks';
@@ -691,4 +692,32 @@ describe('HostList', () => {
      () => {
        expect(hostList.hasQueryStringParams(convertToParamMap({}))).toBeFalse();
      });
+
+  it('should call container.initIframeUrl when useLabConsoleUI emits true and search page is enabled', () => {
+    TestBed.resetTestingModule();
+    const containerSpy =
+        jasmine.createSpyObj('V6IframeContainerComponent', ['initIframeUrl']);
+    TestBed.configureTestingModule({
+      imports: [HostsModule, NoopAnimationsModule],
+      providers: [
+        provideHttpClientTesting(),
+        {provide: ActivatedRoute, useValue: activatedRouteSpy},
+        {
+          provide: APP_DATA,
+          useValue: Object.assign(newMockAppData(), {enableLabConsoleSearchPage: true}),
+        },
+        {provide: FeedbackService, useValue: feedbackService},
+        {provide: LOCALE_ID, useValue: 'en-US'},
+        {provide: Notifier, useValue: notifierSpy},
+        provideRouter([]),
+        {provide: TfcClient, useValue: tfcClient},
+        {provide: V6IframeContainerComponent, useValue: containerSpy},
+      ],
+    });
+    const fixture = TestBed.createComponent(HostList);
+    fixture.detectChanges();
+    const instance = fixture.componentInstance;
+    instance.preferenceService.useLabConsoleUISubject$.next(true);
+    expect(containerSpy.initIframeUrl).toHaveBeenCalledWith(EntityType.HOSTS);
+  });
 });

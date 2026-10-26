@@ -24,6 +24,10 @@ import {ActivatedRoute, convertToParamMap, ParamMap, Router} from '@angular/rout
 import {forkJoin, Observable, of as observableOf, ReplaySubject, Subscription, throwError, timer} from 'rxjs';
 import {catchError, concatMap, delay, filter, map, mergeMap, retryWhen, switchMap, take, takeUntil} from 'rxjs/operators';
 
+import {inject} from '@angular/core';
+import {PreferenceService} from '../services/preference_service';
+import {EntityType, V6IframeContainerComponent} from '../shared/v6_iframe_container_component';
+
 import {APP_DATA, AppData} from '../services';
 import {FeedbackService} from '../services/feedback_service';
 import {ALL_OPTIONS_VALUE, DEVICE_SERIAL, DeviceQueryParams, DeviceSearchCriteria, FilterOption, getDeviceSerialForDisplay, HOSTNAME, LAB_STORAGE_KEY, LabDeviceInfo, LabDeviceInfosResponse, REMOVE_DEVICE_MESSAGE, SurveyTrigger} from '../services/mtt_lab_models';
@@ -65,6 +69,9 @@ export class DeviceList implements OnChanges, OnDestroy, OnInit {
   readonly overflowListType = OverflowListType;
   readonly allOptionsValue = ALL_OPTIONS_VALUE;
   readonly getDeviceSerialForDisplay = getDeviceSerialForDisplay;
+
+  readonly preferenceService = inject(PreferenceService);
+  readonly container = inject(V6IframeContainerComponent, {optional: true});
 
   @ViewChild('table', {static: true, read: ElementRef}) table!: ElementRef;
   @ViewChild(MatTable, {static: true}) matTable!: MatTable<{}>;
@@ -312,6 +319,19 @@ export class DeviceList implements OnChanges, OnDestroy, OnInit {
     }
     this.setFilterBarParameters();
     this.initFilterBarThenLoad();
+
+    // When the user toggles the UI switcher to return to LabConsole V6 search
+    // page, re-initialize the iframe URL so that the iframe reappears and syncs
+    // any query parameters currently present in the UI2 URL.
+    if (this.appData.enableLabConsoleSearchPage && this.container) {
+      this.preferenceService.useLabConsoleUISubject$
+          .pipe(takeUntil(this.destroy))
+          .subscribe((useLabConsoleUI) => {
+            if (useLabConsoleUI && this.container) {
+              this.container.initIframeUrl(EntityType.DEVICES);
+            }
+          });
+    }
     this.loadDisplayColumnFromLocalStorage();
     this.setDisplayColumn();
     this.valueControl.valueChanges.pipe(takeUntil(this.destroy))
