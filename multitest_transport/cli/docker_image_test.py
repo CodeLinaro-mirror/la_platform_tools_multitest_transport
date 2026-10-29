@@ -51,7 +51,7 @@ class DockerImageTest(absltest.TestCase):
     self.mock_context.Run.assert_any_call(
         ["pull", image_ref],
         raise_on_failure=False,
-        timeout=600,
+        timeout=None,
     )
     self.mock_context.Run.assert_any_call(
         ["inspect", "--format={{index .RepoDigests 0}}", image_ref],

@@ -133,14 +133,16 @@ class DockerImageExecutor:
   def PullAndResolveImageRef(
       self,
       image_ref: str,
-      timeout_sec: int = 600,
+      timeout_sec: Optional[int] = None,
       service_account_json_key_path: Optional[str] = None,
   ) -> str:
     """Pulls a Docker image and resolves it to a complete, immutable reference.
 
     Args:
       image_ref: Docker image reference (repo/image:tag or repo/image@sha256:).
-      timeout_sec: Timeout for pull in seconds.
+      timeout_sec: Optional timeout for the pull in seconds. Defaults to None
+        (no timeout): a first-time pull downloads every layer of a multi-GB
+        image and can take well over 10 minutes on slow lab networks.
       service_account_json_key_path: Optional GCP service account JSON key path
         used to authenticate to the target registry before pulling.
 
