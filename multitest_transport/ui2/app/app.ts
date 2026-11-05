@@ -20,7 +20,7 @@ import {MAT_DIALOG_DATA, MatDialog, MatDialogRef} from '@angular/material/dialog
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {BrowserModule} from '@angular/platform-browser';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
-import {mapToCanDeactivate, NavigationEnd, Router, RouterModule, Routes} from '@angular/router';
+import {IsActiveMatchOptions, mapToCanDeactivate, NavigationEnd, Router, RouterModule, Routes} from '@angular/router';
 import {ReplaySubject} from 'rxjs';
 import {takeUntil} from 'rxjs/operators';
 
@@ -47,6 +47,7 @@ import {V6IframeContainerComponent} from './shared/v6_iframe_container_component
 import {NotesModule} from './notes/notes_module';
 import {AnalyticsInterceptor, AnalyticsService} from './services/analytics_service';
 import {APP_DATA, AppData, convertLocalUrl} from './services/app_data';
+import {CommonParamsService} from './services/common_params_service';
 import {FILE_BROWSER_PATH} from './services/file_service';
 import {IapInterceptor} from './services/iap_interceptor';
 import {NavigationEventService, NavigationTarget} from './services/navigation_event_service';
@@ -235,6 +236,17 @@ export const routes: Routes = [
      selector: 'mtt', styleUrls: ['./app.css'], templateUrl: './app.ng.html'})
 export class Mtt implements OnDestroy {
   readonly navigationTarget = NavigationTarget;
+  /**
+   * Matches the active Devices / Hosts left navigation menu items by their path
+   * only, ignoring the preserved common query parameters (e.g. debug) bound to
+   * their links.
+   */
+  readonly navLinkActiveOptions: IsActiveMatchOptions = {
+    paths: 'subset',
+    queryParams: 'ignored',
+    fragment: 'ignored',
+    matrixParams: 'ignored',
+  };
   sideNavExpanded = false;
   atsMajorVersionStr = '';
   netdataUrl: string = '';
@@ -243,6 +255,7 @@ export class Mtt implements OnDestroy {
 
   constructor(
       private readonly analytics: AnalyticsService,
+      private readonly commonParamsService: CommonParamsService,
       private readonly dialog: MatDialog,
       private readonly navigationEventService: NavigationEventService,
       private readonly router: Router,
@@ -327,6 +340,24 @@ export class Mtt implements OnDestroy {
    */
   onNavClick(target: NavigationTarget): void {
     this.navigationEventService.notifyNavMenuClicked(target);
+  }
+
+  /**
+   * Returns the common query parameters (e.g. debug, fake_data) preserved by
+   * the Devices / Hosts left navigation menu links, which embed the V6 iframe,
+   * so that they persist in the browser URL across the entire SPA lifecycle
+   * (not only in the embedded V6 iframe).
+   *
+   * @return Immutable record of the common query parameters captured at SPA
+   *     bootstrap, or an empty record if none is active.
+   *
+   * Explanation:
+   * Clicking the Devices / Hosts left navigation menu item resets all query
+   * parameters except the common ones, which are captured once by
+   * CommonParamsService.
+   */
+  getPreservedQueryParams(): Readonly<Record<string, string>> {
+    return this.commonParamsService.getCommonParams();
   }
 }
 

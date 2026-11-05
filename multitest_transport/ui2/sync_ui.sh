@@ -59,4 +59,12 @@ do
   sleep 10
 done
 
+# Reload Gunicorn workers so Flask clears its in-memory Jinja2 cache for index.html.
+docker exec mtt bash -c '
+  launcher_pid=$(pgrep -o -f "multitest_transport.app_helper.launcher")
+  if [ -n "${launcher_pid}" ]; then
+    pkill -HUP -P "${launcher_pid}" || true
+  fi
+' || true
+
 echo "Sync complete. Refresh your browser to see the changes!!!!!!"

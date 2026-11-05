@@ -25,6 +25,7 @@ export {
   AnalyticsService,
 } from './analytics_service';
 export {APP_DATA, AppData} from './app_data';
+export {CommonParamsService} from './common_params_service';
 export {FeedbackService} from './feedback_service';
 export {
   NavigationEventService,

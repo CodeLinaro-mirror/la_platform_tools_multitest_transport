@@ -25,6 +25,7 @@ import {filter, finalize, switchMap, takeUntil} from 'rxjs/operators';
 import {V6IframeContainerComponent, EntityType} from '../shared/v6_iframe_container_component';
 
 import {APP_DATA} from '../services/app_data';
+import {CommonParamsService} from '../services/common_params_service';
 import {FeedbackService} from '../services/feedback_service';
 import {LabHostInfo, NoteType, SurveyTrigger} from '../services/mtt_lab_models';
 import {Notifier} from '../services/notifier';
@@ -73,6 +74,7 @@ export class HostDetails implements AfterViewChecked, OnChanges, OnDestroy,
   hostnamesStorageKey = '';
 
   private readonly cdRef = inject(ChangeDetectorRef);
+  private readonly commonParamsService = inject(CommonParamsService);
   private readonly feedbackService = inject(FeedbackService);
   private readonly liveAnnouncer = inject(LiveAnnouncer);
   private readonly location = inject(Location);
@@ -211,10 +213,16 @@ export class HostDetails implements AfterViewChecked, OnChanges, OnDestroy,
     this.feedbackService.startSurvey(SurveyTrigger.HOST_NAVIGATION);
   }
 
-  /** Updates current URL string. */
+  /**
+   * Updates current URL string, preserving the common query parameters (e.g.
+   * debug, fake_data) captured at SPA bootstrap.
+   */
   updateUrlByHostname(hostname: string) {
     const url = this.router.serializeUrl(
         this.router.createUrlTree(['/hosts', hostname]));
-    this.router.navigate([url], {replaceUrl: true});
+    this.router.navigate([url], {
+      queryParams: this.commonParamsService.getCommonParams(),
+      replaceUrl: true,
+    });
   }
 }

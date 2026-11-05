@@ -25,17 +25,15 @@ import {ActivatedRoute, provideRouter, Router} from '@angular/router';
 import {BehaviorSubject} from 'rxjs';
 
 import {APP_DATA} from '../services/app_data';
+import {CommonParamsService} from '../services/common_params_service';
 import {
   NavigationEventService,
   NavigationTarget,
 } from '../services/navigation_event_service';
 import {PreferenceService} from '../services/preference_service';
 import {
-  captureInitialPersistentQueryParams,
   EntityType,
-  isAllowedQueryParam,
   MessagePage,
-  setInitialPersistentQueryParams,
   V6IframeContainerComponent,
 } from './v6_iframe_container_component';
 
@@ -44,9 +42,11 @@ describe('V6IframeContainerComponent', () => {
   let fixture: ComponentFixture<V6IframeContainerComponent>;
   let router: Router;
   let useLabConsoleUISubject$: BehaviorSubject<boolean>;
+  // Common query params (e.g. debug, fake_data) captured at SPA bootstrap.
+  let commonParams: Record<string, string>;
 
   beforeEach(async () => {
-    setInitialPersistentQueryParams({});
+    commonParams = {};
     useLabConsoleUISubject$ = new BehaviorSubject<boolean>(true);
     const mockPreferenceService = {
       useLabConsoleUISubject$,
@@ -71,6 +71,10 @@ describe('V6IframeContainerComponent', () => {
         {
           provide: APP_DATA,
           useValue: {enableLabConsoleUI: true, enableLabConsoleSearchPage: true},
+        },
+        {
+          provide: CommonParamsService,
+          useValue: {getCommonParams: () => commonParams},
         },
       ],
     }).compileComponents();
@@ -209,7 +213,7 @@ describe('V6IframeContainerComponent', () => {
     });
 
     it('should handle NAVIGATED message with persistent query params', () => {
-      setInitialPersistentQueryParams({'debug': 'true', 'fake_data': '1'});
+      commonParams = {'debug': 'true', 'fake_data': '1'};
       const event = new MessageEvent('message', {
         data: {
           type: 'NAVIGATED',
@@ -226,7 +230,7 @@ describe('V6IframeContainerComponent', () => {
 
     it('should handle SEARCH_STATE_CHANGED message merging persistent query params', () => {
       const navigateSpy = spyOn(router, 'navigate');
-      setInitialPersistentQueryParams({'debug': 'true', 'fake_data': '1'});
+      commonParams = {'debug': 'true', 'fake_data': '1'};
       const event = new MessageEvent('message', {
         data: {
           type: 'SEARCH_STATE_CHANGED',
@@ -246,7 +250,7 @@ describe('V6IframeContainerComponent', () => {
     });
 
     it('should handle GET_EXTERNAL_URL message with persistent query params', () => {
-      setInitialPersistentQueryParams({'debug': 'true', 'fake_data': '1'});
+      commonParams = {'debug': 'true', 'fake_data': '1'};
       const postMessageSpy = jasmine.createSpy('postMessage');
       const mockSource = {postMessage: postMessageSpy};
       const event = new MessageEvent('message', {
@@ -335,64 +339,9 @@ describe('V6IframeContainerComponent', () => {
     });
   });
 
-  describe('isAllowedQueryParam', () => {
-    it('should allow search params only on non-detail pages', () => {
-      expect(isAllowedQueryParam('f', false)).toBeTrue();
-      expect(isAllowedQueryParam('f', true)).toBeFalse();
-      expect(isAllowedQueryParam('gb', false)).toBeTrue();
-      expect(isAllowedQueryParam('gb', true)).toBeFalse();
-    });
-
-    it('should allow common allowed params on both search and detail pages', () => {
-      expect(isAllowedQueryParam('debug', false)).toBeTrue();
-      expect(isAllowedQueryParam('debug', true)).toBeTrue();
-      expect(isAllowedQueryParam('is_embedded_mode', false)).toBeTrue();
-      expect(isAllowedQueryParam('is_embedded_mode', true)).toBeTrue();
-      expect(isAllowedQueryParam('fake_data', false)).toBeTrue();
-      expect(isAllowedQueryParam('fake_data', true)).toBeTrue();
-    });
-
-    it('should reject unallowed params on all pages', () => {
-      expect(isAllowedQueryParam('fleet', false)).toBeFalse();
-      expect(isAllowedQueryParam('fleet', true)).toBeFalse();
-      expect(isAllowedQueryParam('lab', false)).toBeFalse();
-      expect(isAllowedQueryParam('lab', true)).toBeFalse();
-      expect(isAllowedQueryParam('other', false)).toBeFalse();
-      expect(isAllowedQueryParam('other', true)).toBeFalse();
-      expect(isAllowedQueryParam('q', false)).toBeFalse();
-      expect(isAllowedQueryParam('q', true)).toBeFalse();
-      expect(isAllowedQueryParam('universe', false)).toBeFalse();
-      expect(isAllowedQueryParam('universe', true)).toBeFalse();
-    });
-  });
-
-  describe('captureInitialPersistentQueryParams', () => {
-    it('should capture debug and fake_data when set to true or 1', () => {
-      const res = captureInitialPersistentQueryParams('?debug=true&fake_data=1&other=test');
-      expect(res).toEqual({'debug': 'true', 'fake_data': '1'});
-    });
-
-    it('should ignore params when value is not true or 1', () => {
-      const res = captureInitialPersistentQueryParams('?debug=false&fake_data=0');
-      expect(res).toEqual({});
-    });
-
-    it('should ignore params with other values', () => {
-      const res = captureInitialPersistentQueryParams('?debug=foo&fake_data=bar');
-      expect(res).toEqual({});
-    });
-
-    it('should handle empty or missing search string', () => {
-      expect(captureInitialPersistentQueryParams('')).toEqual({});
-      expect(captureInitialPersistentQueryParams('?')).toEqual({});
-      expect(captureInitialPersistentQueryParams()).toEqual({});
-      expect(captureInitialPersistentQueryParams(undefined)).toEqual({});
-    });
-  });
-
   describe('persistent query parameters propagation', () => {
     it('should append persistent query params to iframe URL in initIframeUrl', () => {
-      setInitialPersistentQueryParams({'debug': 'true', 'fake_data': '1'});
+      commonParams = {'debug': 'true', 'fake_data': '1'};
       component.initIframeUrl(EntityType.HOSTS, 'host1');
       const urlStr = component.iframeUrl?.toString() || '';
       expect(urlStr).toContain('debug=true');
@@ -401,7 +350,7 @@ describe('V6IframeContainerComponent', () => {
     });
 
     it('should append persistent query params in navigateForEntity', fakeAsync(() => {
-      setInitialPersistentQueryParams({'debug': 'true', 'fake_data': '1'});
+      commonParams = {'debug': 'true', 'fake_data': '1'};
       const iframeNavigateSpy = spyOn(component, 'iframeNavigate');
 
       component.navigateForEntity(EntityType.HOSTS, 'host1');
@@ -413,7 +362,7 @@ describe('V6IframeContainerComponent', () => {
     }));
 
     it('should append persistent query params in navigateForSearchReset', () => {
-      setInitialPersistentQueryParams({'debug': 'true', 'fake_data': '1'});
+      commonParams = {'debug': 'true', 'fake_data': '1'};
       spyOnProperty(router, 'url', 'get').and.returnValue('/devices?f=filter1');
       const iframeNavigateSpy = spyOn(component, 'iframeNavigate');
       const navService = TestBed.inject(NavigationEventService);
@@ -426,7 +375,7 @@ describe('V6IframeContainerComponent', () => {
     });
 
     it('should not overwrite query params from current route if already present', fakeAsync(() => {
-      setInitialPersistentQueryParams({'debug': 'true'});
+      commonParams = {'debug': 'true'};
       const activatedRoute = TestBed.inject(ActivatedRoute);
       (activatedRoute.snapshot as unknown as {queryParams: Record<string, string>}).queryParams = {
         'debug': '1',

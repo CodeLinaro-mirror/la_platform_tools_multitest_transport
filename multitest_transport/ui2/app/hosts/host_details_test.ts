@@ -24,6 +24,7 @@ import {ActivatedRoute, convertToParamMap, Router} from '@angular/router';
 import {BehaviorSubject, of as observableOf} from 'rxjs';
 
 import {APP_DATA} from '../services';
+import {CommonParamsService} from '../services/common_params_service';
 import {FeedbackService} from '../services/feedback_service';
 import {SurveyTrigger} from '../services/mtt_lab_models';
 import {Notifier} from '../services/notifier';
@@ -47,6 +48,7 @@ describe('HostDetails', () => {
   let containerSpy: jasmine.SpyObj<V6IframeContainerComponent>;
   let preferenceServiceSpy: jasmine.SpyObj<PreferenceService>;
   let useLabConsoleUISubject$: BehaviorSubject<boolean>;
+  let commonParams: Record<string, string>;
 
   const hostname = 'host1';
   const hostInfo = newMockDeviceInfosResponse(hostname);
@@ -55,6 +57,7 @@ describe('HostDetails', () => {
   };
 
   beforeEach(() => {
+    commonParams = {};
     feedbackService = jasmine.createSpyObj('feedbackService', ['startSurvey']);
     routerSpy = jasmine.createSpyObj(
         'Router',
@@ -110,6 +113,10 @@ describe('HostDetails', () => {
           useValue: Object.assign(newMockAppData(), {enableLabConsoleUI: true}),
         },
         {provide: FeedbackService, useValue: feedbackService},
+        {
+          provide: CommonParamsService,
+          useValue: {getCommonParams: () => commonParams},
+        },
         {provide: LOCALE_ID, useValue: 'en-US'},
         {provide: MAT_DIALOG_DATA, useValue: {}},
         {provide: Notifier, useValue: notifierSpy},
@@ -152,7 +159,17 @@ describe('HostDetails', () => {
   it('should navigate to the selected host when selection change', () => {
     hostDetails.load(hostname, true);
     expect(routerSpy.navigate).toHaveBeenCalledWith(['/hosts/' + hostname], {
+      queryParams: {},
       replaceUrl: true
+    });
+  });
+
+  it('should preserve the common query params when selection change', () => {
+    commonParams = {'debug': 'true', 'fake_data': '1'};
+    hostDetails.load(hostname, true);
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/hosts/' + hostname], {
+      queryParams: {'debug': 'true', 'fake_data': '1'},
+      replaceUrl: true,
     });
   });
 

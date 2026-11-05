@@ -132,6 +132,7 @@ ng_module(
         "//third_party/javascript/safevalues",
         "//third_party/javascript/safevalues/dom",
         "//multitest_transport/ui2/app/services",
+        "//multitest_transport/ui2/app/shared/navigation",
     ],
 )
 

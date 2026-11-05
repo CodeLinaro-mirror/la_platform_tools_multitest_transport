@@ -24,6 +24,7 @@ import {takeUntil} from 'rxjs/operators';
 import {EntityType, V6IframeContainerComponent} from '../shared/v6_iframe_container_component';
 
 import {APP_DATA, AppData} from '../services/app_data';
+import {CommonParamsService} from '../services/common_params_service';
 import {FeedbackService} from '../services/feedback_service';
 import {LabDeviceInfo, NoteType, SurveyTrigger} from '../services/mtt_lab_models';
 import {Notifier} from '../services/notifier';
@@ -63,6 +64,7 @@ export class DeviceDetails implements OnChanges, OnDestroy, OnInit {
   deviceSerialsWithDisplay: DeviceSerialWithDisplay[] = [];
   data?: LabDeviceInfo;
 
+  private readonly commonParamsService = inject(CommonParamsService);
   private readonly feedbackService = inject(FeedbackService);
   private readonly liveAnnouncer = inject(LiveAnnouncer);
   private readonly notifier = inject(Notifier);
@@ -172,10 +174,16 @@ export class DeviceDetails implements OnChanges, OnDestroy, OnInit {
     this.feedbackService.startSurvey(SurveyTrigger.DEVICE_NAVIGATION);
   }
 
-  /** Updates current URL string. */
+  /**
+   * Updates current URL string, preserving the common query parameters (e.g.
+   * debug, fake_data) captured at SPA bootstrap.
+   */
   updateUrlByDeviceSerial(deviceSerial: string) {
     const url = this.router.serializeUrl(
         this.router.createUrlTree(['/devices', deviceSerial]));
-    this.router.navigate([url], {replaceUrl: true});
+    this.router.navigate([url], {
+      queryParams: this.commonParamsService.getCommonParams(),
+      replaceUrl: true,
+    });
   }
 }

@@ -25,6 +25,7 @@ import {SurveyTrigger} from 'google3/third_party/py/multitest_transport/ui2/app/
 import {getEl, getEls, getTextContent} from 'google3/third_party/py/multitest_transport/ui2/app/testing/jasmine_util';
 import {BehaviorSubject, of as observableOf} from 'rxjs';
 
+import {CommonParamsService} from '../services/common_params_service';
 import {FeedbackService} from '../services/feedback_service';
 import {PreferenceService} from '../services/preference_service';
 import {EntityType, V6IframeContainerComponent} from '../shared/v6_iframe_container_component';
@@ -42,12 +43,14 @@ describe('DeviceDetails', () => {
   let containerSpy: jasmine.SpyObj<V6IframeContainerComponent>;
   let preferenceServiceSpy: jasmine.SpyObj<PreferenceService>;
   let useLabConsoleUISubject$: BehaviorSubject<boolean>;
+  let commonParams: Record<string, string>;
 
   const deviceSerial = 'device1';
   const queryParams = {
     deviceSerials: [deviceSerial, 'device2'],
   };
   beforeEach(() => {
+    commonParams = {};
     feedbackService = jasmine.createSpyObj('feedbackService', ['startSurvey']);
     routerSpy = jasmine.createSpyObj(
         'Router',
@@ -88,6 +91,10 @@ describe('DeviceDetails', () => {
           },
         },
         {provide: FeedbackService, useValue: feedbackService},
+        {
+          provide: CommonParamsService,
+          useValue: {getCommonParams: () => commonParams},
+        },
         {provide: PreferenceService, useValue: preferenceServiceSpy},
         {
           provide: Router,
@@ -128,7 +135,19 @@ describe('DeviceDetails', () => {
     routerSpy.serializeUrl.and.returnValue('/devices/' + device);
     deviceDetails.load(device, true);
     expect(routerSpy.navigate).toHaveBeenCalledWith(['/devices/' + device], {
+      queryParams: {},
       replaceUrl: true
+    });
+  });
+
+  it('should preserve the common query params when selection change', () => {
+    commonParams = {'debug': 'true', 'fake_data': '1'};
+    const device = 'device2';
+    routerSpy.serializeUrl.and.returnValue('/devices/' + device);
+    deviceDetails.load(device, true);
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/devices/' + device], {
+      queryParams: {'debug': 'true', 'fake_data': '1'},
+      replaceUrl: true,
     });
   });
 
