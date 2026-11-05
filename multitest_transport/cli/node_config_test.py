@@ -14,6 +14,7 @@
 
 """Unit tests for multitest_transport.cli.node_config declarative configuration layer."""
 
+import json
 import os
 import shutil
 import tempfile
@@ -439,12 +440,12 @@ service_account_key_path: {key_path}
 
     def FetchSideEffect(path):
       if "tenant-cfg" in path:
-        return tenant_yaml
+        return tenant_yaml, "20260917_163105"
       if "node-cfg" in path:
-        return node_yaml
-      return ""
+        return node_yaml, "20260918_000001"
+      return "", ""
 
-    mock_client.FetchUnformatted.side_effect = FetchSideEffect
+    mock_client.FetchUnformattedWithVersion.side_effect = FetchSideEffect
     mock_from_key.return_value = mock_client
 
     var_config_dir = os.path.join(self.test_dir, "var_config")
@@ -464,6 +465,14 @@ service_account_key_path: {key_path}
     self.assertTrue(
         os.path.exists(os.path.join(var_config_dir, "mtt_flags.yaml"))
     )
+    versions_path = os.path.join(
+        var_config_dir, node_config.CONFIG_VERSIONS_FILENAME
+    )
+    with open(versions_path, "r", encoding="utf-8") as f:
+      self.assertEqual(
+          json.load(f),
+          {"tenant_config_version": "20260917_163105"},
+      )
 
   @mock.patch.object(
       gcp_param_manager.GcpParamManagerClient, "FromServiceAccountKeyFile"
@@ -478,7 +487,10 @@ docker_compose_env:
 lab_server_opts:
   remote_opt: "cloud_val"
 """
-    mock_client.FetchUnformatted.return_value = yaml_payload
+    mock_client.FetchUnformattedWithVersion.return_value = (
+        yaml_payload,
+        "v_tenant_1",
+    )
     mock_from_key.return_value = mock_client
 
     key_path = os.path.join(self.test_dir, "key.json")
@@ -495,7 +507,7 @@ service_account_key_path: {key_path}
     manager = node_config._NodeConfigManager()
     dto = manager.ResolveFromManifest(manifest_file)
 
-    mock_client.FetchUnformatted.assert_called_once_with(
+    mock_client.FetchUnformattedWithVersion.assert_called_once_with(
         "projects/123/locations/global/parameters/tenant-cfg/versions/latest"
     )
     self.assertEqual(dto.docker_compose_env.get("GCP_PARAM_ENV"), "from_cloud")
@@ -596,7 +608,10 @@ service_account_key_path: {key_path}
     mock_client = mock.create_autospec(
         gcp_param_manager.GcpParamManagerClient, instance=True
     )
-    mock_client.FetchUnformatted.return_value = "image_name: ats\ntag: prod\n"
+    mock_client.FetchUnformattedWithVersion.return_value = (
+        "image_name: ats\ntag: prod\n",
+        "1",
+    )
     mock_from_key.return_value = mock_client
 
     manager = node_config._NodeConfigManager()
@@ -641,13 +656,16 @@ service_account_key_path: {key_path}
     mock_client = mock.create_autospec(
         gcp_param_manager.GcpParamManagerClient, instance=True
     )
-    mock_client.FetchUnformatted.return_value = (
-        "lab_config_args:\n"
-        "  lab_name: gcp_lab\n"
-        "cluster_config_args:\n"
-        "  cluster_name: gcp_cluster\n"
-        "host_config_args:\n"
-        "  hostname: gcp_host\n"
+    mock_client.FetchUnformattedWithVersion.return_value = (
+        (
+            "lab_config_args:\n"
+            "  lab_name: gcp_lab\n"
+            "cluster_config_args:\n"
+            "  cluster_name: gcp_cluster\n"
+            "host_config_args:\n"
+            "  hostname: gcp_host\n"
+        ),
+        "1",
     )
     mock_from_key.return_value = mock_client
 
@@ -924,7 +942,7 @@ service_account_key_path: {key_path}
     mock_client = mock.create_autospec(
         gcp_param_manager.GcpParamManagerClient, instance=True
     )
-    mock_client.FetchUnformatted.return_value = payload
+    mock_client.FetchUnformattedWithVersion.return_value = (payload, "1")
     mock_from_key.return_value = mock_client
     return os.path.join(self.test_dir, "var_config")
 
@@ -1332,6 +1350,228 @@ service_account_key_path: {key_path}
       ):
         # A cache probe must never be the reason a node fails to materialize.
         self.assertFalse(node_config._HasCacheVolume())
+
+  # =========================================================================
+  # Join record check and resolved config versions
+  # =========================================================================
+
+  def _WriteJoinedManifest(
+      self,
+      mock_from_key,
+      *,
+      tenant_payload: str = "lab_config_args:\n  lab_name: l1\n",
+      pool_payload: str = (
+          "image_name: ats\n"
+          "tag: latest\n"
+          "cluster_config_args:\n"
+          "  omni_mode_usage: private_usage\n"
+      ),
+      node_payload: str = (
+          "docker_compose_env:\n"
+          "  ACCEPTOR_TARGET: wss://ep1.proj.cloud.goog\n"
+          "cluster_config_args:\n"
+          "  omni_mode_usage: private_usage\n"
+          "host_config_args:\n"
+          "  hostname: h1\n"
+      ),
+      tenant_ver: str = "20260917_163105",
+      pool_ver: str = "20261002_091200",
+      node_ver: str = "20261003_010203",
+  ) -> str:
+    key_path = os.path.join(self.test_dir, "key.json")
+    with open(key_path, "w", encoding="utf-8") as f:
+      f.write('{"type": "service_account"}')
+    manifest_path = os.path.join(self.test_dir, "manifest.yaml")
+    with open(manifest_path, "w", encoding="utf-8") as f:
+      f.write(
+          f"service_account_key_path: {key_path}\n"
+          "acceptor_target: wss://ep1.proj.cloud.goog\n"
+          "{% set tenant ="
+          " param_manager('projects/p/locations/global/parameters/"
+          "tenant_config/versions/latest', 'tenant') %}\n"
+          "{% set pool ="
+          " param_manager('projects/p/locations/global/parameters/"
+          "private_usage_pool_config/versions/latest', 'pool') %}\n"
+          "{% set node ="
+          " param_manager('projects/p/locations/global/parameters/"
+          "h1_node_config/versions/latest', 'node') %}\n"
+      )
+
+    mock_client = mock.create_autospec(
+        gcp_param_manager.GcpParamManagerClient, instance=True, spec_set=True
+    )
+
+    def FetchSideEffect(path):
+      if "tenant_config" in path:
+        return tenant_payload, tenant_ver
+      if "private_usage_pool_config" in path:
+        return pool_payload, pool_ver
+      if "h1_node_config" in path:
+        return node_payload, node_ver
+      raise AssertionError(f"Unexpected parameter path: {path}")
+
+    mock_client.FetchUnformattedWithVersion.side_effect = FetchSideEffect
+    mock_from_key.return_value = mock_client
+    return os.path.join(self.test_dir, "var_config")
+
+  @mock.patch.object(
+      gcp_param_manager.GcpParamManagerClient, "FromServiceAccountKeyFile"
+  )
+  def testMaterializeNodeConfig_joinRecordMatchesAndWritesVersions(
+      self, mock_from_key
+  ):
+    var_config_dir = self._WriteJoinedManifest(mock_from_key)
+
+    node_config.MaterializeNodeConfig(
+        static_dir=self.test_dir,
+        var_config_dir=var_config_dir,
+        role=node_config.NodeRole.WORKER,
+    )
+
+    versions_path = os.path.join(
+        var_config_dir, node_config.CONFIG_VERSIONS_FILENAME
+    )
+    with open(versions_path, "r", encoding="utf-8") as f:
+      self.assertEqual(
+          json.load(f),
+          {
+              "tenant_config_version": "20260917_163105",
+              "pool_config_version": "20261002_091200",
+          },
+      )
+
+  @mock.patch.object(
+      gcp_param_manager.GcpParamManagerClient, "FromServiceAccountKeyFile"
+  )
+  def testMaterializeNodeConfig_joinRecordAcceptorMismatchFailsBeforeWrite(
+      self, mock_from_key
+  ):
+    var_config_dir = self._WriteJoinedManifest(
+        mock_from_key,
+        node_payload=(
+            "docker_compose_env:\n"
+            "  ACCEPTOR_TARGET: wss://other.proj.cloud.goog\n"
+            "cluster_config_args:\n"
+            "  omni_mode_usage: private_usage\n"
+        ),
+    )
+
+    with self.assertRaisesRegex(
+        node_config.ConfigValidationError,
+        "controller/pool in Parameter Manager differs from what this host"
+        " joined; re-run `mtt node worker join`",
+    ):
+      node_config.MaterializeNodeConfig(
+          static_dir=self.test_dir,
+          var_config_dir=var_config_dir,
+          role=node_config.NodeRole.WORKER,
+      )
+
+    self.assertFalse(os.path.exists(var_config_dir))
+
+  @mock.patch.object(
+      gcp_param_manager.GcpParamManagerClient, "FromServiceAccountKeyFile"
+  )
+  def testMaterializeNodeConfig_joinRecordMissingAcceptorFailsBeforeWrite(
+      self, mock_from_key
+  ):
+    # Node scope deleted ACCEPTOR_TARGET, and tenant scope sets another one.
+    var_config_dir = self._WriteJoinedManifest(
+        mock_from_key,
+        tenant_payload=(
+            "docker_compose_env:\n"
+            "  ACCEPTOR_TARGET: wss://inherited.proj.cloud.goog\n"
+        ),
+        node_payload="host_config_args:\n  hostname: h1\n",
+    )
+
+    with self.assertRaisesRegex(
+        node_config.ConfigValidationError,
+        "re-run `mtt node worker join`",
+    ):
+      node_config.MaterializeNodeConfig(
+          static_dir=self.test_dir,
+          var_config_dir=var_config_dir,
+          role=node_config.NodeRole.WORKER,
+      )
+
+    self.assertFalse(os.path.exists(var_config_dir))
+
+  @mock.patch.object(
+      gcp_param_manager.GcpParamManagerClient, "FromServiceAccountKeyFile"
+  )
+  def testMaterializeNodeConfig_joinRecordPoolMismatchFailsBeforeWrite(
+      self, mock_from_key
+  ):
+    var_config_dir = self._WriteJoinedManifest(
+        mock_from_key,
+        node_payload=(
+            "docker_compose_env:\n"
+            "  ACCEPTOR_TARGET: wss://ep1.proj.cloud.goog\n"
+            "cluster_config_args:\n"
+            "  omni_mode_usage: dda\n"
+        ),
+    )
+
+    with self.assertRaisesRegex(
+        node_config.ConfigValidationError,
+        "re-run `mtt node worker join`",
+    ):
+      node_config.MaterializeNodeConfig(
+          static_dir=self.test_dir,
+          var_config_dir=var_config_dir,
+          role=node_config.NodeRole.WORKER,
+      )
+
+    self.assertFalse(os.path.exists(var_config_dir))
+
+  @mock.patch.object(
+      gcp_param_manager.GcpParamManagerClient, "FromServiceAccountKeyFile"
+  )
+  def testMaterializeNodeConfig_joinRecordHostLevelPoolOverrideFails(
+      self, mock_from_key
+  ):
+    var_config_dir = self._WriteJoinedManifest(
+        mock_from_key,
+        node_payload=(
+            "docker_compose_env:\n"
+            "  ACCEPTOR_TARGET: wss://ep1.proj.cloud.goog\n"
+            "cluster_config_args:\n"
+            "  omni_mode_usage: private_usage\n"
+            "host_config_args:\n"
+            "  hostname: h1\n"
+            "  omni_mode_usage: dda\n"
+        ),
+    )
+
+    with self.assertRaisesRegex(
+        node_config.ConfigValidationError,
+        "re-run `mtt node worker join`",
+    ):
+      node_config.MaterializeNodeConfig(
+          static_dir=self.test_dir,
+          var_config_dir=var_config_dir,
+          role=node_config.NodeRole.WORKER,
+      )
+
+    self.assertFalse(os.path.exists(var_config_dir))
+
+  def testMaterializeNodeConfig_staticRemovesStaleConfigVersions(self):
+    var_config_dir = self._WriteStaticConfig()
+    os.makedirs(var_config_dir, exist_ok=True)
+    stale_versions = os.path.join(
+        var_config_dir, node_config.CONFIG_VERSIONS_FILENAME
+    )
+    with open(stale_versions, "w", encoding="utf-8") as f:
+      json.dump({"tenant_config_version": "old"}, f)
+
+    node_config.MaterializeNodeConfig(
+        static_dir=self.test_dir,
+        var_config_dir=var_config_dir,
+        role=node_config.NodeRole.WORKER,
+    )
+
+    self.assertFalse(os.path.exists(stale_versions))
 
 
 if __name__ == "__main__":

@@ -15,15 +15,18 @@
 """Release directory management data plane for MTT Node.
 
 Manages template configs, tunnel compose environment files, versioned release
-directories under <baseDir>/core/releases/<digest>/, atomic symlink transitions
-between staging and active releases, path getters, and release pruning.
+directories under <baseDir>/core/releases/<image_ref>-<config_hash>/, atomic
+symlink transitions between staging and active releases, path getters, and
+release pruning.
 """
 
+import hashlib
+import json
 import logging
 import os
 import re
 import shutil
-from typing import Optional
+from typing import Any, Optional
 import uuid
 from multitest_transport.cli import node_permissions
 import yaml
@@ -34,12 +37,68 @@ _LAB_CONFIG_FILENAME = "lab_config.yaml"
 _UNPINNED_FLAGS_FILENAME = "mtt_flags.yaml"
 _PINNED_FLAGS_FILENAME = "pinned_mtt_flags.yaml"
 _COMPOSE_ENV_FILENAME = "docker-compose.env"
+_CONFIG_VERSIONS_FILENAME = "config_versions.json"
+_REVISION_FILENAME = "revision.json"
+_CONFIG_HASH_LEN = 12
 
 
 def _SanitizeImageRef(image_ref: str) -> str:
   """Sanitizes an image reference into a filesystem-safe directory name."""
   sanitized = re.sub(r"[^a-zA-Z0-9._-]", "_", image_ref)
   return sanitized.strip("_")
+
+
+def _HashConfigInputs(lab_config_path: str, flags: list[str]) -> str:
+  """Computes a short deterministic SHA-256 hash of lab_config and flags."""
+  hasher = hashlib.sha256()
+  if os.path.exists(lab_config_path):
+    hasher.update(b"lab_config:present\n")
+    with open(lab_config_path, "rb") as f:
+      hasher.update(f.read())
+  else:
+    hasher.update(b"lab_config:absent\n")
+  hasher.update(b"\nflags:")
+  hasher.update(
+      json.dumps([str(f) for f in flags], separators=(",", ":")).encode("utf-8")
+  )
+  return hasher.hexdigest()[:_CONFIG_HASH_LEN]
+
+
+def _BuildRevisionDict(image_ref: str, src_dir: str) -> dict[str, str]:
+  """Builds the revision.json payload from image_ref and config_versions.json."""
+  revision: dict[str, str] = {"build": image_ref}
+  versions_path = os.path.join(src_dir, _CONFIG_VERSIONS_FILENAME)
+  if os.path.exists(versions_path):
+    try:
+      with open(versions_path, "r", encoding="utf-8") as f:
+        versions_data = json.load(f)
+      if isinstance(versions_data, dict):
+        for key in ("tenant_config_version", "pool_config_version"):
+          val = versions_data.get(key)
+          if val:
+            revision[key] = str(val)
+    except (OSError, ValueError):
+      logger.warning(
+          "Could not read %s; writing build-only revision.", versions_path
+      )
+  return revision
+
+
+def _WriteJsonWithMode(path: str, data: dict[str, Any], mode: int) -> None:
+  """Atomically writes a JSON file with explicit file mode."""
+  parent = os.path.dirname(path)
+  temp_path = os.path.join(parent, f".tmp_{uuid.uuid4().hex[:8]}.json")
+  try:
+    with open(temp_path, "w", encoding="utf-8") as f:
+      json.dump(data, f, indent=2)
+    os.chmod(temp_path, mode)
+    os.replace(temp_path, path)
+  finally:
+    if os.path.exists(temp_path):
+      try:
+        os.remove(temp_path)
+      except OSError:
+        pass
 
 
 class ReleaseDirectoryManager:
@@ -86,6 +145,11 @@ class ReleaseDirectoryManager:
     return os.path.join(self._config_dir, _COMPOSE_ENV_FILENAME)
 
   @property
+  def config_versions_path(self) -> str:
+    """Returns the path to config_versions.json in the config directory."""
+    return os.path.join(self._config_dir, _CONFIG_VERSIONS_FILENAME)
+
+  @property
   def tunnel_compose_env_path(self) -> str:
     """Returns applied compose env path in tunnel/ (snapshot read by compose)."""
     return os.path.join(self._tunnel_dir, _COMPOSE_ENV_FILENAME)
@@ -101,6 +165,11 @@ class ReleaseDirectoryManager:
     return os.path.join(self._active_symlink, _PINNED_FLAGS_FILENAME)
 
   @property
+  def active_revision_path(self) -> str:
+    """Returns the path to revision.json in the active release."""
+    return os.path.join(self._active_symlink, _REVISION_FILENAME)
+
+  @property
   def staging_config_path(self) -> str:
     """Returns the path to lab_config.yaml in the staging release."""
     return os.path.join(self._staging_symlink, _LAB_CONFIG_FILENAME)
@@ -109,6 +178,11 @@ class ReleaseDirectoryManager:
   def staging_flags_path(self) -> str:
     """Returns the path to pinned_mtt_flags.yaml in the staging release."""
     return os.path.join(self._staging_symlink, _PINNED_FLAGS_FILENAME)
+
+  @property
+  def staging_revision_path(self) -> str:
+    """Returns the path to revision.json in the staging release."""
+    return os.path.join(self._staging_symlink, _REVISION_FILENAME)
 
   @property
   def has_active_release(self) -> bool:
@@ -168,12 +242,105 @@ class ReleaseDirectoryManager:
     logger.info("Staged tunnel docker-compose.env at %s", dst_env)
     return dst_env
 
+  def ComputeConfigHash(self, source_dir: Optional[str] = None) -> str:
+    """Computes the deterministic config hash for source_dir (or config_dir)."""
+    src_dir = os.path.abspath(source_dir) if source_dir else self._config_dir
+    src_lab_config = os.path.join(src_dir, _LAB_CONFIG_FILENAME)
+    src_flags_config = os.path.join(src_dir, _UNPINNED_FLAGS_FILENAME)
+    if not os.path.exists(src_flags_config):
+      raise FileNotFoundError(
+          f"Source mtt_flags.yaml not found at: {src_flags_config}"
+      )
+    with open(src_flags_config, "r", encoding="utf-8") as f:
+      src_flags_data = yaml.safe_load(f) or {}
+    flags = (
+        [str(x) for x in (src_flags_data.get("flags") or [])]
+        if isinstance(src_flags_data, dict)
+        else []
+    )
+    return _HashConfigInputs(src_lab_config, flags)
+
+  def GetActiveImageRef(self) -> Optional[str]:
+    """Returns the image_ref recorded in core/active, or None if unavailable."""
+    if not self.has_active_release or not os.path.exists(
+        self.active_flags_path
+    ):
+      return None
+    try:
+      with open(self.active_flags_path, "r", encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+    except (OSError, yaml.YAMLError):
+      return None
+    if not isinstance(data, dict):
+      return None
+    ref = str(data.get("image_ref") or "").strip()
+    return ref or None
+
+  def GetActiveConfigHash(self) -> Optional[str]:
+    """Computes the config hash of the active release, or None if absent."""
+    if not self.has_active_release or not os.path.exists(
+        self.active_flags_path
+    ):
+      return None
+    try:
+      with open(self.active_flags_path, "r", encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+    except (OSError, yaml.YAMLError):
+      return None
+    if not isinstance(data, dict):
+      return None
+    flags = [str(x) for x in (data.get("flags") or [])]
+    return _HashConfigInputs(self.active_config_path, flags)
+
+  def DoesActiveMatchConfig(self, source_dir: Optional[str] = None) -> bool:
+    """Returns True if core/active has the same config hash as source_dir."""
+    active_hash = self.GetActiveConfigHash()
+    if active_hash is None:
+      return False
+    try:
+      desired_hash = self.ComputeConfigHash(source_dir)
+    except (OSError, yaml.YAMLError):
+      return False
+    return active_hash == desired_hash
+
+  def GetActiveRevision(self) -> dict[str, str]:
+    """Reads core/active/revision.json, returning {} if absent or unreadable."""
+    if not self.has_active_release or not os.path.exists(
+        self.active_revision_path
+    ):
+      return {}
+    try:
+      with open(self.active_revision_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    except (OSError, ValueError):
+      return {}
+    if not isinstance(data, dict):
+      return {}
+    return {str(k): str(v) for k, v in data.items() if v}
+
+  def WriteActiveRevisionFromConfig(
+      self, image_ref: str, source_dir: Optional[str] = None
+  ) -> None:
+    """Refreshes core/active/revision.json when an upgrade is a config no-op."""
+    if not self.has_active_release:
+      return
+    active_dir = self._active_release_dir
+    if not active_dir or not os.path.isdir(active_dir):
+      return
+    src_dir = os.path.abspath(source_dir) if source_dir else self._config_dir
+    revision = _BuildRevisionDict(image_ref, src_dir)
+    _WriteJsonWithMode(
+        os.path.join(active_dir, _REVISION_FILENAME),
+        revision,
+        node_permissions.BASE_FILE_MODE,
+    )
+
   def StageRelease(
       self,
       image_ref: str,
       source_dir: Optional[str] = None,
   ) -> str:
-    """Stages a release in releases/<image_ref>/ from source_dir (defaults to config_dir).
+    """Stages a release in releases/<image_ref>-<hash>/ from source_dir.
 
     Args:
       image_ref: Complete immutable image reference as returned by
@@ -182,9 +349,10 @@ class ReleaseDirectoryManager:
         as `mtt --image_name`.
       source_dir: Directory holding the unpinned config, defaults to config_dir.
 
-    The release directory is named from the image reference alone, so staging a
-    reference reuses and overwrites any release already staged for it. Callers
-    must not stage a reference they may need to roll back to.
+    The release directory is named from both the sanitized image reference and a
+    deterministic hash of the staged lab_config.yaml and flags list, so a
+    config-only change stages into a distinct directory without overwriting the
+    active release needed for rollback.
 
     Returns:
       Absolute path of the staged release directory.
@@ -193,8 +361,8 @@ class ReleaseDirectoryManager:
       ValueError: If image_ref sanitizes to an empty directory name.
       FileNotFoundError: If the source mtt_flags.yaml is missing.
     """
-    release_name = _SanitizeImageRef(image_ref)
-    if not release_name:
+    sanitized_ref = _SanitizeImageRef(image_ref)
+    if not sanitized_ref:
       raise ValueError(f"Invalid image reference: {image_ref!r}")
 
     src_dir = os.path.abspath(source_dir) if source_dir else self._config_dir
@@ -206,13 +374,20 @@ class ReleaseDirectoryManager:
           f"Source mtt_flags.yaml not found at: {src_flags_config}"
       )
 
+    with open(src_flags_config, "r", encoding="utf-8") as f:
+      src_flags_data = yaml.safe_load(f) or {}
+    flags_list = (
+        [str(x) for x in (src_flags_data.get("flags") or [])]
+        if isinstance(src_flags_data, dict)
+        else []
+    )
+
+    config_hash = _HashConfigInputs(src_lab_config, flags_list)
+    release_name = f"{sanitized_ref}-{config_hash}"
+
     release_dir = os.path.join(self._releases_dir, release_name)
     os.makedirs(release_dir, exist_ok=True)
 
-    # The release directory is named after the image reference alone, so
-    # re-staging the same reference reuses the directory. A lab_config.yaml
-    # left by an earlier staging would then be handed to a release whose
-    # config no longer defines one.
     dst_lab_config = os.path.join(release_dir, _LAB_CONFIG_FILENAME)
     if os.path.exists(src_lab_config):
       node_permissions.CopyFileWithMode(
@@ -223,20 +398,23 @@ class ReleaseDirectoryManager:
 
     dst_flags = os.path.join(release_dir, _PINNED_FLAGS_FILENAME)
 
-    src_flags_data = {}
-    if os.path.exists(src_flags_config):
-      with open(src_flags_config, "r", encoding="utf-8") as f:
-        src_flags_data = yaml.safe_load(f) or {}
-
     # image_name and tag are deliberately dropped here: image_ref already
     # identifies the exact image, and re-emitting the mutable tag would invite
     # callers to reconstruct a reference instead of using the pinned one.
     flags_data = {
         "image_ref": image_ref,
-        "flags": src_flags_data.get("flags", []),
+        "flags": flags_list,
     }
     with open(dst_flags, "w", encoding="utf-8") as f:
       yaml.dump(flags_data, f, default_flow_style=False, sort_keys=False)
+    os.chmod(dst_flags, node_permissions.BASE_FILE_MODE)
+
+    revision = _BuildRevisionDict(image_ref, src_dir)
+    _WriteJsonWithMode(
+        os.path.join(release_dir, _REVISION_FILENAME),
+        revision,
+        node_permissions.BASE_FILE_MODE,
+    )
 
     self._AtomicSymlink(target=release_dir, link_path=self._staging_symlink)
     logger.info("Staged release for %s at %s", image_ref, release_dir)

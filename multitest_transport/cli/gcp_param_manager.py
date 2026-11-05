@@ -74,15 +74,18 @@ class GcpParamManagerClient:
     )
     return cls.FromCredentials(credentials=credentials)
 
-  def FetchUnformatted(self, param_version_path: str) -> str:
-    """Renders and decodes an UNFORMATTED parameter version payload as a string.
+  def FetchUnformattedWithVersion(
+      self, param_version_path: str
+  ) -> tuple[str, str]:
+    """Renders an UNFORMATTED parameter version and returns payload and version.
 
     Args:
       param_version_path: Resource name path of the parameter version (e.g.
         'projects/123/locations/global/parameters/my-param/versions/latest').
 
     Returns:
-      Decoded UTF-8 string payload.
+      Tuple of (decoded UTF-8 string payload, resolved version ID string). The
+      resolved version ID is empty if the response omits `parameterVersion`.
     """
     name = param_version_path.strip("/")
     try:
@@ -106,11 +109,32 @@ class GcpParamManagerClient:
           f"No payload data in response for {name}. Response: {response}"
       )
 
+    param_version = str(response.get("parameterVersion") or "").strip("/")
+    if "/versions/" in param_version:
+      version_id = param_version.rsplit("/versions/", 1)[-1]
+    elif param_version:
+      version_id = param_version.split("/")[-1]
+    else:
+      version_id = ""
+
     try:
       payload_bytes = base64.b64decode(payload_base64)
-      return payload_bytes.decode("utf-8")
+      return payload_bytes.decode("utf-8"), version_id
     except Exception as e:
       raise ValueError(f"Failed to decode payload for {name}: {e}") from e
+
+  def FetchUnformatted(self, param_version_path: str) -> str:
+    """Renders and decodes an UNFORMATTED parameter version payload as a string.
+
+    Args:
+      param_version_path: Resource name path of the parameter version (e.g.
+        'projects/123/locations/global/parameters/my-param/versions/latest').
+
+    Returns:
+      Decoded UTF-8 string payload.
+    """
+    payload, _ = self.FetchUnformattedWithVersion(param_version_path)
+    return payload
 
   def StoreUnformatted(
       self,

@@ -21,6 +21,7 @@ from manifest.yaml and compiles them into concrete runtime configuration files
 
 import dataclasses
 import enum
+import json
 import logging
 import os
 import re
@@ -44,6 +45,7 @@ DEFAULT_PARTNER_IMAGE_NAME = (
     "asia-docker.pkg.dev/omnilab-ats-repo/omnilab-ats-partner/omnilab-ats"
 )
 DEFAULT_PARTNER_TAG = "partner_latest"
+CONFIG_VERSIONS_FILENAME = "config_versions.json"
 
 logger = logging.getLogger(__name__)
 
@@ -446,6 +448,8 @@ class _ConfigLoader:
       manifest.
     configs: Dictionary mapping scope name ('tenant', 'pool', 'node') to parsed
       configuration dictionary.
+    versions: Dictionary mapping scope name to the Parameter Manager version ID
+      that `versions/latest` resolved to when that scope was rendered.
   """
 
   def __init__(
@@ -460,6 +464,7 @@ class _ConfigLoader:
     self._param_manager_client = param_manager_client
     self.service_account_key_path = service_account_key_path
     self.configs: dict[str, dict[str, Any]] = {}
+    self.versions: dict[str, str] = {}
 
   @classmethod
   def FromManifest(
@@ -562,8 +567,10 @@ class _ConfigLoader:
     scope_name = (
         _ConfigScope(scope).value if isinstance(scope, str) else scope.value
     )
-    payload_str = self._param_manager_client.FetchUnformatted(
-        param_version_path
+    payload_str, version_id = (
+        self._param_manager_client.FetchUnformattedWithVersion(
+            param_version_path
+        )
     )
 
     raw_data: dict[str, Any] = {}
@@ -581,6 +588,8 @@ class _ConfigLoader:
     data = yaml.safe_load(rendered) or {}
 
     self.configs[scope_name] = data
+    if version_id:
+      self.versions[scope_name] = version_id
     context.environment.globals[scope_name] = data
     return data
 
@@ -738,17 +747,17 @@ class _NodeConfigManager:
         tag=tag,
     )
 
-  def ResolveFromManifest(
+  def ResolveFromManifestWithVersions(
       self,
       manifest_path: str,
-  ) -> ConfigDTO:
-    """Renders entrypoint manifest and returns merged ConfigDTO.
+  ) -> tuple[ConfigDTO, dict[str, str]]:
+    """Renders entrypoint manifest and returns merged ConfigDTO and versions.
 
     Args:
       manifest_path: Path to the entrypoint manifest file.
 
     Returns:
-      Resolved ConfigDTO.
+      Tuple of (resolved ConfigDTO, scope -> resolved parameter version ID).
 
     Raises:
       FileNotFoundError: If the manifest file cannot be found.
@@ -777,6 +786,24 @@ class _NodeConfigManager:
       dto.mtt_args["service_account_json_key_path"] = (
           loader.service_account_key_path
       )
+    return dto, dict(loader.versions)
+
+  def ResolveFromManifest(
+      self,
+      manifest_path: str,
+  ) -> ConfigDTO:
+    """Renders entrypoint manifest and returns merged ConfigDTO.
+
+    Args:
+      manifest_path: Path to the entrypoint manifest file.
+
+    Returns:
+      Resolved ConfigDTO.
+
+    Raises:
+      FileNotFoundError: If the manifest file cannot be found.
+    """
+    dto, _ = self.ResolveFromManifestWithVersions(manifest_path)
     return dto
 
   @staticmethod
@@ -866,13 +893,100 @@ class _NodeConfigManager:
     return client.StoreUnformatted(param_version_path, yaml_content)
 
 
+def _ValidateJoinRecord(manifest_path: str, config_dto: ConfigDTO) -> None:
+  """Verifies merged Parameter Manager config matches what this host joined.
+
+  `manifest.yaml` is the host's local join record: `mtt node worker join` writes
+  `acceptor_target` and the `<usage>_pool_config` parameter reference alongside
+  the node-scope Parameter Manager entry. Checking the merged ConfigDTO before
+  touching `var_config_dir` prevents a Parameter Manager edit (or a deleted
+  node-scope key inherited from pool/tenant) from silently moving the worker to
+  another controller or pool.
+
+  Args:
+    manifest_path: Path to manifest.yaml.
+    config_dto: Merged ConfigDTO across Tenant -> Pool -> Node scopes.
+
+  Raises:
+    ConfigValidationError: If merged ACCEPTOR_TARGET or omni_mode_usage differs
+      from the join record in manifest.yaml.
+  """
+  with open(manifest_path, "r", encoding="utf-8") as f:
+    content = f.read()
+
+  mismatches: list[str] = []
+
+  acceptor_match = re.search(
+      r"^\s*acceptor_target:\s*['\"]?(.*?)['\"]?\s*$",
+      content,
+      re.MULTILINE,
+  )
+  if acceptor_match is not None:
+    expected_acceptor = acceptor_match.group(1).strip()
+    actual_acceptor = str(
+        config_dto.docker_compose_env.get("ACCEPTOR_TARGET") or ""
+    ).strip()
+    if actual_acceptor != expected_acceptor:
+      mismatches.append(
+          f"ACCEPTOR_TARGET={actual_acceptor!r} != {expected_acceptor!r}"
+      )
+
+  pool_match = re.search(
+      r"/parameters/([a-zA-Z0-9_-]+)_pool_config(?:/versions/|['\"])",
+      content,
+  )
+  if pool_match is not None:
+    expected_usage = pool_match.group(1).strip()
+    actual_usage = str(
+        config_dto.host_config_args.get("omni_mode_usage")
+        or config_dto.cluster_config_args.get("omni_mode_usage")
+        or ""
+    ).strip()
+    if actual_usage != expected_usage:
+      mismatches.append(
+          f"omni_mode_usage={actual_usage!r} != {expected_usage!r}"
+      )
+
+  if mismatches:
+    raise ConfigValidationError(
+        "controller/pool in Parameter Manager differs from what this host"
+        f" joined; re-run `mtt node worker join` ({'; '.join(mismatches)})"
+    )
+
+
+def _WriteConfigVersions(
+    var_config_dir: str, scope_versions: dict[str, str]
+) -> None:
+  """Writes resolved tenant/pool Parameter Manager version IDs, or cleans up."""
+  versions_path = os.path.join(var_config_dir, CONFIG_VERSIONS_FILENAME)
+  metadata: dict[str, str] = {}
+  tenant_ver = scope_versions.get(_ConfigScope.TENANT.value)
+  pool_ver = scope_versions.get(_ConfigScope.POOL.value)
+  if tenant_ver:
+    metadata["tenant_config_version"] = tenant_ver
+  if pool_ver:
+    metadata["pool_config_version"] = pool_ver
+
+  if not metadata:
+    if os.path.lexists(versions_path):
+      os.remove(versions_path)
+    return
+
+  with open(versions_path, "w", encoding="utf-8") as f:
+    json.dump(metadata, f, indent=2)
+  os.chmod(versions_path, node_permissions.BASE_FILE_MODE)
+
+
 def _ResolveAndMaterializeFromManifest(
     manifest_path: str,
     var_config_dir: str,
 ) -> ConfigDTO:
   """Resolves multi-scope GCP configs from manifest and materializes them into var_config_dir."""
   manager = _NodeConfigManager()
-  config_dto = manager.ResolveFromManifest(manifest_path)
+  config_dto, scope_versions = manager.ResolveFromManifestWithVersions(
+      manifest_path
+  )
+  _ValidateJoinRecord(manifest_path, config_dto)
   os.makedirs(var_config_dir, exist_ok=True)
   _NodeConfigManager.MaterializeLabConfig(
       config_dto, os.path.join(var_config_dir, "lab_config.yaml")
@@ -883,6 +997,7 @@ def _ResolveAndMaterializeFromManifest(
   _NodeConfigManager.MaterializeMttFlags(
       config_dto, os.path.join(var_config_dir, "mtt_flags.yaml")
   )
+  _WriteConfigVersions(var_config_dir, scope_versions)
   return config_dto
 
 
@@ -910,6 +1025,7 @@ def _CopyMaterializedConfig(
     node_permissions.CopyFileWithMode(
         src_file, dst_file, node_permissions.BASE_FILE_MODE
     )
+  _WriteConfigVersions(var_config_dir, {})
 
 
 # Name of the secrets subdirectory under static_dir, bind-mounted into the
@@ -1288,6 +1404,7 @@ def MaterializeNodeConfig(
 
 
 __all__ = [
+    "CONFIG_VERSIONS_FILENAME",
     "ConfigDTO",
     "ConfigValidationError",
     "MaterializeNodeConfig",

@@ -290,6 +290,31 @@ py_library(
 )
 
 py_library(
+    name = "node_lock_lib",
+    srcs = [
+        "node_lock.py",
+    ],
+    strict_deps = False,
+    deps = [
+        ":node_permissions_lib",
+    ],
+)
+
+py_library(
+    name = "node_provision_lib",
+    srcs = [
+        "node_provision.py",
+    ],
+    strict_deps = False,
+    deps = [
+        ":docker_image_lib",
+        ":node_lock_lib",
+        ":node_permissions_lib",
+        ":node_state_lib",
+    ],
+)
+
+py_library(
     name = "node_state_lib",
     srcs = [
         "node_state.py",
@@ -300,6 +325,7 @@ py_library(
         ":docker_image_lib",
         ":host_env_lib",
         ":node_config_lib",
+        ":node_lock_lib",
         ":node_permissions_lib",
         ":process_executor_lib",
         ":release_directory_lib",
@@ -354,6 +380,7 @@ py_library(
         ":node_init_lib",
         ":node_join_lib",
         ":node_permissions_lib",
+        ":node_provision_lib",
         ":node_state_lib",
     ],
 )
@@ -615,12 +642,41 @@ py_test(
         ":docker_image_lib",
         ":host_env_lib",
         ":node_config_lib",
+        ":node_lock_lib",
         ":node_permissions_lib",
         ":node_state_lib",
         ":process_executor_lib",
         ":release_directory_lib",
         third_party("absl/testing:absltest"),
         third_party("yaml"),
+    ],
+)
+
+py_test(
+    name = "node_lock_test",
+    srcs = [
+        "node_lock_test.py",
+    ],
+    strict_deps = False,
+    deps = [
+        ":node_lock_lib",
+        ":node_permissions_lib",
+        third_party("absl/testing:absltest"),
+    ],
+)
+
+py_test(
+    name = "node_provision_test",
+    srcs = [
+        "node_provision_test.py",
+    ],
+    strict_deps = False,
+    deps = [
+        ":docker_image_lib",
+        ":node_lock_lib",
+        ":node_permissions_lib",
+        ":node_provision_lib",
+        third_party("absl/testing:absltest"),
     ],
 )
 
@@ -663,6 +719,7 @@ py_test(
         ":node_join_lib",
         ":node_lib",
         ":node_permissions_lib",
+        ":node_provision_lib",
         ":node_state_lib",
         third_party("absl/testing:absltest"),
     ],

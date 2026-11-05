@@ -388,6 +388,7 @@ def Join(
     prompter: Optional[Prompter] = None,
     endpoints_client_factory: Optional[Callable[[str], Any]] = None,
     param_manager_client_factory: Optional[Callable[[str], Any]] = None,
+    reset_runtime: Optional[Callable[[], None]] = None,
 ) -> None:
   """Executes the interactive onboarding wizard for MTT worker nodes.
 
@@ -410,6 +411,10 @@ def Join(
     endpoints_client_factory: Factory for GcpEndpointsClient (for testing).
     param_manager_client_factory: Factory for GcpParamManagerClient (for
       testing).
+    reset_runtime: Called once the static files are written and before config
+      is materialized, to empty the runtime directory (keeping its `.lock`) so
+      the next `start` is a first start. A failure in it rolls back the static
+      files like any other Phase 3 failure; the runtime state is not restored.
 
   Raises:
     UserAbortError: If the operator interrupts a prompt. Nothing has been
@@ -661,6 +666,7 @@ def Join(
     )
     manifest_content = (
         f"service_account_key_path: {sa_key_dest}\n"
+        f"acceptor_target: {dcon_acceptor_target}\n"
         f"{{% set tenant = param_manager('{t_path}', 'tenant') %}}\n"
         f"{{% set pool = param_manager('{p_path}', 'pool') %}}\n"
         f"{{% set node = param_manager('{n_path}', 'node') %}}\n"
@@ -669,7 +675,11 @@ def Join(
     with open(manifest_dest, "w", encoding="utf-8") as f:
       f.write(manifest_content)
 
-    # 4. Materialize Node Configuration
+    # 4. Reset the runtime directory, then materialize into it. The static
+    # tree is committed above, so the reset only ever replaces runtime state
+    # with what this join just provisioned.
+    if reset_runtime is not None:
+      reset_runtime()
     node_config.MaterializeNodeConfig(
         static_dir=static_dir,
         var_config_dir=var_config_dir,

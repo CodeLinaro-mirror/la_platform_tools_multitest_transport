@@ -152,6 +152,51 @@ class GcpParamManagerTest(absltest.TestCase):
         name="projects/p1/locations/global/parameters/cfg/versions/latest"
     )
 
+  def testFetchUnformattedWithVersion(self):
+    mock_service, _, mock_versions = self._create_mock_service_hierarchy()
+
+    raw_text = "test_yaml_content: 123"
+    b64_encoded = base64.b64encode(raw_text.encode("utf-8")).decode("utf-8")
+
+    mock_render_req = mock.create_autospec(
+        _MockHttpRequest, instance=True, spec_set=True
+    )
+    mock_render_req.execute.return_value = {
+        "parameterVersion": (
+            "projects/p1/locations/global/parameters/cfg/versions/"
+            "20260917_163105"
+        ),
+        "renderedPayload": b64_encoded,
+    }
+    mock_versions.render.return_value = mock_render_req
+
+    client = gcp_param_manager.GcpParamManagerClient(service=mock_service)
+    payload, version_id = client.FetchUnformattedWithVersion(
+        "projects/p1/locations/global/parameters/cfg/versions/latest"
+    )
+
+    self.assertEqual(payload, raw_text)
+    self.assertEqual(version_id, "20260917_163105")
+
+  def testFetchUnformattedWithVersion_withoutParameterVersionField(self):
+    mock_service, _, mock_versions = self._create_mock_service_hierarchy()
+    raw_text = "test_yaml_content: 123"
+    b64_encoded = base64.b64encode(raw_text.encode("utf-8")).decode("utf-8")
+
+    mock_render_req = mock.create_autospec(
+        _MockHttpRequest, instance=True, spec_set=True
+    )
+    mock_render_req.execute.return_value = {"renderedPayload": b64_encoded}
+    mock_versions.render.return_value = mock_render_req
+
+    client = gcp_param_manager.GcpParamManagerClient(service=mock_service)
+    payload, version_id = client.FetchUnformattedWithVersion(
+        "projects/p1/locations/global/parameters/cfg/versions/latest"
+    )
+
+    self.assertEqual(payload, raw_text)
+    self.assertEqual(version_id, "")
+
   def testStoreUnformatted(self):
     mock_service, _, mock_versions = self._create_mock_service_hierarchy()
 

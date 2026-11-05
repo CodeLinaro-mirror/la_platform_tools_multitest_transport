@@ -19,6 +19,7 @@ import os
 import shutil
 import stat
 import tempfile
+from unittest import mock
 from absl.testing import absltest
 from multitest_transport.cli import host_env
 from multitest_transport.cli import node_init
@@ -53,6 +54,78 @@ class NodeInitTest(absltest.TestCase):
   def tearDown(self):
     shutil.rmtree(self.test_dir, ignore_errors=True)
     super().tearDown()
+
+  # =========================================================================
+  # Re-provisioning
+  # =========================================================================
+
+  def testInit_removesManifestLeftByJoin(self):
+    # Materialization prefers manifest.yaml whenever it exists, so a host
+    # re-provisioned with `init` would keep using the old join setup.
+    manifest = os.path.join(self.static_dir, "manifest.yaml")
+    for init in (
+        lambda: node_init.InitController(
+            static_dir=self.static_dir,
+            base_dir=self.base_dir,
+            mtt_group=self.mtt_group,
+            host_environment=host_env.HostEnvironment.DEFAULT,
+        ),
+        lambda: node_init.InitWorker(
+            dcon_acceptor_target="wss://acceptor.example.com",
+            static_dir=self.static_dir,
+            base_dir=self.base_dir,
+            mtt_group=self.mtt_group,
+        ),
+    ):
+      with open(manifest, "w", encoding="utf-8") as f:
+        f.write("acceptor_target: wss://old.example.com\n")
+
+      init()
+
+      self.assertFalse(os.path.exists(manifest))
+
+  def testInit_resetsRuntimeAfterStaticFilesBeforeFinalPolicy(self):
+    events: list[str] = []
+    flags_file = os.path.join(self.static_dir, "config", "mtt_flags.yaml")
+
+    def Reset():
+      # The static tree is written before the runtime is reset, so a failed
+      # init never wipes the runtime of a host it did not re-provision.
+      self.assertTrue(os.path.exists(flags_file))
+      events.append("reset")
+
+    real_finalize = node_permissions.FinalizeProvisioning
+
+    def Finalize(*args, **kwargs):
+      events.append("finalize")
+      return real_finalize(*args, **kwargs)
+
+    with mock.patch.object(
+        node_permissions, "FinalizeProvisioning", side_effect=Finalize
+    ):
+      node_init.InitWorker(
+          dcon_acceptor_target="wss://acceptor.example.com",
+          static_dir=self.static_dir,
+          base_dir=self.base_dir,
+          mtt_group=self.mtt_group,
+          reset_runtime=Reset,
+      )
+
+    self.assertEqual(events, ["reset", "finalize"])
+
+  def testInit_validationFailureDoesNotResetRuntime(self):
+    reset = mock.Mock()
+
+    with self.assertRaises(ValueError):
+      node_init.InitWorker(
+          dcon_acceptor_target="",
+          static_dir=self.static_dir,
+          base_dir=self.base_dir,
+          mtt_group=self.mtt_group,
+          reset_runtime=reset,
+      )
+
+    reset.assert_not_called()
 
   # =========================================================================
   # Controller Init Tests

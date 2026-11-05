@@ -337,6 +337,52 @@ class NodeJoinTest(absltest.TestCase):
 
   @mock.patch.object(node_config, "MaterializeNodeConfig")
   @mock.patch("socket.gethostname", return_value="worker-host-1")
+  def testJoin_resetsRuntimeAfterStaticCommitAndBeforeMaterializing(
+      self, mock_hostname, mock_materialize
+  ):
+    del mock_hostname
+    events: list[str] = []
+    manifest_path = os.path.join(self.static_dir, "manifest.yaml")
+
+    def Reset():
+      # The static tree is already written when the runtime is reset, so a
+      # reset never runs for a join that has not committed its inputs.
+      self.assertTrue(os.path.exists(manifest_path))
+      events.append("reset")
+
+    mock_materialize.side_effect = lambda **_: events.append("materialize")
+    fake_prompter = FakePrompter(
+        text_responses=[self.sa_key_file, "MyTestWifi", "MySecretPassword"],
+        choice_responses=[_ENDPOINT, "private_usage"],
+    )
+    mock_ep_client = mock.create_autospec(
+        gcp_endpoints_client.GcpEndpointsClient, instance=True, spec_set=True
+    )
+    mock_ep_client.ListServiceNames.return_value = [_ENDPOINT]
+    mock_pm_client = mock.create_autospec(
+        gcp_param_manager.GcpParamManagerClient, instance=True, spec_set=True
+    )
+    mock_pm_client.ListParameters.return_value = [
+        "tenant_config",
+        "private_usage_pool_config",
+    ]
+    mock_pm_client.ParameterExists.return_value = True
+
+    node_join.Join(
+        static_dir=self.static_dir,
+        var_config_dir=self.var_config_dir,
+        base_dir=self.base_dir,
+        mtt_group=self.mtt_group,
+        prompter=fake_prompter,
+        endpoints_client_factory=lambda _: mock_ep_client,
+        param_manager_client_factory=lambda _: mock_pm_client,
+        reset_runtime=Reset,
+    )
+
+    self.assertEqual(events, ["reset", "materialize"])
+
+  @mock.patch.object(node_config, "MaterializeNodeConfig")
+  @mock.patch("socket.gethostname", return_value="worker-host-1")
   def testJoin(
       self, mock_hostname, mock_materialize
   ):
@@ -441,6 +487,7 @@ class NodeJoinTest(absltest.TestCase):
     with open(manifest_path, "r", encoding="utf-8") as f:
       manifest_content = f.read()
     self.assertIn(sa_key_path, manifest_content)
+    self.assertIn(f"acceptor_target: wss://{_ENDPOINT}\n", manifest_content)
     self.assertIn("tenant_config", manifest_content)
     self.assertIn("private_usage_pool_config", manifest_content)
     self.assertIn(_WORKER_HOST_PARAM, manifest_content)

@@ -172,6 +172,39 @@ class DockerImageTest(absltest.TestCase):
     self.assertEqual(status, docker_image.ContainerStatus.UNHEALTHY)
     self.assertTrue(status.is_running)
 
+  def testListRunningComposeContainers(self):
+    self.mock_context.Run.return_value = common.CommandResult(
+        0, "tunnel-acceptor-1\ntunnel-esp-1\n\n", ""
+    )
+
+    names = self.executor.ListRunningComposeContainers("tunnel")
+
+    self.assertEqual(names, ["tunnel-acceptor-1", "tunnel-esp-1"])
+    # Filtered by the compose project label only: no profiles, env file, or
+    # health condition, so every running service of the project is seen.
+    self.mock_context.Run.assert_called_once_with(
+        [
+            "ps",
+            "--filter",
+            "label=com.docker.compose.project=tunnel",
+            "--filter",
+            "status=running",
+            "--format",
+            "{{.Names}}",
+        ],
+        raise_on_failure=False,
+        timeout=15,
+    )
+
+  def testListRunningComposeContainers_noneOrErrorIsEmpty(self):
+    for result in (
+        common.CommandResult(0, "", ""),
+        common.CommandResult(1, "", "Cannot connect to the Docker daemon"),
+        common.CommandResult(None, None, "timed out after 15 seconds"),
+    ):
+      self.mock_context.Run.return_value = result
+      self.assertEqual(self.executor.ListRunningComposeContainers("tunnel"), [])
+
   def testDoesContainerMatchImage_exactConfigImageMatch(self):
     self.mock_context.Run.return_value = common.CommandResult(
         0, "gcr.io/mtt/image@sha256:manifest1234\n", ""

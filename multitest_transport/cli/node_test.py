@@ -17,6 +17,7 @@
 import argparse
 import contextlib
 import io
+import json
 import os
 from unittest import mock
 from absl.testing import absltest
@@ -25,6 +26,7 @@ from multitest_transport.cli import node
 from multitest_transport.cli import node_init
 from multitest_transport.cli import node_join
 from multitest_transport.cli import node_permissions
+from multitest_transport.cli import node_provision
 from multitest_transport.cli import node_state
 
 NodeRole = node.NodeRole
@@ -42,6 +44,31 @@ class NodeCliTest(absltest.TestCase):
     previous_umask = os.umask(0o022)
     os.umask(previous_umask)
     self.addCleanup(os.umask, previous_umask)
+    # `init` and `join` hold the node through node_provision.Reprovisioning,
+    # which inspects Docker and takes the node lock; neither may happen here.
+    self.mock_reset = mock.Mock()
+    self.mock_reprovisioning = self.enterContext(
+        mock.patch.object(
+            node_provision,
+            "Reprovisioning",
+            return_value=contextlib.nullcontext(self.mock_reset),
+        )
+    )
+
+  # =========================================================================
+  # Node directory
+  # =========================================================================
+
+  def testBaseDir_isAlwaysMttnodeUnderTheParent(self):
+    
+    self.assertEqual(node._BaseDir("/var/lib"), "/var/lib/mttnode")
+    # A mistyped parent can only ever name a directory called `mttnode`.
+    self.assertEqual(node._BaseDir("/"), "/mttnode")
+    self.assertEqual(node._BaseDir("/var/lib/mtt"), "/var/lib/mtt/mttnode")
+    self.assertEqual(
+        node._BaseDir("relative"),
+        os.path.join(os.path.abspath("relative"), "mttnode"),
+    )
 
   # =========================================================================
   # CLI Init Dispatch Tests
@@ -60,7 +87,7 @@ class NodeCliTest(absltest.TestCase):
         "--otel",
         "--service_account_json_key_path=/path/sa.json",
         "--static_dir=/tmp/etc_mtt",
-        "--base_dir=/tmp/var_mttnode",
+        "--base_parent_dir=/tmp/var_parent",
         "--",
         "--port=8080",
         "--is_omnilab_based",
@@ -72,9 +99,11 @@ class NodeCliTest(absltest.TestCase):
 
     exit_code = args.func(args)
     self.assertEqual(exit_code, 0)
+    # The reset is handed to init, which runs it after the static tree is
+    # written and before the final permission pass.
     mock_init.assert_called_once_with(
         static_dir="/tmp/etc_mtt",
-        base_dir="/tmp/var_mttnode",
+        base_dir="/tmp/var_parent/mttnode",
         mtt_group=node_permissions.DEFAULT_MTT_GROUP,
         image_name="gcr.io/android-mtt/mtt",
         tag="latest",
@@ -83,6 +112,10 @@ class NodeCliTest(absltest.TestCase):
         service_account_json_key_path="/path/sa.json",
         unrecognized_flags=["--port=8080", "--is_omnilab_based", "true"],
         host_environment=host_env.HostEnvironment.GCE,
+        reset_runtime=self.mock_reset,
+    )
+    self.mock_reprovisioning.assert_called_once_with(
+        "/tmp/etc_mtt", "/tmp/var_parent/mttnode"
     )
 
   @mock.patch.object(os, "geteuid", return_value=0)
@@ -119,7 +152,32 @@ class NodeCliTest(absltest.TestCase):
         service_account_json_key_path="/path/sa.json",
         lab_config_path="/path/to/lab.yaml",
         unrecognized_flags=["--extra_flag=1"],
+        reset_runtime=self.mock_reset,
     )
+
+  @mock.patch.object(os, "geteuid", return_value=0)
+  @mock.patch.object(node_init, "InitWorker")
+  def testHandleWorkerInit_runningNodeIsRefused(self, mock_init, unused_euid):
+    self.mock_reprovisioning.side_effect = node_provision.ReprovisionError(
+        "The node is running: core container 'mtt'."
+    )
+    argv = [
+        "node",
+        "worker",
+        "init",
+        "--dcon_acceptor_target=wss://acceptor.proj.cloud.goog",
+    ]
+    args, unknown = self.parser.parse_known_args(argv)
+
+    with self.assertLogs(node.logger, level="ERROR") as logs:
+      exit_code, output = self._RunAndCapture(args, unknown)
+
+    # Nothing is provisioned on a running node, and no start is suggested.
+    self.assertEqual(exit_code, 1)
+    mock_init.assert_not_called()
+    self.mock_reset.assert_not_called()
+    self.assertNotIn("start", output)
+    self.assertIn("The node is running", "\n".join(logs.output))
 
   @mock.patch.object(os, "geteuid", return_value=0)
   @mock.patch.object(node_init, "InitWorker")
@@ -150,6 +208,7 @@ class NodeCliTest(absltest.TestCase):
         service_account_json_key_path=None,
         lab_config_path=None,
         unrecognized_flags=["--extra_flag=1", "--is_omnilab_based", "true"],
+        reset_runtime=self.mock_reset,
     )
 
   def testInit_rejectsUnrecognizedFlagBeforeDashDash(self):
@@ -194,24 +253,44 @@ class NodeCliTest(absltest.TestCase):
         "worker",
         "join",
         "--static_dir=/tmp/etc_mtt",
-        "--base_dir=/tmp/custom_base",
+        "--base_parent_dir=/tmp/custom_parent",
     ]
     args = self.parser.parse_args(argv)
     self.assertEqual(args.node_role, "worker")
     self.assertEqual(args.node_command, "join")
     self.assertEqual(args.static_dir, "/tmp/etc_mtt")
-    self.assertEqual(args.base_dir, "/tmp/custom_base")
+    self.assertEqual(args.base_parent_dir, "/tmp/custom_parent")
     prompter = self._MakePrompter(confirm=False)
 
     exit_code = args.func(args, prompter)
     self.assertEqual(exit_code, 0)
     mock_join.assert_called_once_with(
         static_dir="/tmp/etc_mtt",
-        var_config_dir="/tmp/custom_base/config",
-        base_dir="/tmp/custom_base",
+        var_config_dir="/tmp/custom_parent/mttnode/config",
+        base_dir="/tmp/custom_parent/mttnode",
         mtt_group=node_permissions.DEFAULT_MTT_GROUP,
         prompter=prompter,
+        reset_runtime=self.mock_reset,
     )
+
+  @mock.patch.object(os, "geteuid", return_value=0)
+  @mock.patch.object(node_join, "Join")
+  def testHandleWorkerJoin_runningNodeIsRefusedBeforePrompting(
+      self, mock_join, unused_geteuid
+  ):
+    self.mock_reprovisioning.side_effect = node_provision.ReprovisionError(
+        "Another node command (UpgradeCore) is running."
+    )
+    args = self.parser.parse_args(["node", "worker", "join"])
+    prompter = self._MakePrompter(confirm=True)
+
+    with self.assertLogs(node.logger, level="ERROR"):
+      exit_code = args.func(args, prompter)
+
+    # The operator is not asked anything before the precondition is checked.
+    self.assertEqual(exit_code, 1)
+    mock_join.assert_not_called()
+    prompter.Confirm.assert_not_called()
 
   @mock.patch.object(os, "geteuid", return_value=0)
   @mock.patch.object(node_join, "Join")
@@ -234,6 +313,7 @@ class NodeCliTest(absltest.TestCase):
         base_dir="/var/lib/mttnode",
         mtt_group=node_permissions.DEFAULT_MTT_GROUP,
         prompter=prompter,
+        reset_runtime=self.mock_reset,
         tag="canary",
         android_service_account_key_path="/tmp/android-key.json",
     )
@@ -282,7 +362,7 @@ class NodeCliTest(absltest.TestCase):
     # Default directories are not echoed back: the operator would only have to
     # delete them again.
     self.assertNotIn("--static_dir", output)
-    self.assertNotIn("--base_dir", output)
+    self.assertNotIn("--base_parent_dir", output)
     self.assertIn(node_permissions.DEFAULT_MTT_GROUP, output)
 
   @mock.patch.object(os, "geteuid", return_value=0)
@@ -296,7 +376,7 @@ class NodeCliTest(absltest.TestCase):
         "init",
         "--dcon_acceptor_target=wss://acceptor.proj.cloud.goog",
         "--static_dir=/tmp/etc_mtt",
-        "--base_dir=/tmp/var_mttnode",
+        "--base_parent_dir=/tmp/var_parent",
         "--mtt_group=mttgrp",
     ]
     args, unknown = self.parser.parse_known_args(argv)
@@ -306,8 +386,8 @@ class NodeCliTest(absltest.TestCase):
     # `start` reads both directories, so a non-default init must hand back a
     # command that still works.
     self.assertIn(
-        "mtt node worker start --static_dir /tmp/etc_mtt --base_dir"
-        " /tmp/var_mttnode",
+        "mtt node worker start --static_dir /tmp/etc_mtt --base_parent_dir"
+        " /tmp/var_parent",
         output,
     )
     self.assertIn("mttgrp", output)
@@ -454,14 +534,14 @@ class NodeCliTest(absltest.TestCase):
         "node",
         "worker",
         "start",
-        "--base_dir=/tmp/base",
+        "--base_parent_dir=/tmp/base",
         "--static_dir=/tmp/static",
     ])
     exit_code = args.func(args)
     self.assertEqual(exit_code, 0)
     mock_mgr.Start.assert_called_once()
     mock_factory.assert_called_once_with(
-        base_dir="/tmp/base",
+        base_dir="/tmp/base/mttnode",
         static_dir="/tmp/static",
         role=NodeRole.WORKER,
     )
@@ -478,14 +558,14 @@ class NodeCliTest(absltest.TestCase):
         "node",
         "controller",
         "stop",
-        "--base_dir=/tmp/base",
+        "--base_parent_dir=/tmp/base",
         "--static_dir=/tmp/static",
     ])
     exit_code = args.func(args)
     self.assertEqual(exit_code, 0)
     mock_mgr.Stop.assert_called_once_with(drain=False, timeout_sec=None)
     mock_factory.assert_called_once_with(
-        base_dir="/tmp/base",
+        base_dir="/tmp/base/mttnode",
         static_dir="/tmp/static",
         role=NodeRole.CONTROLLER,
     )
@@ -504,14 +584,14 @@ class NodeCliTest(absltest.TestCase):
         "stop",
         "--drain",
         "--drain_timeout=600",
-        "--base_dir=/tmp/base",
+        "--base_parent_dir=/tmp/base",
         "--static_dir=/tmp/static",
     ])
     exit_code = args.func(args)
     self.assertEqual(exit_code, 0)
     mock_mgr.Stop.assert_called_once_with(drain=True, timeout_sec=600)
     mock_factory.assert_called_once_with(
-        base_dir="/tmp/base",
+        base_dir="/tmp/base/mttnode",
         static_dir="/tmp/static",
         role=NodeRole.WORKER,
     )
@@ -537,20 +617,27 @@ class NodeCliTest(absltest.TestCase):
     mock_mgr.GetStatus.return_value = node_state.NodeStatus(
         tunnel=node_state.TunnelCondition.HEALTHY,
         core=node_state.CoreCondition.UP_CURRENT,
+        role=NodeRole.CONTROLLER,
+        state="RUNNING",
+        active_revision={"build": "gcr.io/proj/mtt@sha256:abc"},
     )
     mock_factory.return_value = mock_mgr
 
     args = self.parser.parse_args(["node", "controller", "status"])
-    with mock.patch("builtins.print") as mock_print:
-      exit_code = args.func(args)
+    exit_code, output = self._RunAndCapture(args)
 
     self.assertEqual(exit_code, 0)
     mock_mgr.GetStatus.assert_called_once()
-    mock_print.assert_has_calls([
-        mock.call("role: controller"),
-        mock.call("tunnel: healthy"),
-        mock.call("core: running"),
-    ])
+    self.assertEqual(
+        json.loads(output),
+        {
+            "role": "controller",
+            "tunnel": "healthy",
+            "state": "RUNNING",
+            "busy": False,
+            "active_revision": {"build": "gcr.io/proj/mtt@sha256:abc"},
+        },
+    )
 
   @mock.patch.object(node, "_DefaultStateManagerFactory")
   def testHandleStatus_downNodeStillExitsZero(self, mock_factory):
@@ -560,18 +647,25 @@ class NodeCliTest(absltest.TestCase):
     mock_mgr.GetStatus.return_value = node_state.NodeStatus(
         tunnel=node_state.TunnelCondition.DOWN,
         core=node_state.CoreCondition.DOWN,
+        role=NodeRole.WORKER,
+        state="DOWN",
     )
     mock_factory.return_value = mock_mgr
 
     args = self.parser.parse_args(["node", "worker", "status"])
-    with mock.patch("builtins.print") as mock_print:
-      exit_code = args.func(args)
+    exit_code, output = self._RunAndCapture(args)
 
     self.assertEqual(exit_code, 0)
-    mock_print.assert_has_calls([
-        mock.call("tunnel: down"),
-        mock.call("core: down"),
-    ])
+    self.assertEqual(
+        json.loads(output),
+        {
+            "role": "worker",
+            "tunnel": "down",
+            "state": "DOWN",
+            "busy": False,
+            "active_revision": {},
+        },
+    )
 
   @mock.patch.object(node, "_DefaultStateManagerFactory")
   def testHandleTunnelUpgrade(self, mock_factory):
@@ -600,7 +694,7 @@ class NodeCliTest(absltest.TestCase):
     exit_code = args.func(args)
     self.assertEqual(exit_code, 0)
     mock_mgr.UpgradeCore.assert_called_once_with(
-        enable_rollback=False, drain=False, timeout_sec=None
+        enable_rollback=False, drain=False, timeout_sec=None, image_ref=None
     )
 
   @mock.patch.object(node, "_DefaultStateManagerFactory")
@@ -624,7 +718,32 @@ class NodeCliTest(absltest.TestCase):
     exit_code = args.func(args)
     self.assertEqual(exit_code, 0)
     mock_mgr.UpgradeCore.assert_called_once_with(
-        enable_rollback=True, drain=True, timeout_sec=120
+        enable_rollback=True, drain=True, timeout_sec=120, image_ref=None
+    )
+
+  @mock.patch.object(node, "_DefaultStateManagerFactory")
+  def testHandleCoreUpgrade_withImageRef(self, mock_factory):
+    mock_mgr = mock.create_autospec(
+        node_state.NodeStateManager, instance=True, spec_set=True
+    )
+    mock_mgr.UpgradeCore.return_value = True
+    mock_factory.return_value = mock_mgr
+
+    args = self.parser.parse_args([
+        "node",
+        "worker",
+        "core",
+        "upgrade",
+        "--image_ref=gcr.io/proj/mtt@sha256:def456",
+        "--enable_rollback",
+    ])
+    exit_code = args.func(args)
+    self.assertEqual(exit_code, 0)
+    mock_mgr.UpgradeCore.assert_called_once_with(
+        enable_rollback=True,
+        drain=False,
+        timeout_sec=None,
+        image_ref="gcr.io/proj/mtt@sha256:def456",
     )
 
   @mock.patch.object(host_env, "IsGceInstance")
@@ -653,12 +772,13 @@ class NodeCliTest(absltest.TestCase):
         "node",
         "worker",
         "start",
-        f"--base_dir={temp_dir}",
+        f"--base_parent_dir={temp_dir}",
         f"--static_dir={temp_dir}",
     ])
     args.cli_path = "/home/mobileharness/mtt"
     mgr = node._GetStateManager(args, node.NodeRole.WORKER)
     self.assertEqual(mgr._mtt_cli_path, "/home/mobileharness/mtt")
+    self.assertEqual(mgr.base_dir, os.path.join(temp_dir, "mttnode"))
 
   # =========================================================================
   # Membership preflight
@@ -669,7 +789,7 @@ class NodeCliTest(absltest.TestCase):
         "node",
         "worker",
         command,
-        "--base_dir=/tmp/base",
+        "--base_parent_dir=/tmp/base",
         "--static_dir=/tmp/static",
     ])
 

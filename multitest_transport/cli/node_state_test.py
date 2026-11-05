@@ -15,6 +15,7 @@
 """Unit tests for NodeStateManager."""
 
 import contextlib
+import fcntl
 import io
 import json
 import os
@@ -25,6 +26,7 @@ from multitest_transport.cli import compose_directory
 from multitest_transport.cli import docker_image
 from multitest_transport.cli import host_env
 from multitest_transport.cli import node_config
+from multitest_transport.cli import node_lock
 from multitest_transport.cli import node_permissions
 from multitest_transport.cli import node_state
 from multitest_transport.cli import process_executor
@@ -296,13 +298,131 @@ class NodeStateTest(absltest.TestCase):
     self.assertEqual(status.tunnel, TunnelCondition.HEALTHY)
     self.assertTrue(status.core.is_up)
 
-  def testGetStatus_writesNoJournal(self):
+  def testGetStatus_writesNoJournalOrLock(self):
     self.state_mgr.GetStatus()
 
     self.assertFalse(os.path.exists(self.state_mgr.journal_file))
+    self.assertFalse(os.path.exists(self.state_mgr.lock_file))
+
+  def testGetStatus_runningMatchingContainerReportsActiveRevision(self):
+    self._PopulateRuntimeConfig()
+    versions_path = self.release_mgr.config_versions_path
+    with open(versions_path, "w", encoding="utf-8") as f:
+      json.dump(
+          {
+              "tenant_config_version": "20260917_163105",
+              "pool_config_version": "20261002_091200",
+          },
+          f,
+      )
+    self.release_mgr.StageRelease(_ACTIVE_IMAGE_REF)
+    self.release_mgr.PromoteStagingToActive()
+    self.release_mgr.StageTunnelEnv()
+    self.mock_image_executor.GetContainerStatus.return_value = (
+        docker_image.ContainerStatus.HEALTHY
+    )
+    self.mock_image_executor.DoesContainerMatchImage.return_value = True
+
+    status = self.state_mgr.GetStatus()
+
+    self.assertEqual(
+        status.ToDict(),
+        {
+            "role": "worker",
+            "tunnel": "healthy",
+            "state": "RUNNING",
+            "busy": False,
+            "active_revision": {
+                "build": _ACTIVE_IMAGE_REF,
+                "tenant_config_version": "20260917_163105",
+                "pool_config_version": "20261002_091200",
+            },
+        },
+    )
+
+  def testGetStatus_failedPromotionMismatchedContainerReportsEmptyRevision(
+      self,
+  ):
+    self._CreateActiveRelease(_ACTIVE_IMAGE_REF)
+    self.release_mgr.StageTunnelEnv()
+    self.mock_image_executor.GetContainerStatus.return_value = (
+        docker_image.ContainerStatus.HEALTHY
+    )
+    # Container runs candidate while core/active still points to old release.
+    self.mock_image_executor.DoesContainerMatchImage.return_value = False
+
+    status = self.state_mgr.GetStatus()
+
+    self.assertEqual(status.state, "RUNNING")
+    self.assertEqual(status.active_revision, {})
+
+  def testGetStatus_busyAndBusyCommandFromHeldLock(self):
+    self._RecordAppliedTunnelEnv()
+    self.mock_image_executor.GetContainerStatus.return_value = (
+        docker_image.ContainerStatus.HEALTHY
+    )
+    lock_fd = os.open(
+        self.state_mgr.lock_file, os.O_CREAT | os.O_RDWR, 0o660
+    )
+    self.addCleanup(os.close, lock_fd)
+    fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+
+    with open(self.state_mgr.journal_file, "w", encoding="utf-8") as f:
+      json.dump({"command": "UpgradeCore", "started_at": "t0"}, f)
+
+    upgrading_status = self.state_mgr.GetStatus().ToDict()
+    # `state` reports the container, `busy` reports the lock: a core being
+    # swapped is both DOWN and busy, and neither hides the other.
+    self.assertEqual(upgrading_status["state"], "RUNNING")
+    self.assertTrue(upgrading_status["busy"])
+    self.assertEqual(upgrading_status["busy_command"], "UpgradeCore")
+    self.assertNotIn("last_upgrade", upgrading_status)
+
+    with open(self.state_mgr.journal_file, "w", encoding="utf-8") as f:
+      json.dump({"command": "Stop", "started_at": "t1"}, f)
+    self.mock_image_executor.GetContainerStatus.return_value = (
+        docker_image.ContainerStatus.NOT_RUNNING
+    )
+
+    busy_status = self.state_mgr.GetStatus().ToDict()
+    self.assertEqual(busy_status["state"], "DOWN")
+    self.assertTrue(busy_status["busy"])
+    self.assertEqual(busy_status["busy_command"], "Stop")
+
+  @mock.patch.object(process_executor.MttExecutor, "FromConfigFiles")
+  def testGetStatus_includesLastUpgradeAfterCompletedUpgrade(
+      self, mock_from_config_files
+  ):
+    self._PrepareCoreUpgrade()
+    candidate_core = self._MockCore(success=False, error="Candidate crash")
+    active_core = self._MockCore()
+    mock_from_config_files.side_effect = (
+        lambda pinned_mtt_flags_path=None, **_: (
+            candidate_core
+            if pinned_mtt_flags_path == self.release_mgr.staging_flags_path
+            else active_core
+        )
+    )
+
+    self.assertFalse(self.state_mgr.UpgradeCore(enable_rollback=True))
+    self.mock_image_executor.DoesContainerMatchImage.return_value = True
+
+    status_dict = self.state_mgr.GetStatus().ToDict()
+
+    self.assertEqual(status_dict["state"], "RUNNING")
+    self.assertFalse(status_dict["busy"])
+    self.assertEqual(
+        status_dict["active_revision"], {"build": _ACTIVE_IMAGE_REF}
+    )
+    last_upgrade = status_dict["last_upgrade"]
+    self.assertEqual(last_upgrade["image_ref"], _CANDIDATE_IMAGE_REF)
+    self.assertFalse(last_upgrade["success"])
+    self.assertEqual(last_upgrade["reason"], "rolled_back")
+    self.assertNotEmpty(last_upgrade["started_at"])
+    self.assertNotEmpty(last_upgrade["finished_at"])
 
   # ==========================================================================
-  # Start
+  # Start (first start: no active release)
   # ==========================================================================
 
   @mock.patch.object(process_executor.MttExecutor, "FromConfigFiles")
@@ -418,65 +538,29 @@ class NodeStateTest(absltest.TestCase):
         os.path.exists(self.release_mgr.tunnel_compose_env_path)
     )
 
-  def testStart_staleCoreAborts(self):
-    self._PopulateStaticConfig()
-    self.mock_image_executor.PullAndResolveImageRef.return_value = (
-        _CANDIDATE_IMAGE_REF
-    )
-    self.mock_image_executor.GetContainerStatus.return_value = (
-        docker_image.ContainerStatus.HEALTHY
-    )
-    self.mock_image_executor.DoesContainerMatchImage.return_value = False
-    self.mock_image_executor.GetContainerImage.return_value = (
-        _ACTIVE_IMAGE_REF
-    )
-
-    success = self.state_mgr.Start()
-
-    self.assertFalse(success)
-    self.mock_compose_executor.StartAndAwaitHealthy.assert_not_called()
-    self.mock_stop_executor.Stop.assert_not_called()
-
-  def testStart_currentCoreAndHealthyTunnelDoesNothing(self):
+  @mock.patch.object(process_executor.MttExecutor, "FromConfigFiles")
+  def testStart_firstStartStopsForeignCoreAndDeploys(
+      self, mock_from_config_files
+  ):
     self._PopulateStaticConfig()
     self._RecordAppliedTunnelEnv()
     self.mock_image_executor.PullAndResolveImageRef.return_value = (
         _CANDIDATE_IMAGE_REF
     )
+    # A container started outside the node framework: no active release owns
+    # it, so the first start takes it over rather than refusing.
     self.mock_image_executor.GetContainerStatus.return_value = (
         docker_image.ContainerStatus.HEALTHY
     )
-    self.mock_image_executor.DoesContainerMatchImage.return_value = True
-
-    success = self.state_mgr.Start()
-
-    self.assertTrue(success)
-    self.mock_compose_executor.StartAndAwaitHealthy.assert_not_called()
-    self.mock_stop_executor.Stop.assert_not_called()
-    self.assertFalse(self.release_mgr.has_staging_release)
-
-  @mock.patch.object(process_executor.MttExecutor, "FromConfigFiles")
-  def testStart_currentCoreAndDownTunnelStopsCore(
-      self, mock_from_config_files
-  ):
-    self._PopulateStaticConfig()
-    self.mock_image_executor.PullAndResolveImageRef.return_value = (
-        _CANDIDATE_IMAGE_REF
-    )
-    self.mock_image_executor.GetContainerStatus.return_value = (
-        docker_image.ContainerStatus.HEALTHY
-    )
-    self.mock_image_executor.DoesContainerMatchImage.return_value = True
     mock_from_config_files.return_value = self._MockCore()
 
     success = self.state_mgr.Start()
 
     self.assertTrue(success)
-    # The tunnel was restarted, so the core has to follow it.
     self.mock_stop_executor.Stop.assert_called_once_with(
         drain=False, timeout_sec=None
     )
-    self.assertIn("StopCore", self._JournalSteps())
+    self.mock_compose_executor.StartAndAwaitHealthy.assert_not_called()
     self.assertTrue(self.release_mgr.has_active_release)
 
   @mock.patch.object(process_executor.MttExecutor, "FromConfigFiles")
@@ -502,8 +586,9 @@ class NodeStateTest(absltest.TestCase):
     self.assertTrue(self.release_mgr.has_active_release)
 
   @mock.patch.object(process_executor.MttExecutor, "FromConfigFiles")
-  def testStart_coreFailureAbortsWithoutRollback(self, mock_from_config_files):
-    self._CreateActiveRelease()
+  def testStart_firstStartCoreFailureAbortsWithoutRollback(
+      self, mock_from_config_files
+  ):
     self._PopulateStaticConfig()
     self.mock_image_executor.PullAndResolveImageRef.return_value = (
         _CANDIDATE_IMAGE_REF
@@ -520,6 +605,7 @@ class NodeStateTest(absltest.TestCase):
         mock_from_config_files.return_value.StartAndAwaitHealthy.call_count, 1
     )
     self.assertEqual(self._JournalSteps()[-1], "StartCore")
+    self.assertFalse(self.release_mgr.has_active_release)
 
   @mock.patch.object(process_executor.MttExecutor, "FromConfigFiles")
   def testStart_writesJournal(self, mock_from_config_files):
@@ -563,6 +649,147 @@ class NodeStateTest(absltest.TestCase):
 
     self.assertEqual(self._ReadJournal()["command"], "Stop")
     self.assertLess(len(self._JournalSteps()), first_run_steps)
+
+  # ==========================================================================
+  # Start (active release exists)
+  # ==========================================================================
+
+  @mock.patch.object(process_executor.MttExecutor, "FromConfigFiles")
+  def testStart_activeReleaseDeploysActiveWithoutRegistryOrConfig(
+      self, mock_from_config_files
+  ):
+    # No static config at all: with an active release, start must not need
+    # Parameter Manager, /etc/mtt, or the registry.
+    self._CreateActiveRelease()
+    mock_from_config_files.return_value = self._MockCore()
+
+    success = self.state_mgr.Start()
+
+    self.assertTrue(success)
+    self.mock_image_executor.PullAndResolveImageRef.assert_not_called()
+    mock_from_config_files.assert_called_once_with(
+        lab_config_path=self.release_mgr.active_config_path,
+        pinned_mtt_flags_path=self.release_mgr.active_flags_path,
+        mtt_bin="mtt",
+    )
+    self.assertEqual(
+        self._JournalSteps(),
+        [
+            "StageComposeFiles",
+            "StartTunnel",
+            "RecordAppliedTunnelEnv",
+            "StartCore",
+        ],
+    )
+    self.assertEqual(self.release_mgr.GetActiveImageRef(), _ACTIVE_IMAGE_REF)
+
+  def testStart_activeReleaseCurrentCoreAndHealthyTunnelDoesNothing(self):
+    self._CreateActiveRelease()
+    self._RecordAppliedTunnelEnv()
+    self.mock_image_executor.GetContainerStatus.return_value = (
+        docker_image.ContainerStatus.HEALTHY
+    )
+    self.mock_image_executor.DoesContainerMatchImage.return_value = True
+
+    success = self.state_mgr.Start()
+
+    self.assertTrue(success)
+    self.mock_image_executor.DoesContainerMatchImage.assert_called_once_with(
+        "mtt", _ACTIVE_IMAGE_REF
+    )
+    self.mock_compose_executor.StartAndAwaitHealthy.assert_not_called()
+    self.mock_stop_executor.Stop.assert_not_called()
+    self.assertEqual(self._JournalSteps(), [])
+
+  @mock.patch.object(process_executor.MttExecutor, "FromConfigFiles")
+  def testStart_activeReleaseCurrentCoreAndDownTunnelStopsCore(
+      self, mock_from_config_files
+  ):
+    self._CreateActiveRelease()
+    self.mock_image_executor.GetContainerStatus.return_value = (
+        docker_image.ContainerStatus.HEALTHY
+    )
+    self.mock_image_executor.DoesContainerMatchImage.return_value = True
+    mock_from_config_files.return_value = self._MockCore()
+
+    success = self.state_mgr.Start()
+
+    self.assertTrue(success)
+    # The tunnel was restarted, so the core has to follow it.
+    self.mock_stop_executor.Stop.assert_called_once_with(
+        drain=False, timeout_sec=None
+    )
+    self.assertEqual(
+        self._JournalSteps(),
+        [
+            "StopCore",
+            "StageComposeFiles",
+            "StartTunnel",
+            "RecordAppliedTunnelEnv",
+            "StartCore",
+        ],
+    )
+
+  @mock.patch.object(process_executor.MttExecutor, "FromConfigFiles")
+  def testStart_activeReleaseStaleCoreIsBroughtBackToActive(
+      self, mock_from_config_files
+  ):
+    self._CreateActiveRelease()
+    self._RecordAppliedTunnelEnv()
+    # Container is ahead of core/active (a failed promotion); start resolves
+    # it downward rather than refusing or re-pulling.
+    self.mock_image_executor.GetContainerStatus.return_value = (
+        docker_image.ContainerStatus.HEALTHY
+    )
+    self.mock_image_executor.DoesContainerMatchImage.return_value = False
+    self.mock_image_executor.GetContainerImage.return_value = (
+        _CANDIDATE_IMAGE_REF
+    )
+    mock_from_config_files.return_value = self._MockCore()
+
+    success = self.state_mgr.Start()
+
+    self.assertTrue(success)
+    self.mock_image_executor.PullAndResolveImageRef.assert_not_called()
+    self.mock_compose_executor.StartAndAwaitHealthy.assert_not_called()
+    self.assertEqual(self._JournalSteps(), ["StopCore", "StartCore"])
+    mock_from_config_files.assert_called_once_with(
+        lab_config_path=self.release_mgr.active_config_path,
+        pinned_mtt_flags_path=self.release_mgr.active_flags_path,
+        mtt_bin="mtt",
+    )
+
+  @mock.patch.object(process_executor.MttExecutor, "FromConfigFiles")
+  def testStart_activeReleaseDownCoreAndHealthyTunnelStartsCoreOnly(
+      self, mock_from_config_files
+  ):
+    self._CreateActiveRelease()
+    self._RecordAppliedTunnelEnv()
+    mock_from_config_files.return_value = self._MockCore()
+
+    success = self.state_mgr.Start()
+
+    self.assertTrue(success)
+    self.mock_stop_executor.Stop.assert_not_called()
+    self.assertEqual(self._JournalSteps(), ["StartCore"])
+
+  @mock.patch.object(process_executor.MttExecutor, "FromConfigFiles")
+  def testStart_activeReleaseCoreFailureAbortsWithoutRollback(
+      self, mock_from_config_files
+  ):
+    self._CreateActiveRelease()
+    self._RecordAppliedTunnelEnv()
+    mock_from_config_files.return_value = self._MockCore(
+        success=False, error="Active crash"
+    )
+
+    success = self.state_mgr.Start()
+
+    self.assertFalse(success)
+    self.assertEqual(
+        mock_from_config_files.return_value.StartAndAwaitHealthy.call_count, 1
+    )
+    self.assertEqual(self._JournalSteps(), ["StartCore"])
 
   # ==========================================================================
   # Stop
@@ -718,8 +945,24 @@ class NodeStateTest(absltest.TestCase):
     self.mock_compose_executor.StartAndAwaitHealthy.assert_not_called()
     self.mock_compose_executor.Stop.assert_not_called()
 
-  def testUpgradeCore_alreadyOnCandidateSkips(self):
-    self._PrepareCoreUpgrade()
+  def testUpgradeCore_alreadyOnCandidateAndConfigSkips(self):
+    self._PopulateStaticConfig(flags=("--port=8000",))
+    node_config.MaterializeNodeConfig(
+        static_dir=self.static_dir,
+        var_config_dir=self.release_mgr.config_dir,
+        role=NodeRole.WORKER,
+    )
+    self.release_mgr.StageRelease(_CANDIDATE_IMAGE_REF)
+    self.release_mgr.PromoteStagingToActive()
+    self.release_mgr.StageTunnelEnv()
+    # Simulate an active directory predating revision.json.
+    os.remove(self.release_mgr.active_revision_path)
+    self.mock_image_executor.PullAndResolveImageRef.return_value = (
+        _CANDIDATE_IMAGE_REF
+    )
+    self.mock_image_executor.GetContainerStatus.return_value = (
+        docker_image.ContainerStatus.HEALTHY
+    )
     self.mock_image_executor.DoesContainerMatchImage.return_value = True
 
     success = self.state_mgr.UpgradeCore()
@@ -727,6 +970,234 @@ class NodeStateTest(absltest.TestCase):
     self.assertTrue(success)
     self.mock_stop_executor.Stop.assert_not_called()
     self.assertNotIn("StageRelease", self._JournalSteps())
+    journal = self._ReadJournal()
+    self.assertEqual(journal["reason"], "converged")
+    self.assertEqual(journal["image_ref"], _CANDIDATE_IMAGE_REF)
+    self.assertEqual(
+        self.release_mgr.GetActiveRevision(), {"build": _CANDIDATE_IMAGE_REF}
+    )
+    self.assertEqual(self._JournalSteps()[-1], "RefreshActiveRevision")
+
+  def testUpgradeCore_noOpRevisionWriteFailureIsJournaledError(self):
+    self._PopulateStaticConfig(flags=("--port=8000",))
+    node_config.MaterializeNodeConfig(
+        static_dir=self.static_dir,
+        var_config_dir=self.release_mgr.config_dir,
+        role=NodeRole.WORKER,
+    )
+    self.release_mgr.StageRelease(_CANDIDATE_IMAGE_REF)
+    self.release_mgr.PromoteStagingToActive()
+    self.release_mgr.StageTunnelEnv()
+    self.mock_image_executor.PullAndResolveImageRef.return_value = (
+        _CANDIDATE_IMAGE_REF
+    )
+    self.mock_image_executor.GetContainerStatus.return_value = (
+        docker_image.ContainerStatus.HEALTHY
+    )
+    self.mock_image_executor.DoesContainerMatchImage.return_value = True
+
+    with mock.patch.object(
+        self.release_mgr,
+        "WriteActiveRevisionFromConfig",
+        side_effect=OSError(28, "No space left on device"),
+    ):
+      success = self.state_mgr.UpgradeCore()
+
+    # The failure is reported, not raised: the pipeline closes the journal
+    # with the failed step and an `error` reason, and leaves the core alone.
+    self.assertFalse(success)
+    self.mock_stop_executor.Stop.assert_not_called()
+    journal = self._ReadJournal()
+    self.assertFalse(journal["success"])
+    self.assertEqual(journal["reason"], "error")
+    last_step = journal["steps"][-1]
+    self.assertEqual(last_step["step"], "RefreshActiveRevision")
+    self.assertFalse(last_step["success"])
+    self.assertIn("No space left on device", last_step["error_message"])
+
+  @mock.patch.object(process_executor.MttExecutor, "FromConfigFiles")
+  def testUpgradeCore_sameImageButConfigChangedUpgrades(
+      self, mock_from_config_files
+  ):
+    self._PopulateStaticConfig(flags=("--port=8000",))
+    node_config.MaterializeNodeConfig(
+        static_dir=self.static_dir,
+        var_config_dir=self.release_mgr.config_dir,
+        role=NodeRole.WORKER,
+    )
+    old_active_dir = self.release_mgr.StageRelease(_CANDIDATE_IMAGE_REF)
+    self.release_mgr.PromoteStagingToActive()
+    self.release_mgr.StageTunnelEnv()
+    # Update static config flags while keeping the same resolved image.
+    self._PopulateStaticConfig(flags=("--port=9000",))
+    self.mock_image_executor.PullAndResolveImageRef.return_value = (
+        _CANDIDATE_IMAGE_REF
+    )
+    self.mock_image_executor.GetContainerStatus.return_value = (
+        docker_image.ContainerStatus.HEALTHY
+    )
+    self.mock_image_executor.DoesContainerMatchImage.return_value = True
+    mock_from_config_files.return_value = self._MockCore()
+
+    success = self.state_mgr.UpgradeCore()
+
+    self.assertTrue(success)
+    self.mock_stop_executor.Stop.assert_called_once()
+    self.assertIn("StageRelease", self._JournalSteps())
+    self.assertIn("PromoteStaging", self._JournalSteps())
+    self.assertFalse(os.path.exists(old_active_dir))
+    self.assertEqual(self._ReadJournal()["reason"], "converged")
+
+  @mock.patch.object(process_executor.MttExecutor, "FromConfigFiles")
+  def testUpgradeCore_failedPromotionAheadOfActiveReStagesAndPromotes(
+      self, mock_from_config_files
+  ):
+    self._PrepareCoreUpgrade()
+    # Running container matches candidate, while core/active still has old ref.
+    self.mock_image_executor.DoesContainerMatchImage.return_value = True
+    mock_from_config_files.return_value = self._MockCore()
+
+    success = self.state_mgr.UpgradeCore()
+
+    self.assertTrue(success)
+    self.assertIn("StageRelease", self._JournalSteps())
+    self.assertIn("PromoteStaging", self._JournalSteps())
+    self.assertEqual(
+        self.release_mgr.GetActiveImageRef(), _CANDIDATE_IMAGE_REF
+    )
+    self.assertEqual(self._ReadJournal()["reason"], "converged")
+
+  @mock.patch.object(process_executor.MttExecutor, "FromConfigFiles")
+  def testUpgradeCore_imageRefOverride(self, mock_from_config_files):
+    self._PrepareCoreUpgrade()
+    override_ref = "gcr.io/custom/mtt@sha256:override999"
+    self.mock_image_executor.PullAndResolveImageRef.return_value = override_ref
+    mock_from_config_files.return_value = self._MockCore()
+
+    success = self.state_mgr.UpgradeCore(image_ref=override_ref)
+
+    self.assertTrue(success)
+    self.mock_image_executor.PullAndResolveImageRef.assert_called_once_with(
+        override_ref,
+        service_account_json_key_path=None,
+    )
+    self.assertEqual(self.release_mgr.GetActiveImageRef(), override_ref)
+    journal = self._ReadJournal()
+    self.assertEqual(journal["image_ref"], override_ref)
+    self.assertEqual(journal["reason"], "converged")
+
+  def testUpgradeCore_journalReasonsForFailures(self):
+    # 1. Never started (no active release + core down) -> core_not_running.
+    self._PopulateStaticConfig()
+    self.mock_image_executor.GetContainerStatus.return_value = (
+        docker_image.ContainerStatus.NOT_RUNNING
+    )
+    self.assertFalse(
+        self.state_mgr.UpgradeCore(image_ref=_CANDIDATE_IMAGE_REF)
+    )
+    self.assertEqual(self._ReadJournal()["reason"], "core_not_running")
+    self.assertEqual(self._ReadJournal()["image_ref"], _CANDIDATE_IMAGE_REF)
+
+    # 2. Rogue container running without active release -> error.
+    self.mock_image_executor.GetContainerStatus.return_value = (
+        docker_image.ContainerStatus.HEALTHY
+    )
+    self.assertFalse(self.state_mgr.UpgradeCore())
+    self.assertEqual(self._ReadJournal()["reason"], "error")
+
+    # 3. Pull failed -> pull_failed.
+    self._PrepareCoreUpgrade()
+    self.mock_image_executor.PullAndResolveImageRef.side_effect = (
+        docker_image.Error("Registry error")
+    )
+    self.assertFalse(self.state_mgr.UpgradeCore())
+    self.assertEqual(self._ReadJournal()["reason"], "pull_failed")
+    self.assertEqual(self._ReadJournal()["image_ref"], "mtt-worker:v1")
+    self.mock_image_executor.PullAndResolveImageRef.side_effect = None
+
+    # 4. Active release exists, container down -> core_not_running.
+    self._PrepareCoreUpgrade()
+    self.mock_image_executor.GetContainerStatus.return_value = (
+        docker_image.ContainerStatus.NOT_RUNNING
+    )
+    self.assertFalse(self.state_mgr.UpgradeCore())
+    self.assertEqual(self._ReadJournal()["reason"], "core_not_running")
+
+    # 5. Unhealthy tunnel -> error.
+    self._PrepareCoreUpgrade()
+    self.mock_compose_executor.CheckHealthy.return_value = ExecutionResult(
+        common.CommandResult(1, "", "Compose unhealthy")
+    )
+    self.assertFalse(self.state_mgr.UpgradeCore())
+    self.assertEqual(self._ReadJournal()["reason"], "error")
+    self.mock_compose_executor.CheckHealthy.return_value = ExecutionResult(
+        common.CommandResult(0, "", "")
+    )
+
+    # 6. Drain timeout -> drain_timeout.
+    self._PrepareCoreUpgrade()
+    self.mock_stop_executor.Stop.return_value = ExecutionResult(
+        common.CommandResult(
+            None, None, "Command mtt -vv stop --drain timed out after 60s"
+        )
+    )
+    self.assertFalse(self.state_mgr.UpgradeCore(drain=True, timeout_sec=60))
+    self.assertEqual(self._ReadJournal()["reason"], "drain_timeout")
+
+    # 7. Non-timeout StopCore error -> error.
+    self._PrepareCoreUpgrade()
+    self.mock_stop_executor.Stop.return_value = ExecutionResult(
+        common.CommandResult(1, "", "mtt stop failed")
+    )
+    self.assertFalse(self.state_mgr.UpgradeCore(drain=True, timeout_sec=60))
+    self.assertEqual(self._ReadJournal()["reason"], "error")
+    self.mock_stop_executor.Stop.return_value = ExecutionResult(
+        common.CommandResult(0, "", "")
+    )
+
+  @mock.patch.object(process_executor.MttExecutor, "FromConfigFiles")
+  def testUpgradeCore_leftStoppedReasons(self, mock_from_config_files):
+    # Rollback disabled -> left_stopped.
+    self._PrepareCoreUpgrade()
+    mock_from_config_files.return_value = self._MockCore(
+        success=False, error="Candidate crash"
+    )
+    self.assertFalse(self.state_mgr.UpgradeCore(enable_rollback=False))
+    self.assertEqual(self._ReadJournal()["reason"], "left_stopped")
+
+    # Rollback enabled, but the rollback's StartCore(ACTIVE) also fails ->
+    # left_stopped.
+    self._PrepareCoreUpgrade()
+    mock_from_config_files.return_value = self._MockCore(
+        success=False, error="Both crash"
+    )
+    self.assertFalse(self.state_mgr.UpgradeCore(enable_rollback=True))
+    self.assertEqual(self._ReadJournal()["reason"], "left_stopped")
+
+  def testPipeline_lockHeldAbortsWithoutWritingJournal(self):
+    lock_fd = os.open(
+        self.state_mgr.lock_file, os.O_CREAT | os.O_RDWR, 0o660
+    )
+    self.addCleanup(os.close, lock_fd)
+    fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+
+    existing_journal = {"command": "UpgradeCore", "started_at": "t0"}
+    with open(self.state_mgr.journal_file, "w", encoding="utf-8") as f:
+      json.dump(existing_journal, f)
+
+    stderr = io.StringIO()
+    with contextlib.redirect_stderr(stderr):
+      self.assertFalse(self.state_mgr.Stop())
+
+    self.assertIn("UpgradeCore", stderr.getvalue())
+    self.assertEqual(self._ReadJournal(), existing_journal)
+    self.mock_stop_executor.Stop.assert_not_called()
+
+  def testPipeline_releasesLockAfterRun(self):
+    # The lock primitive itself is covered by node_lock_test.
+    self.assertFalse(node_lock.IsHeld(self.test_dir))
+    self.assertTrue(self.state_mgr.Stop())
+    self.assertFalse(node_lock.IsHeld(self.test_dir))
 
   def testUpgradeCore_noActiveReleaseFails(self):
     self._PopulateStaticConfig()

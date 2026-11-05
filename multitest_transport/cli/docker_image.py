@@ -254,6 +254,38 @@ class DockerImageExecutor:
       return res.stdout.strip()
     return None
 
+  def ListRunningComposeContainers(self, project_name: str) -> list[str]:
+    """Returns the names of running containers of a compose project.
+
+    Matches on the `com.docker.compose.project` label that compose sets on
+    every container it creates, so the answer covers every service of the
+    project whatever profiles it was started with and whatever its health,
+    and needs neither the env file nor the compose files.
+
+    Args:
+      project_name: Compose project name (`-p`).
+
+    Returns:
+      Container names, empty when none is running or the daemon cannot be
+      queried; a daemon that does not answer has no running containers.
+    """
+    res = self._docker_context.Run(
+        [
+            "ps",
+            "--filter",
+            f"label=com.docker.compose.project={project_name}",
+            "--filter",
+            "status=running",
+            "--format",
+            "{{.Names}}",
+        ],
+        raise_on_failure=False,
+        timeout=15,
+    )
+    if res.return_code != 0 or not res.stdout:
+      return []
+    return [line.strip() for line in res.stdout.splitlines() if line.strip()]
+
   def DoesContainerMatchImage(
       self, container_name: str, expected_image: str
   ) -> bool:

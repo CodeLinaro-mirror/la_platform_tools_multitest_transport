@@ -17,7 +17,7 @@
 import logging
 import os
 import shutil
-from typing import Optional, Sequence
+from typing import Callable, Optional, Sequence
 from multitest_transport.cli import host_env
 from multitest_transport.cli import node_permissions
 import yaml
@@ -32,6 +32,22 @@ DEFAULT_OTEL_ENDPOINT = "http://otel-collector:4317"
 DEFAULT_SECRETS_DIR_NAME = "secrets"
 DEFAULT_CONFIG_DIR_NAME = "config"
 DEFAULT_SA_KEY_FILENAME = "sa-key.json"
+# Written by `join`. Materialization prefers it over config/ whenever it
+# exists, so `init` removes it to switch the host to the configuration it
+# writes.
+_MANIFEST_FILENAME = "manifest.yaml"
+
+
+def _RemoveStaleManifest(static_dir: str) -> None:
+  """Removes a `join` manifest, so the static config written by `init` is used.
+
+  Args:
+    static_dir: Root static directory.
+  """
+  manifest = os.path.join(static_dir, _MANIFEST_FILENAME)
+  if os.path.lexists(manifest):
+    os.remove(manifest)
+    logger.info("Removed %s left by a previous join.", manifest)
 
 
 def _ProvisionDirectories(static_dir: str, base_dir: str, group: str) -> int:
@@ -68,6 +84,7 @@ def InitController(
     service_account_json_key_path: Optional[str] = None,
     unrecognized_flags: Sequence[str] = (),
     host_environment: Optional[host_env.HostEnvironment] = None,
+    reset_runtime: Optional[Callable[[], None]] = None,
 ) -> None:
   """Initializes controller configuration non-interactively.
 
@@ -83,6 +100,9 @@ def InitController(
     service_account_json_key_path: Path to local service account JSON key file.
     unrecognized_flags: Extra flags to forward to MTT container.
     host_environment: Environment this host runs in. Detected when omitted.
+    reset_runtime: Called once the static files are written and before the
+      permission policy is re-applied, to reset the runtime directory so the
+      next `start` is a first start.
 
   Raises:
     FileNotFoundError: If service_account_json_key_path does not exist.
@@ -162,6 +182,9 @@ def InitController(
   with open(flags_file, "w", encoding="utf-8") as f:
     yaml.dump(flags_data, f, default_flow_style=False)
 
+  _RemoveStaleManifest(static_dir)
+  if reset_runtime is not None:
+    reset_runtime()
   node_permissions.FinalizeProvisioning(gid, static_dir, base_dir)
   logger.info("Controller initialized successfully in %s", static_dir)
 
@@ -177,6 +200,7 @@ def InitWorker(
     service_account_json_key_path: Optional[str] = None,
     lab_config_path: Optional[str] = None,
     unrecognized_flags: Sequence[str] = (),
+    reset_runtime: Optional[Callable[[], None]] = None,
 ) -> None:
   """Initializes worker configuration non-interactively.
 
@@ -191,6 +215,9 @@ def InitWorker(
     service_account_json_key_path: Path to local service account JSON key file.
     lab_config_path: Path to local lab_config.yaml file.
     unrecognized_flags: Extra flags to forward to MTT container.
+    reset_runtime: Called once the static files are written and before the
+      permission policy is re-applied, to reset the runtime directory so the
+      next `start` is a first start.
 
   Raises:
     ValueError: If dcon_acceptor_target is empty.
@@ -256,5 +283,8 @@ def InitWorker(
   with open(flags_file, "w", encoding="utf-8") as f:
     yaml.dump(flags_data, f, default_flow_style=False)
 
+  _RemoveStaleManifest(static_dir)
+  if reset_runtime is not None:
+    reset_runtime()
   node_permissions.FinalizeProvisioning(gid, static_dir, base_dir)
   logger.info("Worker initialized successfully in %s", static_dir)

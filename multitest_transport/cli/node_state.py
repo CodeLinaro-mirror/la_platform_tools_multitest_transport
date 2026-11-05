@@ -47,6 +47,7 @@ from multitest_transport.cli import compose_directory
 from multitest_transport.cli import docker_image
 from multitest_transport.cli import host_env as host_env_lib
 from multitest_transport.cli import node_config
+from multitest_transport.cli import node_lock
 from multitest_transport.cli import node_permissions
 from multitest_transport.cli import process_executor
 from multitest_transport.cli import release_directory
@@ -54,8 +55,11 @@ import yaml
 
 logger = logging.getLogger(__name__)
 
-_JOURNAL_FILENAME = "journal.json"
-_CORE_CONTAINER_NAME = "mtt"
+# Names the node runs its two service groups under. Public because
+# `node_provision` inspects them on hosts whatever role they were started as.
+CORE_CONTAINER_NAME = "mtt"
+TUNNEL_PROJECT_NAME = "tunnel"
+_CORE_CONTAINER_NAME = CORE_CONTAINER_NAME  # Short alias used throughout.
 
 _ENV_OVERLAY_COMPOSE_FILES: dict[str, str] = {
     host_env_lib.HostEnvironment.GCE.value: "docker-compose.gce.yml",
@@ -115,17 +119,66 @@ class BlockResult:
   success: bool
   error_message: Optional[str] = None
   failed_services: dict[str, str] = dataclasses.field(default_factory=dict)
+  timed_out: bool = False
 
   def __bool__(self) -> bool:
     return self.success
 
 
 @dataclasses.dataclass(frozen=True)
+class LastUpgrade:
+  """Outcome of the most recent completed UpgradeCore run."""
+
+  image_ref: str
+  started_at: str
+  finished_at: str
+  success: bool
+  reason: str
+
+  def ToDict(self) -> dict[str, Any]:
+    return {
+        "image_ref": self.image_ref,
+        "started_at": self.started_at,
+        "finished_at": self.finished_at,
+        "success": self.success,
+        "reason": self.reason,
+    }
+
+
+@dataclasses.dataclass(frozen=True)
 class NodeStatus:
-  """What `status` observed, one entry per service group."""
+  """What `status` observed.
+
+  `state` says what the core container is doing (RUNNING or DOWN); `busy` says
+  whether a pipeline currently holds `.lock`, with `busy_command` naming it.
+  The two are independent: a core being swapped by `core upgrade` is DOWN and
+  busy at once, and a reader that only wants to know whether to act now reads
+  `busy` alone.
+  """
 
   tunnel: TunnelCondition
   core: CoreCondition
+  role: NodeRole = NodeRole.WORKER
+  state: str = "DOWN"
+  busy: bool = False
+  active_revision: dict[str, str] = dataclasses.field(default_factory=dict)
+  busy_command: Optional[str] = None
+  last_upgrade: Optional[LastUpgrade] = None
+
+  def ToDict(self) -> dict[str, Any]:
+    """Returns the JSON-serializable form printed by `status`."""
+    res: dict[str, Any] = {
+        "role": self.role.value,
+        "tunnel": self.tunnel.value,
+        "state": self.state,
+        "busy": self.busy,
+        "active_revision": dict(self.active_revision),
+    }
+    if self.busy_command:
+      res["busy_command"] = self.busy_command
+    if self.last_upgrade is not None:
+      res["last_upgrade"] = self.last_upgrade.ToDict()
+    return res
 
 
 def _Now() -> str:
@@ -168,10 +221,14 @@ def Block(func: Callable[..., BlockResult]) -> Callable[..., BlockResult]:
 
 
 def Pipeline(func: Callable[..., bool]) -> Callable[..., bool]:
-  """Marks a command, and opens and closes its journal.
+  """Marks a command, acquires the host lock, and opens/closes its journal.
 
-  Clears the journal of the previous run, catches TerminalAbortError, and
-  writes the closing outcome entry.
+  Acquires a non-blocking exclusive lock on `<baseDir>/.lock` before opening
+  the journal, retrying for a short grace period so that a concurrent `status`
+  probe, which holds the lock for microseconds, cannot make a command fail as
+  busy. When another command still holds the lock after the grace period,
+  prints the holding command and returns False without touching
+  `journal.json`.
 
   Args:
     func: The pipeline method, which must return a bool.
@@ -184,21 +241,40 @@ def Pipeline(func: Callable[..., bool]) -> Callable[..., bool]:
   def Wrapper(self: Any, *args: Any, **kwargs: Any) -> bool:
     
     name = getattr(func, "__name__", str(func))
-    self._OpenJournal(name)
-    success = False
+    lock_fd = node_lock.Acquire(self._base_dir)
+    if lock_fd is None:
+      holder = node_lock.HolderCommand(self._base_dir)
+      msg = (
+          f"Another node command ({holder}) is already running in"
+          f" {self._base_dir}."
+      )
+      logger.error("%s", msg)
+      print(f"ERROR: {msg}", file=sys.stderr)
+      return False
     try:
-      success = func(self, *args, **kwargs)
-    except TerminalAbortError:
+      self._OpenJournal(name)
       success = False
+      try:
+        success = func(self, *args, **kwargs)
+      except TerminalAbortError:
+        success = False
+      finally:
+        self._CloseJournal(success)
+      return success
     finally:
-      self._CloseJournal(success)
-    return success
+      node_lock.Release(lock_fd)
 
   return Wrapper
 
 
 class NodeStateManager:
-  """Control plane coordinating the tunnel and the core."""
+  """Lifecycle of a node that `init` or `join` has already provisioned.
+
+  Observes the tunnel and the core, runs the lifecycle pipelines (`start`,
+  `stop`, `restart`, `core upgrade`, `tunnel upgrade`), reports `status`, and
+  journals each run. It reads what provisioning set up and never creates or
+  removes the setup itself; that belongs to `node_provision`.
+  """
 
   def __init__(
       self,
@@ -213,7 +289,10 @@ class NodeStateManager:
   ):
     self._base_dir = os.path.abspath(base_dir)
     self._static_dir = os.path.abspath(static_dir)
-    self._journal_file = os.path.join(self._base_dir, _JOURNAL_FILENAME)
+    self._journal_file = os.path.join(
+        self._base_dir, node_lock.JOURNAL_FILENAME
+    )
+    self._lock_file = os.path.join(self._base_dir, node_lock.LOCK_FILENAME)
     self._release_mgr = release_mgr or (
         release_directory.ReleaseDirectoryManager(self._base_dir)
     )
@@ -240,6 +319,10 @@ class NodeStateManager:
     return self._journal_file
 
   @property
+  def lock_file(self) -> str:
+    return self._lock_file
+
+  @property
   def release_manager(self) -> release_directory.ReleaseDirectoryManager:
     return self._release_mgr
 
@@ -262,6 +345,30 @@ class NodeStateManager:
   # ==========================================================================
   # Journal
   # ==========================================================================
+
+  def _ReadJournalDict(self) -> Optional[dict[str, Any]]:
+    """Reads journal.json from disk, returning None if absent or invalid."""
+    if not os.path.exists(self._journal_file):
+      return None
+    try:
+      with open(self._journal_file, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    except (OSError, ValueError):
+      return None
+    return data if isinstance(data, dict) else None
+
+  def _InitUpgradeJournal(self, image_ref: str) -> None:
+    """Initializes UpgradeCore metadata on the open journal."""
+    if self._journal is None:
+      return
+    self._journal["image_ref"] = image_ref
+    self._journal["reason"] = "error"
+
+  def _SetUpgradeReason(self, reason: str) -> None:
+    """Sets the UpgradeCore outcome reason on the open journal."""
+    if self._journal is None:
+      return
+    self._journal["reason"] = reason
 
   def _OpenJournal(self, command: str) -> None:
     """Starts a journal for a pipeline, discarding the previous run's."""
@@ -441,18 +548,65 @@ class NodeStateManager:
     return True
 
   def GetStatus(self) -> NodeStatus:
-    """Observes both groups, writing nothing.
+    """Observes both groups, lock state, active release, and last upgrade.
 
-    It does read: ObserveTunnel stats <base_dir>/tunnel/docker-compose.env and,
-    when it is there, reads that env and the compose files. os.path.exists
-    reports EACCES as False, so a caller who cannot traverse base_dir is told
-    the tunnel is DOWN rather than that they lack access. The CLI therefore
-    gates `status` on group membership like every other command.
+    Writes nothing to disk. It does read: ObserveTunnel stats
+    <base_dir>/tunnel/docker-compose.env, node_lock.IsHeld probes
+    <base_dir>/.lock
+    only if it already exists, and _ReadJournalDict reads journal.json if
+    present. os.path.exists reports EACCES as False, so a caller who cannot
+    traverse base_dir would be told the tunnel is DOWN rather than that they
+    lack access; the CLI therefore gates `status` on group membership like
+    every other command.
 
     Returns:
-      The observed tunnel and core conditions.
+      Structured NodeStatus observation.
     """
-    return NodeStatus(tunnel=self.ObserveTunnel(), core=self.ObserveCore())
+    tunnel = self.ObserveTunnel()
+    core = self.ObserveCore()
+    busy = node_lock.IsHeld(self._base_dir)
+    journal = self._ReadJournalDict()
+
+    state = "RUNNING" if core.is_up else "DOWN"
+    busy_command: Optional[str] = None
+    if busy:
+      busy_command = str((journal or {}).get("command") or "unknown")
+
+    active_revision: dict[str, str] = {}
+    active_ref = self._release_mgr.GetActiveImageRef()
+    if (
+        core.is_up
+        and active_ref
+        and self._image_executor.DoesContainerMatchImage(
+            _CORE_CONTAINER_NAME, active_ref
+        )
+    ):
+      active_revision = self._release_mgr.GetActiveRevision()
+
+    last_upgrade: Optional[LastUpgrade] = None
+    if (
+        journal is not None
+        and journal.get("command") == "UpgradeCore"
+        and "finished_at" in journal
+    ):
+      last_upgrade = LastUpgrade(
+          image_ref=str(journal.get("image_ref") or ""),
+          started_at=str(journal.get("started_at") or ""),
+          finished_at=str(journal.get("finished_at") or ""),
+          success=bool(journal.get("success", False)),
+          reason=str(journal.get("reason") or ""),
+      )
+
+    return NodeStatus(
+        tunnel=tunnel,
+        core=core,
+        role=self._role,
+        state=state,
+        busy=busy,
+        active_revision=active_revision,
+        busy_command=busy_command,
+        last_upgrade=last_upgrade,
+    )
 
   # ==========================================================================
   # Setup blocks (touch disk or the registry, move no service)
@@ -612,8 +766,10 @@ class NodeStateManager:
     return env.get("DCON_REPO") or "us-docker.pkg.dev/android-mtt"
 
   @Block
-  def _ResolveCandidate(self) -> BlockResult:
-    """Pulls the configured image and resolves it to an immutable reference."""
+  def _ResolveCandidate(
+      self, image_ref_override: Optional[str] = None
+  ) -> BlockResult:
+    """Pulls the configured or overridden image and resolves an immutable ref."""
     image_name = ""
     tag = ""
     config_flags: dict[str, Any] = {}
@@ -627,18 +783,27 @@ class NodeStateManager:
         image_name = str(config_flags.get("image_name") or "").strip()
         tag = str(config_flags.get("tag") or "").strip()
 
-      last_segment = image_name.rsplit("/", 1)[-1]
-      has_tag_or_digest = "@" in image_name or ":" in last_segment
-      if image_name and not has_tag_or_digest and tag:
-        image_ref = f"{image_name}:{tag}"
+      override = (image_ref_override or "").strip()
+      if override:
+        image_ref = override
       else:
-        image_ref = image_name or "mtt:latest"
+        last_segment = image_name.rsplit("/", 1)[-1]
+        has_tag_or_digest = "@" in image_name or ":" in last_segment
+        if image_name and not has_tag_or_digest and tag:
+          image_ref = f"{image_name}:{tag}"
+        else:
+          image_ref = image_name or "mtt:latest"
+
+      if self._journal is not None and "image_ref" in self._journal:
+        self._journal["image_ref"] = image_ref
 
       sa_key_path = self._ResolveServiceAccountKeyPath(config_flags)
       self._candidate_image_ref = self._image_executor.PullAndResolveImageRef(
           image_ref,
           service_account_json_key_path=sa_key_path,
       )
+      if self._journal is not None and "image_ref" in self._journal:
+        self._journal["image_ref"] = self._candidate_image_ref
     except (docker_image.Error, ValueError, OSError, yaml.YAMLError) as e:
       logger.error("Failed to pull and resolve image: %s", e)
       return BlockResult(False, error_message=str(e))
@@ -682,6 +847,34 @@ class NodeStateManager:
   def _PromoteStaging(self) -> BlockResult:
     """Promotes the candidate staging symlink to active."""
     self._release_mgr.PromoteStagingToActive()
+    return BlockResult(True)
+
+  @Block
+  def _RefreshActiveRevision(self) -> BlockResult:
+    """Rewrites core/active/revision.json from the materialized config.
+
+    Used by a no-op `core upgrade`: the running release already matches the
+    candidate image and config hash, but the Parameter Manager version IDs it
+    was materialized from may have moved (or the release predates
+    revision.json). `status` reports this file as `active_revision`, so a
+    failed write means the host does not report the revision it runs.
+
+    Returns:
+      A failed BlockResult if revision.json could not be written.
+    """
+    if not self._candidate_image_ref:
+      return BlockResult(
+          False, error_message="No candidate image reference to record"
+      )
+    try:
+      self._release_mgr.WriteActiveRevisionFromConfig(self._candidate_image_ref)
+    except OSError as e:
+      return BlockResult(
+          False,
+          error_message=(
+              f"Failed to write {self._release_mgr.active_revision_path}: {e}"
+          ),
+      )
     return BlockResult(True)
 
   @Block
@@ -763,9 +956,17 @@ class NodeStateManager:
     stop_executor = process_executor.MttStopExecutor(mtt_bin=self._mtt_cli_path)
     res = stop_executor.Stop(drain=drain, timeout_sec=timeout_sec)
     if not res.success:
+      timed_out = bool(
+          drain
+          and (
+              res.command_result.return_code is None
+              or "timed out" in res.stderr.lower()
+          )
+      )
       return BlockResult(
           False,
           error_message=res.error_message or "Failed to stop MTT container",
+          timed_out=timed_out,
       )
     return BlockResult(True)
 
@@ -935,7 +1136,7 @@ class NodeStateManager:
     return process_executor.DockerComposeExecutor.FromConfigFiles(
         env_file=env_path,
         project_dir=self._compose_mgr.compose_dir,
-        project_name="tunnel",
+        project_name=TUNNEL_PROJECT_NAME,
         compose_files=compose_files,
         profiles=profiles,
     )
@@ -989,45 +1190,88 @@ class NodeStateManager:
 
   @Pipeline
   def Start(self) -> bool:
-    """Brings the node up on the image the configuration currently names.
+    """Brings the node up on the active release, or deploys the first one.
+
+    With an active release, `start` never resolves a tag, pulls an image, or
+    reads Parameter Manager: it brings the tunnel up if needed and runs the
+    active release, so a reboot never changes the version and does not need
+    the registry. Only `core upgrade` changes the version. Without one, the
+    first start materializes config, resolves the candidate, and deploys it
+    through staging.
 
     Never rolls back. `start` is a manual operation run when nothing is
     serving, so there is no previous release worth restoring; `core upgrade`
     is the command with a failure policy.
 
     Returns:
-      True if the node is running the candidate image and the tunnel is
+      True if the core is running the active release and the tunnel is
       healthy.
     """
-    self._Require(self._MaterializeAndValidateConfig())
-    self._Require(self._ResolveCandidate())
+    if self._release_mgr.has_active_release:
+      return self._StartActive()
+    return self._FirstStart()
 
-    core = self.ObserveCore(self._candidate_image_ref)
+  def _StartActive(self) -> bool:
+    """Deploys the active release, touching only what is not already up.
+
+    Returns:
+      True if the core runs the active release and the tunnel is healthy.
+
+    Raises:
+      TerminalAbortError: If any block failed.
+    """
+    active_ref = self._release_mgr.GetActiveImageRef()
+    core = self.ObserveCore(active_ref)
     tunnel = self.ObserveTunnel()
-    role_str = self._role.value if self._role else "<role>"
+
+    if core == CoreCondition.UP_CURRENT and tunnel == TunnelCondition.HEALTHY:
+      logger.info(
+          "Container 'mtt' is already running the active release %s and the"
+          " tunnel is healthy; nothing to do.",
+          active_ref,
+      )
+      return True
 
     if core == CoreCondition.UP_STALE:
       running_image = (
           self._image_executor.GetContainerImage(_CORE_CONTAINER_NAME)
           or "unknown"
       )
-      self._Abort(
-          "Container 'mtt' is already running image %r, which differs from"
-          " candidate %r. Run 'mtt node %s core upgrade' to replace it, or"
-          " 'mtt node %s stop' and start again.",
+      logger.warning(
+          "Container 'mtt' is running image %r, not the active release %r;"
+          " bringing it back to the active release.",
           running_image,
-          self._candidate_image_ref,
-          role_str,
-          role_str,
+          active_ref,
       )
 
-    if core == CoreCondition.UP_CURRENT and tunnel == TunnelCondition.HEALTHY:
-      logger.info(
-          "Container 'mtt' is already running candidate image %s and the"
-          " tunnel is healthy; nothing to do.",
-          self._candidate_image_ref,
-      )
-      return True
+    # A running core is stopped when it is not on the active release, or when
+    # the tunnel has to be started underneath it (a dialer restart requires a
+    # core restart). A core that is already DOWN has nothing to stop.
+    if core.is_up:
+      self._Require(self._StopCore())
+    if tunnel == TunnelCondition.DOWN:
+      self._StartTunnelGroup()
+    self._Require(self._StartCore(_Release.ACTIVE))
+    return True
+
+  def _FirstStart(self) -> bool:
+    """Materializes config, resolves the candidate, and deploys it.
+
+    This is the only `start` that contacts Parameter Manager and the registry.
+    Any running core is stopped first: with no active release there is nothing
+    it could legitimately be running, and the deploy must own the container.
+
+    Returns:
+      True if the node is running the candidate image and the tunnel is
+      healthy.
+
+    Raises:
+      TerminalAbortError: If any block failed.
+    """
+    self._Require(self._MaterializeAndValidateConfig())
+    self._Require(self._ResolveCandidate())
+
+    tunnel = self.ObserveTunnel()
 
     self._Require(self._StopCore())
     if tunnel == TunnelCondition.DOWN:
@@ -1088,8 +1332,9 @@ class NodeStateManager:
       enable_rollback: bool = False,
       drain: bool = False,
       timeout_sec: Optional[int] = None,
+      image_ref: Optional[str] = None,
   ) -> bool:
-    """Moves the core to the image the configuration now names.
+    """Moves the core to the candidate image and configuration.
 
     Args:
       enable_rollback: Restart the active release if the candidate fails.
@@ -1100,41 +1345,62 @@ class NodeStateManager:
         long-running test; unattended callers should enable it.
       timeout_sec: Drain timeout in seconds, or None to let `mtt stop` manage
         its own budget.
+      image_ref: Explicit image reference overriding the configured image_name
+        and tag, or None to use the configuration.
 
     Returns:
-      True if the core now runs the candidate image, or already did. False if
-      the candidate was rejected, including when rollback restored the previous
-      release: the node is serving in that case, but the upgrade did not
-      happen.
+      True if the core now runs the candidate image and config, or already did.
+      False if the candidate was rejected, including when rollback restored the
+      previous release: the node is serving in that case, but the upgrade did
+      not happen.
     """
     role_str = self._role.value if self._role else "<role>"
+    self._InitUpgradeJournal((image_ref or "").strip())
 
     self._Require(self._MaterializeAndValidateConfig())
 
     if not self._release_mgr.has_active_release:
+      if self.ObserveCore() == CoreCondition.DOWN:
+        self._SetUpgradeReason("core_not_running")
+      else:
+        self._SetUpgradeReason("error")
       self._Abort(
           "No active release found. Run 'mtt node %s start' first.", role_str
       )
 
-    self._Require(self._ResolveCandidate())
+    resolve_res = self._ResolveCandidate(image_ref_override=image_ref)
+    if not resolve_res:
+      self._SetUpgradeReason("pull_failed")
+      self._Require(resolve_res)
 
     core = self.ObserveCore(self._candidate_image_ref)
     if core == CoreCondition.DOWN:
+      self._SetUpgradeReason("core_not_running")
       self._Abort(
           "Container 'mtt' is not running or is unhealthy. Run 'mtt node %s"
           " start' first.",
           role_str,
       )
 
-    if core == CoreCondition.UP_CURRENT:
+    if (
+        core == CoreCondition.UP_CURRENT
+        and self._release_mgr.GetActiveImageRef() == self._candidate_image_ref
+        and self._release_mgr.DoesActiveMatchConfig()
+    ):
+      # Nothing to restart, but the recorded revision must still match what
+      # `latest` resolved to now; a failure here is a failed upgrade, since
+      # `status` would keep reporting a stale revision.
+      self._Require(self._RefreshActiveRevision())
+      self._SetUpgradeReason("converged")
       logger.info(
-          "Running container 'mtt' already matches candidate image %s;"
-          " nothing to upgrade.",
+          "Running container 'mtt' already matches candidate image %s and"
+          " configuration; nothing to upgrade.",
           self._candidate_image_ref,
       )
       return True
 
     if self.ObserveTunnel() != TunnelCondition.HEALTHY:
+      self._SetUpgradeReason("error")
       self._Abort(
           "Tunnel sidecars are not healthy. Run 'mtt node %s tunnel upgrade'"
           " or 'mtt node %s start' first.",
@@ -1148,7 +1414,12 @@ class NodeStateManager:
     )
 
     self._Require(self._StageRelease())
-    self._Require(self._StopCore(drain=drain, timeout_sec=timeout_sec))
+    stop_res = self._StopCore(drain=drain, timeout_sec=timeout_sec)
+    if not stop_res:
+      self._SetUpgradeReason(
+          "drain_timeout" if stop_res.timed_out else "error"
+      )
+      self._Require(stop_res)
 
     candidate_res = self._StartCore(_Release.STAGING)
     if candidate_res:
@@ -1156,8 +1427,10 @@ class NodeStateManager:
       # would restart the active release on top of a running candidate, so the
       # staging release is left in place for inspection.
       self._Require(self._PromoteStaging())
+      self._SetUpgradeReason("converged")
       return True
 
+    self._SetUpgradeReason("left_stopped")
     if not enable_rollback:
       self._Abort(
           "Candidate %s failed its health check and rollback is disabled, so"
@@ -1176,6 +1449,7 @@ class NodeStateManager:
     self._Require(self._DiscardStaging())
     self._Require(self._StopCore())
     self._Require(self._StartCore(_Release.ACTIVE))
+    self._SetUpgradeReason("rolled_back")
     logger.error(
         "Core upgrade to %s failed. The candidate was rejected and the"
         " previous active release %s was restored; the node is serving but"

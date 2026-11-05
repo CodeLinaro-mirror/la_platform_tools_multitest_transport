@@ -15,15 +15,18 @@
 """MTT Node CLI commands for Controller and Worker orchestration."""
 
 import argparse
+import contextlib
 import functools
+import json
 import logging
 import os
 import sys
-from typing import Any, Callable, Optional, Sequence
+from typing import Any, Callable, Iterator, Optional, Sequence
 from multitest_transport.cli import host_env
 from multitest_transport.cli import node_init
 from multitest_transport.cli import node_join
 from multitest_transport.cli import node_permissions
+from multitest_transport.cli import node_provision
 from multitest_transport.cli import node_state
 
 logger = logging.getLogger(__name__)
@@ -31,14 +34,46 @@ logger = logging.getLogger(__name__)
 NodeRole = node_state.NodeRole
 NodeStateManager = node_state.NodeStateManager
 
-# Deliberately not /var/lib/mtt: that tree belongs to the legacy MTT daemon and
-# holds the `mtt` executable, so applying the node's file policy to it would
-# strip the binary's execute bit.
-_DEFAULT_BASE_DIR = "/var/lib/mttnode"
+# The node runtime directory, `base_dir`, is always
+# `<base_parent_dir>/mttnode`; only its parent is configurable, through
+# `--base_parent_dir`. `init` and `join` empty base_dir, and fixing its name
+# means a mistyped flag can never point that at unrelated data. The parent
+# defaults to /var/lib, so base_dir is /var/lib/mttnode. It is deliberately not
+# /var/lib/mtt: that tree belongs to the legacy MTT daemon and holds the `mtt`
+# executable.
+_DEFAULT_BASE_PARENT_DIR = "/var/lib"
+_BASE_DIR_NAME = "mttnode"
+_BASE_PARENT_DIR_HELP = (
+    "Parent of the node runtime directory; the node uses"
+    f" <base_parent_dir>/{_BASE_DIR_NAME}"
+    f" (default: {_DEFAULT_BASE_PARENT_DIR})."
+)
+
+
+def _BaseDir(base_parent_dir: str) -> str:
+  """Returns the node runtime directory for a `--base_parent_dir` value.
+
+  Every subcommand goes through this one helper, so no two commands can
+  resolve different directories from the same flag.
+
+  Args:
+    base_parent_dir: Value of `--base_parent_dir`.
+
+  Returns:
+    Absolute path of `<base_parent_dir>/mttnode`.
+  """
+  return os.path.join(os.path.abspath(base_parent_dir), _BASE_DIR_NAME)
+
+
+def _ArgsBaseDir(args: argparse.Namespace) -> str:
+  """Returns the node runtime directory named by parsed CLI arguments."""
+  return _BaseDir(
+      getattr(args, "base_parent_dir", _DEFAULT_BASE_PARENT_DIR)
+  )
 
 
 def _DefaultStateManagerFactory(
-    base_dir: str = _DEFAULT_BASE_DIR,
+    base_dir: str = _BaseDir(_DEFAULT_BASE_PARENT_DIR),
     static_dir: str = node_init.DEFAULT_STATIC_DIR,
     role: NodeRole = NodeRole.WORKER,
     host_environment: Optional[host_env.HostEnvironment] = None,
@@ -115,7 +150,7 @@ def _RequiresMembership(handler: Callable[..., int]) -> Callable[..., int]:
 
 
 def _PrintNextSteps(
-    role: NodeRole, static_dir: str, base_dir: str, mtt_group: str
+    role: NodeRole, static_dir: str, base_parent_dir: str, mtt_group: str
 ) -> None:
   """Tells the operator the command to run next.
 
@@ -127,20 +162,44 @@ def _PrintNextSteps(
   Args:
     role: Role that was just provisioned.
     static_dir: Static configuration root that was provisioned.
-    base_dir: Runtime base directory that was provisioned.
+    base_parent_dir: Value of `--base_parent_dir` that was used.
     mtt_group: Group that now owns both directories.
   """
   command = f"mtt node {role.value} start"
   if static_dir != node_init.DEFAULT_STATIC_DIR:
     command += f" --static_dir {static_dir}"
-  if base_dir != _DEFAULT_BASE_DIR:
-    command += f" --base_dir {base_dir}"
+  if base_parent_dir != _DEFAULT_BASE_PARENT_DIR:
+    command += f" --base_parent_dir {base_parent_dir}"
   print(
       f"\n{role.value.capitalize()} provisioned in {static_dir}."
       f"\n\nNext step, start the node:\n  {command}\n"
-      f"\nNo sudo needed: {static_dir} and {base_dir} are owned by the"
-      f" '{mtt_group}' group, so any member of it can run the command."
+      f"\nNo sudo needed: {static_dir} and {_BaseDir(base_parent_dir)} are"
+      f" owned by the '{mtt_group}' group, so any member of it can run the"
+      " command."
   )
+
+
+@contextlib.contextmanager
+def _Reprovisioning(args: argparse.Namespace) -> Iterator[Callable[[], None]]:
+  """Holds the node for `init`/`join` and yields the runtime reset.
+
+  The check does not depend on the role being provisioned: the node may
+  currently run as the other role. Role-dependent host preparation, when there
+  is some, runs after the reset and the new config inside this same hold.
+
+  Args:
+    args: Parsed CLI arguments of the provisioning command.
+
+  Yields:
+    A function that empties the node runtime directory.
+
+  Raises:
+    node_provision.ReprovisionError: If the node is running, `.lock` is held,
+      or the node runtime directory cannot be reset safely.
+  """
+  static_dir = getattr(args, "static_dir", node_init.DEFAULT_STATIC_DIR)
+  with node_provision.Reprovisioning(static_dir, _ArgsBaseDir(args)) as reset:
+    yield reset
 
 
 def _CreateLabConfigArgParser() -> argparse.ArgumentParser:
@@ -190,10 +249,10 @@ def _CreateCommonInitArgParser() -> argparse.ArgumentParser:
       help="Static configuration directory (default: /etc/mtt).",
   )
   parser.add_argument(
-      "--base_dir",
+      "--base_parent_dir",
       type=str,
-      default=_DEFAULT_BASE_DIR,
-      help="Runtime directory (default: /var/lib/mttnode).",
+      default=_DEFAULT_BASE_PARENT_DIR,
+      help=_BASE_PARENT_DIR_HELP,
   )
   parser.add_argument(
       "--mtt_group",
@@ -271,27 +330,31 @@ def _HandleControllerInit(
 ) -> int:
   """Handler for `mtt node controller init`."""
   static_dir = getattr(args, "static_dir", node_init.DEFAULT_STATIC_DIR)
-  base_dir = getattr(args, "base_dir", _DEFAULT_BASE_DIR)
+  base_parent_dir = getattr(args, "base_parent_dir", _DEFAULT_BASE_PARENT_DIR)
   mtt_group = getattr(args, "mtt_group", node_permissions.DEFAULT_MTT_GROUP)
   try:
     _, passthrough_flags = _ExtractInitArgs(
         args, unrecognized_flags=unrecognized_flags, allow_lab_config=False
     )
-    node_init.InitController(
-        static_dir=static_dir,
-        base_dir=base_dir,
-        mtt_group=mtt_group,
-        image_name=getattr(args, "image_name", node_init.DEFAULT_IMAGE_NAME),
-        tag=getattr(args, "tag", node_init.DEFAULT_TAG),
-        dcon_acceptor_addr=getattr(args, "dcon_acceptor_addr", None),
-        otel=getattr(args, "otel", False),
-        service_account_json_key_path=getattr(
-            args, "service_account_json_key_path", None
-        ),
-        unrecognized_flags=passthrough_flags,
-        host_environment=host_env.Detect(),
+    with _Reprovisioning(args) as reset_runtime:
+      node_init.InitController(
+          static_dir=static_dir,
+          base_dir=_BaseDir(base_parent_dir),
+          mtt_group=mtt_group,
+          image_name=getattr(args, "image_name", node_init.DEFAULT_IMAGE_NAME),
+          tag=getattr(args, "tag", node_init.DEFAULT_TAG),
+          dcon_acceptor_addr=getattr(args, "dcon_acceptor_addr", None),
+          otel=getattr(args, "otel", False),
+          service_account_json_key_path=getattr(
+              args, "service_account_json_key_path", None
+          ),
+          unrecognized_flags=passthrough_flags,
+          host_environment=host_env.Detect(),
+          reset_runtime=reset_runtime,
+      )
+    _PrintNextSteps(
+        NodeRole.CONTROLLER, static_dir, base_parent_dir, mtt_group
     )
-    _PrintNextSteps(NodeRole.CONTROLLER, static_dir, base_dir, mtt_group)
     return 0
   except Exception as e:  
     logger.error("Failed to initialize controller: %s", e)
@@ -305,27 +368,29 @@ def _HandleWorkerInit(
 ) -> int:
   """Handler for `mtt node worker init`."""
   static_dir = getattr(args, "static_dir", node_init.DEFAULT_STATIC_DIR)
-  base_dir = getattr(args, "base_dir", _DEFAULT_BASE_DIR)
+  base_parent_dir = getattr(args, "base_parent_dir", _DEFAULT_BASE_PARENT_DIR)
   mtt_group = getattr(args, "mtt_group", node_permissions.DEFAULT_MTT_GROUP)
   try:
     lab_config_path, passthrough_flags = _ExtractInitArgs(
         args, unrecognized_flags=unrecognized_flags, allow_lab_config=True
     )
-    node_init.InitWorker(
-        dcon_acceptor_target=getattr(args, "dcon_acceptor_target", ""),
-        static_dir=static_dir,
-        base_dir=base_dir,
-        mtt_group=mtt_group,
-        image_name=getattr(args, "image_name", node_init.DEFAULT_IMAGE_NAME),
-        tag=getattr(args, "tag", node_init.DEFAULT_TAG),
-        otel=getattr(args, "otel", False),
-        service_account_json_key_path=getattr(
-            args, "service_account_json_key_path", None
-        ),
-        lab_config_path=lab_config_path,
-        unrecognized_flags=passthrough_flags,
-    )
-    _PrintNextSteps(NodeRole.WORKER, static_dir, base_dir, mtt_group)
+    with _Reprovisioning(args) as reset_runtime:
+      node_init.InitWorker(
+          dcon_acceptor_target=getattr(args, "dcon_acceptor_target", ""),
+          static_dir=static_dir,
+          base_dir=_BaseDir(base_parent_dir),
+          mtt_group=mtt_group,
+          image_name=getattr(args, "image_name", node_init.DEFAULT_IMAGE_NAME),
+          tag=getattr(args, "tag", node_init.DEFAULT_TAG),
+          otel=getattr(args, "otel", False),
+          service_account_json_key_path=getattr(
+              args, "service_account_json_key_path", None
+          ),
+          lab_config_path=lab_config_path,
+          unrecognized_flags=passthrough_flags,
+          reset_runtime=reset_runtime,
+      )
+    _PrintNextSteps(NodeRole.WORKER, static_dir, base_parent_dir, mtt_group)
     return 0
   except Exception as e:  
     logger.error("Failed to initialize worker: %s", e)
@@ -362,13 +427,9 @@ def _HandleWorkerJoin(
 ) -> int:
   """Handler for `mtt node worker join`."""
   static_dir = getattr(args, "static_dir", node_init.DEFAULT_STATIC_DIR)
-  base_dir = getattr(args, "base_dir", _DEFAULT_BASE_DIR)
+  base_parent_dir = getattr(args, "base_parent_dir", _DEFAULT_BASE_PARENT_DIR)
   mtt_group = getattr(args, "mtt_group", node_permissions.DEFAULT_MTT_GROUP)
-  var_config_dir = (
-      os.path.join(base_dir, "config")
-      if base_dir
-      else node_join.DEFAULT_VAR_CONFIG_DIR
-  )
+  base_dir = _BaseDir(base_parent_dir)
   ui = prompter or node_join.Prompter()
   tag = getattr(args, "tag", None)
   android_sa_key_path = getattr(args, "android_service_account_key_path", None)
@@ -378,14 +439,19 @@ def _HandleWorkerJoin(
   if android_sa_key_path:
     join_kwargs["android_service_account_key_path"] = android_sa_key_path
   try:
-    node_join.Join(
-        static_dir=static_dir,
-        var_config_dir=var_config_dir,
-        base_dir=base_dir,
-        mtt_group=mtt_group,
-        prompter=ui,
-        **join_kwargs,
-    )
+    # The node is held from before the first prompt until the runtime
+    # directory has been reset, and released before the start handoff below,
+    # which takes the lock itself.
+    with _Reprovisioning(args) as reset_runtime:
+      node_join.Join(
+          static_dir=static_dir,
+          var_config_dir=os.path.join(base_dir, "config"),
+          base_dir=base_dir,
+          mtt_group=mtt_group,
+          prompter=ui,
+          reset_runtime=reset_runtime,
+          **join_kwargs,
+      )
   except node_join.UserAbortError:
     logger.info("Worker join cancelled by user; no changes were applied.")
     return 1
@@ -395,7 +461,7 @@ def _HandleWorkerJoin(
 
   # The join is committed from here on. Failures below are start failures.
   if not _ConfirmStartNow(ui):
-    _PrintNextSteps(NodeRole.WORKER, static_dir, base_dir, mtt_group)
+    _PrintNextSteps(NodeRole.WORKER, static_dir, base_parent_dir, mtt_group)
     return 0
   exit_code = _HandleStart(args, NodeRole.WORKER)
   if exit_code != 0:
@@ -411,7 +477,7 @@ def _GetStateManager(
     args: argparse.Namespace, role: NodeRole
 ) -> NodeStateManager:
   """Helper to construct NodeStateManager from CLI args."""
-  base_dir = getattr(args, "base_dir", _DEFAULT_BASE_DIR)
+  base_dir = _ArgsBaseDir(args)
   static_dir = getattr(args, "static_dir", node_init.DEFAULT_STATIC_DIR)
   mtt_cli_path = getattr(args, "cli_path", None)
   kwargs = {"mtt_cli_path": mtt_cli_path} if mtt_cli_path else {}
@@ -462,9 +528,7 @@ def _HandleStatus(args: argparse.Namespace, role: NodeRole) -> int:
   """
   mgr = _GetStateManager(args, role)
   status = mgr.GetStatus()
-  print(f"role: {role.value}")
-  print(f"tunnel: {status.tunnel.value}")
-  print(f"core: {'running' if status.core.is_up else 'down'}")
+  print(json.dumps(status.ToDict(), indent=2))
   return 0
 
 
@@ -482,10 +546,12 @@ def _HandleCoreUpgrade(args: argparse.Namespace, role: NodeRole) -> int:
   enable_rollback = getattr(args, "enable_rollback", False)
   drain = getattr(args, "drain", False)
   drain_timeout = getattr(args, "drain_timeout", None)
+  image_ref = getattr(args, "image_ref", None)
   success = mgr.UpgradeCore(
       enable_rollback=enable_rollback,
       drain=drain,
       timeout_sec=drain_timeout if drain else None,
+      image_ref=image_ref,
   )
   return 0 if success else 1
 
@@ -570,10 +636,10 @@ def AddNodeSubparsers(subparsers: Any) -> None:
       help="Static configuration directory (default: /etc/mtt).",
   )
   worker_join.add_argument(
-      "--base_dir",
+      "--base_parent_dir",
       type=str,
-      default=_DEFAULT_BASE_DIR,
-      help="Base directory for runtime files (default: /var/lib/mttnode).",
+      default=_DEFAULT_BASE_PARENT_DIR,
+      help=_BASE_PARENT_DIR_HELP,
   )
   # A flag and nothing else: the interactive wizard never prompts for it, so
   # the common case stays a plain `sudo mtt node worker join`.
@@ -620,10 +686,10 @@ def _AddLifecycleCommands(subparsers: Any, role: NodeRole) -> None:
       "start", help=f"Start all {role.value} services and application."
   )
   start_p.add_argument(
-      "--base_dir",
+      "--base_parent_dir",
       type=str,
-      default=_DEFAULT_BASE_DIR,
-      help="Runtime directory.",
+      default=_DEFAULT_BASE_PARENT_DIR,
+      help=_BASE_PARENT_DIR_HELP,
   )
   start_p.add_argument(
       "--static_dir",
@@ -638,10 +704,10 @@ def _AddLifecycleCommands(subparsers: Any, role: NodeRole) -> None:
       "stop", help=f"Stop all {role.value} services and application."
   )
   stop_p.add_argument(
-      "--base_dir",
+      "--base_parent_dir",
       type=str,
-      default=_DEFAULT_BASE_DIR,
-      help="Runtime directory.",
+      default=_DEFAULT_BASE_PARENT_DIR,
+      help=_BASE_PARENT_DIR_HELP,
   )
   stop_p.add_argument(
       "--static_dir",
@@ -674,10 +740,10 @@ def _AddLifecycleCommands(subparsers: Any, role: NodeRole) -> None:
       "restart", help=f"Restart {role.value} services and application."
   )
   restart_p.add_argument(
-      "--base_dir",
+      "--base_parent_dir",
       type=str,
-      default=_DEFAULT_BASE_DIR,
-      help="Runtime directory.",
+      default=_DEFAULT_BASE_PARENT_DIR,
+      help=_BASE_PARENT_DIR_HELP,
   )
   restart_p.add_argument(
       "--static_dir",
@@ -694,10 +760,10 @@ def _AddLifecycleCommands(subparsers: Any, role: NodeRole) -> None:
       "status", help=f"Check {role.value} node status."
   )
   status_p.add_argument(
-      "--base_dir",
+      "--base_parent_dir",
       type=str,
-      default=_DEFAULT_BASE_DIR,
-      help="Runtime directory.",
+      default=_DEFAULT_BASE_PARENT_DIR,
+      help=_BASE_PARENT_DIR_HELP,
   )
   status_p.add_argument(
       "--static_dir",
@@ -716,10 +782,10 @@ def _AddLifecycleCommands(subparsers: Any, role: NodeRole) -> None:
   )
   tunnel_up = tunnel_sub.add_parser("upgrade", help="Upgrade tunnel sidecars.")
   tunnel_up.add_argument(
-      "--base_dir",
+      "--base_parent_dir",
       type=str,
-      default=_DEFAULT_BASE_DIR,
-      help="Runtime directory.",
+      default=_DEFAULT_BASE_PARENT_DIR,
+      help=_BASE_PARENT_DIR_HELP,
   )
   tunnel_up.add_argument(
       "--static_dir",
@@ -740,10 +806,10 @@ def _AddLifecycleCommands(subparsers: Any, role: NodeRole) -> None:
       "upgrade", help="Upgrade core application container."
   )
   core_up.add_argument(
-      "--base_dir",
+      "--base_parent_dir",
       type=str,
-      default=_DEFAULT_BASE_DIR,
-      help="Runtime directory.",
+      default=_DEFAULT_BASE_PARENT_DIR,
+      help=_BASE_PARENT_DIR_HELP,
   )
   core_up.add_argument(
       "--static_dir",
@@ -780,6 +846,15 @@ def _AddLifecycleCommands(subparsers: Any, role: NodeRole) -> None:
           "Give up and kill 'mtt stop' after this many seconds; only used"
           " with --drain. Unset by default, which lets 'mtt stop' manage its"
           " own budget."
+      ),
+  )
+  core_up.add_argument(
+      "--image_ref",
+      type=str,
+      default=None,
+      help=(
+          "Explicit container image reference (for example, repo@sha256:...)"
+          " overriding the configured image_name and tag."
       ),
   )
   core_up.set_defaults(

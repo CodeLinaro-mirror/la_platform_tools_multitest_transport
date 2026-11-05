@@ -14,6 +14,7 @@
 
 """Unit tests for ReleaseDirectoryManager."""
 
+import json
 import os
 import shutil
 import stat
@@ -290,6 +291,144 @@ class ReleaseDirectoryTest(absltest.TestCase):
     self.assertIn("sha256_v2_manual", pruned)
     self.assertTrue(os.path.exists(rel1))
     self.assertFalse(os.path.exists(rel2))
+
+  def testStageRelease_namesDirectoryWithImageAndConfigHash(self):
+    self._populate_config(flags=("--port=8000",))
+    image_ref = "gcr.io/proj/mtt-worker@sha256:abc12345"
+    expected_hash = self.manager.ComputeConfigHash()
+
+    release_dir = self.manager.StageRelease(image_ref)
+
+    self.assertLen(expected_hash, 12)
+    self.assertEqual(
+        os.path.basename(release_dir),
+        f"{_SanitizeImageRef(image_ref)}-{expected_hash}",
+    )
+
+  def testStageRelease_configChangeStagesDistinctDirectoryPreservingActive(
+      self,
+  ):
+    image_ref = "gcr.io/proj/mtt-worker@sha256:abc12345"
+    self._populate_config(flags=("--port=8000",))
+    active_dir = self.manager.StageRelease(image_ref)
+    self.manager.PromoteStagingToActive()
+
+    # Change config only (same image_ref).
+    with open(self.manager.config_lab_config_path, "w", encoding="utf-8") as f:
+      f.write("host_config:\n  hostname: updated-host\n")
+    staging_dir = self.manager.StageRelease(image_ref)
+
+    self.assertNotEqual(staging_dir, active_dir)
+    self.assertEqual(self.manager._active_release_dir, active_dir)
+    self.assertEqual(self.manager._staging_release_dir, staging_dir)
+    with open(self.manager.active_config_path, "r", encoding="utf-8") as f:
+      self.assertIn("localhost", f.read())
+
+    # Rollback discards the new config directory and keeps active intact.
+    self.manager.DiscardStaging()
+    self.assertTrue(os.path.exists(active_dir))
+    self.assertFalse(os.path.exists(staging_dir))
+
+    # Re-staging and promoting replaces active and prunes the old hash dir.
+    staging_dir2 = self.manager.StageRelease(image_ref)
+    self.manager.PromoteStagingToActive()
+    self.assertEqual(self.manager._active_release_dir, staging_dir2)
+    self.assertFalse(os.path.exists(active_dir))
+
+  def testStageRelease_writesRevisionJsonBuildOnly(self):
+    self._populate_config()
+    image_ref = "gcr.io/proj/mtt-worker@sha256:abc12345"
+
+    release_dir = self.manager.StageRelease(image_ref)
+    self.manager.PromoteStagingToActive()
+
+    revision_path = os.path.join(release_dir, "revision.json")
+    flags_path = os.path.join(release_dir, "pinned_mtt_flags.yaml")
+    self.assertEqual(
+        stat.S_IMODE(os.stat(revision_path).st_mode),
+        node_permissions.BASE_FILE_MODE,
+    )
+    self.assertEqual(
+        stat.S_IMODE(os.stat(flags_path).st_mode),
+        node_permissions.BASE_FILE_MODE,
+    )
+    self.assertEqual(self.manager.GetActiveRevision(), {"build": image_ref})
+
+  def testStageRelease_writesRevisionJsonWithParameterVersions(self):
+    self._populate_config()
+    versions_path = self.manager.config_versions_path
+    with open(versions_path, "w", encoding="utf-8") as f:
+      json.dump(
+          {
+              "tenant_config_version": "20260917_163105",
+              "pool_config_version": "20261002_091200",
+          },
+          f,
+      )
+    image_ref = "gcr.io/proj/mtt-worker@sha256:abc12345"
+
+    self.manager.StageRelease(image_ref)
+    self.manager.PromoteStagingToActive()
+
+    self.assertEqual(
+        self.manager.GetActiveRevision(),
+        {
+            "build": image_ref,
+            "tenant_config_version": "20260917_163105",
+            "pool_config_version": "20261002_091200",
+        },
+    )
+
+  def testDoesActiveMatchConfig(self):
+    self._populate_config(flags=("--port=8000",))
+    self.assertFalse(self.manager.DoesActiveMatchConfig())
+
+    self.manager.StageRelease("gcr.io/proj/mtt-worker@sha256:abc12345")
+    self.manager.PromoteStagingToActive()
+    self.assertTrue(self.manager.DoesActiveMatchConfig())
+
+    # Changing mutable tag alone does not change config hash.
+    self._populate_config(tag="v2", flags=("--port=8000",))
+    self.assertTrue(self.manager.DoesActiveMatchConfig())
+
+    # Changing flags invalidates config match.
+    self._populate_config(tag="v2", flags=("--port=9000",))
+    self.assertFalse(self.manager.DoesActiveMatchConfig())
+
+    # Restoring flags matches again; changing lab_config invalidates match.
+    self._populate_config(tag="v2", flags=("--port=8000",))
+    self.assertTrue(self.manager.DoesActiveMatchConfig())
+    with open(self.manager.config_lab_config_path, "w", encoding="utf-8") as f:
+      f.write("host_config:\n  hostname: other\n")
+    self.assertFalse(self.manager.DoesActiveMatchConfig())
+
+  def testGetActiveImageRef_andWriteActiveRevisionFromConfig(self):
+    self.assertIsNone(self.manager.GetActiveImageRef())
+    self._populate_config(flags=("--port=8000",))
+    image_ref = "gcr.io/proj/mtt-worker@sha256:abc12345"
+    self.manager.StageRelease(image_ref)
+    self.manager.PromoteStagingToActive()
+    self.assertEqual(self.manager.GetActiveImageRef(), image_ref)
+
+    # Simulate an active directory created prior to revision.json support.
+    os.remove(self.manager.active_revision_path)
+    self.assertEqual(self.manager.GetActiveRevision(), {})
+    self.assertTrue(self.manager.DoesActiveMatchConfig())
+
+    versions_path = self.manager.config_versions_path
+    with open(versions_path, "w", encoding="utf-8") as f:
+      json.dump({"tenant_config_version": "v_tenant"}, f)
+
+    self.manager.WriteActiveRevisionFromConfig(image_ref)
+
+    self.assertEqual(
+        stat.S_IMODE(os.stat(self.manager.active_revision_path).st_mode),
+        node_permissions.BASE_FILE_MODE,
+    )
+    self.assertEqual(
+        self.manager.GetActiveRevision(),
+        {"build": image_ref, "tenant_config_version": "v_tenant"},
+    )
 
 
 if __name__ == "__main__":
