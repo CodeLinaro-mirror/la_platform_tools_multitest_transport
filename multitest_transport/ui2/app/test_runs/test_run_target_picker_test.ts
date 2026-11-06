@@ -22,6 +22,7 @@ import {of as observableOf, throwError} from 'rxjs';
 import {APP_DATA} from '../services';
 import {TfcClient} from '../services/tfc_client';
 import {FilterHintType} from '../services/tfc_models';
+import {getEl} from '../testing/jasmine_util';
 import {newMockAppData} from '../testing/mtt_lab_mocks';
 
 import {TestRunTargetPicker} from './test_run_target_picker';
@@ -248,5 +249,17 @@ describe('TestRunTargetPicker', () => {
           expect(result).toEqual([]);
           done();
         });
+  });
+
+  it('displays tooltip for Dynamically Adjust Shard Count checkbox', () => {
+    const checkbox = getEl(
+        testRunTargetPickerFixture.debugElement,
+        '.allowPartialDeviceMatchCheckBox mat-checkbox');
+    expect(checkbox.getAttribute('mattooltip'))
+        .toBe(
+            'When enabled, the test run starts immediately using only the ' +
+            'selected devices that are currently available (IDLE), and fails ' +
+            'if none are available. When disabled, the test run queues and ' +
+            'waits for all selected devices to become available.');
   });
 });

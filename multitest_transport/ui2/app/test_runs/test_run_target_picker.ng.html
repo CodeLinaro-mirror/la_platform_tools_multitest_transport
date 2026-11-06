@@ -60,6 +60,7 @@
   <!-- Allow partial device match -->
   <mat-checkbox [(ngModel)]="allowPartialDeviceMatch"
                 (change)="allowPartialDeviceMatchChange.emit(allowPartialDeviceMatch)"
+                matTooltip="When enabled, the test run starts immediately using only the selected devices that are currently available (IDLE), and fails if none are available. When disabled, the test run queues and waits for all selected devices to become available."
                 fxFlex="350px">
     Dynamically Adjust Shard Count
   </mat-checkbox>
