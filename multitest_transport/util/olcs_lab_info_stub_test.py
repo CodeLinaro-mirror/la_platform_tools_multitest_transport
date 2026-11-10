@@ -214,6 +214,33 @@ class OlcsLabInfoStubTest(absltest.TestCase):
 
     self.assertEqual(device_info.state, 'FAILED')
 
+  def testGetDevice_offlineInCache_returnsOfflineSuffixState(self):
+    """Tests that a device with offline_in_cache dimension appends (Offline)."""
+    get_lab_info_response = lab_info_service_pb2.GetLabInfoResponse()
+    get_lab_info_response.lab_query_result.timestamp.seconds = 60
+    device_info = (
+        get_lab_info_response.lab_query_result.device_view.grouped_devices.device_list.device_info.add()
+    )
+    self._init_device_info(device_info)
+    device_info.device_status = device_pb2.DeviceStatus.BUSY
+    dimension = (
+        device_info.device_feature.composite_dimension.supported_dimension.add()
+    )
+    dimension.name = 'offline_in_cache'
+    dimension.value = 'true'
+    self._olcs_lab_info_client.get_lab_info.return_value = get_lab_info_response
+
+    ats_device_info = self._olcs_lab_info_stub.GetDevice('device_uuid1')
+    self.assertEqual(ats_device_info.state, 'Allocated (Offline)')
+
+    device_info.device_status = device_pb2.DeviceStatus.IDLE
+    ats_device_info = self._olcs_lab_info_stub.GetDevice('device_uuid1')
+    self.assertEqual(ats_device_info.state, 'Available (Offline)')
+
+    device_info.device_status = device_pb2.DeviceStatus.INIT
+    ats_device_info = self._olcs_lab_info_stub.GetDevice('device_uuid1')
+    self.assertEqual(ats_device_info.state, 'INIT')
+
   def testListDevices_match(self):
     """Tests the ListDevices method."""
     options = self._create_list_devices_options(

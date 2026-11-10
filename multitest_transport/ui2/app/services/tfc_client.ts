@@ -25,8 +25,17 @@ import * as mttLabModels from './mtt_lab_models';
 import * as tfcModels from './tfc_models';
 import {DeviceInfosResponse, InvocationStatus, Request} from './tfc_models';
 
-/** Device states to return when excluding offline devices. */
-export const ONLINE_DEVICE_STATES = ['Allocated', 'Available', 'Fastboot'];
+/**
+ * Device states to return when excluding gone devices (keeps online and
+ * cached-offline devices).
+ */
+export const ONLINE_DEVICE_STATES = [
+  'Allocated',
+  'Allocated (Offline)',
+  'Available',
+  'Available (Offline)',
+  'Fastboot',
+];
 
 /** Client for TFC API access */
 @Injectable({

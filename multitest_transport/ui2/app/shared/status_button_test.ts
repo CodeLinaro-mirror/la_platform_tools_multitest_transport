@@ -63,9 +63,17 @@ describe('DeviceState', () => {
     statusButtonixture.detectChanges();
     expect(getTextContent(el).toLowerCase()).toContain('idle');
 
+    statusButton.state = 'Available (Offline)';
+    statusButtonixture.detectChanges();
+    expect(getTextContent(el)).toContain('Idle (Offline)');
+
     statusButton.state = 'Allocated';
     statusButtonixture.detectChanges();
     expect(getTextContent(el).toLowerCase()).toContain('busy');
+
+    statusButton.state = 'Allocated (Offline)';
+    statusButtonixture.detectChanges();
+    expect(getTextContent(el)).toContain('Busy (Offline)');
 
     statusButton.state = 'Gone';
     statusButtonixture.detectChanges();
@@ -83,5 +91,9 @@ describe('DeviceState', () => {
     statusButton.state = 'Available';
     statusButtonixture.detectChanges();
     expect(getTextContent(el).toLowerCase()).toContain('available');
+
+    statusButton.state = 'Allocated (Offline)';
+    statusButtonixture.detectChanges();
+    expect(getTextContent(el)).toContain('Allocated (Offline)');
   });
 });

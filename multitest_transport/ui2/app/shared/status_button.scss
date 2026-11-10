@@ -30,6 +30,12 @@ button {
     background: $progress-background;
   }
 
+  &.status-button-allocated-offline,
+  &.status-button-available-offline {
+    background: $warning-background;
+    width: 140px;
+  }
+
   &.status-button-gone,
   &.status-button-missing {
     background: $danger-background;

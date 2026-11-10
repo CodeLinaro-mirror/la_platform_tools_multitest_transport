@@ -318,6 +318,7 @@ class OlcsLabInfoStub:
     sim_state = 'ABSENT'
     control_id = device_info.device_locator.id
     product_name = ''
+    is_offline_in_cache = False
     for dimension in dimensions:
       if dimension.name == 'build':
         build_id = dimension.value
@@ -343,6 +344,14 @@ class OlcsLabInfoStub:
         control_id = dimension.value
       elif dimension.name == 'type':
         product_name = dimension.value
+      elif dimension.name == 'offline_in_cache':
+        is_offline_in_cache = dimension.value.lower() == 'true'
+
+    if is_offline_in_cache and state in (
+        common.DeviceState.ALLOCATED,
+        common.DeviceState.AVAILABLE,
+    ):
+      state = f'{state} (Offline)'
 
     return api_messages.DeviceInfo(
         device_serial=device_info.device_locator.id,

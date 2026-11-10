@@ -48,12 +48,23 @@ export class StatusButton implements OnInit, OnChanges {
     this.state = this.state.replace('_', ' ');
   }
 
+  getCssClass(state: string): string {
+    return `status-button-${state
+      .replace(/[ ()_]+/g, '-')
+      .replace(/-+$/, '')
+      .toLowerCase()}`;
+  }
+
   getOmniLabState(state: string): string {
     switch (state.toLowerCase()) {
       case 'available':
         return 'idle';
+      case 'available (offline)':
+        return 'idle (offline)';
       case 'allocated':
         return 'busy';
+      case 'allocated (offline)':
+        return 'busy (offline)';
       case 'gone':
         return 'missing';
       default:
