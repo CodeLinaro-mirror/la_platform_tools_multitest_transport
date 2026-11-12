@@ -298,6 +298,17 @@ describe('PageNavigationStrategy', () => {
     expect(url).toBe('/fake?debug=1&is_embedded_mode=true');
   });
 
+  it('should forward the LabConsole force ready flags present on the MTT URL', () => {
+    const url = strategy.buildIframeNavigateUrl(
+      undefined,
+      {'force_bulk_config_ready': 'true', 'force_host_ready': '1'},
+      {'force_all_ready': 'true'},
+    );
+    expect(url).toBe(
+      '/fake?force_all_ready=true&force_bulk_config_ready=true&force_host_ready=1&is_embedded_mode=true',
+    );
+  });
+
   it('should always force is_embedded_mode=true', () => {
     const url = strategy.buildIframeNavigateUrl(
       undefined,

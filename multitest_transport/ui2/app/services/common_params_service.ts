@@ -21,8 +21,19 @@ import {inject, Injectable} from '@angular/core';
  * Common query parameters of MTT UI2, which persist in memory across the
  * client-side SPA navigations and are forwarded to the embedded LabConsole
  * (MHFE V6) iframe.
+ *
+ * The `force_*_ready` keys are LabConsole developer flags: they are forwarded
+ * so that features still under development (e.g. host/device action buttons
+ * or the bulk device configuration actions) can be previewed inside MTT.
  */
-export const COMMON_QUERY_PARAMS = ['debug', 'fake_data'] as const;
+export const COMMON_QUERY_PARAMS = [
+  'debug',
+  'fake_data',
+  'force_host_ready',
+  'force_device_ready',
+  'force_all_ready',
+  'force_bulk_config_ready',
+] as const;
 
 /** Key type of the supported common query parameters. */
 export type CommonQueryParamKey = (typeof COMMON_QUERY_PARAMS)[number];
@@ -57,9 +68,9 @@ export function isCommonQueryParam(key: string): key is CommonQueryParamKey {
  * @return Frozen record of the active common query parameters.
  *
  * Explanation:
- * Only the common query parameters (e.g. debug, fake_data) whose value is
- * 'true' or '1' are captured, so that e.g. '?debug=false' does not activate
- * the debug mode.
+ * Only the common query parameters (e.g. debug, fake_data, force_all_ready)
+ * whose value is 'true' or '1' are captured, so that e.g. '?debug=false' does
+ * not activate the debug mode.
  */
 export function parseCommonQueryParams(
   search: string,

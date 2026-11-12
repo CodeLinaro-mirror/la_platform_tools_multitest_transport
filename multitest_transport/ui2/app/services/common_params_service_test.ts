@@ -47,6 +47,18 @@ describe('CommonParamsService', () => {
     expect(service.getCommonParams()).toEqual({});
   });
 
+  it('should capture the LabConsole force ready flags from the initial URL', () => {
+    const service = createService(
+      '?force_host_ready=true&force_device_ready=1&force_all_ready=true&force_bulk_config_ready=1&f=filter1',
+    );
+    expect(service.getCommonParams()).toEqual({
+      'force_host_ready': 'true',
+      'force_device_ready': '1',
+      'force_all_ready': 'true',
+      'force_bulk_config_ready': '1',
+    });
+  });
+
   it('should return the same immutable record on every call', () => {
     const service = createService('?debug=true');
     expect(Object.isFrozen(service.getCommonParams())).toBeTrue();
@@ -71,6 +83,13 @@ describe('CommonParamsService', () => {
       expect(res).toEqual({});
     });
 
+    it('should ignore force ready flags when value is not true or 1', () => {
+      const res = parseCommonQueryParams(
+        '?force_host_ready=start,restart&force_device_ready=0&force_all_ready=false&force_bulk_config_ready=',
+      );
+      expect(res).toEqual({});
+    });
+
     it('should ignore params with other values', () => {
       const res = parseCommonQueryParams('?debug=foo&fake_data=bar');
       expect(res).toEqual({});
@@ -86,6 +105,10 @@ describe('CommonParamsService', () => {
     it('should accept common query params only', () => {
       expect(isCommonQueryParam('debug')).toBeTrue();
       expect(isCommonQueryParam('fake_data')).toBeTrue();
+      expect(isCommonQueryParam('force_host_ready')).toBeTrue();
+      expect(isCommonQueryParam('force_device_ready')).toBeTrue();
+      expect(isCommonQueryParam('force_all_ready')).toBeTrue();
+      expect(isCommonQueryParam('force_bulk_config_ready')).toBeTrue();
       expect(isCommonQueryParam('f')).toBeFalse();
       expect(isCommonQueryParam('gb')).toBeFalse();
       expect(isCommonQueryParam('is_embedded_mode')).toBeFalse();
