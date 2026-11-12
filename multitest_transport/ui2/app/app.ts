@@ -14,15 +14,18 @@
  * limitations under the License.
  */
 
+import {PortalModule} from '@angular/cdk/portal';
+import {ScrollingModule} from '@angular/cdk/scrolling';
 import {HTTP_INTERCEPTORS, HttpClientModule} from '@angular/common/http';
-import {ChangeDetectionStrategy, Component, Inject, NgModule, OnDestroy, provideZoneChangeDetection} from '@angular/core';
+import {ChangeDetectionStrategy, Component, ElementRef, Inject, NgModule, OnDestroy, OnInit, provideZoneChangeDetection, ViewChild} from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialog, MatDialogRef} from '@angular/material/dialog';
+import {MatSlideToggleModule} from '@angular/material/slide-toggle';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {BrowserModule} from '@angular/platform-browser';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {IsActiveMatchOptions, mapToCanDeactivate, NavigationEnd, Router, RouterModule, Routes} from '@angular/router';
-import {ReplaySubject} from 'rxjs';
-import {takeUntil} from 'rxjs/operators';
+import {Observable, ReplaySubject} from 'rxjs';
+import {filter, map, startWith, takeUntil} from 'rxjs/operators';
 
 import {AuthModule} from './auth/auth_module';
 import {AuthReturnPage} from './auth/auth_return_page';
@@ -51,6 +54,7 @@ import {CommonParamsService} from './services/common_params_service';
 import {FILE_BROWSER_PATH} from './services/file_service';
 import {IapInterceptor} from './services/iap_interceptor';
 import {NavigationEventService, NavigationTarget} from './services/navigation_event_service';
+import {PreferenceService} from './services/preference_service';
 import {ServicesModule} from './services/services_module';
 import {StrictParamsInterceptor} from './services/strict_params';
 import {UserService} from './services/user_service';
@@ -60,6 +64,7 @@ import {SettingPage} from './settings/setting_page';
 import {SetupWizardDialog} from './setup_wizard/setup_wizard_dialog';
 import {SetupWizardModule} from './setup_wizard/setup_wizard_module';
 import {UnsavedChangeGuard} from './shared/can_deactivate';
+import {HeaderSlotService} from './shared/header_slot_service';
 import {SharedModule} from './shared/shared_module';
 import {EditTestSuitesPage} from './test_plans/edit_test_suites_page';
 import {TestPlanEditPage} from './test_plans/test_plan_edit_page';
@@ -234,7 +239,7 @@ export const routes: Routes = [
 @Component(
     {standalone: false, changeDetection: ChangeDetectionStrategy.Eager,
      selector: 'mtt', styleUrls: ['./app.css'], templateUrl: './app.ng.html'})
-export class Mtt implements OnDestroy {
+export class Mtt implements OnDestroy, OnInit {
   readonly navigationTarget = NavigationTarget;
   /**
    * Matches the active Devices / Hosts left navigation menu items by their path
@@ -247,10 +252,17 @@ export class Mtt implements OnDestroy {
     fragment: 'ignored',
     matrixParams: 'ignored',
   };
+  @ViewChild('headerSlot', {static: true}) headerSlot!: ElementRef<HTMLElement>;
   sideNavExpanded = false;
   atsMajorVersionStr = '';
   netdataUrl: string = '';
   dialogRef!: MatDialogRef<SetupWizardDialog>;
+  /**
+   * Whether the "Legacy UI" switcher is shown in the header: only on the
+   * Devices / Hosts search and detail pages, when the respective Lab Console
+   * feature is enabled.
+   */
+  readonly showLabConsoleToggle$: Observable<boolean>;
   private readonly destroy = new ReplaySubject<void>();
 
   constructor(
@@ -260,8 +272,15 @@ export class Mtt implements OnDestroy {
       private readonly navigationEventService: NavigationEventService,
       private readonly router: Router,
       readonly userService: UserService,
+      readonly preferenceService: PreferenceService,
+      readonly headerSlotService: HeaderSlotService,
       @Inject(APP_DATA) readonly appData: AppData,
   ) {
+    this.showLabConsoleToggle$ = this.router.events.pipe(
+        filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+        startWith(null),
+        map(() => this.isLabConsoleTogglePage()),
+    );
     if (!appData.setupWizardCompleted) {
       this.dialogRef = this.dialog.open(SetupWizardDialog, {
         disableClose: true,
@@ -282,9 +301,39 @@ export class Mtt implements OnDestroy {
     this.checkUserPermission();
   }
 
+  ngOnInit() {
+    // Registered before the routed pages are created (static view query), so
+    // that a page activated on the initial navigation already finds the slot.
+    this.headerSlotService.setSlotElement(this.headerSlot.nativeElement);
+  }
+
   ngOnDestroy() {
+    this.headerSlotService.setSlotElement(null);
     this.destroy.next();
     this.destroy.complete();
+  }
+
+  /**
+   * Returns whether the current page shows the "Legacy UI" switcher.
+   *
+   * @return True on the Devices / Hosts search pages when the Lab Console
+   *     search page is enabled, and on their detail pages when the Lab Console
+   *     UI is enabled; false everywhere else (e.g. test plans, settings).
+   *
+   * Explanation:
+   * The switcher only affects the Devices / Hosts pages, which are the only
+   * pages that can be rendered by the embedded Lab Console (V6) iframe, so it
+   * is hidden on all other pages to keep the header clean.
+   */
+  isLabConsoleTogglePage(): boolean {
+    const path = this.router.url.split('?')[0].split('#')[0];
+    const match = /^\/(?:devices|hosts)(\/[^/]+)?\/?$/.exec(path);
+    if (!match) {
+      return false;
+    }
+    const isDetailPage = !!match[1];
+    return isDetailPage ? !!this.appData.enableLabConsoleUI :
+                          !!this.appData.enableLabConsoleSearchPage;
   }
 
   /** Initialize the tracking of route change events. */
@@ -369,8 +418,11 @@ export class Mtt implements OnDestroy {
     BrowserModule,
     BrowserAnimationsModule,
     HttpClientModule,
+    MatSlideToggleModule,
     MatTooltipModule,
     NotesModule,
+    PortalModule,
+    ScrollingModule,
     ServicesModule,
     SetupWizardModule,
     SharedModule,

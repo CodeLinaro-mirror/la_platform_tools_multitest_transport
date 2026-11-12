@@ -16,7 +16,8 @@
 
 <mat-spinner class="loading-spinner" color="accent" *ngIf="isLoading && !(preferenceService.useLabConsoleSearchPageSubject$ | async)"></mat-spinner>
 
-<mat-toolbar class="device-list-toolbar">
+<!-- The Lab Console search page renders its own header content, so this sub-header is legacy-only. -->
+<mat-toolbar class="device-list-toolbar" *ngIf="!(preferenceService.useLabConsoleSearchPageSubject$ | async)">
   <mat-toolbar-row fxLayoutAlign="space-between center">
     <div fxLayout="row" fxLayoutAlign="start center">
       <h1>Devices</h1>
@@ -31,21 +32,6 @@
           </mat-option>
         </mat-select>
       </mat-form-field>
-    </div>
-    <div
-      class="lab-console-ui-switch-button"
-      *ngIf="appData.enableLabConsoleSearchPage"
-    >
-      <mat-slide-toggle
-        class="lab-console-ui-toggle"
-        [checked]="!(preferenceService.useLabConsoleUISubject$ | async)"
-        (change)="
-          preferenceService.useLabConsoleUISubject$.next(!$event.checked)
-        "
-        color="accent"
-      >
-        Back to Legacy UI
-      </mat-slide-toggle>
     </div>
   </mat-toolbar-row>
 </mat-toolbar>

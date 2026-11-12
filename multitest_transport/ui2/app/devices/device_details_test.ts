@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import {DomPortalOutlet} from '@angular/cdk/portal';
 import {provideHttpClientTesting} from '@angular/common/http/testing';
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
@@ -28,6 +29,7 @@ import {BehaviorSubject, of as observableOf} from 'rxjs';
 import {CommonParamsService} from '../services/common_params_service';
 import {FeedbackService} from '../services/feedback_service';
 import {PreferenceService} from '../services/preference_service';
+import {HeaderSlotService} from '../shared/header_slot_service';
 import {EntityType, V6IframeContainerComponent} from '../shared/v6_iframe_container_component';
 import {newMockAppData} from '../testing/mtt_lab_mocks';
 
@@ -181,5 +183,71 @@ describe('DeviceDetails', () => {
       EntityType.DEVICES,
       newId,
     );
+  });
+
+  describe('header slot', () => {
+    let headerSlotService: HeaderSlotService;
+
+    beforeEach(() => {
+      headerSlotService = TestBed.inject(HeaderSlotService);
+    });
+
+    afterEach(() => {
+      headerSlotService.setSlotElement(null);
+    });
+
+    it('keeps the page header when the app header has no slot', () => {
+      expect(deviceDetails.isHeaderInAppHeaderSlot).toBeFalse();
+      expect(getEl(el, '.header')).toBeTruthy();
+      expect(headerSlotService.portal$.value).toBeNull();
+    });
+
+    it('moves the page header into the app header slot in Lab Console mode', () => {
+      headerSlotService.setSlotElement(document.createElement('div'));
+      const fixture = TestBed.createComponent(DeviceDetails);
+      fixture.componentRef.setInput('id', deviceSerial);
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.isHeaderInAppHeaderSlot).toBeTrue();
+      expect(fixture.nativeElement.querySelector('.header')).toBeNull();
+      const portal = headerSlotService.portal$.value;
+      expect(portal).not.toBeNull();
+
+      // The slot content offers the back button, the "Devices" breadcrumb and
+      // the device switcher.
+      const host = document.createElement('div');
+      document.body.appendChild(host);
+      const outlet = new DomPortalOutlet(host);
+      outlet.attach(portal!);
+      fixture.detectChanges();
+      expect(host.querySelector('#back-button')).toBeTruthy();
+      expect(host.querySelector('.header-crumb')!.textContent).toContain('Devices');
+      expect(host.querySelector('mat-select.entity-switcher')).toBeTruthy();
+      outlet.dispose();
+      host.remove();
+
+      // Switching back to the legacy UI restores the page header.
+      useLabConsoleUISubject$.next(false);
+      fixture.detectChanges();
+      expect(fixture.componentInstance.isHeaderInAppHeaderSlot).toBeFalse();
+      expect(fixture.nativeElement.querySelector('.header')).toBeTruthy();
+      expect(headerSlotService.portal$.value).toBeNull();
+      fixture.destroy();
+    });
+
+    it('never uses the app header slot in the dialog (modal) mode', () => {
+      headerSlotService.setSlotElement(document.createElement('div'));
+      const fixture = TestBed.createComponent(DeviceDetails);
+      // Opened from a dialog: MAT_DIALOG_DATA carries the device id.
+      (fixture.componentInstance as {params: DeviceDetails['params']}).params =
+          {id: deviceSerial, newWindow: false};
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.isModalMode).toBeTrue();
+      expect(fixture.componentInstance.isHeaderInAppHeaderSlot).toBeFalse();
+      expect(fixture.nativeElement.querySelector('.header')).toBeTruthy();
+      expect(headerSlotService.portal$.value).toBeNull();
+      fixture.destroy();
+    });
   });
 });

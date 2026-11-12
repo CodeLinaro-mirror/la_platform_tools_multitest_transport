@@ -14,7 +14,43 @@
  limitations under the License.
 -->
 
-<div class="header" fxLayout="row" fxLayoutAlign="space-between center">
+<!--
+  Lab Console mode: the page header lives in the app header slot (see
+  HeaderSlotService) as a breadcrumb, so that the embedded page gets the full
+  height. The <div class="header"> below is only rendered otherwise.
+-->
+<ng-template #headerSlotContent>
+  <div class="header-slot-content">
+    <button
+      mat-icon-button
+      class="back-button"
+      (click)="back()"
+      id="back-button"
+      matTooltip="Return"
+      aria-label="Return"
+    >
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <a class="header-crumb" routerLink="/hosts" queryParamsHandling="preserve">Hosts</a>
+    <mat-icon class="header-crumb-separator">chevron_right</mat-icon>
+    <mat-select
+      class="entity-switcher"
+      panelClass="entity-switcher-panel"
+      [panelWidth]="null"
+      placeholder="Host"
+      aria-label="Host"
+      [(ngModel)]="id"
+      (selectionChange)="load($event.value, true)"
+      (click)="startHostNavigationHats()"
+    >
+      <mat-option *ngFor="let hostname of hostnames" [value]="hostname">
+        {{ hostname }}
+      </mat-option>
+    </mat-select>
+  </div>
+</ng-template>
+
+<div class="header" fxLayout="row" fxLayoutAlign="space-between center" *ngIf="!isHeaderInAppHeaderSlot">
   <div class="header-left" fxLayout="row" fxLayoutAlign="start center">
     <button
       *ngIf="!isModalMode"
@@ -70,11 +106,6 @@
   <div class="action-buttons" fxLayout="row" fxLayoutAlign="end center">
     <div class="loading-spinner-overlay" *ngIf="isLoading && !(preferenceService.useLabConsoleUISubject$ | async)">
       <mat-spinner color="accent"></mat-spinner>
-    </div>
-    <div class="lab-console-ui-switch-button" *ngIf="appData.enableLabConsoleUI">
-      <mat-slide-toggle class="lab-console-ui-toggle" [checked]="!(preferenceService.useLabConsoleUISubject$ | async)" (change)="preferenceService.useLabConsoleUISubject$.next(!$event.checked)" color="accent">
-        Back to Legacy UI
-      </mat-slide-toggle>
     </div>
   </div>
 </div>

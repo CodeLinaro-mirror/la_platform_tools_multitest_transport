@@ -55,6 +55,22 @@ $nav-transition-duration: 250ms;
   line-height: 16px;
 }
 
+// Free header area between the logo and the header actions (see HeaderSlotService).
+// used to compute the horizontal position of the iframe in the header search mode.
+.header-slot {
+  align-items: center;
+  display: flex;
+  flex: 1 1 auto;
+  margin: 0 24px;
+  min-width: 0;
+}
+
+mat-toolbar .lab-console-ui-switch-button {
+  flex: none;
+  font-size: 14px;
+  margin-right: 16px;
+}
+
 :host,
 mat-sidenav-content {
   display: flex;
@@ -63,10 +79,34 @@ mat-sidenav-content {
 }
 
 footer {
+  align-items: center;
   color: #787878;
+  display: flex;
   flex: none;
   font-size: 13px;
-  margin: 20px auto 4px;
+  gap: 16px;
+  justify-content: space-between;
+  margin: 6px 16px 4px;
+
+  .version-info {
+    align-items: center;
+    flex: none;
+    font-size: 12px;
+    justify-content: flex-start;
+    white-space: nowrap;
+
+    .separator {
+      background: #c4c7c5;
+      display: inline-block;
+      height: 12px;
+      margin: 0 10px;
+      width: 1px;
+    }
+  }
+
+  .privacy-notice {
+    text-align: right;
+  }
 }
 
 footer a {
@@ -75,6 +115,11 @@ footer a {
 
 main {
   flex: 1;
+  // Pages taller than the viewport (e.g. the legacy Devices / Hosts tables)
+  // scroll inside the main area instead of growing it, so the footer always
+  // stays visible at the bottom of the window.
+  min-height: 0;
+  overflow: auto;
 }
 
 mat-divider {

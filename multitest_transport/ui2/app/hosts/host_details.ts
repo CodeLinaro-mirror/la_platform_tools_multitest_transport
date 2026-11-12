@@ -15,8 +15,9 @@
  */
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
+import {TemplatePortal} from '@angular/cdk/portal';
 import {Location} from '@angular/common';
-import {AfterViewChecked, ChangeDetectorRef, Component, ElementRef, inject, Input, OnChanges, OnDestroy, OnInit, SimpleChanges, ViewChild, ChangeDetectionStrategy} from '@angular/core';
+import {AfterViewChecked, ChangeDetectorRef, Component, ElementRef, inject, Input, OnChanges, OnDestroy, OnInit, SimpleChanges, TemplateRef, ViewChild, ViewContainerRef, ChangeDetectionStrategy} from '@angular/core';
 import {MAT_DIALOG_DATA} from '@angular/material/dialog';
 import {MatTabChangeEvent} from '@angular/material/tabs';
 import {Router} from '@angular/router';
@@ -34,6 +35,7 @@ import {StorageService} from '../services/storage_service';
 import {TfcClient} from '../services/tfc_client';
 import {TestHarness} from '../services/tfc_models';
 import {UserService} from '../services/user_service';
+import {HeaderSlotService} from '../shared/header_slot_service';
 import {assertRequiredInput} from '../shared/util';
 
 import {HostDetailsSummary} from './host_details_summary';
@@ -72,16 +74,26 @@ export class HostDetails implements AfterViewChecked, OnChanges, OnDestroy,
   isModalMode = false;
   hostnames: string[] = [];
   hostnamesStorageKey = '';
+  /**
+   * Whether the page header (back button, breadcrumb, host switcher) is
+   * rendered in the app header slot instead of the page's own sub-header.
+   */
+  isHeaderInAppHeaderSlot = false;
+  @ViewChild('headerSlotContent', {static: true})
+  headerSlotContent!: TemplateRef<unknown>;
+  private headerPortal?: TemplatePortal;
 
   private readonly cdRef = inject(ChangeDetectorRef);
   private readonly commonParamsService = inject(CommonParamsService);
   private readonly feedbackService = inject(FeedbackService);
+  private readonly headerSlotService = inject(HeaderSlotService);
   private readonly liveAnnouncer = inject(LiveAnnouncer);
   private readonly location = inject(Location);
   private readonly notifier = inject(Notifier);
   private readonly router = inject(Router);
   private readonly storageService = inject(StorageService);
   private readonly tfcClient = inject(TfcClient);
+  private readonly viewContainerRef = inject(ViewContainerRef);
   readonly userService = inject(UserService);
   readonly appData = inject(APP_DATA);
   readonly preferenceService = inject(PreferenceService);
@@ -117,6 +129,7 @@ export class HostDetails implements AfterViewChecked, OnChanges, OnDestroy,
       this.preferenceService.useLabConsoleUISubject$
           .pipe(takeUntil(this.destroy))
           .subscribe((useLabConsoleUI) => {
+            this.syncHeaderSlot(useLabConsoleUI);
             if (useLabConsoleUI && this.container) {
               this.container.initIframeUrl(EntityType.HOSTS, this.id);
             }
@@ -125,8 +138,44 @@ export class HostDetails implements AfterViewChecked, OnChanges, OnDestroy,
   }
 
   ngOnDestroy() {
+    if (this.headerPortal) {
+      this.headerSlotService.detach(this.headerPortal);
+    }
     this.destroy.next();
     this.destroy.complete();
+  }
+
+  /**
+   * Moves the page header into the app header slot while the Lab Console UI
+   * renders this page, and back into the page otherwise.
+   *
+   * @param useLabConsoleUI Whether the Lab Console UI is active.
+   *
+   * Explanation:
+   * In Lab Console mode the page content is the embedded V6 iframe, so the
+   * back button, the "Hosts" breadcrumb and the host switcher are shown in the
+   * app header (HeaderSlotService) and the page's own sub-header is not
+   * rendered, giving the iframe the full height. The dialog (modal) variant and
+   * pages without an app header keep the sub-header.
+   */
+  private syncHeaderSlot(useLabConsoleUI: boolean) {
+    const inSlot = useLabConsoleUI && !this.isModalMode &&
+        this.headerSlotService.isAvailable();
+    if (inSlot === this.isHeaderInAppHeaderSlot) {
+      return;
+    }
+    this.isHeaderInAppHeaderSlot = inSlot;
+    if (inSlot) {
+      this.headerPortal = this.headerPortal ??
+          new TemplatePortal(this.headerSlotContent, this.viewContainerRef);
+      // Attaching from ngOnInit, i.e. in the middle of a change detection
+      // pass that has already checked the app header, is fine: the outlet's
+      // async pipe marks the app component for check and Angular refreshes it
+      // again in the same tick (no NG0100, no extra frame).
+      this.headerSlotService.attach(this.headerPortal);
+    } else if (this.headerPortal) {
+      this.headerSlotService.detach(this.headerPortal);
+    }
   }
 
   ngAfterViewChecked() {

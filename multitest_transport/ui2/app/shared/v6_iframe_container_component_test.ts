@@ -21,8 +21,14 @@ import {
   TestBed,
   tick,
 } from '@angular/core/testing';
-import {ActivatedRoute, provideRouter, Router} from '@angular/router';
-import {BehaviorSubject} from 'rxjs';
+import {
+  ActivatedRoute,
+  Event as RouterEvent,
+  NavigationEnd,
+  provideRouter,
+  Router,
+} from '@angular/router';
+import {BehaviorSubject, Subject} from 'rxjs';
 
 import {APP_DATA} from '../services/app_data';
 import {CommonParamsService} from '../services/common_params_service';
@@ -31,8 +37,12 @@ import {
   NavigationTarget,
 } from '../services/navigation_event_service';
 import {PreferenceService} from '../services/preference_service';
+import {HeaderSlotService} from './header_slot_service';
 import {
+  EMBEDDED_HEADER_SLOT_MESSAGE,
+  EMBEDDED_HEADER_SLOT_REQUEST_MESSAGE,
   EntityType,
+  HEADER_SEARCH_MODE_CLASS,
   MessagePage,
   V6IframeContainerComponent,
 } from './v6_iframe_container_component';
@@ -42,14 +52,17 @@ describe('V6IframeContainerComponent', () => {
   let fixture: ComponentFixture<V6IframeContainerComponent>;
   let router: Router;
   let useLabConsoleUISubject$: BehaviorSubject<boolean>;
+  let useLabConsoleSearchPageSubject$: BehaviorSubject<boolean>;
   // Common query params (e.g. debug, fake_data) captured at SPA bootstrap.
   let commonParams: Record<string, string>;
 
   beforeEach(async () => {
     commonParams = {};
     useLabConsoleUISubject$ = new BehaviorSubject<boolean>(true);
+    useLabConsoleSearchPageSubject$ = new BehaviorSubject<boolean>(true);
     const mockPreferenceService = {
       useLabConsoleUISubject$,
+      useLabConsoleSearchPageSubject$,
     };
     const mockActivatedRoute = {
       snapshot: {
@@ -272,8 +285,31 @@ describe('V6IframeContainerComponent', () => {
           requestId: 'req1',
           url: jasmine.stringMatching(/\/hosts\/host4\?debug=true&fake_data=1$/),
         }),
-        jasmine.objectContaining({targetOrigin: window.location.origin}),
+        window.location.origin,
       );
+    });
+
+    it('should log an error for unknown message types from the same origin', () => {
+      const errorSpy = spyOn(console, 'error');
+      const data = {type: 'BOGUS'};
+      const event = new MessageEvent('message', {data});
+      Object.defineProperty(event, 'origin', {value: window.location.origin});
+
+      component.onMessage(event);
+
+      expect(errorSpy).toHaveBeenCalledOnceWith(
+        'Unknown message type:',
+        'BOGUS',
+        data,
+      );
+      expect(router.navigateByUrl).not.toHaveBeenCalled();
+
+      // Messages from other origins are ignored silently.
+      errorSpy.calls.reset();
+      const foreign = new MessageEvent('message', {data: {type: 'BOGUS'}});
+      Object.defineProperty(foreign, 'origin', {value: 'https://evil.example'});
+      component.onMessage(foreign);
+      expect(errorSpy).not.toHaveBeenCalled();
     });
   });
 
@@ -301,6 +337,142 @@ describe('V6IframeContainerComponent', () => {
     expect(() => {
       component.iframeNavigate('/some/path');
     }).not.toThrow();
+  });
+
+  describe('header slot layout', () => {
+    let headerSlotService: HeaderSlotService;
+    let slot: HTMLElement;
+    let iframeEl: HTMLIFrameElement;
+
+    beforeEach(() => {
+      headerSlotService = TestBed.inject(HeaderSlotService);
+      slot = document.createElement('div');
+      slot.style.cssText =
+        'position: fixed; left: 300px; top: 10px; width: 500px; height: 40px;';
+      document.body.appendChild(slot);
+      iframeEl = document.createElement('iframe');
+      document.body.appendChild(iframeEl);
+      component.iframe = {nativeElement: iframeEl};
+      // This container sits right below a 64px app header.
+      spyOn(fixture.nativeElement, 'getBoundingClientRect').and.returnValue({
+        left: 100,
+        top: 64,
+        right: 1100,
+        bottom: 664,
+        width: 1000,
+        height: 600,
+      } as DOMRect);
+    });
+
+    afterEach(() => {
+      slot.remove();
+      iframeEl.remove();
+      headerSlotService.setSlotElement(null);
+    });
+
+    it('clips the iframe to the header slot and the content area on search pages and tells the iframe where the slot is', () => {
+      spyOnProperty(component, 'isDetailPage', 'get').and.returnValue(false);
+      const postMessage =
+        spyOn(iframeEl.contentWindow!, 'postMessage') as jasmine.Spy;
+      headerSlotService.setSlotElement(slot);
+
+      component.updateHeaderSlotLayout();
+
+      expect(iframeEl.classList).toContain(HEADER_SEARCH_MODE_CLASS);
+      expect(iframeEl.style.left).toBe('100px');
+      expect(iframeEl.style.width).toBe('1000px');
+      expect(iframeEl.style.height).toBe('664px');
+      // Slot: x 300..800 on the page => 200..700 relative to the iframe.
+      expect(iframeEl.style.clipPath).toBe(
+        'polygon(0px 64px, 200px 64px, 200px 0px, 700px 0px, 700px 64px, ' +
+          '1000px 64px, 1000px 664px, 0px 664px)',
+      );
+      expect(postMessage).toHaveBeenCalledOnceWith(
+        jasmine.objectContaining({
+          type: EMBEDDED_HEADER_SLOT_MESSAGE,
+          left: 200,
+          width: 500,
+          height: 64,
+        }),
+        window.location.origin,
+      );
+
+      // Unchanged geometry is not re-sent, unless the iframe asks for it.
+      component.updateHeaderSlotLayout();
+      expect(postMessage).toHaveBeenCalledTimes(1);
+      component.onMessage({
+        origin: window.location.origin,
+        data: {type: EMBEDDED_HEADER_SLOT_REQUEST_MESSAGE},
+      } as MessageEvent);
+      expect(postMessage).toHaveBeenCalledTimes(2);
+    });
+
+    it('lets the iframe fill the container on detail pages', () => {
+      const isDetailPage = spyOnProperty(component, 'isDetailPage', 'get');
+      isDetailPage.and.returnValue(false);
+      headerSlotService.setSlotElement(slot);
+      component.updateHeaderSlotLayout();
+      expect(iframeEl.classList).toContain(HEADER_SEARCH_MODE_CLASS);
+
+      isDetailPage.and.returnValue(true);
+      component.updateHeaderSlotLayout();
+
+      expect(iframeEl.classList).not.toContain(HEADER_SEARCH_MODE_CLASS);
+      expect(iframeEl.style.left).toBe('');
+      expect(iframeEl.style.clipPath).toBe('');
+    });
+
+    it('does not use the header slot when the app header has none', () => {
+      spyOnProperty(component, 'isDetailPage', 'get').and.returnValue(false);
+      const postMessage =
+        spyOn(iframeEl.contentWindow!, 'postMessage') as jasmine.Spy;
+
+      component.updateHeaderSlotLayout();
+
+      expect(iframeEl.classList).not.toContain(HEADER_SEARCH_MODE_CLASS);
+      expect(postMessage).not.toHaveBeenCalled();
+    });
+
+    it('logs and skips the layout when the Lab Console iframe is not rendered', () => {
+      spyOnProperty(component, 'isDetailPage', 'get').and.returnValue(false);
+      const log = spyOn(console, 'log');
+      component.iframe = undefined;
+
+      component.updateHeaderSlotLayout();
+
+      expect(log).toHaveBeenCalledOnceWith(
+        'Lab Console iframe is not rendered, skipping the header slot layout.',
+      );
+    });
+
+    it('re-lays out the iframe once per animation frame after a navigation or a header slot change', async () => {
+      const nextFrame = () =>
+        new Promise<void>((resolve) => {
+          requestAnimationFrame(() => {
+            resolve();
+          });
+        });
+      // Let the frame scheduled by the iframe view child setter run first.
+      await nextFrame();
+      const update = spyOn(component, 'updateHeaderSlotLayout');
+
+      // Two triggers in the same frame are coalesced into a single update,
+      // which runs right before the next paint.
+      (router.events as Subject<RouterEvent>).next(
+        new NavigationEnd(1, '/devices', '/devices'),
+      );
+      headerSlotService.setSlotElement(slot);
+      expect(update).not.toHaveBeenCalled();
+      await nextFrame();
+      expect(update).toHaveBeenCalledTimes(1);
+
+      // Once the frame has run, the next trigger schedules a new frame.
+      (router.events as Subject<RouterEvent>).next(
+        new NavigationEnd(2, '/hosts', '/hosts'),
+      );
+      await nextFrame();
+      expect(update).toHaveBeenCalledTimes(2);
+    });
   });
 
   describe('navMenuClick$', () => {

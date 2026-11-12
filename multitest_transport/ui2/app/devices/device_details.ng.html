@@ -16,7 +16,49 @@
 
 <mat-spinner class="loading-spinner" color="accent" *ngIf="isLoading && !(preferenceService?.useLabConsoleUISubject$ | async)"></mat-spinner>
 
-<div class="header" fxLayout="row" fxLayoutAlign="space-between center">
+<!--
+  In Lab Console mode (the new UI mode, NOT the Legacy UI mode): the page header lives in the app header slot (see
+  HeaderSlotService) as a breadcrumb, so that the embedded page gets the full
+  height. The <div class="header"> below is only rendered otherwise.
+-->
+<!--
+  Below ng-template content is rendered in the app header slot, NOT in the page content.
+-->
+<ng-template #headerSlotContent>
+  <div class="header-slot-content">
+    <button
+      mat-icon-button
+      class="back-button"
+      (click)="back()"
+      id="back-button"
+      matTooltip="Return"
+      aria-label="Return"
+    >
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <a class="header-crumb" routerLink="/devices" queryParamsHandling="preserve">Devices</a>
+    <mat-icon class="header-crumb-separator">chevron_right</mat-icon>
+    <mat-select
+      class="entity-switcher"
+      panelClass="entity-switcher-panel"
+      [panelWidth]="null"
+      placeholder="Device"
+      aria-label="Device"
+      [(ngModel)]="id"
+      (selectionChange)="load($event.value, true)"
+      (click)="startDeviceNavigationHats()"
+    >
+      <mat-option *ngFor="let deviceSerial of deviceSerialsWithDisplay" [value]="deviceSerial.serial">
+        {{ deviceSerial.serialForDisplay }}
+      </mat-option>
+    </mat-select>
+  </div>
+</ng-template>
+
+<!--
+  Below div is rendered in the page content, and it is ONLY rendered when the header is NOT in the app header slot.
+-->
+<div class="header" fxLayout="row" fxLayoutAlign="space-between center" *ngIf="!isHeaderInAppHeaderSlot">
   <div class="header-left" fxLayout="row" fxLayoutAlign="start center">
     <button
       *ngIf="!isModalMode"
@@ -43,13 +85,6 @@
         </mat-option>
       </mat-select>
     </mat-form-field>
-  </div>
-  <div class="action-buttons" *ngIf="appData?.enableLabConsoleUI">
-    <div class="lab-console-ui-switch-button">
-      <mat-slide-toggle class="lab-console-ui-toggle" [checked]="!(preferenceService?.useLabConsoleUISubject$ | async)" (change)="preferenceService?.useLabConsoleUISubject$.next(!$event.checked)" color="accent">
-        Back to Legacy UI
-      </mat-slide-toggle>
-    </div>
   </div>
 </div>
 

@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import {DomPortalOutlet} from '@angular/cdk/portal';
 import {Location} from '@angular/common';
 import {provideHttpClientTesting} from '@angular/common/http/testing';
 import {DebugElement, LOCALE_ID} from '@angular/core';
@@ -30,6 +31,7 @@ import {SurveyTrigger} from '../services/mtt_lab_models';
 import {Notifier} from '../services/notifier';
 import {PreferenceService} from '../services/preference_service';
 import {TfcClient} from '../services/tfc_client';
+import {HeaderSlotService} from '../shared/header_slot_service';
 import {EntityType, V6IframeContainerComponent} from '../shared/v6_iframe_container_component';
 import {getEl, getEls} from '../testing/jasmine_util';
 import {newMockAppData, newMockDeviceInfosResponse, newMockLabHostInfo} from '../testing/mtt_lab_mocks';
@@ -212,5 +214,71 @@ describe('HostDetails', () => {
     hostDetailsFixture.detectChanges();
     expect(containerSpy.navigateForEntity)
         .toHaveBeenCalledWith(EntityType.HOSTS, newId);
+  });
+
+  describe('header slot', () => {
+    let headerSlotService: HeaderSlotService;
+
+    beforeEach(() => {
+      headerSlotService = TestBed.inject(HeaderSlotService);
+    });
+
+    afterEach(() => {
+      headerSlotService.setSlotElement(null);
+    });
+
+    it('keeps the page header when the app header has no slot', () => {
+      expect(hostDetails.isHeaderInAppHeaderSlot).toBeFalse();
+      expect(getEl(el, '.header')).toBeTruthy();
+      expect(headerSlotService.portal$.value).toBeNull();
+    });
+
+    it('moves the page header into the app header slot in Lab Console mode', () => {
+      headerSlotService.setSlotElement(document.createElement('div'));
+      const fixture = TestBed.createComponent(HostDetails);
+      fixture.componentRef.setInput('id', hostname);
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.isHeaderInAppHeaderSlot).toBeTrue();
+      expect(fixture.nativeElement.querySelector('.header')).toBeNull();
+      const portal = headerSlotService.portal$.value;
+      expect(portal).not.toBeNull();
+
+      // The slot content offers the back button, the "Hosts" breadcrumb and
+      // the host switcher.
+      const host = document.createElement('div');
+      document.body.appendChild(host);
+      const outlet = new DomPortalOutlet(host);
+      outlet.attach(portal!);
+      fixture.detectChanges();
+      expect(host.querySelector('#back-button')).toBeTruthy();
+      expect(host.querySelector('.header-crumb')!.textContent).toContain('Hosts');
+      expect(host.querySelector('mat-select.entity-switcher')).toBeTruthy();
+      outlet.dispose();
+      host.remove();
+
+      // Switching back to the legacy UI restores the page header.
+      useLabConsoleUISubject$.next(false);
+      fixture.detectChanges();
+      expect(fixture.componentInstance.isHeaderInAppHeaderSlot).toBeFalse();
+      expect(fixture.nativeElement.querySelector('.header')).toBeTruthy();
+      expect(headerSlotService.portal$.value).toBeNull();
+      fixture.destroy();
+    });
+
+    it('never uses the app header slot in the dialog (modal) mode', () => {
+      headerSlotService.setSlotElement(document.createElement('div'));
+      const fixture = TestBed.createComponent(HostDetails);
+      // Opened from a dialog: MAT_DIALOG_DATA carries the host name.
+      (fixture.componentInstance as {params: HostDetails['params']}).params =
+          {id: hostname, newWindow: false};
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.isModalMode).toBeTrue();
+      expect(fixture.componentInstance.isHeaderInAppHeaderSlot).toBeFalse();
+      expect(fixture.nativeElement.querySelector('.header')).toBeTruthy();
+      expect(headerSlotService.portal$.value).toBeNull();
+      fixture.destroy();
+    });
   });
 });

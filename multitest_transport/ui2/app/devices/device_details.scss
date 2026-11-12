@@ -66,3 +66,73 @@
     }
   }
 }
+
+// Page header rendered in the app header slot in Lab Console mode (see
+// HeaderSlotService): back button · "Devices" breadcrumb · device switcher.
+.header-slot-content {
+  align-items: center;
+  display: flex;
+  gap: 4px;
+  min-width: 0;
+
+  .back-button .mat-icon {
+    margin: 0;
+    vertical-align: unset;
+  }
+
+  .header-crumb {
+    border-radius: 8px;
+    color: #444746;
+    flex: none;
+    font-size: 16px;
+    font-weight: 400;
+    padding: 6px 8px;
+    text-decoration: none;
+
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.05);
+    }
+  }
+
+  .header-crumb-separator {
+    color: #9aa0a6;
+    flex: none;
+    font-size: 20px;
+    height: 20px;
+    margin: 0;
+    width: 20px;
+  }
+
+  // Chip-like dropdown instead of an outlined form field, so it fits the 64px header.
+  .entity-switcher {
+    align-items: center;
+    background-color: #e9eef6;
+    border-radius: 18px;
+    box-sizing: border-box;
+    cursor: pointer;
+    display: inline-flex;
+    height: 36px;
+    max-width: 480px;
+    min-width: 0;
+    padding: 0 12px 0 14px;
+    width: auto;
+
+    ::ng-deep {
+      // MDC lays the trigger out as a table, which ignores the gap between the
+      // value and the arrow; use a flex row instead.
+      .mat-mdc-select-trigger {
+        align-items: center;
+        display: flex;
+        gap: 10px;
+        height: 100%;
+      }
+
+      .mat-mdc-select-value {
+        font-size: 14px;
+        font-weight: 500;
+        max-width: 420px;
+        width: auto;
+      }
+    }
+  }
+}

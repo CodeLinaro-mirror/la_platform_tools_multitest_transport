@@ -45,7 +45,10 @@ ng_module(
         third_party_js("angular2:platform_browser"),
         third_party_js("angular2:platform_browser_animations"),
         third_party_js("angular2:router"),
+        third_party_js("angular_components:cdk_portal"),
+        third_party_js("angular_components:cdk_scrolling"),
         third_party_js("angular_components:material_dialog"),
+        third_party_js("angular_components:material_slide_toggle"),
         third_party_js("angular_components:material_tooltip"),
         third_party_js("rxjs"),
         "//multitest_transport/ui2/app/auth",
@@ -82,6 +85,7 @@ ng_module(
         third_party_js("typings/jasmine"),
         third_party_js("rxjs"),
         "//multitest_transport/ui2/app/services",
+        "//multitest_transport/ui2/app/shared",
         "//multitest_transport/ui2/app/testing:jasmine_util",
     ],
 )

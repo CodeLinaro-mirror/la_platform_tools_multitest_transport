@@ -14,7 +14,10 @@
  limitations under the License.
 -->
 
+<!-- The Legacy UI will be rendered in the router-outlet. -->
 <router-outlet></router-outlet>
+
+<!-- New Lab Console UI will be rendered in the iframe. -->
 @if (useLabConsoleIframe$ | async) {
-  <iframe #iframe [src]="iframeUrl" style="width: 100%; height: 100%; border: none;"></iframe>
+  <iframe #iframe [src]="iframeUrl"></iframe>
 }

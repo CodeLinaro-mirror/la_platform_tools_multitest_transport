@@ -25,10 +25,24 @@
     <mat-icon aria-label="Side nav toggle icon">menu</mat-icon>
   </button>
   <img src="static/images/logo-title.png" alt="Omnilab ATS Logo">
-  <div class="version-info">
-    Version: {{ appData?.mttVersion }} <br />
-    ADB: {{ appData?.adbVersion }} <br />
-    {{ atsMajorVersionStr }}
+  <!--
+    Free header area shared with the routed pages:
+      + Detail pages project their breadcrumb / entity switcher here
+      + Search/list pages project the embedded V6 iframe(the Lab Console search pages)'s 
+      search input into it (see V6IframeContainerComponent).
+  -->
+  <div class="header-slot" #headerSlot>
+    <ng-template [cdkPortalOutlet]="headerSlotService.portal$ | async"></ng-template>
+  </div>
+  <div class="lab-console-ui-switch-button" *ngIf="showLabConsoleToggle$ | async">
+    <mat-slide-toggle
+      class="lab-console-ui-toggle"
+      [checked]="!(preferenceService.useLabConsoleUISubject$ | async)"
+      (change)="preferenceService.useLabConsoleUISubject$.next(!$event.checked)"
+      color="accent"
+    >
+      Legacy UI
+    </mat-slide-toggle>
   </div>
   <login-button></login-button>
 </mat-toolbar>
@@ -213,14 +227,24 @@
 
   <!--Routed content-->
   <mat-sidenav-content>
-    <main>
+    <!-- cdkScrollable: main is the page scroller, so CDK overlays reposition on scroll. -->
+    <main cdkScrollable>
       <router-outlet></router-outlet>
     </main>
-    <footer *ngIf="appData.analyticsTrackingId">
-      Android Test Station collects anonymous usage statistics to help us improve it, in accordance
-      with our
-      <a href="https://accounts.google.com/TOS" target="_blank">Terms of Service</a> and
-      <a href="https://accounts.google.com/TOS?privacy=true" target="_blank">Privacy Policy</a>.
+    <footer>
+      <div class="version-info">
+        <span>Version: {{ appData?.mttVersion }}</span>
+        <span class="separator"></span>
+        <span>ADB: {{ appData?.adbVersion }}</span>
+        <span class="separator"></span>
+        <span>{{ atsMajorVersionStr }}</span>
+      </div>
+      <div class="privacy-notice" *ngIf="appData.analyticsTrackingId">
+        Android Test Station collects anonymous usage statistics to help us improve it, in accordance
+        with our
+        <a href="https://accounts.google.com/TOS" target="_blank">Terms of Service</a> and
+        <a href="https://accounts.google.com/TOS?privacy=true" target="_blank">Privacy Policy</a>.
+      </div>
     </footer>
   </mat-sidenav-content>
 </mat-sidenav-container>

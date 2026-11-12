@@ -17,8 +17,8 @@
 import {Location} from '@angular/common';
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed, fakeAsync, tick} from '@angular/core/testing';
-import {Router, RouterModule} from '@angular/router';
-import {of as observableOf} from 'rxjs';
+import {Event, NavigationEnd, Router, RouterModule} from '@angular/router';
+import {of as observableOf, Subject} from 'rxjs';
 
 import {Mtt, MttModule} from './app';
 import {AnalyticsService} from './services/analytics_service';
@@ -26,6 +26,7 @@ import {APP_DATA} from './services/app_data';
 import {CommonParamsService} from './services/common_params_service';
 import {NavigationEventService, NavigationTarget} from './services/navigation_event_service';
 import {UserService} from './services/user_service';
+import {HeaderSlotService} from './shared/header_slot_service';
 import {getEl} from './testing/jasmine_util';
 
 describe('Mtt', () => {
@@ -35,9 +36,16 @@ describe('Mtt', () => {
   let analyticsServiceSpy: jasmine.SpyObj<AnalyticsService>;
   let userServiceSpy: jasmine.SpyObj<UserService>;
   let commonParams: Record<string, string>;
+  // Mutable so that tests can flip the Lab Console feature flags.
+  let appData: {
+    netdataUrl: string,
+    enableLabConsoleSearchPage?: boolean,
+    enableLabConsoleUI?: boolean,
+  };
 
   beforeEach(() => {
     commonParams = {};
+    appData = {netdataUrl: 'localhost:8008'};
     analyticsServiceSpy = jasmine.createSpyObj(['trackLocation']);
     userServiceSpy = jasmine.createSpyObj('userService', {
       checkPermission: observableOf(true),
@@ -47,7 +55,7 @@ describe('Mtt', () => {
     TestBed.configureTestingModule({
       imports: [MttModule, RouterModule],
       providers: [
-        {provide: APP_DATA, useValue: {netdataUrl: 'localhost:8008'}},
+        {provide: APP_DATA, useValue: appData},
         {provide: AnalyticsService, useValue: analyticsServiceSpy},
         {provide: UserService, useValue: userServiceSpy},
         {
@@ -119,5 +127,90 @@ describe('Mtt', () => {
         .toMatch(/\/devices$/);
     expect(getEl(el, 'a[href*="/hosts"]').getAttribute('href'))
         .toMatch(/\/hosts$/);
+  });
+
+  it('should register the header slot for the routed pages', () => {
+    const headerSlotService = TestBed.inject(HeaderSlotService);
+    expect(headerSlotService.isAvailable()).toBeTrue();
+    expect(headerSlotService.slotElement$.value)
+        .toBe(getEl(el, '.header-slot'));
+  });
+
+  it('should render the version info in the footer, not in the header', () => {
+    const footer = getEl(el, 'footer');
+    expect(footer).toBeTruthy();
+    expect(footer.querySelector('.version-info')!.textContent)
+        .toContain('Version:');
+    expect(footer.querySelectorAll('.version-info .separator').length).toBe(2);
+    expect(getEl(el, 'mat-toolbar').querySelector('.version-info')).toBeNull();
+    // No analytics tracking id => no privacy notice.
+    expect(footer.querySelector('.privacy-notice')).toBeNull();
+  });
+
+  describe('Legacy UI switcher', () => {
+    let urlSpy: jasmine.Spy|undefined;
+
+    beforeEach(() => {
+      urlSpy = undefined;
+    });
+
+    function setUrl(url: string) {
+      urlSpy = urlSpy ?? spyOnProperty(TestBed.inject(Router), 'url', 'get');
+      urlSpy.and.returnValue(url);
+    }
+
+    it('is shown on the Devices / Hosts search pages when the Lab Console search page is enabled',
+       () => {
+         appData.enableLabConsoleSearchPage = true;
+         appData.enableLabConsoleUI = false;
+         setUrl('/devices?includeOfflineDevices=false');
+         expect(mtt.isLabConsoleTogglePage()).toBeTrue();
+         setUrl('/hosts');
+         expect(mtt.isLabConsoleTogglePage()).toBeTrue();
+         // Detail pages are governed by the Lab Console UI flag.
+         setUrl('/devices/serial-1');
+         expect(mtt.isLabConsoleTogglePage()).toBeFalse();
+       });
+
+    it('is shown on the Devices / Hosts detail pages when the Lab Console UI is enabled',
+       () => {
+         appData.enableLabConsoleSearchPage = false;
+         appData.enableLabConsoleUI = true;
+         setUrl('/devices/serial-1?debug=true');
+         expect(mtt.isLabConsoleTogglePage()).toBeTrue();
+         setUrl('/hosts/host-1');
+         expect(mtt.isLabConsoleTogglePage()).toBeTrue();
+         setUrl('/devices');
+         expect(mtt.isLabConsoleTogglePage()).toBeFalse();
+       });
+
+    it('is hidden on all other pages', () => {
+      appData.enableLabConsoleSearchPage = true;
+      appData.enableLabConsoleUI = true;
+      for (const url of ['/test_plans', '/settings', '/test_runs/123', '/']) {
+        setUrl(url);
+        expect(mtt.isLabConsoleTogglePage()).withContext(url).toBeFalse();
+      }
+    });
+
+    it('renders the switcher in the header and flips the Lab Console preference',
+       () => {
+         appData.enableLabConsoleSearchPage = true;
+         setUrl('/devices');
+         // Re-evaluated on every navigation.
+         (TestBed.inject(Router).events as Subject<Event>)
+             .next(new NavigationEnd(1, '/devices', '/devices'));
+         mttFixture.detectChanges();
+
+         const toggle =
+             getEl(el, 'mat-toolbar .lab-console-ui-toggle button[role="switch"]');
+         expect(toggle).toBeTruthy();
+         expect(getEl(el, 'mat-toolbar .lab-console-ui-toggle').textContent)
+             .toContain('Legacy UI');
+         const before = mtt.preferenceService.useLabConsoleUISubject$.value;
+         toggle.click();
+         expect(mtt.preferenceService.useLabConsoleUISubject$.value)
+             .toBe(!before);
+       });
   });
 });
