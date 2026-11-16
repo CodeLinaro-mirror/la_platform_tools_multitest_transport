@@ -601,6 +601,12 @@ function start_test_runner {
       lab_server_args+=" --api_config=/deviceinfra/lab_server_api_config.textproto"
     fi
 
+    # ATS server mode only: --xts_tf_xmx caps the OUTER Tradefed that runs
+    # ClusterCommandLauncher, not the inner Tradefed that runs the tests
+    # (its heap comes from the suite's JVM options). See b/582007596.
+    # LAB_SERVER_OPTS comes after it, so it can still override the value.
+    local outer_tf_xmx_arg="--xts_tf_xmx=4g"
+
     java \
       "-Xmx${max_heap_mb}m" \
       -XX:+HeapDumpOnOutOfMemoryError \
@@ -612,6 +618,7 @@ function start_test_runner {
       --public_dir="${MTT_LOG_DIR}" \
       --tf_fallback_java_binary="${JAVA21_HOME}/bin/java" \
       --tmp_dir_root="${MTT_MH_WORK_DIR}" \
+      "${outer_tf_xmx_arg}" \
       ${LAB_SERVER_OPTS} \
         ${lab_server_args} \
         ${TF_EXTRA_OPTS} &
