@@ -83,7 +83,7 @@ class LastAccessTime(Criterion):
 
   def __init__(self, ttl: str = DEFAULT_TTL):
     super().__init__()
-    self.ttl_seconds = timeparse.timeparse(ttl)
+    self.ttl_seconds = timeparse.timeparse(ttl) or 0
 
   def Apply(self, path: str) -> bool:
     return time.time() - os.path.getatime(path) > self.ttl_seconds
@@ -94,7 +94,7 @@ class LastModifiedTime(Criterion):
 
   def __init__(self, ttl: str = DEFAULT_TTL):
     super().__init__()
-    self.ttl_seconds = timeparse.timeparse(ttl)
+    self.ttl_seconds = timeparse.timeparse(ttl) or 0
 
   def Apply(self, path: str) -> bool:
     return time.time() - os.path.getmtime(path) > self.ttl_seconds
