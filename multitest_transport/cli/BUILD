@@ -34,7 +34,6 @@ py_library(
         "@com_google_deviceinfra//src/devtools/deviceinfra/host/daemon/proto:health_service_py_proto",
         "//multitest_transport/util:env_lib",
         "//multitest_transport/util:worker_lab_health_client",
-        "//third_party/py/requests",
         "@tradefed_cluster//tradefed_cluster/configs:lab_config_py_pb2",
         third_party("packaging"),
         third_party("six"),

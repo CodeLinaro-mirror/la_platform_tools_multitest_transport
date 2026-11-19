@@ -22,7 +22,6 @@ from unittest import mock
 
 from absl.testing import absltest
 from absl.testing import parameterized
-import requests
 from tradefed_cluster.configs import lab_config
 
 
@@ -118,10 +117,6 @@ class CliTest(parameterized.TestCase):
         cli_util, 'GetVersion', return_value=('dev_version', 'prod')
     )
     self.get_version_patcher.start()
-    self.gethostname_patcher = mock.patch(
-        '__main__.cli.socket.gethostname', return_value='mock-host'
-    )
-    self.gethostname_patcher.start()
 
     self.arg_parser = cli.CreateParser()
     self.arg_parser.add_argument('--cli_path', default='cli_path')
@@ -157,7 +152,6 @@ class CliTest(parameterized.TestCase):
 
   def tearDown(self):
     self.get_version_patcher.stop()
-    self.gethostname_patcher.stop()
     os.environ['USER'] = self.old_user
     self.expanduser_patcher.stop()
     self.file_exists_patcher.stop()
@@ -397,6 +391,7 @@ class CliTest(parameterized.TestCase):
             '-e', 'USER=user',
             '-e', 'TZ=Etc/UTC',
             '-e', 'MTT_SERVER_LOG_LEVEL=info',
+            '-e', 'IS_OMNILAB_BASED=true',
             '--mount', 'type=volume,src=mtt-data,dst=/data',
             '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
             '--mount', 'type=bind,src=/local/.android,dst=/root/.android',
@@ -581,6 +576,8 @@ class CliTest(parameterized.TestCase):
             'TZ=Etc/UTC',
             '-e',
             'MTT_SERVER_LOG_LEVEL=info',
+            '-e',
+            'IS_OMNILAB_BASED=true',
             '--mount',
             'type=volume,src=mtt-data,dst=/data',
             '--mount',
@@ -765,6 +762,7 @@ class CliTest(parameterized.TestCase):
             '-e', 'FTP_PROXY=ftp_proxy',
             '-e', 'NO_PROXY=127.0.0.1,::1,localhost,ahost,no_proxy',
             '-e', 'MTT_SERVER_LOG_LEVEL=info',
+            '-e', 'IS_OMNILAB_BASED=true',
             '--mount', 'type=volume,src=mtt-data,dst=/data',
             '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
             '--mount', 'type=bind,src=/local/.android,dst=/root/.android',
@@ -820,6 +818,7 @@ class CliTest(parameterized.TestCase):
             '-e', 'USER=user',
             '-e', 'TZ=Etc/UTC',
             '-e', 'MTT_SERVER_LOG_LEVEL=info',
+            '-e', 'IS_OMNILAB_BASED=true',
             '--mount', 'type=volume,src=mtt-data,dst=/data',
             '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
             '--mount', ('type=bind,src=/var/run/docker.sock,'
@@ -999,6 +998,7 @@ class CliTest(parameterized.TestCase):
             '-e', 'TZ=Etc/UTC',
             '-e', 'JSON_KEY_PATH=/tmp/keyfile/key.json',
             '-e', 'MTT_SERVER_LOG_LEVEL=info',
+            '-e', 'IS_OMNILAB_BASED=true',
             '--mount', 'type=volume,src=mtt-data,dst=/data',
             '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
             '--mount', 'type=volume,src=mtt-key,dst=/tmp/keyfile',
@@ -1131,6 +1131,7 @@ class CliTest(parameterized.TestCase):
             '-e', 'USER=user',
             '-e', 'TZ=Etc/UTC',
             '-e', 'MTT_SERVER_LOG_LEVEL=info',
+            '-e', 'IS_OMNILAB_BASED=true',
             '--mount', 'type=volume,src=mtt-data,dst=/data',
             '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
             '--mount', 'type=bind,src=/local/.android,dst=/root/.android',
@@ -1326,6 +1327,7 @@ class CliTest(parameterized.TestCase):
             '-e', 'USER=user',
             '-e', 'TZ=Etc/UTC',
             '-e', 'MTT_SERVER_LOG_LEVEL=info',
+            '-e', 'IS_OMNILAB_BASED=true',
             '--mount', 'type=volume,src=mtt-data,dst=/data',
             '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
             '--mount', 'type=bind,src=/local/.android,dst=/root/.android',
@@ -1389,6 +1391,7 @@ class CliTest(parameterized.TestCase):
             '-e', 'ENABLE_STACKDRIVER_LOGGING=1',
             '-e', 'ENABLE_STACKDRIVER_MONITORING=1',
             '-e', 'MTT_SERVER_LOG_LEVEL=info',
+            '-e', 'IS_OMNILAB_BASED=true',
             '--mount', 'type=volume,src=mtt-data,dst=/data',
             '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
             '--mount', 'type=volume,src=mtt-key,dst=/tmp/keyfile',
@@ -1449,6 +1452,7 @@ class CliTest(parameterized.TestCase):
             '-e', 'USER=user',
             '-e', 'TZ=Etc/UTC',
             '-e', 'MTT_SERVER_LOG_LEVEL=info',
+            '-e', 'IS_OMNILAB_BASED=true',
             '--mount', 'type=volume,src=mtt-data,dst=/data',
             '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
             '--mount', 'type=bind,src=/local/.android,dst=/root/.android',
@@ -1584,6 +1588,7 @@ class CliTest(parameterized.TestCase):
             '-e', 'TZ=Etc/UTC',
             '-e', 'MTT_SERVER_LOG_LEVEL=info',
             '-e', 'MAX_LOCAL_VIRTUAL_DEVICES=1',
+            '-e', 'IS_OMNILAB_BASED=true',
             '--mount', 'type=volume,src=mtt-data,dst=/data',
             '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
             '--mount', 'type=bind,src=/local/.android,dst=/root/.android',
@@ -1628,6 +1633,7 @@ class CliTest(parameterized.TestCase):
             '-e', 'TZ=Etc/UTC',
             '-e', 'MTT_SERVER_LOG_LEVEL=info',
             '-e', 'MAX_LOCAL_VIRTUAL_DEVICES=5',
+            '-e', 'IS_OMNILAB_BASED=true',
             '--mount', 'type=volume,src=mtt-data,dst=/data',
             '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
             '--mount', 'type=bind,src=/local/.android,dst=/root/.android',
@@ -1681,6 +1687,7 @@ class CliTest(parameterized.TestCase):
             '-e', 'USER=user',
             '-e', 'TZ=Etc/UTC',
             '-e', 'MTT_SERVER_LOG_LEVEL=info',
+            '-e', 'IS_OMNILAB_BASED=true',
             '--mount', 'type=volume,src=mtt-data,dst=/data',
             '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
             '--mount', 'type=bind,src=/local/.android,dst=/root/.android',
@@ -1719,6 +1726,7 @@ class CliTest(parameterized.TestCase):
             '-e', 'USER=user',
             '-e', 'TZ=Etc/UTC',
             '-e', 'MTT_SERVER_LOG_LEVEL=info',
+            '-e', 'IS_OMNILAB_BASED=true',
             '--mount', 'type=volume,src=mtt-data,dst=/data',
             '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
             '--mount', 'type=bind,src=/local/.android,dst=/root/.android',
@@ -1752,6 +1760,7 @@ class CliTest(parameterized.TestCase):
             '-e', 'USER=user',
             '-e', 'TZ=Etc/UTC',
             '-e', 'MTT_SERVER_LOG_LEVEL=info',
+            '-e', 'IS_OMNILAB_BASED=true',
             '--mount', 'type=volume,src=mtt-data,dst=/data',
             '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
             '--mount', 'type=bind,src=/local/.android,dst=/root/.android',
@@ -1791,6 +1800,7 @@ class CliTest(parameterized.TestCase):
             '-e', 'USER=user',
             '-e', 'TZ=Etc/UTC',
             '-e', 'MTT_SERVER_LOG_LEVEL=info',
+            '-e', 'IS_OMNILAB_BASED=true',
             '--mount', 'type=volume,src=mtt-data,dst=/data',
             '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
             '--mount', 'type=bind,src=/local/.android,dst=/root/.android',
@@ -1877,6 +1887,7 @@ class CliTest(parameterized.TestCase):
               '-e', 'TZ=Etc/UTC',
               '-e', 'MTT_SERVER_LOG_LEVEL=info',
               '-e', 'MTT_USE_HOST_ADB=1',
+              '-e', 'IS_OMNILAB_BASED=true',
               '--mount', 'type=volume,src=mtt-data,dst=/data',
               '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
               '--mount', 'type=bind,src=/local/.android,dst=/root/.android',
@@ -1924,6 +1935,7 @@ class CliTest(parameterized.TestCase):
             '-e', 'MTT_SERVER_LOG_LEVEL=info',
             '-e', 'IPV6_BRIDGE_NETWORK=2001:db8::/56',
             '-e', 'MAX_LOCAL_VIRTUAL_DEVICES=1',
+            '-e', 'IS_OMNILAB_BASED=true',
             '--mount', 'type=volume,src=mtt-data,dst=/data',
             '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
             '--mount', 'type=bind,src=/local/.android,dst=/root/.android',
@@ -1966,7 +1978,8 @@ class CliTest(parameterized.TestCase):
             'MTT_CONTROL_SERVER_URL=new_url', '-e', 'LAB_NAME=alab', '-e',
             'CLUSTER=acluster', '-e', 'IMAGE_NAME=gcr.io/android-mtt/mtt:prod',
             '-e', 'USER=user', '-e', 'TZ=Etc/UTC', '-e',
-            'MTT_SERVER_LOG_LEVEL=info', '--mount',
+            'MTT_SERVER_LOG_LEVEL=info', '-e', 'IS_OMNILAB_BASED=true',
+            '--mount',
             'type=volume,src=mtt-data,dst=/data', '--mount',
             'type=volume,src=mtt-temp,dst=/tmp', '--mount',
             'type=bind,src=/local/.android,dst=/root/.android', '--mount',
@@ -2003,7 +2016,8 @@ class CliTest(parameterized.TestCase):
             'LAB_NAME=alab', '-e',
             'CLUSTER=acluster', '-e', 'IMAGE_NAME=gcr.io/android-mtt/mtt:prod',
             '-e', 'USER=user', '-e', 'TZ=Etc/UTC', '-e',
-            'MTT_SERVER_LOG_LEVEL=info', '--mount',
+            'MTT_SERVER_LOG_LEVEL=info', '-e', 'IS_OMNILAB_BASED=true',
+            '--mount',
             'type=volume,src=mtt-data,dst=/data', '--mount',
             'type=volume,src=mtt-temp,dst=/tmp', '--mount',
             'type=bind,src=/local/.android,dst=/root/.android', '--mount',
@@ -2041,7 +2055,8 @@ class CliTest(parameterized.TestCase):
             'LAB_NAME=alab', '-e',
             'CLUSTER=acluster', '-e', 'IMAGE_NAME=gcr.io/android-mtt/mtt:prod',
             '-e', 'USER=user', '-e', 'TZ=Etc/UTC', '-e',
-            'MTT_SERVER_LOG_LEVEL=info', '--mount',
+            'MTT_SERVER_LOG_LEVEL=info', '-e', 'IS_OMNILAB_BASED=true',
+            '--mount',
             'type=volume,src=mtt-data,dst=/data', '--mount',
             'type=volume,src=mtt-temp,dst=/tmp', '--mount',
             'type=bind,src=/local/.android,dst=/root/.android', '--mount',
@@ -2085,6 +2100,7 @@ class CliTest(parameterized.TestCase):
             '-e', 'TZ=Etc/UTC',
             '-e', 'MTT_SERVER_LOG_LEVEL=info',
             '-e', 'REMOTE_VIRTUAL_DEVICES=user1@192.0.2.3/2',
+            '-e', 'IS_OMNILAB_BASED=true',
             '--mount', 'type=volume,src=mtt-data,dst=/data',
             '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
             '--mount', 'type=bind,src=/local/.android,dst=/root/.android',
@@ -3076,87 +3092,6 @@ class CliTest(parameterized.TestCase):
               operation_mode='UNKNOWN',
           ),
           lab_config.CreateHostConfig(),
-          False,
-      ),
-      (
-          'on_premise_mode',
-          argparse.Namespace(
-              force_ats_version=None,
-              is_omnilab_based=False,
-              operation_mode='ON_PREMISE',
-          ),
-          lab_config.CreateHostConfig(),
-          False,
-      ),
-  )
-  def test_IsOmnilabBased_noRollout(self, args, host_config, expected):
-    with mock.patch.object(cli, '_GetATS2RolloutPercentage', return_value=0):
-      self.assertEqual(
-          expected,
-          cli._IsOmnilabBased(
-              args, host_config, image_build_env='prod', release=52
-          ),
-      )
-
-  @parameterized.named_parameters(
-      (
-          'force_ats_version_1',
-          argparse.Namespace(
-              force_ats_version=1,
-              is_omnilab_based=False,
-              operation_mode='UNKNOWN',
-          ),
-          lab_config.CreateHostConfig(),
-          False,
-      ),
-      (
-          'force_ats_version_in_host_config_1',
-          argparse.Namespace(
-              force_ats_version=None,
-              is_omnilab_based=False,
-              operation_mode='UNKNOWN',
-          ),
-          lab_config.CreateHostConfig(force_ats_version=1),
-          False,
-      ),
-      (
-          'force_ats_version_2',
-          argparse.Namespace(
-              force_ats_version=2,
-              is_omnilab_based=False,
-              operation_mode='UNKNOWN',
-          ),
-          lab_config.CreateHostConfig(),
-          True,
-      ),
-      (
-          'force_ats_version_in_host_config_2',
-          argparse.Namespace(
-              force_ats_version=None,
-              is_omnilab_based=False,
-              operation_mode='UNKNOWN',
-          ),
-          lab_config.CreateHostConfig(force_ats_version=2),
-          True,
-      ),
-      (
-          'is_omnilab_based_true',
-          argparse.Namespace(
-              force_ats_version=None,
-              is_omnilab_based=True,
-              operation_mode='UNKNOWN',
-          ),
-          lab_config.CreateHostConfig(),
-          True,
-      ),
-      (
-          'is_omnilab_based_false',
-          argparse.Namespace(
-              force_ats_version=None,
-              is_omnilab_based=False,
-              operation_mode='UNKNOWN',
-          ),
-          lab_config.CreateHostConfig(),
           True,
       ),
       (
@@ -3170,12 +3105,11 @@ class CliTest(parameterized.TestCase):
           False,
       ),
   )
-  def test_IsOmnilabBased_fullRollout(self, args, host, expected):
-    with mock.patch.object(cli, '_GetATS2RolloutPercentage', return_value=100):
-      self.assertEqual(
-          expected,
-          cli._IsOmnilabBased(args, host, image_build_env='prod', release=52),
-      )
+  def test_IsOmnilabBased(self, args, host, expected):
+    self.assertEqual(
+        expected,
+        cli._IsOmnilabBased(args, host, image_build_env='prod', release=52),
+    )
 
   def test_IsOmnilabBased_invalidForceAtsVersionInHostConfig(self):
     args = argparse.Namespace(
@@ -3189,17 +3123,15 @@ class CliTest(parameterized.TestCase):
       cli._IsOmnilabBased(args, host_config)
 
   def test_IsOmnilabBased_devImageDefaultsToAts2(self):
-    """Dev images should default to ATS 2.0 even if rollout is 0."""
     args = argparse.Namespace(
         force_ats_version=None,
         is_omnilab_based=False,
         operation_mode='UNKNOWN',
     )
     host_config = lab_config.CreateHostConfig()
-    with mock.patch.object(cli, '_GetATS2RolloutPercentage', return_value=0):
-      self.assertTrue(
-          cli._IsOmnilabBased(args, host_config, image_build_env='dev')
-      )
+    self.assertTrue(
+        cli._IsOmnilabBased(args, host_config, image_build_env='dev')
+    )
 
   @parameterized.named_parameters(
       ('force_1', 1, False),
@@ -3251,12 +3183,11 @@ class CliTest(parameterized.TestCase):
         operation_mode='UNKNOWN',
     )
     host_config = lab_config.CreateHostConfig()
-    with mock.patch.object(cli, '_GetATS2RolloutPercentage', return_value=100):
-      self.assertTrue(
-          cli._IsOmnilabBased(
-              args, host_config, image_build_env='prod', release=52
-          )
-      )
+    self.assertTrue(
+        cli._IsOmnilabBased(
+            args, host_config, image_build_env='prod', release=52
+        )
+    )
 
   def test_IsOmnilabBased_prodIncompatibleReleaseVersionFallback(self):
     """Prod image with release < 52 falls back gracefully to ATS 1.0."""
@@ -3266,12 +3197,11 @@ class CliTest(parameterized.TestCase):
         operation_mode='UNKNOWN',
     )
     host_config = lab_config.CreateHostConfig()
-    with mock.patch.object(cli, '_GetATS2RolloutPercentage', return_value=100):
-      self.assertFalse(
-          cli._IsOmnilabBased(
-              args, host_config, image_build_env='prod', release=51
-          )
-      )
+    self.assertFalse(
+        cli._IsOmnilabBased(
+            args, host_config, image_build_env='prod', release=51
+        )
+    )
 
   def test_IsOmnilabBased_prodIncompatibleReleaseVersionForcedOverride(self):
     """Forcing ATS 2.0 on incompatible release < 52 bypasses safety checks."""
@@ -3286,48 +3216,6 @@ class CliTest(parameterized.TestCase):
             args, host_config, image_build_env='prod', release=51
         )
     )
-
-  @mock.patch.object(requests, 'get')
-  def test_GetATS2RolloutPercentage_success(self, mock_get):
-    """Verify _GetATS2RolloutPercentage successfully fetches percentage from remote GCS."""
-    mock_response = mock.Mock()
-    mock_response.status_code = 200
-    mock_response.json.return_value = {'ats2_rollout_percentage': 25}
-    mock_get.return_value = mock_response
-
-    percentage = cli._GetATS2RolloutPercentage()
-    self.assertEqual(25, percentage)
-    mock_get.assert_called_once_with(cli._ATS2_ROLLOUT_CONFIG_URL, timeout=2)
-
-  @mock.patch.object(requests, 'get')
-  def test_GetATS2RolloutPercentage_timeoutFallback(self, mock_get):
-    """Verify _GetATS2RolloutPercentage falls back to default 10% on timeout/exception."""
-    mock_get.side_effect = requests.exceptions.Timeout('Timeout error')
-
-    percentage = cli._GetATS2RolloutPercentage()
-    self.assertEqual(10, percentage)
-
-  @mock.patch.object(requests, 'get')
-  def test_GetATS2RolloutPercentage_invalidJsonFallback(self, mock_get):
-    """Verify _GetATS2RolloutPercentage falls back to default 10% on invalid JSON response."""
-    mock_response = mock.Mock()
-    mock_response.status_code = 200
-    mock_response.json.side_effect = ValueError('Invalid JSON')
-    mock_get.return_value = mock_response
-
-    percentage = cli._GetATS2RolloutPercentage()
-    self.assertEqual(10, percentage)
-
-  @mock.patch.object(requests, 'get')
-  def test_GetATS2RolloutPercentage_missingKeyFallback(self, mock_get):
-    """Verify _GetATS2RolloutPercentage falls back to default 10% if rollout key is missing."""
-    mock_response = mock.Mock()
-    mock_response.status_code = 200
-    mock_response.json.return_value = {'other_key': 123}
-    mock_get.return_value = mock_response
-
-    percentage = cli._GetATS2RolloutPercentage()
-    self.assertEqual(10, percentage)
 
   @parameterized.named_parameters(
       ('dev_env', ['MTT_VERSION=dev'], ('dev', None)),
@@ -3363,43 +3251,70 @@ class CliTest(parameterized.TestCase):
   @mock.patch.object(cli, '_IsConsoleSuccessfullyStarted')
   @mock.patch.object(cli, '_WaitForServer')
   def testStart_ats2CompatibleProdImage(self, mock_wait, mock_started):
-    """Verify prod image (>= 1.52) defaults to ATS 2.0 if rollout matches."""
+    """Verify prod image (>= 1.52) defaults to ATS 2.0."""
     mock_wait.return_value = True
     mock_started.return_value = True
     args = self.arg_parser.parse_args(['start'])
 
-    # Mock rollout to 100% (so prod is selected)
     # Mock GetEnv to return prod_1.52.003 (compatible)
-    with mock.patch.object(cli, '_GetATS2RolloutPercentage', return_value=100):
-      with mock.patch.object(
-          cli.command_util.DockerHelper, 'GetEnv'
-      ) as mock_getenv:
-        mock_getenv.return_value = ['MTT_VERSION=prod_1.52.003']
-        cli.Start(args, self._CreateHost())
+    with mock.patch.object(
+        cli.command_util.DockerHelper, 'GetEnv', autospec=True, spec_set=True
+    ) as mock_getenv:
+      mock_getenv.return_value = ['MTT_VERSION=prod_1.52.003']
+      cli.Start(args, self._CreateHost())
 
-        # Since ATS 2.0 is used, IS_OMNILAB_BASED=true env should be set
-        docker_create_args = None
-        for call in self.mock_context.Run.call_args_list:
-          call_args, _ = call
-          command_args = call_args[0]
-          if command_args[:2] == ['docker', 'create']:
-            docker_create_args = command_args
-            break
-        self.assertIsNotNone(docker_create_args)
-        self.assertIn('-e', docker_create_args)
-        # Find IS_OMNILAB_BASED=true
-        is_omnilab_based_env = False
-        for i, arg in enumerate(docker_create_args):
-          if (
-              arg == '-e'
-              and docker_create_args[i + 1] == 'IS_OMNILAB_BASED=true'
-          ):
-            is_omnilab_based_env = True
-            break
-        self.assertTrue(
-            is_omnilab_based_env,
-            'Expected IS_OMNILAB_BASED=true in docker create',
-        )
+      # Since ATS 2.0 is used, IS_OMNILAB_BASED=true env should be set
+      docker_create_args = None
+      for call in self.mock_context.Run.call_args_list:
+        call_args, _ = call
+        command_args = call_args[0]
+        if command_args[:2] == ['docker', 'create']:
+          docker_create_args = command_args
+          break
+      self.assertIsNotNone(docker_create_args)
+      self.assertIn('-e', docker_create_args)
+      # Find IS_OMNILAB_BASED=true
+      is_omnilab_based_env = False
+      for i, arg in enumerate(docker_create_args):
+        if (
+            arg == '-e'
+            and docker_create_args[i + 1] == 'IS_OMNILAB_BASED=true'
+        ):
+          is_omnilab_based_env = True
+          break
+      self.assertTrue(
+          is_omnilab_based_env,
+          'Expected IS_OMNILAB_BASED=true in docker create',
+      )
+
+  @mock.patch.object(cli, '_IsConsoleSuccessfullyStarted')
+  @mock.patch.object(cli, '_WaitForServer')
+  def testStart_ats1ForcedOverrideOnProdImage(self, mock_wait, mock_started):
+    """Verify --force_ats_version 1 uses ATS 1.0 on compatible prod image."""
+    mock_wait.return_value = True
+    mock_started.return_value = True
+    args = self.arg_parser.parse_args(['start', '--force_ats_version', '1'])
+
+    with mock.patch.object(
+        cli.command_util.DockerHelper, 'GetEnv', autospec=True, spec_set=True
+    ) as mock_getenv:
+      mock_getenv.return_value = ['MTT_VERSION=prod_1.52.003']
+      cli.Start(args, self._CreateHost())
+
+      docker_create_args = None
+      for call in self.mock_context.Run.call_args_list:
+        call_args, _ = call
+        command_args = call_args[0]
+        if command_args[:2] == ['docker', 'create']:
+          docker_create_args = command_args
+          break
+      self.assertIsNotNone(docker_create_args)
+      for i, arg in enumerate(docker_create_args):
+        if arg == '-e' and docker_create_args[i + 1] == 'IS_OMNILAB_BASED=true':
+          self.fail(
+              'Did not expect IS_OMNILAB_BASED=true when --force_ats_version 1'
+              ' is passed'
+          )
 
   @mock.patch.object(cli, '_IsConsoleSuccessfullyStarted')
   @mock.patch.object(cli, '_WaitForServer')
@@ -3411,34 +3326,32 @@ class CliTest(parameterized.TestCase):
     mock_started.return_value = True
     args = self.arg_parser.parse_args(['start'])
 
-    # Mock rollout to 100% (so prod is selected)
     # Mock GetEnv to return prod_1.51.001 (incompatible)
-    with mock.patch.object(cli, '_GetATS2RolloutPercentage', return_value=100):
-      with mock.patch.object(
-          cli.command_util.DockerHelper, 'GetEnv'
-      ) as mock_getenv:
-        mock_getenv.return_value = ['MTT_VERSION=prod_1.51.001']
-        cli.Start(args, self._CreateHost())
+    with mock.patch.object(
+        cli.command_util.DockerHelper, 'GetEnv', autospec=True, spec_set=True
+    ) as mock_getenv:
+      mock_getenv.return_value = ['MTT_VERSION=prod_1.51.001']
+      cli.Start(args, self._CreateHost())
 
-        # Falls back to 1.0, IS_OMNILAB_BASED=true should NOT be set
-        docker_create_args = None
-        for call in self.mock_context.Run.call_args_list:
-          call_args, _ = call
-          command_args = call_args[0]
-          if command_args[:2] == ['docker', 'create']:
-            docker_create_args = command_args
-            break
-        self.assertIsNotNone(docker_create_args)
-        # Ensure IS_OMNILAB_BASED=true is NOT in the args
-        for i, arg in enumerate(docker_create_args):
-          if (
-              arg == '-e'
-              and docker_create_args[i + 1] == 'IS_OMNILAB_BASED=true'
-          ):
-            self.fail(
-                'Did not expect IS_OMNILAB_BASED=true in docker create '
-                'for incompatible image'
-            )
+      # Falls back to 1.0, IS_OMNILAB_BASED=true should NOT be set
+      docker_create_args = None
+      for call in self.mock_context.Run.call_args_list:
+        call_args, _ = call
+        command_args = call_args[0]
+        if command_args[:2] == ['docker', 'create']:
+          docker_create_args = command_args
+          break
+      self.assertIsNotNone(docker_create_args)
+      # Ensure IS_OMNILAB_BASED=true is NOT in the args
+      for i, arg in enumerate(docker_create_args):
+        if (
+            arg == '-e'
+            and docker_create_args[i + 1] == 'IS_OMNILAB_BASED=true'
+        ):
+          self.fail(
+              'Did not expect IS_OMNILAB_BASED=true in docker create '
+              'for incompatible image'
+          )
 
   @mock.patch.object(cli, '_IsConsoleSuccessfullyStarted')
   @mock.patch.object(cli, '_WaitForServer')

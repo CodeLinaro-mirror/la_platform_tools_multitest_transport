@@ -18,7 +18,6 @@ This tool is supposed to be bootstrapped by 'mtt' script and expects the current
 working directory to be the root of MTT package.
 """
 import argparse
-import hashlib
 from importlib import resources
 import json
 import logging
@@ -45,7 +44,6 @@ from multitest_transport.cli import ssh_util
 from multitest_transport.util import env
 from multitest_transport.util import worker_lab_health_client
 from packaging import version
-import requests
 import six
 from tradefed_cluster.configs import lab_config_pb2
 
@@ -131,15 +129,6 @@ logger = logging.getLogger(__name__)
 
 _CRASH_REPORT_FILE_PATH = '/data/.crash_report_file'
 
-# Percentage of hosts to rollout ATS2 by default. This is an integer between 0
-# and 100.
-
-_DEFAULT_ATS2_ROLLOUT_PERCENTAGE = 10
-
-_ATS2_ROLLOUT_CONFIG_URL = (
-    'https://storage.googleapis.com/android-mtt.appspot.com/prod/'
-    'rollout_config.json'
-)
 _PROD_ENVIRONMENT = 'prod'
 
 
@@ -1838,25 +1827,6 @@ def _GetImageVersionInfo(
   return build_env, release
 
 
-def _GetATS2RolloutPercentage() -> int:
-  """Fetches the dynamic rollout percentage from GCS with fallback."""
-  try:
-    response = requests.get(_ATS2_ROLLOUT_CONFIG_URL, timeout=2)
-    if response.status_code == 200:
-      config = response.json()
-      percentage = config.get(
-          'ats2_rollout_percentage', _DEFAULT_ATS2_ROLLOUT_PERCENTAGE
-      )
-      return int(percentage)
-  except Exception as e:  
-    logger.debug(
-        'Failed to fetch dynamic rollout config: %s. Falling back to %d%%.',
-        e,
-        _DEFAULT_ATS2_ROLLOUT_PERCENTAGE,
-    )
-  return _DEFAULT_ATS2_ROLLOUT_PERCENTAGE
-
-
 def _IsOmnilabBased(
     args,
     host_config,
@@ -1871,17 +1841,9 @@ def _IsOmnilabBased(
     2. Deprecated `--is_omnilab_based` flag (always forces ATS 2.0).
     3. Host-specific config file override via `force_ats_version`.
     4. Operation Mode check: ON_PREMISE nodes are excluded from ATS 2.0.
-    5. Image build environment evaluation:
-       - Non-prod (e.g. 'dev', 'latest', local builds) bypass rollout checks and
-         default directly to ATS 2.0.
-       - Prod ('prod') images are subject to percentage-based dynamic rollout.
-
-  After selecting ATS 2.0, a version safety floor compatibility check is
-  enforced
-  for production images. If the image release version is less than 52:
-    - If ATS 2.0 was explicitly forced via `--force_ats_version 2`, an
-      ActionableError is raised.
-    - Otherwise, the system logs a warning and falls back gracefully to ATS 1.0.
+    5. Default to ATS 2.0, subject to a version safety floor compatibility check
+       for production images: if the image release version is less than 52, the
+       system logs a warning and falls back gracefully to ATS 1.0.
 
   Args:
     args: Command-line parsed arguments.
@@ -1889,13 +1851,10 @@ def _IsOmnilabBased(
     image_build_env: The target image build environment ('prod', 'dev', etc.)
       parsed from the container metadata.
     release: Optional integer release version of the image.
-    image_name: Optional string name of the Docker image for error reporting.
+    image_name: Optional string name of the Docker image for warning messages.
 
   Returns:
     bool: True if ATS 2.0 (Omnilab) should be enabled; False for ATS 1.0.
-
-  Raises:
-    ActionableError: If ATS 2.0 is forced on an incompatible image.
   """
   if args.force_ats_version:
     return args.force_ats_version == 2
@@ -1922,7 +1881,7 @@ def _IsOmnilabBased(
   ):
     operation_mode = host_config.operation_mode
 
-  # On Premise mode does not have percentage rollout to ATS 2.0.
+  # On Premise mode defaults to ATS 1.0 unless explicitly forced above.
   if operation_mode == lab_config_pb2.OperationMode.ON_PREMISE:
     return False
 
@@ -1931,29 +1890,17 @@ def _IsOmnilabBased(
   if image_build_env != _PROD_ENVIRONMENT:
     return True
 
-  # Production images ('prod_...') use host-deterministic SHA-256 hashing
-  # for percentage-based rollouts.
-  hostname = socket.gethostname()
-  hash_value = int(hashlib.sha256(hostname.encode('utf-8')).hexdigest(), 16)
-  rollout_number = (hash_value % 100) + 1
-  logger.debug(
-      'Random number for ATS 2.0 rollout: %s, hostname: %s, hash value: %s',
-      rollout_number,
-      hostname,
-      hash_value,
-  )
-  is_ats2 = rollout_number <= _GetATS2RolloutPercentage()
-  if is_ats2:
-    # Enforce safety floor compatibility check only for automatic rollouts.
-    if release is None or release < 52:
-      display_image_name = image_name or 'The target image'
-      logger.warning(
-          'Image %s does not support ATS 2.0. Falling back to ATS 1.0.',
-          display_image_name,
-      )
-      return False
+  # Enforce safety floor compatibility check for automatic ATS 2.0 selection on
+  # production images.
+  if release is None or release < 52:
+    display_image_name = image_name or 'The target image'
+    logger.warning(
+        'Image %s does not support ATS 2.0. Falling back to ATS 1.0.',
+        display_image_name,
+    )
+    return False
 
-  return is_ats2
+  return True
 
 
 def _CreateStopArgParser():
