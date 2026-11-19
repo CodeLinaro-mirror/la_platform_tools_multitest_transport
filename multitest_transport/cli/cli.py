@@ -652,7 +652,12 @@ def _StartMttNode(args, host):
 
   if control_server_url:
     docker_helper.AddEnv('MTT_CONTROL_SERVER_URL', control_server_url)
-    u = urllib.parse.urlparse(control_server_url)
+    parsed_url = (
+        control_server_url
+        if '://' in control_server_url
+        else f'http://{control_server_url}'
+    )
+    u = urllib.parse.urlparse(parsed_url)
     if not control_file_server_url and u.hostname and u.port:
       # Set default value for control file server url
       control_file_server_url = u._replace(netloc=u.hostname + ':' +

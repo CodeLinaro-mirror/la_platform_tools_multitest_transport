@@ -35,10 +35,7 @@ function cleanup {
   echo "Shutdown complete."
 }
 
-# Kill all subprocesses when this script stops.
-trap cleanup SIGINT SIGTERM EXIT
-
-readonly SCRIPT_PATH="$(realpath "$0")"
+readonly SCRIPT_PATH="$(realpath "${BASH_SOURCE[0]}")"
 readonly SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
 readonly NETDATA_STREAM_API_KEY="2ba5b231-875d-4d39-82b0-adafd4c977d9"
 readonly MYSQL_SCRIPT_PATH="${SCRIPT_DIR}/scripts/mysql.sh"
@@ -50,115 +47,117 @@ readonly LAUNCH_SEPARATOR="
 
 "
 
-# Set environment defaults
-ADB_VERSION="$(adb version | grep -oP "Version \K(.*)")"
-ADB_VERSION=${ADB_VERSION:-"UNKNOWN"}
-HTTPLIB2_CA_CERTS=${HTTPLIB2_CA_CERTS:-"/etc/ssl/certs/ca-certificates.crt"}
-MTT_HOSTNAME="$(hostname)"
-MTT_VERSION=${MTT_VERSION:-"dev"}
-MTT_USER="$USER"
+function setup_runtime {
+  # Set environment defaults
+  ADB_VERSION="$(adb version 2>/dev/null | sed -n 's/.*Version //p')"
+  ADB_VERSION=${ADB_VERSION:-"UNKNOWN"}
+  HTTPLIB2_CA_CERTS=${HTTPLIB2_CA_CERTS:-"/etc/ssl/certs/ca-certificates.crt"}
+  MTT_HOSTNAME="$(hostname)"
+  MTT_VERSION=${MTT_VERSION:-"dev"}
+  MTT_USER="$USER"
 
-# Parse command line arguments
-WORKING_DIR="."
-LIVE_RELOAD="false"
-LOG_LEVEL="info"
-MTT_HOST="0.0.0.0"
-MTT_CONTROL_SERVER_PORT=8000
-STORAGE_PATH="/tmp/mtt"
-FILE_SERVICE_ONLY="false"
-SQL_DATABASE_URI="mysql+pymysql://root@/ats_db"
-MTT_CONTROL_SERVER_URL="http://localhost:8000"
-REPORT_GENERATOR_JAR=""
-IS_OMNILAB_BASED="false"
-OLCS_SERVER_ADDRESS="localhost:7030"
-OLCS_CREDENTIAL_TYPE="no_credential"
-ENABLE_LAB_CONSOLE_UI="true"
-ENABLE_LAB_CONSOLE_SEARCH_PAGE="false"
-while [[ $# -gt 0 ]]; do
-  case "$1" in
-    --bind_address) MTT_HOST="$2";;
-    --port) MTT_CONTROL_SERVER_PORT="$2";;
-    --labconsole_grpc_port) LABCONSOLE_SERVER_GRPC_PORT="$2";;
-    --labconsole_rest_port) LABCONSOLE_SERVER_REST_PORT="$2";;
-    --lab_console_port) LAB_CONSOLE_PORT="$2";;
-    --olc_server_port) OLC_SERVER_PORT="$2";;
-    --storage_path) STORAGE_PATH="$2";;
-    --working_dir) WORKING_DIR="$2";;
-    --live_reload) LIVE_RELOAD="$2";;
-    --file_service_only) FILE_SERVICE_ONLY="$2";;
-    --log_level) LOG_LEVEL="$2";;
-    --dev_mode) DEV_MODE="$2";;
-    --is_omnilab_based) IS_OMNILAB_BASED="$2";;
-    --olcs_server_address) OLCS_SERVER_ADDRESS="$2";;
-    --olcs_credential_type) OLCS_CREDENTIAL_TYPE="$2";;
-    --sql_database_uri) SQL_DATABASE_URI="$2";;
-    --control_server_url) MTT_CONTROL_SERVER_URL="$2";;
-    --report_generator_jar) REPORT_GENERATOR_JAR="$2";;
-    --enable_lab_console_ui) ENABLE_LAB_CONSOLE_UI="$2";;
-    --enable_lab_console_search_page) ENABLE_LAB_CONSOLE_SEARCH_PAGE="$2";;
-    *) echo "Unknown argument $1"; exit 1; # fail-fast on unknown key
-  esac
-  shift # skip key
-  shift # skip value
-done
+  # Parse command line arguments
+  WORKING_DIR="."
+  LIVE_RELOAD="false"
+  LOG_LEVEL="info"
+  MTT_HOST="0.0.0.0"
+  MTT_CONTROL_SERVER_PORT=8000
+  STORAGE_PATH="/tmp/mtt"
+  FILE_SERVICE_ONLY="false"
+  SQL_DATABASE_URI="mysql+pymysql://root@/ats_db"
+  MTT_CONTROL_SERVER_URL="http://localhost:8000"
+  REPORT_GENERATOR_JAR=""
+  IS_OMNILAB_BASED="false"
+  OLCS_SERVER_ADDRESS="localhost:7030"
+  OLCS_CREDENTIAL_TYPE="no_credential"
+  ENABLE_LAB_CONSOLE_UI="true"
+  ENABLE_LAB_CONSOLE_SEARCH_PAGE="false"
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --bind_address) MTT_HOST="$2";;
+      --port) MTT_CONTROL_SERVER_PORT="$2";;
+      --labconsole_grpc_port) LABCONSOLE_SERVER_GRPC_PORT="$2";;
+      --labconsole_rest_port) LABCONSOLE_SERVER_REST_PORT="$2";;
+      --lab_console_port) LAB_CONSOLE_PORT="$2";;
+      --olc_server_port) OLC_SERVER_PORT="$2";;
+      --storage_path) STORAGE_PATH="$2";;
+      --working_dir) WORKING_DIR="$2";;
+      --live_reload) LIVE_RELOAD="$2";;
+      --file_service_only) FILE_SERVICE_ONLY="$2";;
+      --log_level) LOG_LEVEL="$2";;
+      --dev_mode) DEV_MODE="$2";;
+      --is_omnilab_based) IS_OMNILAB_BASED="$2";;
+      --olcs_server_address) OLCS_SERVER_ADDRESS="$2";;
+      --olcs_credential_type) OLCS_CREDENTIAL_TYPE="$2";;
+      --sql_database_uri) SQL_DATABASE_URI="$2";;
+      --control_server_url) MTT_CONTROL_SERVER_URL="$2";;
+      --report_generator_jar) REPORT_GENERATOR_JAR="$2";;
+      --enable_lab_console_ui) ENABLE_LAB_CONSOLE_UI="$2";;
+      --enable_lab_console_search_page) ENABLE_LAB_CONSOLE_SEARCH_PAGE="$2";;
+      *) echo "Unknown argument $1"; exit 1; # fail-fast on unknown key
+    esac
+    shift # skip key
+    shift # skip value
+  done
 
-# If it is OMNILAB based run, transform MTT_VERSION if needed.
-if [[ $IS_OMNILAB_BASED == "true" ]]; then
-  current_mtt_version="${MTT_VERSION}"
-  if [[ $current_mtt_version =~ prod_1\.([0-9]+)\.([0-9]+) ]]; then
-    minor_version=${BASH_REMATCH[1]}
-    patch_version=${BASH_REMATCH[2]}
-    if [[ $minor_version -ge 52 ]]; then
-      new_minor_version=$(($minor_version - 52 + 1))
-      MTT_VERSION="prod_2.${new_minor_version}.${patch_version}"
-      echo "Setting MTT_VERSION to ${MTT_VERSION} for OmniLab based run " \
-           "(originally ${current_mtt_version})."
+  # If it is OMNILAB based run, transform MTT_VERSION if needed.
+  if [[ $IS_OMNILAB_BASED == "true" ]]; then
+    current_mtt_version="${MTT_VERSION}"
+    if [[ $current_mtt_version =~ prod_1\.([0-9]+)\.([0-9]+) ]]; then
+      minor_version=${BASH_REMATCH[1]}
+      patch_version=${BASH_REMATCH[2]}
+      if [[ $minor_version -ge 52 ]]; then
+        new_minor_version=$(($minor_version - 52 + 1))
+        MTT_VERSION="prod_2.${new_minor_version}.${patch_version}"
+        echo "Setting MTT_VERSION to ${MTT_VERSION} for OmniLab based run " \
+             "(originally ${current_mtt_version})."
+      else
+        echo "OmniLab based run, but version ${current_mtt_version} has minor " \
+             "version < 52. MTT_VERSION not set by this custom logic."
+      fi
     else
-      echo "OmniLab based run, but version ${current_mtt_version} has minor " \
-           "version < 52. MTT_VERSION not set by this custom logic."
+      echo "OmniLab based run, but version ${current_mtt_version} doesn't " \
+           "match expected pattern for MTT_VERSION transformation. " \
+           "MTT_VERSION not set by this custom logic."
     fi
   else
-    echo "OmniLab based run, but version ${current_mtt_version} doesn't " \
-         "match expected pattern for MTT_VERSION transformation. " \
-         "MTT_VERSION not set by this custom logic."
+    echo "Not an OmniLab based run. MTT_VERSION not set by this custom logic."
   fi
-else
-  echo "Not an OmniLab based run. MTT_VERSION not set by this custom logic."
-fi
 
-# Change working directory
-cd "${WORKING_DIR}"
-MTT_PYTHON_PATH="$(pwd):${PYTHONPATH}"
-MTT_PYTHON="python3"
+  # Change working directory
+  cd "${WORKING_DIR}"
+  MTT_PYTHON_PATH="$(pwd):${PYTHONPATH}"
+  MTT_PYTHON="python3"
 
-# Set dependent variables
-MTT_PORT="${MTT_CONTROL_SERVER_PORT}"
-MTT_CORE_PORT="$((${MTT_CONTROL_SERVER_PORT}+1))"
-MTT_TFC_PORT="$((${MTT_CONTROL_SERVER_PORT}+2))"
-FILE_SERVER_PORT="$((${MTT_CONTROL_SERVER_PORT}+6))"
-DATASTORE_EMULATOR_PORT="$((${MTT_CONTROL_SERVER_PORT}+7))"
-NETDATA_PORT="$((${MTT_CONTROL_SERVER_PORT}+8))"
-LABCONSOLE_SERVER_GRPC_PORT="${LABCONSOLE_SERVER_GRPC_PORT:-9001}"
-LABCONSOLE_SERVER_REST_PORT="${LABCONSOLE_SERVER_REST_PORT:-9000}"
-LAB_CONSOLE_PORT="${LAB_CONSOLE_PORT:-4200}"
+  # Set dependent variables
+  MTT_PORT="${MTT_CONTROL_SERVER_PORT}"
+  MTT_CORE_PORT="$((${MTT_CONTROL_SERVER_PORT}+1))"
+  MTT_TFC_PORT="$((${MTT_CONTROL_SERVER_PORT}+2))"
+  FILE_SERVER_PORT="$((${MTT_CONTROL_SERVER_PORT}+6))"
+  DATASTORE_EMULATOR_PORT="$((${MTT_CONTROL_SERVER_PORT}+7))"
+  NETDATA_PORT="$((${MTT_CONTROL_SERVER_PORT}+8))"
+  LABCONSOLE_SERVER_GRPC_PORT="${LABCONSOLE_SERVER_GRPC_PORT:-9001}"
+  LABCONSOLE_SERVER_REST_PORT="${LABCONSOLE_SERVER_REST_PORT:-9000}"
+  LAB_CONSOLE_PORT="${LAB_CONSOLE_PORT:-4200}"
 
-# Create storage directory if it doesn't exist
-if [[ ! -d "$STORAGE_PATH" ]]; then
-  echo "Storage path $STORAGE_PATH does not exist. Creating..."
-  mkdir -p "$STORAGE_PATH"
-fi
+  # Create storage directory if it doesn't exist
+  if [[ ! -d "$STORAGE_PATH" ]]; then
+    echo "Storage path $STORAGE_PATH does not exist. Creating..."
+    mkdir -p "$STORAGE_PATH"
+  fi
 
-# Create netdata directories if they don't exist
-if [[ ! -d "$STORAGE_PATH/netdata" ]]; then
-  echo "Netdata path does not exist. Creating..."
-  mkdir -p "$STORAGE_PATH/netdata/cache"
-  mkdir -p "$STORAGE_PATH/netdata/lib"
-  mkdir -p "$STORAGE_PATH/netdata/log"
-fi
+  # Create netdata directories if they don't exist
+  if [[ ! -d "$STORAGE_PATH/netdata" ]]; then
+    echo "Netdata path does not exist. Creating..."
+    mkdir -p "$STORAGE_PATH/netdata/cache"
+    mkdir -p "$STORAGE_PATH/netdata/lib"
+    mkdir -p "$STORAGE_PATH/netdata/log"
+  fi
 
-if [[ -f "${MYSQL_SCRIPT_PATH}" ]]; then
-  source "${MYSQL_SCRIPT_PATH}"
-fi
+  if [[ -f "${MYSQL_SCRIPT_PATH}" ]]; then
+    source "${MYSQL_SCRIPT_PATH}"
+  fi
+}
 
 function start_rabbitmq_puller {
   # Start RabbitMQ puller
@@ -402,8 +401,8 @@ function start_netdata_headless_collector {
   # Start Netdata headless collector
   echo "Starting Netdata..."
 
-  local control_server_hostname=$(echo ${MTT_CONTROL_SERVER_URL} | sed "s,^\([^:/]\+://\)\?\([^:/]\+\)\(:\([0-9]\{1\,5\}\)\)\?\+.*$,\2,g")
-  local control_server_port=$(echo ${MTT_CONTROL_SERVER_URL} | sed "s,^\([^:/]\+://\)\+\([^:/]\+\)\(:\([0-9]\{1\,5\}\)\)\?\+.*$,\4,g")
+  local control_server_hostname=$(printf '%s\n' "${MTT_CONTROL_SERVER_URL}" | sed "s,^\([^:/]\+://\)\?\([^:/]\+\)\(:\([0-9]\{1\,5\}\)\)\?.*$,\2,g")
+  local control_server_port=$(printf '%s\n' "${MTT_CONTROL_SERVER_URL}" | sed "s,^\([^:/]\+://\)\?\([^:/]\+\)\(:\([0-9]\{1\,5\}\)\)\?.*$,\4,g")
   local control_server_stream_port=$((${control_server_port:-80}+8))
 
 cat << EOF > ${STORAGE_PATH}/netdata/stream.conf
@@ -427,22 +426,32 @@ EOF
       &
 }
 
-if [ $FILE_SERVICE_ONLY == "false" ]
-then
-  start_and_wait_for_datastore
-  start_local_file_server
-  start_mysql_database "${STORAGE_PATH}"
-  start_rabbitmq_puller
-  if [[ "${ENABLE_LAB_CONSOLE_UI}" == "true" ]] || [[ "${ENABLE_LAB_CONSOLE_SEARCH_PAGE}" == "true" ]]; then
-    start_oss_fe_server
+function main {
+  # Kill all subprocesses when this script stops.
+  trap cleanup SIGINT SIGTERM EXIT
+
+  setup_runtime "$@"
+  if [ $FILE_SERVICE_ONLY == "false" ]
+  then
+    start_and_wait_for_datastore
+    start_local_file_server
+    start_mysql_database "${STORAGE_PATH}"
+    start_rabbitmq_puller
+    if [[ "${ENABLE_LAB_CONSOLE_UI}" == "true" ]] || [[ "${ENABLE_LAB_CONSOLE_SEARCH_PAGE}" == "true" ]]; then
+      start_oss_fe_server
+    fi
+    start_main_server
+    start_file_cleaner
+    start_netdata
+  else
+    start_and_wait_for_datastore
+    start_local_file_server
+    start_file_cleaner
+    start_netdata_headless_collector
   fi
-  start_main_server
-  start_file_cleaner
-  start_netdata
-else
-  start_and_wait_for_datastore
-  start_local_file_server
-  start_file_cleaner
-  start_netdata_headless_collector
+  wait
+}
+
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  main "$@"
 fi
-wait

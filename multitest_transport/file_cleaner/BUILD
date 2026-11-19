@@ -52,6 +52,8 @@ py_test(
         "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         "//multitest_transport/util:env_lib",
         third_party("absl/testing:absltest"),
+        third_party("absl/testing:flagsaver"),
+        third_party("requests"),
         third_party("requests_mock"),
         third_party("pyfakefs:fake_filesystem_unittest"),
     ],

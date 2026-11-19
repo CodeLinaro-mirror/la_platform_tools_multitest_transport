@@ -63,7 +63,10 @@ def LoadSettings() -> messages.FileCleanerSettings:
   Returns:
     messages.FileCleanerSettings
   """
-  url = FILE_CLEANER_SETTINGS_API_FORMAT.format(FLAGS.control_server_url)
+  control_server_url = FLAGS.control_server_url
+  if control_server_url and '://' not in control_server_url:
+    control_server_url = f'http://{control_server_url}'
+  url = FILE_CLEANER_SETTINGS_API_FORMAT.format(control_server_url)
   response = requests.get(url)
   return protojson.decode_message(
       messages.FileCleanerSettings, response.content)

@@ -1,5 +1,5 @@
 load("//third_party/bazel_rules/rules_shell/shell:sh_binary.bzl", "sh_binary")
-load("@tradefed_cluster//tradefed_cluster:adapter.bzl", "py_appengine_binary", "py_appengine_binary_zip", "pytype_strict_library", "third_party")
+load("@tradefed_cluster//tradefed_cluster:adapter.bzl", "py_appengine_binary", "py_appengine_binary_zip", "py_test", "pytype_strict_library", "third_party")
 load("//tools/build_defs/license:license.bzl", "license")
 load("//tools/build_defs/packaging:genzip.bzl", "genzip")
 load("//tools/build_defs/packaging:pkg_library.bzl", "pkg_library")
@@ -109,6 +109,16 @@ sh_binary(
     ],
     data = [
         ":main",
+    ],
+)
+
+py_test(
+    name = "serve_test",
+    srcs = ["serve_test.py"],
+    data = [":serve.sh"],
+    deps = [
+        third_party("absl/testing:absltest"),
+        third_party("absl/testing:parameterized"),
     ],
 )
 

@@ -14,7 +14,9 @@
 """Tests for multitest_transport.file_cleaner.file_cleaner.py."""
 import os
 from absl.testing import absltest
+from absl.testing import flagsaver
 from pyfakefs import fake_filesystem_unittest
+import requests
 import requests_mock
 
 
@@ -62,6 +64,44 @@ class FileCleanerTest(fake_filesystem_unittest.TestCase):
     self.assertTrue(os.path.exists('/test/dir2'))
     self.assertFalse(os.path.exists('/test/dir1/file'))
     self.assertFalse(os.path.exists('/test/dir2/file'))
+
+  @flagsaver.flagsaver(control_server_url='dialer:8000')
+  @requests_mock.mock()
+  def testCleanUp_withoutSchemeInControlServerUrl(self, mock_requests):
+    self.fs.create_dir('/test/dir1')
+    self.fs.create_file('/test/dir1/file')
+    config = b"""{
+        "policies": [{
+            "name": "policy name",
+            "target": "FILE",
+            "operation": {
+                "type": "DELETE"
+            }
+        }],
+        "configs": [{
+            "name": "config name",
+            "directories": ["/test/dir1"],
+            "policy_names": ["policy name"]
+        }]
+    }
+    """
+    mock_requests.get(
+        'http://dialer:8000/_ah/api/mtt/v1/file_cleaner/settings',
+        content=config,
+    )
+
+    file_cleaner.CleanUp()
+
+    self.assertTrue(os.path.exists('/test/dir1'))
+    self.assertFalse(os.path.exists('/test/dir1/file'))
+
+  @flagsaver.flagsaver(control_server_url='')
+  def testLoadSettings_emptyControlServerUrl(self):
+    with self.assertRaisesRegex(
+        requests.exceptions.MissingSchema,
+        '/_ah/api/mtt/v1/file_cleaner/settings',
+    ):
+      file_cleaner.LoadSettings()
 
 
 if __name__ == '__main__':
