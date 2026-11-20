@@ -269,7 +269,7 @@ function start_config_service {
     --config_service_grpc_port="${MTT_CONFIG_SERVICE_GRPC_PORT}"
     --config_service_storage_type="JDBC_CONNECTOR"
     --config_service_jdbc_url="jdbc:mysql:///ats_db"
-    --config_service_jdbc_properties="socketFactory=org.newsclub.net.mysql.AFUNIXDatabaseSocketFactory&junixsocket.file=/data/ats_db/mysqld.sock"
+    --config_service_jdbc_property="socketFactory=org.newsclub.net.mysql.AFUNIXDatabaseSocketFactory,junixsocket.file=/data/ats_db/mysqld.sock"
   )
 
   mkdir -p "${MTT_CONFIG_SERVICE_LOG_DIR}"
